@@ -1,0 +1,324 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{078F7418-8D74-4F0F-A997-E49607E874B7}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>ABLMediaServer</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <UseOfMfc>Static</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+    <UseOfMfc>Static</UseOfMfc>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>D:\boost_1_73_0\boost_1_73_0;..\rapidjson-master\include;..\media-server-master\libflv\include;..\media-server-master\librtmp\include;..\media-server-master\libmpeg\include;..\media-server-master\libhls\include;..\media-server-master\libmov\include;..\media-server-master\librtp\include;..\ffmpeg-4.2.3\include;..\directx9\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\boost_1_73_0_lib\lib;..\media-server-master\x64\Release;..\ffmpeg-4.2.3\lib;..\directx9\lib\x64;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>E:\boost_1_69_0\boost_1_69_0;..\media-server-master\libflv\include;..\media-server-master\librtmp\include;$(IncludePath)</IncludePath>
+    <LibraryPath>E:\boost_1_69_0.lib\boost_1_69_0_Lib_VC2015\VC2015\lib;..\media-server-master\x64\Release;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>librtmp.lib;libflv.lib;libmpeg.lib;libhls.lib;libmov.lib;librtp.lib;ws2_32.lib;iphlpapi.lib;avcodec.lib;avutil.lib;avformat.lib;swscale.lib;avfilter.lib;swresample.lib;d3dx9.lib;d3d9.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>librtmp.lib;libflv.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="AACEncode.h" />
+    <ClInclude Include="ABLogSDK.h" />
+    <ClInclude Include="ABLSipParse.h" />
+    <ClInclude Include="AVFrameSWS.h" />
+    <ClInclude Include="faac.h" />
+    <ClInclude Include="faaccfg.h" />
+    <ClInclude Include="FFVideoDecode.h" />
+    <ClInclude Include="FFVideoEncode.h" />
+    <ClInclude Include="g711.h" />
+    <ClInclude Include="g711_table.h" />
+    <ClInclude Include="H265_SPS_Nal.h" />
+    <ClInclude Include="LCbase64.h" />
+    <ClInclude Include="ConfigFile.h" />
+    <ClInclude Include="MediaFifo.h" />
+    <ClInclude Include="MediaSendThreadPool.h" />
+    <ClInclude Include="MediaStreamSource.h" />
+    <ClInclude Include="MyWriteLogFile.h" />
+    <ClInclude Include="NetClientHttp.h" />
+    <ClInclude Include="NetClientSnap.h" />
+    <ClInclude Include="NetGB28181Listen.h" />
+    <ClInclude Include="NetClientAddPushProxy.h" />
+    <ClInclude Include="NetClientAddStreamProxy.h" />
+    <ClInclude Include="NetClientRecvFLV.h" />
+    <ClInclude Include="NetClientRecvHttpHLS.h" />
+    <ClInclude Include="NetClientRecvRtmp.h" />
+    <ClInclude Include="NetClientRecvRtsp.h" />
+    <ClInclude Include="NetClientSendRtmp.h" />
+    <ClInclude Include="NetClientSendRtsp.h" />
+    <ClInclude Include="NetGB28181RtpClient.h" />
+    <ClInclude Include="NetGB28181RtpServer.h" />
+    <ClInclude Include="NetRecvBase.h" />
+    <ClInclude Include="NetServerHLS.h" />
+    <ClInclude Include="NetServerHTTP.h" />
+    <ClInclude Include="NetServerHTTP_FLV.h" />
+    <ClInclude Include="NetRtmpServerRecv.h" />
+    <ClInclude Include="NetRtspServer.h" />
+    <ClInclude Include="NetBaseThreadPool.h" />
+    <ClInclude Include="NetServerHTTP_MP4.h" />
+    <ClInclude Include="NetServerRecvRtpTS_PS.h" />
+    <ClInclude Include="NetServerWS_FLV.h" />
+    <ClInclude Include="PictureFileSource.h" />
+    <ClInclude Include="ps_demux.h" />
+    <ClInclude Include="ps_mux.h" />
+    <ClInclude Include="ReadRecordFileInput.h" />
+    <ClInclude Include="RecordFileSource.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="RtcpDef.h" />
+    <ClInclude Include="RtcpPacket.h" />
+    <ClInclude Include="RtpPSStreamInput.h" />
+    <ClInclude Include="RtpTSStreamInput.h" />
+    <ClInclude Include="rtp_depacket.h" />
+    <ClInclude Include="rtp_packet.h" />
+    <ClInclude Include="rtspMD5\Base64.hh" />
+    <ClInclude Include="rtspMD5\DigestAuthentication.hh" />
+    <ClInclude Include="rtspMD5\gettimeofday.h" />
+    <ClInclude Include="rtspMD5\netBase64.h" />
+    <ClInclude Include="rtspMD5\ourMD5.hh" />
+    <ClInclude Include="rtspMD5\strDup.hh" />
+    <ClInclude Include="SHA1.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="StreamRecordFMP4.h" />
+    <ClInclude Include="StreamRecordMP4.h" />
+    <ClInclude Include="targetver.h" />
+    <ClInclude Include="Unit_ReadSPS.h" />
+    <ClInclude Include="VideoDecode.h" />
+    <ClInclude Include="WriteAVFile.h" />
+    <ClInclude Include="XHNetSDK.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="AACEncode.cpp" />
+    <ClCompile Include="ABLMediaServer.cpp" />
+    <ClCompile Include="ABLogSDK.cpp" />
+    <ClCompile Include="ABLSipParse.cpp" />
+    <ClCompile Include="AVFrameSWS.cpp" />
+    <ClCompile Include="FFVideoDecode.cpp" />
+    <ClCompile Include="FFVideoEncode.cpp" />
+    <ClCompile Include="g711.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="g711_table.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="LCbase64.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="ConfigFile.cpp" />
+    <ClCompile Include="MediaFifo.cpp" />
+    <ClCompile Include="MediaSendThreadPool.cpp" />
+    <ClCompile Include="MediaStreamSource.cpp" />
+    <ClCompile Include="MyWriteLogFile.cpp" />
+    <ClCompile Include="NetClientHttp.cpp" />
+    <ClCompile Include="NetClientSnap.cpp" />
+    <ClCompile Include="NetGB28181Listen.cpp" />
+    <ClCompile Include="NetClientAddPushProxy.cpp" />
+    <ClCompile Include="NetClientAddStreamProxy.cpp" />
+    <ClCompile Include="NetClientRecvFLV.cpp" />
+    <ClCompile Include="NetClientRecvHttpHLS.cpp" />
+    <ClCompile Include="NetClientRecvRtmp.cpp" />
+    <ClCompile Include="NetClientRecvRtsp.cpp" />
+    <ClCompile Include="NetClientSendRtmp.cpp" />
+    <ClCompile Include="NetClientSendRtsp.cpp" />
+    <ClCompile Include="NetGB28181RtpClient.cpp" />
+    <ClCompile Include="NetGB28181RtpServer.cpp" />
+    <ClCompile Include="NetRecvBase.cpp" />
+    <ClCompile Include="NetServerHLS.cpp" />
+    <ClCompile Include="NetServerHTTP.cpp" />
+    <ClCompile Include="NetServerHTTP_FLV.cpp" />
+    <ClCompile Include="CNetRtmpServerRecv.cpp" />
+    <ClCompile Include="NetRtspServer.cpp" />
+    <ClCompile Include="NetBaseThreadPool.cpp" />
+    <ClCompile Include="NetServerHTTP_MP4.cpp" />
+    <ClCompile Include="NetServerRecvRtpTS_PS.cpp" />
+    <ClCompile Include="NetServerWS_FLV.cpp" />
+    <ClCompile Include="PictureFileSource.cpp" />
+    <ClCompile Include="ReadRecordFileInput.cpp" />
+    <ClCompile Include="RecordFileSource.cpp" />
+    <ClCompile Include="RtcpPacket.cpp" />
+    <ClCompile Include="RtpPSStreamInput.cpp" />
+    <ClCompile Include="RtpTSStreamInput.cpp" />
+    <ClCompile Include="rtspMD5\Base64.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="rtspMD5\DigestAuthentication.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="rtspMD5\gettimeofday.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="rtspMD5\netBase64.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="rtspMD5\ourMD5.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="rtspMD5\strDup.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="SHA1.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="StreamRecordFMP4.cpp" />
+    <ClCompile Include="StreamRecordMP4.cpp" />
+    <ClCompile Include="Unit_ReadSPS.cpp" />
+    <ClCompile Include="VideoDecode.cpp" />
+    <ClCompile Include="WriteAVFile.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="ABLMediaServer.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="..\lib\libfaac.lib" />
+    <Library Include="..\lib\PsDemux.lib" />
+    <Library Include="..\lib\PsMux.lib" />
+    <Library Include="..\lib\rtpdepacket.lib" />
+    <Library Include="..\lib\rtppacket.lib" />
+    <Library Include="..\lib\XHNetSDK.lib" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
