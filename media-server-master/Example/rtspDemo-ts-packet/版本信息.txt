@@ -1,0 +1,119 @@
+rtspDemo-ts-packet-2021-06-23
+1 增加生成m3u8文件，使用nginx作为服务器正常 
+	//生成m3u8文件里面的TS文件
+	sprintf(szOutputName, "%09d.ts", nTsFileOrder - 1);//上一个文件
+	m3u8FileFifo.push((unsigned char*)szOutputName, strlen(szOutputName));
+	if (m3u8FileFifo.GetSize() > 3)
+		m3u8FileFifo.pop_front();//删除掉最老的一个文件名字
+	if (m3u8FileFifo.GetSize() >= 3)
+	{
+		sprintf(szOutputName, "%shls.m3u8", szHlsPath);
+		FILE* m3u8File = fopen(szOutputName, "w+b");
+		if (m3u8File != NULL)
+		{
+			fprintf(m3u8File, "#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:3\n#EXT-X-MEDIA-SEQUENCE:%d\n#EXT-X-ALLOW-CACHE:NO\n", m3u8FileOrder);
+
+			unsigned char* pData;
+			int            nLength;
+			for (int i = 0; i < 3; i++)
+			{
+				pData = m3u8FileFifo.pop(&nLength);
+				if (pData)
+				{
+					memset(szOutputName, 0x00, sizeof(szOutputName));
+					memcpy(szOutputName, pData, nLength);
+					fprintf(m3u8File, "#EXTINF:3.000,\n%s\n", szOutputName);
+
+					m3u8FileFifo.pop_front();
+					m3u8FileFifo.push((unsigned char*)szOutputName, strlen(szOutputName));//回收TS文件名字
+				}
+			}
+
+			fclose(m3u8File);
+		}
+		m3u8FileOrder ++;
+	}
+
+
+rtspDemo-ts-packet-2021-06-22-2
+1  修改为75帧重新切片一个新的TS文件 
+	if (nVideoOrder % 75 == 0)
+	{
+		if (pTSHandle->fWrite != NULL)
+			fclose(pTSHandle->fWrite); //关闭老ts文件 
+
+		//重新创建新TS文件 
+		sprintf(szOutputName, "%s%09d.ts", ABL_szCurrentPath, nTsFileOrder);
+		FILE* fp = fopen(szOutputName, "wb");
+		pTSHandle->fWrite = fp;
+		nTsFileOrder ++;
+
+		tsFileNameFifo.push((unsigned char*)szOutputName, strlen(szOutputName));
+	}
+			
+2 定期删除历史TS文件
+ 
+	if (GetTickCount() - tsDeleteTime >= 1000 * 5)
+	{
+		unsigned char* pData;
+		int           nLength;
+		while (tsFileNameFifo.GetSize() > 15 )
+		{
+			memset(szOutputName, 0x00, sizeof(szOutputName));
+			pData = tsFileNameFifo.pop(&nLength);
+			if (pData != NULL)
+			{
+				memcpy(szOutputName, pData, nLength);
+				::DeleteFile(szOutputName);
+
+				tsFileNameFifo.pop_front();
+			}
+		}
+		tsDeleteTime = GetTickCount() ;
+	}			
+	
+rtspDemo-ts-packet-2021-06-22 
+1 写TS文件视频、音频写入都能正常 
+   视频的时间戳  nVideoOrder * 40 * 90;   
+   音频的时间戳  nAudioOrder * 64 * 90
+   
+	else if (RtspDataType == XHRtspDataType_Video)
+	{//收到视频 
+		if (nRecordFlag == 1)
+		{
+			if (strcmp(codeName, "H264") == 0)
+				avtype = PSI_STREAM_H264;
+			else if (strcmp(codeName, "H265") == 0)
+				avtype = PSI_STREAM_H265;
+
+			if (CheckVideoIsIFrame(avtype, pAVData, nAVDataLength) == true)
+				flags = 1;
+			else
+				flags = 0;
+
+			pts = nVideoOrder * 40 * 90;
+			mpeg_ts_write(tsPacketHandle, ts_stream(tsPacketHandle, avtype), flags, pts, pts, pAVData, nAVDataLength);
+			nVideoOrder++;
+		}
+
+		if (nRecvCount % 100 == 0)
+		{
+			printf("收到视频 nRtspChan = %d,  RtspDataType =%d,  codeName = %s, nAVDataLength = %d \r\n", nRtspChan, RtspDataType, codeName, nAVDataLength);
+		}
+	}
+	else if (RtspDataType == XHRtspDataType_Audio && strcmp(codeName,"AAC") == 0)
+	{//收到音频
+		if (nRecordFlag == 1)
+		{
+		   if (strcmp(codeName, "AAC") == 0)
+			  avtype = PSI_STREAM_AAC;
+
+	     	mpeg_ts_write(tsPacketHandle, ts_stream(tsPacketHandle, avtype), 0, nAudioOrder * 64 * 90, nAudioOrder * 64 * 90, pAVData , nAVDataLength);
+		    nAudioOrder ++;
+		}
+ 
+		if (nRecvCount % 100 == 0)
+		{
+			printf("收到音频 nRtspChan = %d,  RtspDataType =%d,  codeName = %s, nAVDataLength = %d \r\n", nRtspChan, RtspDataType, codeName, nAVDataLength);
+		}
+	}

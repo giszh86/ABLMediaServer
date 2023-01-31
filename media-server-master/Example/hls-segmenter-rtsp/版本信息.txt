@@ -1,0 +1,73 @@
+2021-05-18
+1 在老陈代码增加 清空文件列表函数，这样 m3u8 就不需要删除 m3u8 
+	//清空文件列表 
+	void hls_m3u8_clearFileList(struct hls_m3u8_t* m3u8)
+	{
+		struct list_head* l, *n;
+		struct hls_segment_t* seg;
+		list_for_each_safe(l, n, &m3u8->root)
+		{
+			seg = list_entry(l, struct hls_segment_t, link);
+			free(seg);
+		}
+		m3u8->count = 0;
+		m3u8->duration = 0;
+		LIST_INIT_HEAD(&m3u8->root);
+
+		if (m3u8->ext_x_map)
+			free(m3u8->ext_x_map);
+	}
+
+2 设置m3u8里面的seq数量，因为m3u8文件里面，有个初始序号 	
+	//设置seq 数量
+	void hls_m3u8_setSeq(struct hls_m3u8_t* m3u8, int nSeqCount)
+	{
+		if (m3u8 == NULL)
+			return;
+		m3u8->seq += nSeqCount;
+	}
+
+3  创建完毕m3u8文件后，不需要删除m3u8 ,也不需要删除hls切片文件 
+	
+	hls_m3u8_clearFileList(m3u); //增加清除文件列表函数，不需要删除m3u8，不需要删除hls切片句柄 
+	//hls_m3u8_destroy(m3u); //m3u8 不需要删除 
+ 	//hls_media_destroy(hls); //hls 不需要删除 
+
+	//m3u = hls_m3u8_create(0, 3); //m3u8 不需要重新创建 
+	//hls = hls_media_create(HLS_DURATION * 1000, hls_handler, m3u); //HLS 不需要重新创建 
+	
+
+4 只有AAC才对声音进行切片 
+	if (hls && strcmp(codeName,"AAC") == 0)
+	  hls_media_input(hls, STREAM_AUDIO_AAC, pAVData, nAVDataLength, audioDts, audioDts, 0);
+	
+5   更新m3u8里面的序号seq  
+	  //更新文件列表的seq 
+	  hls_m3u8_setSeq(m3u, hls_m3u8_count(m3u));
+
+	#EXTM3U
+	#EXT-X-VERSION:3
+	#EXT-X-TARGETDURATION:4  //把切片时长修改为4秒 
+	#EXT-X-MEDIA-SEQUENCE:30  //这个序号序号更新 
+	#EXT-X-PLAYLIST-TYPE:VOD
+	#EXT-X-ALLOW-CACHE:YES
+	#EXTINF:4.000,
+	30.ts
+	#EXTINF:3.880,
+	31.ts
+	#EXTINF:4.000,
+	32.ts
+	#EXT-X-ENDLIST
+	
+	
+2021-05-17
+1  HLS 循环切片视频、音频都正常，但是 hls、m3u8 句柄存在泄漏，尚未执行删除 ,需要延时删除
+2  需要延时删除 hls ,m3u8 句柄 
+
+2021-05-12
+1 每次切割视频大小接近 
+
+2021-05-11
+1 项目刚刚创建
+2 能对rtsp码流进行切片，但是最后一个TS文件切片不准确 ，不是最后切片 
+
