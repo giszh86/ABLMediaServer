@@ -84,8 +84,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>E:\boost_1_69_0\boost_1_69_0;..\media-server-master\libflv\include;..\media-server-master\librtmp\include;$(IncludePath)</IncludePath>
-    <LibraryPath>E:\boost_1_69_0.lib\boost_1_69_0_Lib_VC2015\VC2015\lib;..\media-server-master\x64\Release;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\media-server-master\libflv\include;..\media-server-master\librtmp\include;$(IncludePath)</IncludePath>
+    <LibraryPath>..\media-server-master\x64\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
