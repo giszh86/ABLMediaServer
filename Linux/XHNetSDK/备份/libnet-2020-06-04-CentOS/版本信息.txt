@@ -1,0 +1,70 @@
+2020-06-04
+1  udp读取出错时，不要关闭，否则会造成udp发送数据失败 
+
+	void udp_session::handle_read(const boost::system::error_code& ec,
+		size_t transize)
+	{
+		if (!m_socket.is_open())
+		{
+			return;
+		}
+
+		if (!ec || ec == boost::asio::error::message_size) 
+		{
+			if (m_start)
+
+		}
+		else
+		{// 有时候会触发 10061 这个错误，造成udp关闭，不需要在这里调用关闭
+			//close();
+			//udp_session_manager_singleton::get_mutable_instance().pop_udp_session(get_id());
+		}
+	}
+
+2  设置 udp 发送、接收缓冲区大小 	
+	boost::system::error_code ec;
+	boost::asio::socket_base::receive_buffer_size recv_buffer_size_option(4 * 1024 * 1024);
+	m_socket.set_option(recv_buffer_size_option, ec);//设置接收缓冲区
+
+	boost::asio::socket_base::send_buffer_size    SendSize_option(4 * 1024 * 1024); //定义发送缓冲区大小
+	m_socket.set_option(SendSize_option, ec); //设置发送缓存区大小
+	
+2020-05-07
+1 增加设置发送、接收缓冲区大小
+	//设置接收，发送缓冲区
+	int  nRecvSize = 1024 * 1024 * 2;
+	boost::asio::socket_base::send_buffer_size    SendSize_option(nRecvSize); //定义发送缓冲区大小
+	boost::asio::socket_base::receive_buffer_size RecvSize_option(nRecvSize); //定义接收缓冲区大小
+	m_socket.set_option(SendSize_option); //设置发送缓存区大小
+	m_socket.set_option(RecvSize_option); //设置接收缓冲区大小
+
+	//设置立即关闭
+	struct linger so_linger ;
+	so_linger.l_onoff = 0;
+	so_linger.l_linger = 1;
+	setsockopt(m_socket.native_handle(), SOL_SOCKET, SO_LINGER, (const char*)&so_linger, sizeof(so_linger)); //设置立即关闭
+
+2  把网络发送改成循环发送
+	unsigned long nSendPos = 0, nSendRet = 0 ;
+
+	while (datasize2 > 0)
+	{//改成循环发送
+		nSendRet = boost::asio::write(m_socket, boost::asio::buffer(data + nSendPos, datasize2), ec);
+
+		if (!ec)
+		{//发送没有出错
+			if (nSendRet > 0)
+			{
+				nSendPos  += nSendRet;
+				datasize2 -= nSendRet;
+			}
+		}
+		else//发送出错，立即跳出循环，否则会死循环
+			break;
+	}
+
+	
+2020-05-02
+1 把函数名字稍微改动
+
+拿最新的网络库源码编译成Linux版本。
