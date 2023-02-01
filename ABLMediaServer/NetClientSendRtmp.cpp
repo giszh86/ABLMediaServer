@@ -12,8 +12,8 @@ E-Mail  79941308@qq.com
 #include "NetClientSendRtmp.h"
 
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
-extern boost::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
-extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
+extern std::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
+extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 
@@ -99,7 +99,7 @@ static int rtmp_client_pushCB(void* param, const void* header, size_t len, const
 			{
 				pClient->bUpdateVideoFrameSpeedFlag = true; //用于成功交互
 				pClient->bAddMediaSourceFlag = true;
-				boost::shared_ptr<CMediaStreamSource> pMediaSource = GetMediaStreamSource(pClient->m_szShareMediaURL);
+				std::shared_ptr<CMediaStreamSource> pMediaSource = GetMediaStreamSource(pClient->m_szShareMediaURL);
 				if (pMediaSource != NULL)
 				{
  					//记下媒体源

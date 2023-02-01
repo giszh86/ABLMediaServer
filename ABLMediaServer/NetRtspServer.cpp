@@ -18,16 +18,16 @@ E-Mail  79941308@qq.com
 
 uint64_t                                     CNetRtspServer::Session = 1000;
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
-extern boost::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szURL, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
-extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
+extern std::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szURL, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
+extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
 extern CMediaSendThreadPool*                 pMediaSendThreadPool;
 extern size_t base64_decode(void* target, const char *source, size_t bytes);
 extern MediaServerPort                       ABL_MediaServerPort;
-extern boost::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
-extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
+extern std::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
+extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
 
 //AAC采样频率序号
 int avpriv_mpeg4audio_sample_rates[] = {
@@ -974,7 +974,7 @@ void  CNetRtspServer::InputRtspData(unsigned char* pRecvData, int nDataLength)
 			return;
 
 		//判断推流地址是否存在
-		boost::shared_ptr<CMediaStreamSource> pMediaSourceTemp = GetMediaStreamSource(szMediaSourceURL);
+		std::shared_ptr<CMediaStreamSource> pMediaSourceTemp = GetMediaStreamSource(szMediaSourceURL);
 		if (pMediaSourceTemp != NULL || strstr(szMediaSourceURL, RecordFileReplaySplitter) != NULL )
 		{
 			sprintf(szResponseBuffer, "RTSP/1.0 406 Not Acceptable\r\nServer: %s\r\nCSeq: %s\r\n\r\n", MediaServerVerson, szCSeq);
@@ -1222,7 +1222,7 @@ void  CNetRtspServer::InputRtspData(unsigned char* pRecvData, int nDataLength)
 		  pMediaSource->AddClientToMap(nClient);//媒体拷贝
 		  pMediaSendThreadPool->AddClientToThreadPool(nClient);//媒体发送线程
 
-		  boost::shared_ptr<CNetRevcBase> pBasePtr = GetNetRevcBaseClient(nReplayClient);
+		  std::shared_ptr<CNetRevcBase> pBasePtr = GetNetRevcBaseClient(nReplayClient);
 		  if (pBasePtr )
 		  {
 			  CReadRecordFileInput* pReplayPtr = (CReadRecordFileInput*)pBasePtr.get();
@@ -1270,7 +1270,7 @@ void  CNetRtspServer::InputRtspData(unsigned char* pRecvData, int nDataLength)
 	{
 		m_bPauseFlag = true ;//暂停
  
-		boost::shared_ptr<CNetRevcBase> pBasePtr = GetNetRevcBaseClient(nReplayClient);
+		std::shared_ptr<CNetRevcBase> pBasePtr = GetNetRevcBaseClient(nReplayClient);
 		if (pBasePtr)
 		{
 			CReadRecordFileInput* pReplayPtr = (CReadRecordFileInput*)pBasePtr.get();

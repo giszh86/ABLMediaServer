@@ -12,7 +12,7 @@ E-Mail  79941308@qq.com
 extern CNetBaseThreadPool*                   RecordReplayThreadPool;//录像回放线程池
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
-extern boost::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szURL, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
+extern std::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szURL, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern MediaServerPort                       ABL_MediaServerPort;
 

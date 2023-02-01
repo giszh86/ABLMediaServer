@@ -60,7 +60,7 @@ public:
 	uint64_t        nCallBackVideoTime;
 	ts_demuxer_t *   ts;
 	char             szSourceURL[512];
-	boost::shared_ptr<CMediaStreamSource> pMediaSource;
+	std::shared_ptr<CMediaStreamSource> pMediaSource;
 
 	CMediaFifo       hlsVideoFifo;
 	CMediaFifo       hlsAudioFifo;

@@ -11,7 +11,7 @@ E-Mail  79941308@qq.com
 #include "NetServerHTTP_FLV.h"
 
 extern             bool                DeleteNetRevcBaseClient(NETHANDLE CltHandle);
-boost::shared_ptr<CMediaStreamSource>  GetMediaStreamSource(char* szURL);
+std::shared_ptr<CMediaStreamSource>  GetMediaStreamSource(char* szURL);
 extern CMediaSendThreadPool*           pMediaSendThreadPool;
 extern CMediaFifo                      pDisconnectBaseNetFifo; //清理断裂的链接 
 extern bool                            DeleteClientMediaStreamSource(uint64_t nClient);
@@ -374,7 +374,7 @@ int CNetServerHTTP_FLV::ProcessNetData()
  			szFlvName[strlen(szFlvName) - 4] = 0x00;
 
 		strcpy(szMediaSourceURL, szFlvName);
- 		boost::shared_ptr<CMediaStreamSource> pushClient = NULL;
+ 		std::shared_ptr<CMediaStreamSource> pushClient = NULL;
 		if (strstr(szFlvName, RecordFileReplaySplitter) == NULL)
 		{//实况点播
 		     pushClient = GetMediaStreamSource(szFlvName);

@@ -16,7 +16,7 @@ E-Mail  79941308@qq.com
 #include "stdafx.h"
 #include "RecordFileSource.h"
 extern MediaServerPort                       ABL_MediaServerPort;
-extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
+extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
 extern CMediaFifo                            pMessageNoticeFifo;          //消息通知FIFO
 
 CRecordFileSource::CRecordFileSource(char* app, char* stream)

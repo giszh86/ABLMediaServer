@@ -28,7 +28,7 @@ public:
    mpeg4_aac_t                           aacInfo;
    std::mutex                            tsRecvLock;
    ts_demuxer_t                          *ts;
-   boost::shared_ptr<CMediaStreamSource> pMediaSource;
+   std::shared_ptr<CMediaStreamSource> pMediaSource;
    _rtp_header                           rtpHead;
 
 };

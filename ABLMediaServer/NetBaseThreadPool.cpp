@@ -11,7 +11,7 @@ E-Mail  79941308@qq.com
 #include "stdafx.h"
 #include "NetBaseThreadPool.h"
 
-extern boost::shared_ptr<CNetRevcBase> GetNetRevcBaseClient(NETHANDLE CltHandle);
+extern std::shared_ptr<CNetRevcBase> GetNetRevcBaseClient(NETHANDLE CltHandle);
 
 CNetBaseThreadPool::CNetBaseThreadPool(int nThreadCount)
 {
@@ -65,7 +65,7 @@ void CNetBaseThreadPool::ProcessFunc()
 	{
 		if (m_NetHandleQueue[nCurrentThreadID].pop(nClientID))
 		{
-			boost::shared_ptr<CNetRevcBase> pClient = GetNetRevcBaseClient(nClientID);
+			std::shared_ptr<CNetRevcBase> pClient = GetNetRevcBaseClient(nClientID);
 			if (pClient != NULL)
 			{
 				pClient->ProcessNetData();//»ŒŒÒ÷¥––

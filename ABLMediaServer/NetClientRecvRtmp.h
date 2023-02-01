@@ -51,7 +51,7 @@ public:
    flv_demuxer_t*               flvDemuxer;
    char                         szURL[512];
 
-   boost::shared_ptr<CMediaStreamSource> pMediaSource;
+   std::shared_ptr<CMediaStreamSource> pMediaSource;
    volatile bool                         bDeleteRtmpPushH265Flag; //因为推rtmp265被删除标志 
 
 #ifdef  WriteFlvFileByDebug

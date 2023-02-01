@@ -49,7 +49,7 @@ public:
    bool                 UpdatePauseFlag(bool bFlag);
 
    uint64_t              nDownloadFrameCount;
-   boost::shared_ptr<CMediaStreamSource> pMediaSource;
+   std::shared_ptr<CMediaStreamSource> pMediaSource;
    int                   nRetLength;
    std::mutex            readRecordFileInputLock;
    unsigned char         s_buffer[ReadRecordFileInput_MaxPacketCount];

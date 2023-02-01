@@ -969,7 +969,7 @@ extern "C"
 #include <libswresample/swresample.h>
 }
 using namespace std;
-using namespace boost;
+//using namespace boost;
 using namespace rapidjson;
 
 typedef list<int> LogFileVector;

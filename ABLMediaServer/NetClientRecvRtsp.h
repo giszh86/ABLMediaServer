@@ -205,7 +205,7 @@ public:
    char           szAudioSDP[512];
    CABLSipParse   sipParseV, sipParseA;   //sdp 信息分析
 
-   boost::shared_ptr<CMediaStreamSource> pMediaSource;
+   std::shared_ptr<CMediaStreamSource> pMediaSource;
 
    volatile bool  bIsInvalidConnectFlag; //是否为非法连接 
    volatile bool  bExitProcessFlagArray[3];

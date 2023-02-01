@@ -30,7 +30,7 @@ E-Mail  79941308@qq.com
 
 NETHANDLE srvhandle_8080,srvhandle_554, srvhandle_1935, srvhandle_6088, srvhandle_8088, srvhandle_8089, srvhandle_9088;
 
-typedef boost::shared_ptr<CNetRevcBase> CNetRevcBase_ptr;
+typedef std::shared_ptr<CNetRevcBase> CNetRevcBase_ptr;
 typedef boost::unordered_map<NETHANDLE, CNetRevcBase_ptr>        CNetRevcBase_ptrMap;
 CNetRevcBase_ptrMap                                              xh_ABLNetRevcBaseMap;
 std::mutex                                                       ABL_CNetRevcBase_ptrMapLock;
@@ -40,19 +40,19 @@ CNetBaseThreadPool*                                              RecordReplayThr
 CNetBaseThreadPool*                                              MessageSendThreadPool;//消息发送线程池
 
 /* 媒体数据存储 -------------------------------------------------------------------------------------*/
-typedef boost::shared_ptr<CMediaStreamSource>                    CMediaStreamSource_ptr;
+typedef std::shared_ptr<CMediaStreamSource>                    CMediaStreamSource_ptr;
 typedef boost::unordered_map<string, CMediaStreamSource_ptr>     CMediaStreamSource_ptrMap;
 CMediaStreamSource_ptrMap                                        xh_ABLMediaStreamSourceMap;
 std::mutex                                                       ABL_CMediaStreamSourceMapLock;
 
 /* 录像文件存储 -------------------------------------------------------------------------------------*/
-typedef boost::shared_ptr<CRecordFileSource>                     CRecordFileSource_ptr;
+typedef std::shared_ptr<CRecordFileSource>                     CRecordFileSource_ptr;
 typedef boost::unordered_map<string, CRecordFileSource_ptr>      CRecordFileSource_ptrMap;
 CRecordFileSource_ptrMap                                         xh_ABLRecordFileSourceMap;
 std::mutex                                                       ABL_CRecordFileSourceMapLock;
 
 /* 图片文件存储 -------------------------------------------------------------------------------------*/
-typedef boost::shared_ptr<CPictureFileSource>                    CPictureFileSource_ptr;
+typedef std::shared_ptr<CPictureFileSource>                    CPictureFileSource_ptr;
 typedef boost::unordered_map<string, CPictureFileSource_ptr>     CPictureFileSource_ptrMap;
 CPictureFileSource_ptrMap                                        xh_ABLPictureFileSourceMap;
 std::mutex                                                       ABL_CPictureFileSourceMapLock;
@@ -540,7 +540,7 @@ int GetAllMediaStreamSource(char* szMediaSourceInfo, getMediaListStruct mediaLis
 		{//代理拉流（rtsp,rtmp,flv,hls ）,rtsp推流，rtmp推流，gb28181，webrtc 
 
 			sprintf(szShareMediaURL, "/%s/%s", pClient->m_addStreamProxyStruct.app, pClient->m_addStreamProxyStruct.stream);
-			boost::shared_ptr<CMediaStreamSource> tmpMediaSource = GetMediaStreamSource(szShareMediaURL);
+			std::shared_ptr<CMediaStreamSource> tmpMediaSource = GetMediaStreamSource(szShareMediaURL);
 			bAddFlag = false;
 
 			if (strlen(mediaListStruct.app) == 0 && strlen(mediaListStruct.stream) == 0 && tmpMediaSource != NULL)
@@ -1894,7 +1894,7 @@ void*  ABLMedisServerProcessThread(void* lpVoid)
 				memset((char*)&msgNotice, 0x00, sizeof(msgNotice));
 				memcpy((char*)&msgNotice, pData, nLength);
 
-				boost::shared_ptr<CNetRevcBase> pHttpClient = GetNetRevcBaseClient(msgNotice.nClient);
+				std::shared_ptr<CNetRevcBase> pHttpClient = GetNetRevcBaseClient(msgNotice.nClient);
 				if (pHttpClient != NULL)
   					pHttpClient->PushVideo((unsigned char*)msgNotice.szMsg, strlen(msgNotice.szMsg), "JSON");
  			}

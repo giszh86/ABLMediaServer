@@ -11,7 +11,7 @@ E-Mail  79941308@qq.com
 #include "stdafx.h"
 #include "MediaSendThreadPool.h"
 
-extern boost::shared_ptr<CNetRevcBase> GetNetRevcBaseClient(NETHANDLE CltHandle);
+extern std::shared_ptr<CNetRevcBase> GetNetRevcBaseClient(NETHANDLE CltHandle);
 extern bool                            DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 extern CMediaFifo                      pDisconnectBaseNetFifo; //清理断裂的链接 
 
@@ -220,7 +220,7 @@ void CMediaSendThreadPool::ProcessFunc()
 			{
 				if (threadContainClient[nCurrentThreadID].nClients[i] > 0)
 				{
-		           boost::shared_ptr<CNetRevcBase> pClient= GetNetRevcBaseClient(threadContainClient[nCurrentThreadID].nClients[i]);
+		           std::shared_ptr<CNetRevcBase> pClient= GetNetRevcBaseClient(threadContainClient[nCurrentThreadID].nClients[i]);
 				   if (pClient != NULL )
 				   {
 					   if (pClient->netBaseNetType == NetBaseNetType_HttpHLSClientRecv)

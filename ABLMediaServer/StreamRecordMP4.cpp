@@ -15,8 +15,8 @@ E-Mail  79941308@qq.com
 #include "mov-buffer.h"
 
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
-extern boost::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
-extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
+extern std::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
+extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 
@@ -24,9 +24,9 @@ extern CMediaSendThreadPool*                 pMediaSendThreadPool;
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
 extern char                                  ABL_MediaSeverRunPath[256]; //当前路径
 extern MediaServerPort                       ABL_MediaServerPort; 
-extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
+extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
 extern CMediaFifo                            pMessageNoticeFifo;    //消息通知FIFO
-extern boost::shared_ptr<CRecordFileSource>  GetRecordFileSource(char* szShareURL);
+extern std::shared_ptr<CRecordFileSource>  GetRecordFileSource(char* szShareURL);
 
 static int mp4_mov_file_read(void* fp, void* data, uint64_t bytes)
 {
@@ -248,7 +248,7 @@ bool CStreamRecordMP4::OpenMp4File(int nWidth, int nHeight)
 			sprintf(szFileName, "%s%04d%02d%02d%02d%02d%02d.mp4", szRecordPath, local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);
 			sprintf(szFileNameOrder, "%04d%02d%02d%02d%02d%02d.mp4", local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);;
 #endif
-			boost::shared_ptr<CRecordFileSource> pRecord = GetRecordFileSource(m_szShareMediaURL);
+			std::shared_ptr<CRecordFileSource> pRecord = GetRecordFileSource(m_szShareMediaURL);
 			if (pRecord)
 			{
 				bUpdateFlag = pRecord->UpdateExpireRecordFile(szFileName);

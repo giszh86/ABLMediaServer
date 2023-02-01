@@ -40,7 +40,7 @@ public:
 
    //rtp ½â°ü
    bool   RtpDepacket(unsigned char* pData, int nDataLength);
-   boost::shared_ptr<CMediaStreamSource> pMediaSource;
+   std::shared_ptr<CMediaStreamSource> pMediaSource;
 
    volatile  bool bInitFifoFlag;
 

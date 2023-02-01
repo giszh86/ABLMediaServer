@@ -27,7 +27,7 @@ public:
 
    void                                  GetAACAudioInfo(unsigned char* nAudioData, int nLength);
    std::mutex                            psRecvLock;
-   boost::shared_ptr<CMediaStreamSource> pMediaSource;
+   std::shared_ptr<CMediaStreamSource> pMediaSource;
    _rtp_header                           rtpHead;
 
    int                    m_gbPayload;            //¹ú±êpayload 

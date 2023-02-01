@@ -71,7 +71,7 @@ public:
    _rtp_header             rtpHeader;
    _rtp_header*            rtpHeaderPtr;
 
-   boost::shared_ptr<CMediaStreamSource>   CreateReplayClient(char* szReplayURL, uint64_t* nReturnReplayClient);
+   std::shared_ptr<CMediaStreamSource>   CreateReplayClient(char* szReplayURL, uint64_t* nReturnReplayClient);
    bool                    QueryRecordFileIsExiting(char* szReplayRecordFileURL);
 
    char                    szRecordPath[1024];//Â¼Ïñ±£´æµÄÂ·¾¶ D:\video\Media\Camera_000001
