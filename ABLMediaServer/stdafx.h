@@ -924,7 +924,7 @@ struct MessageNoticeStruct
 #ifndef OS_System_Windows
 unsigned long GetTickCount();
 unsigned long GetTickCount64();
-void          Sleep(int mMicroSecond);
+
 #endif
 
 #include "XHNetSDK.h"
