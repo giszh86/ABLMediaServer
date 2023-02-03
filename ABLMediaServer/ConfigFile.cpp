@@ -60,7 +60,7 @@ char* CConfigFile::ReadConfigString(LPCTSTR lpSection, LPCTSTR lpKey, LPCTSTR lp
    else
    {
 	   string strConfig = lpBuff ;
-	   boost::trim(strConfig);
+	   ABL::trim(strConfig);
 	   memset(lpBuff, 0x00, sizeof(lpBuff));
 	   strcpy(lpBuff, strConfig.c_str());
 	   return  (char*)lpBuff ;

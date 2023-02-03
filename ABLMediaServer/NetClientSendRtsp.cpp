@@ -1168,7 +1168,7 @@ void  CNetClientSendRtsp::FindVideoAudioInSDP()
 		return;
 
 	strcpy(szTemp, szRtspContentSDP);
-	to_lower(szTemp);
+	ABL::StrToLwr(szTemp);
 	string strSDP = szTemp;
 	string strTraceID;
 	char   szTempTraceID[512] = { 0 };

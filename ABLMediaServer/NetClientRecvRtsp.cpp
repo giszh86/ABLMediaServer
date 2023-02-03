@@ -1050,7 +1050,7 @@ bool   CNetClientRecvRtsp::GetMediaInfoFromRtspSDP()
 
 				//转为大小
 				strVideoName = szVideoName;
-				to_upper(strVideoName);
+				ABL::StrToUpr(strVideoName);
 				strcpy(szVideoName, strVideoName.c_str());
 			}
 
@@ -1079,7 +1079,7 @@ bool   CNetClientRecvRtsp::GetMediaInfoFromRtspSDP()
 
 				//转为大小
 				string strName = szAudioName;
-				to_upper(strName);
+				ABL::StrToUpr(strName);
 				strcpy(szAudioName, strName.c_str());
 
 				//找出采用频率、通道数
@@ -1515,7 +1515,7 @@ void  CNetClientRecvRtsp::FindVideoAudioInSDP()
 		return;
 
 	strcpy(szTemp, szRtspContentSDP);
-	to_lower(szTemp);
+	ABL::StrToLwr(szTemp);
 	string strSDP = szTemp;
 	string strTraceID;
 	char   szTempTraceID[512] = { 0 };
@@ -1902,7 +1902,8 @@ bool CNetClientRecvRtsp::RtspSeek(char* szSeekTime)
 
 	if (m_wwwType == WWW_Authenticate_None)
 	{
-		if(boost::all(szSeekTime, boost::is_digit()) == true)
+		if (ABL::is_digits(szSeekTime) == true)
+		//if(boost::all(szSeekTime, boost::is_digit()) == true)
 		  sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nRange: npt=%s-0\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\n\r\n", m_rtspStruct.szRtspURLTrim, szSeekTime, CSeq, MediaServerVerson, szSessionID);
 		else 
 		  sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nRange: clock=%s+08:00-\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\n\r\n", m_rtspStruct.szRtspURLTrim, szSeekTime, CSeq, MediaServerVerson, szSessionID);
@@ -1915,8 +1916,8 @@ bool CNetClientRecvRtsp::RtspSeek(char* szSeekTime)
 		author.setRealmAndNonce(m_rtspStruct.szRealm, m_rtspStruct.szNonce);
 		author.setUsernameAndPassword(m_rtspStruct.szUser, m_rtspStruct.szPwd);
 		szResponse = (char*)author.computeDigestResponse("PLAY", m_rtspStruct.szSrcRtspPullUrl); //要注意 uri ,有时候没有最后的 斜杠 /
-
-		if (boost::all(szSeekTime, boost::is_digit()) == true)
+		if (ABL::is_digits(szSeekTime) == true)
+	//	if (boost::all(szSeekTime, boost::is_digit()) == true)
 			sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nRange: npt=%s-0\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\nAuthorization: Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", response=\"%s\"\r\n\r\n", m_rtspStruct.szRtspURLTrim, szSeekTime, CSeq, MediaServerVerson, szSessionID, m_rtspStruct.szUser, m_rtspStruct.szRealm, m_rtspStruct.szNonce, m_rtspStruct.szSrcRtspPullUrl, szResponse);
 		else 
 			sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nRange: clock=%s+08:00-\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\nAuthorization: Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", response=\"%s\"\r\nUpgrade: StreamSystem4.1\r\n\r\n", m_rtspStruct.szRtspURLTrim, szSeekTime, CSeq, MediaServerVerson, szSessionID, m_rtspStruct.szUser, m_rtspStruct.szRealm, m_rtspStruct.szNonce, m_rtspStruct.szSrcRtspPullUrl, szResponse);
@@ -1926,7 +1927,8 @@ bool CNetClientRecvRtsp::RtspSeek(char* szSeekTime)
 	else if (m_wwwType == WWW_Authenticate_Basic)
 	{
 		UserPasswordBase64(szBasic);
-		if (boost::all(szSeekTime, boost::is_digit()) == true)
+		if (ABL::is_digits(szSeekTime) ==true)
+		//if (boost::all(szSeekTime, boost::is_digit()) == true)
 			sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nRange: npt=%s-0\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\nAuthorization: Basic %s\r\n\r\n", m_rtspStruct.szRtspURLTrim, szSeekTime, CSeq, MediaServerVerson, szSessionID, szBasic);
 		else
 			sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nRange: clock=%s+08:00-\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\nAuthorization: Basic %s\r\n\r\n", m_rtspStruct.szRtspURLTrim, szSeekTime, CSeq, MediaServerVerson, szSessionID, szBasic);

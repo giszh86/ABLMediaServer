@@ -255,7 +255,7 @@ bool  CReadRecordFileInput::GetMediaShareURLFromFileName(char* szRecordFileName,
 
 	string strRecordFileName = szRecordFileName;
 #ifdef OS_System_Windows
-	replace_all(strRecordFileName, "\\", "/"); 
+	ABL::replace_all(strRecordFileName, "\\", "/"); 
 #endif
 	int   nPos;
 	char  szTempFileName[512] = { 0 };

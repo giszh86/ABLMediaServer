@@ -76,8 +76,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>D:\boost_1_73_0\boost_1_73_0;..\rapidjson-master\include;..\media-server-master\libflv\include;..\media-server-master\librtmp\include;..\media-server-master\libmpeg\include;..\media-server-master\libhls\include;..\media-server-master\libmov\include;..\media-server-master\librtp\include;..\ffmpeg-4.2.3\include;..\directx9\include;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\boost_1_73_0_lib\lib;..\media-server-master\x64\Release;..\ffmpeg-4.2.3\lib;..\directx9\lib\x64;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\rapidjson-master\include;..\media-server-master\libflv\include;..\media-server-master\librtmp\include;..\media-server-master\libmpeg\include;..\media-server-master\libhls\include;..\media-server-master\libmov\include;..\media-server-master\librtp\include;..\ffmpeg-4.2.3\include;..\directx9\include;$(IncludePath)</IncludePath>
+    <LibraryPath>..\media-server-master\x64\Release;..\ffmpeg-4.2.3\lib;..\directx9\lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -158,6 +158,7 @@
     <ClInclude Include="AACEncode.h" />
     <ClInclude Include="ABLogSDK.h" />
     <ClInclude Include="ABLSipParse.h" />
+    <ClInclude Include="ABLString.h" />
     <ClInclude Include="AVFrameSWS.h" />
     <ClInclude Include="faac.h" />
     <ClInclude Include="faaccfg.h" />
@@ -228,6 +229,7 @@
     <ClCompile Include="ABLMediaServer.cpp" />
     <ClCompile Include="ABLogSDK.cpp" />
     <ClCompile Include="ABLSipParse.cpp" />
+    <ClCompile Include="ABLString.cpp" />
     <ClCompile Include="AVFrameSWS.cpp" />
     <ClCompile Include="FFVideoDecode.cpp" />
     <ClCompile Include="FFVideoEncode.cpp" />

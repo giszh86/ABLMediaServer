@@ -117,7 +117,8 @@ bool  CPictureFileSource::queryPictureFile(char* szPictureFileName)
 		szPictureFileName[strlen(szPictureFileName) - 5] = 0x00;
 
 	//ÅÐ¶ÏÊÇ·ñÎªÊý×Ö
-	if (!boost::all(szPictureFileName, boost::is_digit()))
+	if (!ABL::is_digits(szPictureFileName))
+	//if (!boost::all(szPictureFileName, boost::is_digit()))
 		return false;
  
 	list<uint64_t>::iterator it2;

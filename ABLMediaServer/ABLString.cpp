@@ -103,4 +103,39 @@ namespace ABL {
 	{
 		return std::all_of(str.begin(), str.end(), ::isdigit); // C++11
 	}
+
+	/*
+ *	Function:		StrToLwr
+ *	Explanation:	×Ö·û´®×ªÐ¡Ð´
+ *	Input:			strBuf		×Ö·û´®
+ *	Return:			Ð¡Ð´×Ö·û´®
+ */
+	std::string  StrToLwr(std::string  strBuf)
+	{
+		if (strBuf.empty())
+		{
+			return "";
+		}
+
+		_strlwr_s((char*)strBuf.c_str(), strBuf.length() + 1);
+		return strBuf;
+	}
+	/*
+*	Function:		StrToLwr
+*	Explanation:	×Ö·û´®×ª´óÐ´
+*	Input:			strBuf		×Ö·û´®
+*	Return:			´óÐ´×Ö·û´®
+*/
+	std::string  StrToUpr(std::string  strBuf)
+	{
+		if (strBuf.empty())
+		{
+			return "";
+		}
+
+		_strupr_s((char*)strBuf.c_str(), strBuf.length() + 1);
+		return strBuf;
+
+	}
+
 }

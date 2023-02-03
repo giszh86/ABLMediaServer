@@ -12,4 +12,12 @@ namespace ABL {
 	int	replace_all(std::string& strBuf, std::string  strSrc, std::string  strDes);
 	
 	bool is_digits(const std::string& str);
+
+	// ×Ö·û´®×ªÐ¡Ð´
+	std::string 	StrToLwr(std::string  strBuf);
+
+
+	// ×Ö·û´®×ª´óÐ´
+	std::string 	StrToUpr(std::string  strBuf);
+
 }

@@ -1362,7 +1362,7 @@ bool   CNetRtspServer::GetMediaInfoFromRtspSDP()
 
 				//转为大小
 				strVideoName = szVideoName;
-				to_upper(strVideoName);
+				ABL::StrToUpr(strVideoName);
 				strcpy(szVideoName, strVideoName.c_str());
 			}
 
@@ -1391,7 +1391,7 @@ bool   CNetRtspServer::GetMediaInfoFromRtspSDP()
 
 				//转为大小
 				string strName = szAudioName;
-				to_upper(strName);
+				ABL::StrToUpr(strName);
 				strcpy(szAudioName, strName.c_str());
 
 				//找出采用频率、通道数

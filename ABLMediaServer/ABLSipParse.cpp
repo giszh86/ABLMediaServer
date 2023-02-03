@@ -108,7 +108,7 @@ bool CABLSipParse::ParseSipString(char* szSipString)
 #if 1
 					//调用boost:string trim 函数去掉空格
 					string strTrimLeft = sipKey->szValue;
-					boost::trim(strTrimLeft);
+					ABL::trim(strTrimLeft);
 					strcpy(sipKey->szValue, strTrimLeft.c_str());
 #endif
 				}
@@ -163,12 +163,12 @@ bool CABLSipParse::ParseSipString(char* szSipString)
 #if 1
 								//调用boost:string trim 函数去掉空格
 								string strTrimLeft = sipKey2->szKey;
-								boost::trim(strTrimLeft);
+								ABL::trim(strTrimLeft);
 								strcpy(sipKey2->szKey, strTrimLeft.c_str());
 
 								//删除双引号
 								strTrimLeft = sipKey2->szValue;
-								boost::erase_all(strTrimLeft, "\"");
+								ABL::erase_all(strTrimLeft, "\"");
 								strcpy(sipKey2->szValue, strTrimLeft.c_str());
 #endif
 								sipFieldValueMap.insert(SipFieldStructMap::value_type(sipKey2->szKey, sipKey2));
@@ -196,12 +196,12 @@ bool CABLSipParse::ParseSipString(char* szSipString)
 #if 1
 									//调用boost:string trim 函数去掉空格
 									string strTrimLeft = sipKey2->szKey;
-									boost::trim(strTrimLeft);
+									ABL::trim(strTrimLeft);
 									strcpy(sipKey2->szKey, strTrimLeft.c_str());
 
 									//删除双引号
 									strTrimLeft = sipKey2->szValue;
-									boost::erase_all(strTrimLeft, "\"");
+									ABL::erase_all(strTrimLeft, "\"");
 									strcpy(sipKey2->szValue, strTrimLeft.c_str());
 #endif
 									sipFieldValueMap.insert(SipFieldStructMap::value_type(sipKey2->szKey, sipKey2));

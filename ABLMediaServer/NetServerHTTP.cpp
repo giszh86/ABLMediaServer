@@ -351,7 +351,7 @@ bool CNetServerHTTP::SplitterTextParam(char* szTextParam)
 			memset(szKey, 0x00, sizeof(szKey));
 			memcpy(szKey, szTextParam + nPos1, nFind1 - nPos1);
 			strKey = szKey;
-			replace_all(strKey, "%20", "");//去掉空格
+			ABL::replace_all(strKey, "%20", "");//去掉空格
 			strcpy(keyValue->key, strKey.c_str());
  
 			memset(szValue, 0x00, sizeof(szValue));
@@ -362,8 +362,8 @@ bool CNetServerHTTP::SplitterTextParam(char* szTextParam)
 				nPos1 = nFind2 + 1;
 
 				strValue = szValue;
-				replace_all(strValue, "%26", "&");
-				replace_all(strValue, "%20", "");//去掉空格
+				ABL::replace_all(strValue, "%26", "&");
+				ABL::replace_all(strValue, "%20", "");//去掉空格
 				strcpy(keyValue->value, strValue.c_str());
 
 				requestKeyValueMap.insert(RequestKeyValueMap::value_type(keyValue->key, keyValue));
@@ -373,8 +373,8 @@ bool CNetServerHTTP::SplitterTextParam(char* szTextParam)
 			{
 				memcpy(szValue, szTextParam + nFind1 + 1, strlen(szTextParam) - nFind1 - 1);
 				strValue = szValue;
-				replace_all(strValue, "%26", "&");
-				replace_all(strValue, "%20", "");//去掉空格
+				ABL::replace_all(strValue, "%26", "&");
+				ABL::replace_all(strValue, "%20", "");//去掉空格
 
 				strcpy(keyValue->value, strValue.c_str());
 
@@ -403,7 +403,7 @@ bool CNetServerHTTP::SplitterJsonParam(char* szJsonParam)
 	DeleteAllHttpKeyValue();
 
 	string strJson = szJsonParam;
-	boost::trim(strJson);
+	ABL::trim(strJson);
 	strcpy(szJsonParam, strJson.c_str());
 
 	if (szJsonParam[0] != '{' || szJsonParam[strlen(szJsonParam) - 1] != '}')
@@ -425,13 +425,13 @@ bool CNetServerHTTP::SplitterJsonParam(char* szJsonParam)
 			if (jKey.IsString())
 			{
 				string name = jKey.GetString();
-				boost::trim(name);
+				ABL::trim(name);
 
 				nType = jValue.GetType();
  				if (nType == kStringType)
 				{
 				  string value = jValue.GetString();
- 				  boost::trim(value);
+ 				  ABL::trim(value);
 				  strcpy(szValue, value.c_str());
 				}
 				else if (nType == kNumberType)
@@ -1694,8 +1694,8 @@ bool  CNetServerHTTP::index_api_queryRecordList()
 		ResponseSuccess(szResponseBody);
 		return false;
 	}
-
-	if ( boost::all(m_queryRecordListStruct.starttime, boost::is_digit()) == false || boost::all(m_queryRecordListStruct.endtime, boost::is_digit()) == false )
+	if (ABL::is_digits(m_queryRecordListStruct.starttime) == false || ABL::is_digits(m_queryRecordListStruct.endtime) == false)
+	//if ( boost::all(m_queryRecordListStruct.starttime, boost::is_digit()) == false || boost::all(m_queryRecordListStruct.endtime, boost::is_digit()) == false )
 	{//检测开始时间、结束时间 是否是数字的字符串（0 ~ 9）
 		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"[starttime , endtime ] error , must is number \"}", IndexApiCode_secretError);
 		ResponseSuccess(szResponseBody);
@@ -1784,8 +1784,8 @@ bool  CNetServerHTTP::index_api_getSnap()
 		ResponseSuccess(szResponseBody);
 		return false;
 	}
-
-	if (boost::all(m_getSnapStruct.timeout_sec, boost::is_digit()) == false )
+	if (ABL::is_digits(m_getSnapStruct.timeout_sec)==false)
+	//if (boost::all(m_getSnapStruct.timeout_sec, boost::is_digit()) == false )
 	{//检测超时必须是数字
 		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"[timeout_sec ] error , must is number \"}", IndexApiCode_secretError);
 		ResponseSuccess(szResponseBody);
@@ -1891,8 +1891,8 @@ bool  CNetServerHTTP::index_api_queryPictureList()
 		ResponseSuccess(szResponseBody);
 		return false;
 	}
-
-	if (boost::all(m_queryPictureListStruct.starttime, boost::is_digit()) == false || boost::all(m_queryPictureListStruct.endtime, boost::is_digit()) == false)
+	if (ABL::is_digits(m_queryPictureListStruct.starttime) == false || ABL::is_digits(m_queryPictureListStruct.endtime) == false)
+	//if (boost::all(m_queryPictureListStruct.starttime, boost::is_digit()) == false || boost::all(m_queryPictureListStruct.endtime, boost::is_digit()) == false)
 	{//检测开始时间、结束时间 是否是数字的字符串（0 ~ 9）
 		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"[starttime , endtime ] error , must is number \"}", IndexApiCode_secretError);
 		ResponseSuccess(szResponseBody);
@@ -1978,7 +1978,7 @@ bool  CNetServerHTTP::index_api_downloadImage(char* szHttpURL)
 
 #ifdef OS_System_Windows
 				strHttpURL = szHttpURL;
-				replace_all(strHttpURL, "/", "\\");
+				ABL::replace_all(strHttpURL, "/", "\\");
 				sprintf(szImageFileName, "%s%s", ABL_MediaServerPort.picturePath, strHttpURL.c_str());
  				struct _stat64 fileBuf;
 				int error = _stat64(szImageFileName, &fileBuf);

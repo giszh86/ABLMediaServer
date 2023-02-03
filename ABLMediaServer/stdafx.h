@@ -33,7 +33,8 @@
 #include <d3dx9tex.h>
 
 #include "cudaCodecDLL.h"
-
+#include "ABLString.h"
+#include <cctype>
 #else 
 #include <stdlib.h>
 #include <stdio.h>

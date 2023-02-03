@@ -140,7 +140,7 @@ bool  CNetRevcBase::ParseRtspRtmpHttpURL(char* szURL)
 
 	//全部转为小写
 	strcpy(szSrcRtspPullUrl, szURL);
-	to_lower(szSrcRtspPullUrl);
+	ABL::StrToLwr(szSrcRtspPullUrl);
 
 	if ( !(memcmp(szSrcRtspPullUrl, "rtsp://", 7) == 0 || memcmp(szSrcRtspPullUrl, "rtmp://", 7) == 0 || memcmp(szSrcRtspPullUrl, "http://", 7) == 0))
 		return false;
@@ -260,8 +260,9 @@ bool  CNetRevcBase::ParseRtspRtmpHttpURL(char* szURL)
 		//拷贝域名，判断是否需要转换为IP
 		strcpy(domainName, m_rtspStruct.szIP);
 		string strDomainName = m_rtspStruct.szIP;
-		replace_all(strDomainName, ".", "");
-		if (!boost::all(strDomainName, boost::is_digit()))
+		ABL::replace_all(strDomainName, ".", "");
+		if (!ABL::is_digits(strDomainName))
+		//if (!boost::all(strDomainName, boost::is_digit()))
 		{//不是数字，需要域名转换为IP
 			ifConvertFlag = true;
 
@@ -475,7 +476,7 @@ bool  CNetRevcBase::ResponseHttp(uint64_t nHttpClient,char* szSuccessInfo,bool b
 
 	//回复http请求
 	string strReponseError = szSuccessInfo ;
-	replace_all(strReponseError, "\r\n", " ");
+	ABL::replace_all(strReponseError, "\r\n", " ");
 	strcpy(szSuccessInfo, strReponseError.c_str());
 
 	int nLength = strlen(szSuccessInfo);
@@ -504,7 +505,7 @@ bool  CNetRevcBase::ResponseHttp2(uint64_t nHttpClient, char* szSuccessInfo, boo
 
 	//回复http请求
 	string strReponseError = szSuccessInfo;
-	replace_all(strReponseError, "\r\n", " ");
+	ABL::replace_all(strReponseError, "\r\n", " ");
 	strcpy(szSuccessInfo, strReponseError.c_str());
 
 	int nLength = strlen(szSuccessInfo);

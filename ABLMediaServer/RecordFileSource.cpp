@@ -131,7 +131,8 @@ bool  CRecordFileSource::queryRecordFile(char* szRecordFileName)
 		szRecordFileName[strlen(szRecordFileName) - 5] = 0x00;
 
 	//ÅÐ¶ÏÊÇ·ñÎªÊý×Ö
-	if (!boost::all(szRecordFileName, boost::is_digit()))
+	if (!ABL::is_digits(szRecordFileName))
+	//if (!boost::all(szRecordFileName, boost::is_digit()))
 		return false;
  
 	list<uint64_t>::iterator it2;
