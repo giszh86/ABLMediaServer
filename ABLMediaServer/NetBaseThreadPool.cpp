@@ -63,15 +63,25 @@ void CNetBaseThreadPool::ProcessFunc()
 	bCreateThreadFlag = true; //创建线程完毕
 	while (bRunFlag)
 	{
-		nClientID = m_NetHandleQueue[nCurrentThreadID].front();
-		m_NetHandleQueue[nCurrentThreadID].pop();
-		auto pClient = GetNetRevcBaseClient(nClientID);
-		if (pClient != NULL)
+		if (m_NetHandleQueue[nCurrentThreadID].empty())
 		{
-			pClient->ProcessNetData();//任务执行
-		}		
+			std::this_thread::sleep_for(std::chrono::milliseconds(20));
+		}
 		else
-		  Sleep(5);
+		{
+			nClientID = m_NetHandleQueue[nCurrentThreadID].front();
+			m_NetHandleQueue[nCurrentThreadID].pop();
+			auto pClient = GetNetRevcBaseClient(nClientID);
+			if (pClient != NULL)
+			{
+				pClient->ProcessNetData();//任务执行
+			}
+			else
+				Sleep(5);
+		}
+
+
+	
  	}
 	bExitProcessThreadFlag[nCurrentThreadID] = true;
 }
