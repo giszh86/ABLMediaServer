@@ -1,9 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.32901.82
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ABLMediaServer", "ABLMediaServer\ABLMediaServer.vcxproj", "{078F7418-8D74-4F0F-A997-E49607E874B7}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "librtmp", "media-server-master\librtmp\librtmp.vcxproj", "{4440B772-4BFC-4CD3-9700-7FA6F4EC0002}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libflv", "media-server-master\libflv\libflv.vcxproj", "{D5BA0BB6-0D84-48CB-8630-F617CB6DE375}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmpeg", "media-server-master\libmpeg\libmpeg.vcxproj", "{D4FD8942-4634-4598-B1C0-55D61815A9E8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,8 +27,35 @@ Global
 		{078F7418-8D74-4F0F-A997-E49607E874B7}.Release|x64.Build.0 = Release|x64
 		{078F7418-8D74-4F0F-A997-E49607E874B7}.Release|x86.ActiveCfg = Release|Win32
 		{078F7418-8D74-4F0F-A997-E49607E874B7}.Release|x86.Build.0 = Release|Win32
+		{4440B772-4BFC-4CD3-9700-7FA6F4EC0002}.Debug|x64.ActiveCfg = Debug|x64
+		{4440B772-4BFC-4CD3-9700-7FA6F4EC0002}.Debug|x64.Build.0 = Debug|x64
+		{4440B772-4BFC-4CD3-9700-7FA6F4EC0002}.Debug|x86.ActiveCfg = Debug|Win32
+		{4440B772-4BFC-4CD3-9700-7FA6F4EC0002}.Debug|x86.Build.0 = Debug|Win32
+		{4440B772-4BFC-4CD3-9700-7FA6F4EC0002}.Release|x64.ActiveCfg = Release|x64
+		{4440B772-4BFC-4CD3-9700-7FA6F4EC0002}.Release|x64.Build.0 = Release|x64
+		{4440B772-4BFC-4CD3-9700-7FA6F4EC0002}.Release|x86.ActiveCfg = Release|Win32
+		{4440B772-4BFC-4CD3-9700-7FA6F4EC0002}.Release|x86.Build.0 = Release|Win32
+		{D5BA0BB6-0D84-48CB-8630-F617CB6DE375}.Debug|x64.ActiveCfg = Debug|x64
+		{D5BA0BB6-0D84-48CB-8630-F617CB6DE375}.Debug|x64.Build.0 = Debug|x64
+		{D5BA0BB6-0D84-48CB-8630-F617CB6DE375}.Debug|x86.ActiveCfg = Debug|Win32
+		{D5BA0BB6-0D84-48CB-8630-F617CB6DE375}.Debug|x86.Build.0 = Debug|Win32
+		{D5BA0BB6-0D84-48CB-8630-F617CB6DE375}.Release|x64.ActiveCfg = Release|x64
+		{D5BA0BB6-0D84-48CB-8630-F617CB6DE375}.Release|x64.Build.0 = Release|x64
+		{D5BA0BB6-0D84-48CB-8630-F617CB6DE375}.Release|x86.ActiveCfg = Release|Win32
+		{D5BA0BB6-0D84-48CB-8630-F617CB6DE375}.Release|x86.Build.0 = Release|Win32
+		{D4FD8942-4634-4598-B1C0-55D61815A9E8}.Debug|x64.ActiveCfg = Debug|x64
+		{D4FD8942-4634-4598-B1C0-55D61815A9E8}.Debug|x64.Build.0 = Debug|x64
+		{D4FD8942-4634-4598-B1C0-55D61815A9E8}.Debug|x86.ActiveCfg = Debug|Win32
+		{D4FD8942-4634-4598-B1C0-55D61815A9E8}.Debug|x86.Build.0 = Debug|Win32
+		{D4FD8942-4634-4598-B1C0-55D61815A9E8}.Release|x64.ActiveCfg = Release|x64
+		{D4FD8942-4634-4598-B1C0-55D61815A9E8}.Release|x64.Build.0 = Release|x64
+		{D4FD8942-4634-4598-B1C0-55D61815A9E8}.Release|x86.ActiveCfg = Release|Win32
+		{D4FD8942-4634-4598-B1C0-55D61815A9E8}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A3A07C23-1110-4EE4-A7C1-33A21C28AE34}
 	EndGlobalSection
 EndGlobal
