@@ -1,0 +1,64 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="..\ABLMediaServer\AACEncode.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\ABLMediaServer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\ABLogFile.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\ABLogSDK.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\ABLSipParse.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\ABLString.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\AVFrameSWS.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\Base64.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{b250a932-970b-4593-9144-df2b5bfddbea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{64ef8c58-33a0-4508-abcd-c04ab33afe2f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\ABLMediaServer\AACEncode.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\ABLogFile.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\ABLogSDK.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\ABLSipParse.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\ABLString.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\AVFrameSWS.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\ConfigFile.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\stdafx.h">
+      <Filter>include</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
