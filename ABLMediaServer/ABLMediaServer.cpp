@@ -31,7 +31,7 @@ E-Mail  79941308@qq.com
 NETHANDLE srvhandle_8080,srvhandle_554, srvhandle_1935, srvhandle_6088, srvhandle_8088, srvhandle_8089, srvhandle_9088;
 
 typedef std::shared_ptr<CNetRevcBase> CNetRevcBase_ptr;
-typedef boost::unordered_map<NETHANDLE, CNetRevcBase_ptr>        CNetRevcBase_ptrMap;
+typedef std::map<NETHANDLE, CNetRevcBase_ptr>        CNetRevcBase_ptrMap;
 CNetRevcBase_ptrMap                                              xh_ABLNetRevcBaseMap;
 std::mutex                                                       ABL_CNetRevcBase_ptrMapLock;
 CNetBaseThreadPool*                                              NetBaseThreadPool;
@@ -41,19 +41,19 @@ CNetBaseThreadPool*                                              MessageSendThre
 
 /* 媒体数据存储 -------------------------------------------------------------------------------------*/
 typedef std::shared_ptr<CMediaStreamSource>                    CMediaStreamSource_ptr;
-typedef boost::unordered_map<string, CMediaStreamSource_ptr>     CMediaStreamSource_ptrMap;
+typedef std::map<string, CMediaStreamSource_ptr>     CMediaStreamSource_ptrMap;
 CMediaStreamSource_ptrMap                                        xh_ABLMediaStreamSourceMap;
 std::mutex                                                       ABL_CMediaStreamSourceMapLock;
 
 /* 录像文件存储 -------------------------------------------------------------------------------------*/
 typedef std::shared_ptr<CRecordFileSource>                     CRecordFileSource_ptr;
-typedef boost::unordered_map<string, CRecordFileSource_ptr>      CRecordFileSource_ptrMap;
+typedef std::map<string, CRecordFileSource_ptr>      CRecordFileSource_ptrMap;
 CRecordFileSource_ptrMap                                         xh_ABLRecordFileSourceMap;
 std::mutex                                                       ABL_CRecordFileSourceMapLock;
 
 /* 图片文件存储 -------------------------------------------------------------------------------------*/
 typedef std::shared_ptr<CPictureFileSource>                    CPictureFileSource_ptr;
-typedef boost::unordered_map<string, CPictureFileSource_ptr>     CPictureFileSource_ptrMap;
+typedef std::map<string, CPictureFileSource_ptr>     CPictureFileSource_ptrMap;
 CPictureFileSource_ptrMap                                        xh_ABLPictureFileSourceMap;
 std::mutex                                                       ABL_CPictureFileSourceMapLock;
 
@@ -320,7 +320,7 @@ CMediaStreamSource_ptr CreateMediaStreamSource(char* szURL, uint64_t nClient, Me
 	{
 		do
 		{
- 		   pXHClient = boost::make_shared<CMediaStreamSource>(szURL,nClient, nSourceType, nDuration, h265ConvertH264Struct);
+ 		   pXHClient = std::make_shared<CMediaStreamSource>(szURL,nClient, nSourceType, nDuration, h265ConvertH264Struct);
  		} while (pXHClient == NULL);
 	}
 	catch (const std::exception &e)
@@ -328,7 +328,7 @@ CMediaStreamSource_ptr CreateMediaStreamSource(char* szURL, uint64_t nClient, Me
 		return NULL;
 	}
 
-	std::pair<boost::unordered_map<string, CMediaStreamSource_ptr>::iterator, bool> ret =
+	std::pair<std::map<string, CMediaStreamSource_ptr>::iterator, bool> ret =
 		xh_ABLMediaStreamSourceMap.insert(std::make_pair(strURL, pXHClient));
 	if (!ret.second)
 	{
@@ -742,7 +742,7 @@ CRecordFileSource_ptr CreateRecordFileSource(char* app,char* stream)
 	{
 		do
 		{
-			pRecord = boost::make_shared<CRecordFileSource>(app,stream);
+			pRecord = std::make_shared<CRecordFileSource>(app,stream);
 		} while (pRecord == NULL);
 	}
 	catch (const std::exception &e)
@@ -750,7 +750,7 @@ CRecordFileSource_ptr CreateRecordFileSource(char* app,char* stream)
 		return NULL;
 	}
 
-	std::pair<boost::unordered_map<string, CRecordFileSource_ptr>::iterator, bool> ret =
+	std::pair<std::map<string, CRecordFileSource_ptr>::iterator, bool> ret =
 		xh_ABLRecordFileSourceMap.insert(std::make_pair(pRecord->m_szShareURL, pRecord));
 	if (!ret.second)
 	{
@@ -920,7 +920,7 @@ CPictureFileSource_ptr CreatePictureFileSource(char* app, char* stream)
 	{
 		do
 		{
-			pPicture = boost::make_shared<CPictureFileSource>(app, stream);
+			pPicture = std::make_shared<CPictureFileSource>(app, stream);
 		} while (pPicture == NULL);
 	}
 	catch (const std::exception &e)
@@ -928,7 +928,7 @@ CPictureFileSource_ptr CreatePictureFileSource(char* app, char* stream)
 		return NULL;
 	}
 
-	std::pair<boost::unordered_map<string, CPictureFileSource_ptr>::iterator, bool> ret =
+	std::pair<std::map<string, CPictureFileSource_ptr>::iterator, bool> ret =
 		xh_ABLPictureFileSourceMap.insert(std::make_pair(pPicture->m_szShareURL, pPicture));
 	if (!ret.second)
 	{
@@ -1080,26 +1080,26 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType,NETHANDLE serverHandl
 			if (netClientType == NetRevcBaseClient_ServerAccept)
 			{
 				if (serverHandle == srvhandle_8080)
-					pXHClient = boost::make_shared<CNetServerHTTP>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+					pXHClient = std::make_shared<CNetServerHTTP>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				else if (serverHandle == srvhandle_554)
-					pXHClient = boost::make_shared<CNetRtspServer>(serverHandle, CltHandle,szIP,nPort, szShareMediaURL);
+					pXHClient = std::make_shared<CNetRtspServer>(serverHandle, CltHandle,szIP,nPort, szShareMediaURL);
 				else if (serverHandle == srvhandle_1935)
-					pXHClient = boost::make_shared<CNetRtmpServerRecv>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+					pXHClient = std::make_shared<CNetRtmpServerRecv>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				else if (serverHandle == srvhandle_8088)
-					pXHClient = boost::make_shared<CNetServerHTTP_FLV>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+					pXHClient = std::make_shared<CNetServerHTTP_FLV>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				else if (serverHandle == srvhandle_6088)
-					pXHClient = boost::make_shared<CNetServerWS_FLV>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+					pXHClient = std::make_shared<CNetServerWS_FLV>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				else if (serverHandle == srvhandle_9088)
-					pXHClient = boost::make_shared<CNetServerHLS>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+					pXHClient = std::make_shared<CNetServerHLS>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				else if (serverHandle == srvhandle_8089)
-					pXHClient = boost::make_shared<CNetServerHTTP_MP4>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+					pXHClient = std::make_shared<CNetServerHTTP_MP4>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				else
 				{
 					    CNetRevcBase_ptr gb28181Listen = GetNetRevcBaseClientNoLock(serverHandle);
 						if (gb28181Listen && gb28181Listen->nMediaClient == 0 )
 						{
 							CNetGB28181RtpServer* gb28181TCP = NULL;
-							pXHClient = boost::make_shared<CNetGB28181RtpServer>(serverHandle, CltHandle, szIP, nPort, gb28181Listen->m_szShareMediaURL);
+							pXHClient = std::make_shared<CNetGB28181RtpServer>(serverHandle, CltHandle, szIP, nPort, gb28181Listen->m_szShareMediaURL);
 							pXHClient->netBaseNetType = NetBaseNetType_NetGB28181RtpServerTCP_Server;//国标28181 tcp 方式接收码流 
 
 							gb28181Listen->nMediaClient = CltHandle; //已经有人连接进来
@@ -1120,30 +1120,30 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType,NETHANDLE serverHandl
 			else if (netClientType == NetRevcBaseClient_addStreamProxyControl)
 			{//代理拉流控制
 				CltHandle = XHNetSDK_GenerateIdentifier();
-				pXHClient = boost::make_shared<CNetClientAddStreamProxy>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+				pXHClient = std::make_shared<CNetClientAddStreamProxy>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				pXHClient->nClient = CltHandle;
 			}
 			else if (netClientType == NetRevcBaseClient_addPushProxyControl)
 			{//代理推流控制 
 				CltHandle = XHNetSDK_GenerateIdentifier();
-				pXHClient = boost::make_shared<CNetClientAddPushProxy>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+				pXHClient = std::make_shared<CNetClientAddPushProxy>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				pXHClient->nClient = CltHandle;
 			}
 			else if(netClientType == NetRevcBaseClient_addStreamProxy)
 			{//代理拉流
 				if (memcmp(szIP, "http://", 7) == 0 && strstr(szIP,".m3u8") != NULL )
 				{//hls 暂时不支持 hls 拉流 
- 					pXHClient = boost::make_shared<CNetClientRecvHttpHLS>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+ 					pXHClient = std::make_shared<CNetClientRecvHttpHLS>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 					CltHandle = pXHClient->nClient; //把nClient赋值给 CltHandle ,作为关键字 ，如果连接失败，会收到回调通知，在回调通知进行删除即可 
 				}
 				else if (memcmp(szIP, "http://", 7) == 0 && strstr(szIP, ".flv") != NULL)
 				{//flv 
-					pXHClient = boost::make_shared<CNetClientRecvFLV>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+					pXHClient = std::make_shared<CNetClientRecvFLV>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 					CltHandle = pXHClient->nClient; //把nClient赋值给 CltHandle ,作为关键字 ，如果连接失败，会收到回调通知，在回调通知进行删除即可 
 				}
 				else if (memcmp(szIP, "rtsp://", 7) == 0 )
 				{//rtsp 
-					pXHClient = boost::make_shared<CNetClientRecvRtsp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+					pXHClient = std::make_shared<CNetClientRecvRtsp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 					CltHandle = pXHClient->nClient; //把nClient赋值给 CltHandle ,作为关键字 ，如果连接失败，会收到回调通知，在回调通知进行删除即可 
 					if (CltHandle == 0)
 					{//连接失败
@@ -1153,7 +1153,7 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType,NETHANDLE serverHandl
  				}
 				else if (memcmp(szIP, "rtmp://", 7) == 0 )
 				{//rtmp
-					pXHClient = boost::make_shared<CNetClientRecvRtmp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+					pXHClient = std::make_shared<CNetClientRecvRtmp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 					CltHandle = pXHClient->nClient; //把nClient赋值给 CltHandle ,作为关键字 ，如果连接失败，会收到回调通知，在回调通知进行删除即可 
 				}else 
 				  return NULL;
@@ -1162,135 +1162,135 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType,NETHANDLE serverHandl
 			{//代理推流
 				if (memcmp(szIP, "rtsp://", 7) == 0)
 				{//hls 暂时不支持 hls 拉流 
- 					pXHClient = boost::make_shared<CNetClientSendRtsp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+ 					pXHClient = std::make_shared<CNetClientSendRtsp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 					CltHandle = pXHClient->nClient; //把nClient赋值给 CltHandle ,作为关键字 ，如果连接失败，会收到回调通知，在回调通知进行删除即可 
 				}
 				else if (memcmp(szIP, "rtmp://", 7) == 0)
 				{
- 					pXHClient = boost::make_shared<CNetClientSendRtmp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+ 					pXHClient = std::make_shared<CNetClientSendRtmp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 					CltHandle = pXHClient->nClient; //把nClient赋值给 CltHandle ,作为关键字 ，如果连接失败，会收到回调通知，在回调通知进行删除即可 
  			    }
 			}
 			else if (netClientType == NetBaseNetType_NetGB28181RtpServerUDP)
 			{//创建GB28181 的udp接收
-				pXHClient = boost::make_shared<CNetGB28181RtpServer>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+				pXHClient = std::make_shared<CNetGB28181RtpServer>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				pXHClient->netBaseNetType = NetBaseNetType_NetGB28181RtpServerUDP;
  			}
 			else if (netClientType == NetBaseNetType_NetGB28181SendRtpUDP)
 			{//创建GB28181 的udp发送
-				pXHClient = boost::make_shared<CNetGB28181RtpClient>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+				pXHClient = std::make_shared<CNetGB28181RtpClient>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				pXHClient->netBaseNetType = NetBaseNetType_NetGB28181SendRtpUDP;
 			}
 			else if (netClientType == NetBaseNetType_NetGB28181SendRtpTCP_Connect)
 			{//创建GB28181 的tcp发送 
-				pXHClient = boost::make_shared<CNetGB28181RtpClient>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+				pXHClient = std::make_shared<CNetGB28181RtpClient>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				pXHClient->netBaseNetType = NetBaseNetType_NetGB28181SendRtpTCP_Connect;
 			}
 			else if (netClientType == NetBaseNetType_RecordFile_FMP4)
 			{//fmp4录像
-				pXHClient = boost::make_shared<CStreamRecordFMP4>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+				pXHClient = std::make_shared<CStreamRecordFMP4>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				pXHClient->netBaseNetType = NetBaseNetType_RecordFile_FMP4;
 			}
 			else if (netClientType == NetBaseNetType_RecordFile_MP4)
 			{//mp4录像
-				pXHClient = boost::make_shared<CStreamRecordMP4>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+				pXHClient = std::make_shared<CStreamRecordMP4>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				pXHClient->netBaseNetType = NetBaseNetType_RecordFile_MP4;
 			}
 			else if (netClientType == ReadRecordFileInput_ReadFMP4File)
 			{//读取fmp4文件
 				CltHandle = XHNetSDK_GenerateIdentifier();
-				pXHClient = boost::make_shared<CReadRecordFileInput>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+				pXHClient = std::make_shared<CReadRecordFileInput>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				pXHClient->netBaseNetType = ReadRecordFileInput_ReadFMP4File;
 			}
 			else if (netClientType == NetBaseNetType_SnapPicture_JPEG)
 			{//抓拍图片
 				CltHandle = XHNetSDK_GenerateIdentifier();
-				pXHClient = boost::make_shared<CNetClientSnap>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+				pXHClient = std::make_shared<CNetClientSnap>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 			}
 			else if (netClientType == NetBaseNetType_HttpClient_None_reader)
 			{//事件通知1
-				pXHClient = boost::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+				pXHClient = std::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				CltHandle = ABL_MediaServerPort.nClientNoneReader = pXHClient->nClient;
 				pXHClient->netBaseNetType = netClientType; //更新网络类型  
 			}
 			else if ( netClientType == NetBaseNetType_HttpClient_Not_found)
 			{//事件通知2
-				pXHClient = boost::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+				pXHClient = std::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				CltHandle = ABL_MediaServerPort.nClientNotFound = pXHClient->nClient;
 				pXHClient->netBaseNetType = netClientType; //更新网络类型
  			}
 			else if (netClientType == NetBaseNetType_HttpClient_Record_mp4)
 			{//事件通知3
-				pXHClient = boost::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+				pXHClient = std::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				CltHandle = ABL_MediaServerPort.nClientRecordMp4 = pXHClient->nClient;
 				pXHClient->netBaseNetType = netClientType; //更新网络类型
  			}
 			else if (netClientType == NetBaseNetType_HttpClient_on_stream_arrive)
 			{//事件通知4
-				pXHClient = boost::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+				pXHClient = std::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				CltHandle = ABL_MediaServerPort.nClientArrive = pXHClient->nClient;
 				pXHClient->netBaseNetType = netClientType; //更新网络类型
 			}
 			else if (netClientType == NetBaseNetType_HttpClient_on_stream_not_arrive)
 			{//事件通知5
-				pXHClient = boost::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+				pXHClient = std::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				CltHandle = ABL_MediaServerPort.nClientNotArrive = pXHClient->nClient;
 				pXHClient->netBaseNetType = netClientType; //更新网络类型
 			}
 			else if (netClientType == NetBaseNetType_HttpClient_on_stream_disconnect)
 			{//事件通知6
-				pXHClient = boost::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+				pXHClient = std::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				CltHandle = ABL_MediaServerPort.nClientDisconnect = pXHClient->nClient;
 				pXHClient->netBaseNetType = netClientType; //更新网络类型
 			}
 			else if (netClientType == NetBaseNetType_HttpClient_on_record_ts)
 			{//事件通知7
-				pXHClient = boost::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+				pXHClient = std::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				CltHandle = ABL_MediaServerPort.nClientRecordTS = pXHClient->nClient;
 				pXHClient->netBaseNetType = netClientType; //更新网络类型
 			}
 			else if (netClientType == NetBaseNetType_HttpClient_Record_Progress)
 			{//事件通知8
-				pXHClient = boost::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+				pXHClient = std::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				CltHandle = ABL_MediaServerPort.nClientRecordProgress = pXHClient->nClient;
 				pXHClient->netBaseNetType = netClientType; //更新网络类型
 			}
 			else if (netClientType == NetBaseNetType_HttpClient_ServerStarted)
 			{//事件通知9
-				pXHClient = boost::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+				pXHClient = std::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				CltHandle = ABL_MediaServerPort.nServerStarted = pXHClient->nClient;
 				pXHClient->netBaseNetType = netClientType; //更新网络类型
 			}
 			else if (netClientType == NetBaseNetType_HttpClient_ServerKeepalive)
 			{//事件通知10
-				pXHClient = boost::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+				pXHClient = std::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				CltHandle = ABL_MediaServerPort.nServerKeepalive = pXHClient->nClient;
 				pXHClient->netBaseNetType = netClientType; //更新网络类型
 			}
 			else if (netClientType == NetBaseNetType_HttpClient_DeleteRecordMp4)
 			{//事件通知11
-				pXHClient = boost::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+				pXHClient = std::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				CltHandle = ABL_MediaServerPort.nClientDeleteRecordMp4 = pXHClient->nClient;
 				pXHClient->netBaseNetType = netClientType; //更新网络类型
 			}
 			else if (netClientType == NetBaseNetType_NetGB28181RecvRtpPS_TS)
 			{//单端口接收国标 
-				pXHClient = boost::make_shared<CNetServerRecvRtpTS_PS>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+				pXHClient = std::make_shared<CNetServerRecvRtpTS_PS>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				CltHandle = pXHClient->nClient; 
  			}
 			else if (netClientType == NetBaseNetType_NetGB28181UDPTSStreamInput)
 			{//TS 解包形成媒体源
-				pXHClient = boost::make_shared<CRtpTSStreamInput>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+				pXHClient = std::make_shared<CRtpTSStreamInput>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				CltHandle = pXHClient->nClient;
 			}
 			else if (netClientType == NetBaseNetType_NetGB28181UDPPSStreamInput)
 			{//PS 解包形成媒体源
-				pXHClient = boost::make_shared<CRtpPSStreamInput>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+				pXHClient = std::make_shared<CRtpPSStreamInput>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				CltHandle = pXHClient->nClient;
 			}
 			else if (netClientType == NetBaseNetType_NetGB28181RtpServerListen)
 			{//国标TCP接收的Listen 
-				pXHClient = boost::make_shared<CNetGB28181Listen>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+				pXHClient = std::make_shared<CNetGB28181Listen>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				CltHandle = pXHClient->nClient;
 			}
 
@@ -1301,7 +1301,7 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType,NETHANDLE serverHandl
 		return NULL;
 	}
 
-	std::pair<boost::unordered_map<NETHANDLE, CNetRevcBase_ptr>::iterator, bool> ret =
+	std::pair<std::map<NETHANDLE, CNetRevcBase_ptr>::iterator, bool> ret =
 		xh_ABLNetRevcBaseMap.insert(std::make_pair(CltHandle, pXHClient));
 	if (!ret.second)
 	{

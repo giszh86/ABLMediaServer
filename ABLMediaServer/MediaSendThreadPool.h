@@ -1,7 +1,7 @@
 #ifndef _MediaSendThreadPool_H
 #define _MediaSendThreadPool_H
 
-#include <boost/lockfree/queue.hpp>
+//#include <boost/lockfree/queue.hpp>
 
 #define   MaxMediaSendThreadCount       2048 //预分配最大的线程数  
 typedef map<NETHANDLE, NETHANDLE>   ClientProcessThreadMap;//固定客户端的线程序号 

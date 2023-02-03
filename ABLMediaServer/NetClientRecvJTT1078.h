@@ -23,13 +23,13 @@ struct Head1708 {
 };
 #pragma pack()
 
-#include <boost/unordered/unordered_map.hpp>
-#include <boost/smart_ptr/shared_ptr.hpp>
-#include <boost/unordered/unordered_map.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/algorithm/string.hpp>
-
-using namespace boost;
+//#include <boost/unordered/unordered_map.hpp>
+//#include <boost/smart_ptr/shared_ptr.hpp>
+//#include <boost/unordered/unordered_map.hpp>
+//#include <boost/make_shared.hpp>
+//#include <boost/algorithm/string.hpp>
+//
+//using namespace boost;
 
 #define          SaveNetDataToJTT1078File          1 
 
@@ -75,7 +75,7 @@ public:
    char                         szURL[512];
    char                         szRequestFLVFile[512];
 
-   boost::shared_ptr<CMediaStreamSource> pMediaSource;
+   std::shared_ptr<CMediaStreamSource> pMediaSource;
    volatile bool                         bDeleteRtmpPushH265Flag; //因为推rtmp265被删除标志 
 
 #ifdef  SaveNetDataToJTT1078File

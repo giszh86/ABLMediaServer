@@ -1,11 +1,11 @@
 #ifndef _StreamRecordMP4_H
 #define _StreamRecordMP4_H
-
-#include <boost/unordered/unordered_map.hpp>
-#include <boost/smart_ptr/shared_ptr.hpp>
-#include <boost/unordered/unordered_map.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/algorithm/string.hpp>
+//
+//#include <boost/unordered/unordered_map.hpp>
+//#include <boost/smart_ptr/shared_ptr.hpp>
+//#include <boost/unordered/unordered_map.hpp>
+//#include <boost/make_shared.hpp>
+//#include <boost/algorithm/string.hpp>
 
 #include "mov-writer.h"
 #include "mov-format.h"
@@ -15,7 +15,7 @@
 
 #define  MaxWriteMp4BufferCount  1024*1024*2
 
-using namespace boost;
+//using namespace boost;
 
 struct mov_h264_test_t
 {
