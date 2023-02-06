@@ -2,9 +2,9 @@
 #define _MediaSendThreadPool_H
 
 //#include <boost/lockfree/queue.hpp>
+#include <condition_variable>
 
 #define   MaxMediaSendThreadCount       2048 //预分配最大的线程数  
-typedef map<NETHANDLE, NETHANDLE>   ClientProcessThreadMap;//固定客户端的线程序号 
 
 //每个线程所包含的客户端ID  
 struct ThreadContainClient
@@ -55,6 +55,9 @@ private:
    pthread_t                hProcessHandle[MaxMediaSendThreadCount];
 #endif 
 	volatile bool           bRunFlag;
+
+	std::condition_variable  cv[MaxMediaSendThreadCount];
+	std::mutex               mtx[MaxMediaSendThreadCount];
 };
 
 #endif

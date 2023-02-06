@@ -43,7 +43,14 @@ CNetBaseThreadPool::CNetBaseThreadPool(int nThreadCount)
 CNetBaseThreadPool::~CNetBaseThreadPool()
 {
 	bRunFlag = false;
-	for (int i = 0; i < nTrueNetThreadPoolCount; i++)
+	int i;
+	std::lock_guard<std::mutex> lock(threadLock);
+	for (i = 0; i < nTrueNetThreadPoolCount; i++)
+	{//通知所有线程
+ 		cv[i].notify_one();
+	}
+
+	for ( i = 0; i < nTrueNetThreadPoolCount; i++)
 	{
 		while (!bExitProcessThreadFlag[i])
 	  		Sleep(50);
@@ -63,11 +70,7 @@ void CNetBaseThreadPool::ProcessFunc()
 	bCreateThreadFlag = true; //创建线程完毕
 	while (bRunFlag)
 	{
-		if (m_NetHandleQueue[nCurrentThreadID].empty())
-		{
-			std::this_thread::sleep_for(std::chrono::milliseconds(20));
-		}
-		else
+		if (!m_NetHandleQueue[nCurrentThreadID].empty()&& bRunFlag)
 		{
 			nClientID = m_NetHandleQueue[nCurrentThreadID].front();
 			m_NetHandleQueue[nCurrentThreadID].pop();
@@ -76,12 +79,18 @@ void CNetBaseThreadPool::ProcessFunc()
 			{
 				pClient->ProcessNetData();//任务执行
 			}
+		}
+		else
+		{
+			if (bRunFlag)
+			{
+				std::unique_lock<std::mutex> lck(mtx[nCurrentThreadID]);
+				cv[nCurrentThreadID].wait(lck);
+			}
 			else
-				Sleep(5);
+				break;		
 		}
 
-
-	
  	}
 	bExitProcessThreadFlag[nCurrentThreadID] = true;
 }
@@ -122,6 +131,7 @@ bool CNetBaseThreadPool::InsertIntoTask(uint64_t nClientID)
 	}
 
 	m_NetHandleQueue[nThreadThread].push(nClientID);
+	cv[nThreadThread].notify_one();
 
 	return true;
 }

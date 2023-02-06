@@ -42,10 +42,11 @@ CMediaSendThreadPool::CMediaSendThreadPool(int nMaxThreadCount)
 CMediaSendThreadPool::~CMediaSendThreadPool()
 {
 	bRunFlag = false;
+
 	for (int i = 0; i < nTrueMaxNetThreadPoolCount; i++)
 	{
+		cv[i].notify_one();
 		while (!bExitProcessThreadFlag[i])
-	  		//Sleep(50);
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 		if (hProcessHandle[i] != NULL)
 		{
@@ -94,7 +95,9 @@ bool  CMediaSendThreadPool::AddClientToThreadPool(uint64_t nClient)
 			threadContainClient[i].nClients[0] = nClient;
 			threadContainClient[i].nTrueClientsCount = 1;
 			threadContainClient[i].nMaxClientArraySize = 1;
-			WriteLog(Log_Debug, "把客户端 nClient = %llu 成功加入到媒体发送线程池 ,nThreadID = %d ", nClient,i );
+
+			cv[i].notify_one();
+ 			WriteLog(Log_Debug, "把客户端 nClient = %llu 成功加入到媒体发送线程池 ,nThreadID = %d ", nClient,i );
 			return true;
 		}
 	}
@@ -118,11 +121,13 @@ bool  CMediaSendThreadPool::AddClientToThreadPool(uint64_t nClient)
 		threadContainClient[nCreateThreadProcessCount].nMaxClientArraySize = 1;
 		threadContainClient[nCreateThreadProcessCount].nClients[0] = nClient;//存储该线程负责发送的客户端ID  
 
+		//信号通知
+		cv[nCreateThreadProcessCount].notify_one();
+
 		WriteLog(Log_Debug, "把客户端 nClient = %llu 成功加入到媒体发送线程池 ,nThreadID = %d ", nClient, nCreateThreadProcessCount);
 
 		nCreateThreadProcessCount ++;
-
-		return true;
+ 		return true;
 	}
 	else
 	{//当前创建的线程已经达到 打算创建的最大线程数，不能再创建线程，采用线程共享的方式发送视频 
@@ -154,7 +159,8 @@ bool  CMediaSendThreadPool::AddClientToThreadPool(uint64_t nClient)
 					 threadContainClient[nMinThreadContainClientThread].nClients[i] = nClient; //把ClientID 放置在空缺的位置上 
 					 threadContainClient[nMinThreadContainClientThread].nTrueClientsCount += 1; //客户端总数加1  
 
-					 FillArrayPositionFlag = true; //占位成功 
+					 cv[nMinThreadContainClientThread].notify_one();
+ 					 FillArrayPositionFlag = true; //占位成功 
 					 WriteLog(Log_Debug, "把客户端 nClient = %llu 成功加入到媒体发送线程池 ,nThreadID = %d ", nClient, i);
  				    }
 			     }
@@ -274,9 +280,17 @@ void CMediaSendThreadPool::ProcessFunc()
 				   }
 				}
  		    }
- 		}else 
- 		//  Sleep(5);
-		std::this_thread::sleep_for(std::chrono::milliseconds(5));
+		}
+		else
+		{
+			if (bRunFlag)
+			{
+				std::unique_lock<std::mutex> lck(mtx[nCurrentThreadID]);
+				cv[nCurrentThreadID].wait(lck);
+			}
+			else
+				break;
+		}
  	}
 	bExitProcessThreadFlag[nCurrentThreadID] = true;
 }

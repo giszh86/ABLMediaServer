@@ -1,8 +1,9 @@
 #ifndef _NetBaseThreadPool_H
 #define _NetBaseThreadPool_H
 
-//#include <boost/lockfree/queue.hpp>
 #include <queue>
+#include <condition_variable> 
+
 #define   MaxNetHandleQueueCount    512 
 typedef map<NETHANDLE, NETHANDLE>   ClientProcessThreadMap;//固定客户端的线程序号 
 
@@ -32,7 +33,10 @@ private:
 #else
 	pthread_t             hProcessHandle[MaxNetHandleQueueCount];
 #endif
-    bool                  bRunFlag;
+	volatile  bool        bRunFlag;
+
+	std::condition_variable  cv[MaxNetHandleQueueCount];
+	std::mutex               mtx[MaxNetHandleQueueCount];
 };
 
 #endif
