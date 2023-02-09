@@ -116,10 +116,16 @@ bool  CPictureFileSource::queryPictureFile(char* szPictureFileName)
 	if (strstr(szPictureFileName, ".png") != NULL )
 		szPictureFileName[strlen(szPictureFileName) - 5] = 0x00;
 
+#ifdef USE_BOOST
+	//判断是否为数字
+	if (!boost::all(szPictureFileName, boost::is_digit()))
+		return false;
+#else
 	//判断是否为数字
 	if (!ABL::is_digits(szPictureFileName))
-	//if (!boost::all(szPictureFileName, boost::is_digit()))
 		return false;
+#endif
+
  
 	list<uint64_t>::iterator it2;
 	for (it2 = fileList.begin(); it2 != fileList.end(); it2++)

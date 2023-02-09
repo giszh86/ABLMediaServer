@@ -9,14 +9,25 @@ E-Mail  79941308@qq.com
 
 #include "stdafx.h"
 #include "NetClientRecvHttpHLS.h"
-
+#ifdef USE_BOOST
 extern bool                                   DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 extern CMediaFifo                             pDisconnectBaseNetFifo; //清理断裂的链接 
-extern char                                   ABL_MediaSeverRunPath[256] ; //当前路径
+extern char                                   ABL_MediaSeverRunPath[256]; //当前路径
+extern boost::shared_ptr<CMediaStreamSource>  GetMediaStreamSource(char* szURL);
+extern boost::shared_ptr<CMediaStreamSource>  CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
+extern bool                                   DeleteMediaStreamSource(char* szURL);
+extern CMediaSendThreadPool* pMediaSendThreadPool;
+
+#else
+extern bool                                   DeleteNetRevcBaseClient(NETHANDLE CltHandle);
+extern CMediaFifo                             pDisconnectBaseNetFifo; //清理断裂的链接 
+extern char                                   ABL_MediaSeverRunPath[256]; //当前路径
 extern std::shared_ptr<CMediaStreamSource>  GetMediaStreamSource(char* szURL);
 extern std::shared_ptr<CMediaStreamSource>  CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
 extern bool                                   DeleteMediaStreamSource(char* szURL);
-extern CMediaSendThreadPool*                  pMediaSendThreadPool;
+extern CMediaSendThreadPool* pMediaSendThreadPool;
+
+#endif
 
 extern void LIBNET_CALLMETHOD	onconnect(NETHANDLE clihandle,
 	uint8_t result);

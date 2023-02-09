@@ -8,13 +8,24 @@ E-Mail  79941308@qq.com
 */
 #include "stdafx.h"
 #include "ReadRecordFileInput.h"
-
-extern CNetBaseThreadPool*                   RecordReplayThreadPool;//录像回放线程池
+#ifdef USE_BOOST
+extern CNetBaseThreadPool* RecordReplayThreadPool;//录像回放线程池
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
+
+extern boost::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szURL, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
+extern bool                                  DeleteMediaStreamSource(char* szURL);
+extern MediaServerPort                       ABL_MediaServerPort;
+#else
+extern CNetBaseThreadPool* RecordReplayThreadPool;//录像回放线程池
+extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
+extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
+
 extern std::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szURL, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern MediaServerPort                       ABL_MediaServerPort;
+#endif
+
 
 #if defined(_WIN32) || defined(_WIN64)
 #define fseek64 _fseeki64
@@ -255,7 +266,12 @@ bool  CReadRecordFileInput::GetMediaShareURLFromFileName(char* szRecordFileName,
 
 	string strRecordFileName = szRecordFileName;
 #ifdef OS_System_Windows
-	ABL::replace_all(strRecordFileName, "\\", "/"); 
+#ifdef USE_BOOST
+	replace_all(strRecordFileName, "\\", "/");
+#else
+	ABL::replace_all(strRecordFileName, "\\", "/");
+#endif
+
 #endif
 	int   nPos;
 	char  szTempFileName[512] = { 0 };

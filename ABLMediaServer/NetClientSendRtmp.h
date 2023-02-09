@@ -8,14 +8,18 @@
 #include "flv-muxer.h"
 
 #include "MediaStreamSource.h"
+#ifdef USE_BOOST
+#include <boost/unordered/unordered_map.hpp>
+#include <boost/smart_ptr/shared_ptr.hpp>
+#include <boost/unordered/unordered_map.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/algorithm/string.hpp>
 
-//#include <boost/unordered/unordered_map.hpp>
-//#include <boost/smart_ptr/shared_ptr.hpp>
-//#include <boost/unordered/unordered_map.hpp>
-//#include <boost/make_shared.hpp>
-//#include <boost/algorithm/string.hpp>
-//
-//using namespace boost;
+using namespace boost;
+#else
+
+#endif
+
 
 //#define  WriteFlvFileByDebug   1 //用于定义是否写FLV文件 
 

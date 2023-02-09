@@ -9,9 +9,14 @@ E-Mail  79941308@qq.com
 
 #include "stdafx.h"
 #include "NetServerHLS.h"
-
+#ifdef USE_BOOST
+extern             bool                DeleteNetRevcBaseClient(NETHANDLE CltHandle);
+boost::shared_ptr<CMediaStreamSource>  GetMediaStreamSource(char* szURL);
+#else
 extern             bool                DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 std::shared_ptr<CMediaStreamSource>  GetMediaStreamSource(char* szURL);
+#endif
+
 extern CMediaSendThreadPool*           pMediaSendThreadPool;
 extern CMediaFifo                      pDisconnectBaseNetFifo; //清理断裂的链接 
 extern bool                            DeleteClientMediaStreamSource(uint64_t nClient);
@@ -292,9 +297,14 @@ int CNetServerHLS::ProcessNetData()
 	if (strlen(szOrigin) == 0)
 		strcpy(szOrigin, "*");
 	//WriteLog(Log_Debug, "CNetServerHLS=%X, 获取到 Origin = %s , nClient = %llu ", this, szOrigin, nClient);
+#ifdef USE_BOOST
+		//根据推流名字找到
+	boost::shared_ptr<CMediaStreamSource> pushClient = GetMediaStreamSource(szPushName);
+#else
+		//根据推流名字找到
+	auto pushClient = GetMediaStreamSource(szPushName);
+#endif
 
-	//根据推流名字找到
-	std::shared_ptr<CMediaStreamSource> pushClient = GetMediaStreamSource(szPushName);
 	if (pushClient == NULL)
 	{
 		WriteLog(Log_Debug, "CNetServerHLS=%X, 没有推流对象的地址 %s nClient = %llu ", this, szPushName, nClient);

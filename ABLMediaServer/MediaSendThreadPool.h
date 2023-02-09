@@ -1,7 +1,11 @@
 #ifndef _MediaSendThreadPool_H
 #define _MediaSendThreadPool_H
+#ifdef USE_BOOST
+#include <boost/lockfree/queue.hpp>
+#else
 
-//#include <boost/lockfree/queue.hpp>
+#endif
+
 #include <condition_variable>
 
 #define   MaxMediaSendThreadCount       2048 //预分配最大的线程数  

@@ -10,7 +10,42 @@ E-Mail  79941308@qq.com
 
 #include "stdafx.h"
 #include "NetServerHTTP.h"
+#ifdef USE_BOOST
 
+extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
+extern boost::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
+extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
+extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSourceNoLock(char* szURL);
+extern bool                                  DeleteMediaStreamSource(char* szURL);
+extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
+extern boost::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
+extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
+extern bool                                  QueryMediaSource(char* pushURL);
+
+extern CMediaSendThreadPool* pMediaSendThreadPool;
+extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
+extern MediaServerPort                       ABL_MediaServerPort;
+extern int                                   GetAllMediaStreamSource(char* szMediaSourceInfo, getMediaListStruct mediaListStruct);
+extern int                                   GetAllOutList(char* szMediaSourceInfo, char* szOutType);
+extern int                                   CloseMediaStreamSource(closeStreamsStruct closeStruct);
+extern boost::shared_ptr<CRecordFileSource>  GetRecordFileSource(char* szShareURL);
+extern int                                   queryRecordListByTime(char* szMediaSourceInfo, queryRecordListStruct queryStruct);
+extern uint64_t                              GetCurrentSecond();
+extern uint64_t                              GetCurrentSecondByTime(char* szDateTime);
+extern int                                   queryPictureListByTime(char* szMediaSourceInfo, queryPictureListStruct queryStruct);
+extern boost::shared_ptr<CPictureFileSource> GetPictureFileSource(char* szShareURL, bool bLock);
+extern int  GetNetRevcBaseClientCountByNetType(NetBaseNetType netType, bool bLockFlag);
+extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClientByNetTypeShareMediaURL(NetBaseNetType netType, char* ShareMediaURL, bool bLockFlag);
+extern bool                                  CheckPortAlreadyUsed(int nPort, int nPortType, bool bLockFlag);
+extern bool                                  CheckSSRCAlreadyUsed(int nSSRC, bool bLockFlag);
+extern bool                                  CheckAppStreamExisting(char* szAppStreamURL);
+extern volatile bool                         ABL_bMediaServerRunFlag;
+extern volatile bool                         ABL_bRestartServerFlag;
+extern char                                  ABL_MediaSeverRunPath[256];
+extern char                                  ABL_wwwMediaPath[256];
+
+
+#else
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 extern std::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
 extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
@@ -21,7 +56,7 @@ extern std::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClient
 extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
 extern bool                                  QueryMediaSource(char* pushURL);
 
-extern CMediaSendThreadPool*                 pMediaSendThreadPool;
+extern CMediaSendThreadPool* pMediaSendThreadPool;
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
 extern MediaServerPort                       ABL_MediaServerPort;
 extern int                                   GetAllMediaStreamSource(char* szMediaSourceInfo, getMediaListStruct mediaListStruct);
@@ -38,10 +73,13 @@ extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClientByNetTypeShareMed
 extern bool                                  CheckPortAlreadyUsed(int nPort, int nPortType, bool bLockFlag);
 extern bool                                  CheckSSRCAlreadyUsed(int nSSRC, bool bLockFlag);
 extern bool                                  CheckAppStreamExisting(char* szAppStreamURL);
-extern volatile bool                         ABL_bMediaServerRunFlag ;
+extern volatile bool                         ABL_bMediaServerRunFlag;
 extern volatile bool                         ABL_bRestartServerFlag;
-extern char                                  ABL_MediaSeverRunPath[256] ;  
-extern char                                  ABL_wwwMediaPath[256];  
+extern char                                  ABL_MediaSeverRunPath[256];
+extern char                                  ABL_wwwMediaPath[256];
+#endif
+
+
 
 extern void LIBNET_CALLMETHOD	onclose(NETHANDLE srvhandle, NETHANDLE clihandle);
 extern void LIBNET_CALLMETHOD	onaccept(NETHANDLE srvhandle, NETHANDLE clihandle, void* address);
@@ -351,7 +389,12 @@ bool CNetServerHTTP::SplitterTextParam(char* szTextParam)
 			memset(szKey, 0x00, sizeof(szKey));
 			memcpy(szKey, szTextParam + nPos1, nFind1 - nPos1);
 			strKey = szKey;
+#ifdef USE_BOOST
+			replace_all(strKey, "%20", "");//去掉空格
+#else
 			ABL::replace_all(strKey, "%20", "");//去掉空格
+#endif
+	
 			strcpy(keyValue->key, strKey.c_str());
  
 			memset(szValue, 0x00, sizeof(szValue));
@@ -362,8 +405,15 @@ bool CNetServerHTTP::SplitterTextParam(char* szTextParam)
 				nPos1 = nFind2 + 1;
 
 				strValue = szValue;
+#ifdef USE_BOOST
+				replace_all(strValue, "%26", "&");
+				replace_all(strValue, "%20", "");//去掉空格
+#else
 				ABL::replace_all(strValue, "%26", "&");
 				ABL::replace_all(strValue, "%20", "");//去掉空格
+#endif
+
+			
 				strcpy(keyValue->value, strValue.c_str());
 
 				requestKeyValueMap.insert(RequestKeyValueMap::value_type(keyValue->key, keyValue));
@@ -373,8 +423,14 @@ bool CNetServerHTTP::SplitterTextParam(char* szTextParam)
 			{
 				memcpy(szValue, szTextParam + nFind1 + 1, strlen(szTextParam) - nFind1 - 1);
 				strValue = szValue;
+#ifdef USE_BOOST
+				replace_all(strValue, "%26", "&");
+				replace_all(strValue, "%20", "");//去掉空格
+#else
 				ABL::replace_all(strValue, "%26", "&");
 				ABL::replace_all(strValue, "%20", "");//去掉空格
+#endif
+			
 
 				strcpy(keyValue->value, strValue.c_str());
 
@@ -403,7 +459,12 @@ bool CNetServerHTTP::SplitterJsonParam(char* szJsonParam)
 	DeleteAllHttpKeyValue();
 
 	string strJson = szJsonParam;
+#ifdef USE_BOOST
+	boost::trim(strJson);
+#else
 	ABL::trim(strJson);
+#endif
+
 	strcpy(szJsonParam, strJson.c_str());
 
 	if (szJsonParam[0] != '{' || szJsonParam[strlen(szJsonParam) - 1] != '}')
@@ -425,13 +486,22 @@ bool CNetServerHTTP::SplitterJsonParam(char* szJsonParam)
 			if (jKey.IsString())
 			{
 				string name = jKey.GetString();
+#ifdef USE_BOOST
+				boost::trim(name);
+#else
 				ABL::trim(name);
+#endif
+		
 
 				nType = jValue.GetType();
  				if (nType == kStringType)
 				{
 				  string value = jValue.GetString();
- 				  ABL::trim(value);
+#ifdef USE_BOOST
+				  boost::trim(name);
+#else
+				  ABL::trim(name);
+#endif
 				  strcpy(szValue, value.c_str());
 				}
 				else if (nType == kNumberType)
@@ -804,8 +874,8 @@ bool  CNetServerHTTP::index_api_addStreamProxy()
 			ResponseSuccess(szResponseBody);
 			return false;
 		}
-
-		std::shared_ptr<CMediaStreamSource> tmpMediaSource = GetMediaStreamSource(szShareMediaURL);
+#ifdef USE_BOOST
+		boost::shared_ptr<CMediaStreamSource> tmpMediaSource = GetMediaStreamSource(szShareMediaURL);
 		if (tmpMediaSource != NULL)
 		{
 			sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"MediaSource: %s Already exists \",\"key\":%d}", IndexApiCode_ParamError, szShareMediaURL, 0);
@@ -813,7 +883,8 @@ bool  CNetServerHTTP::index_api_addStreamProxy()
 			return false;
 		}
 
-		std::shared_ptr<CNetRevcBase> pClient = CreateNetRevcBaseClient(NetRevcBaseClient_addStreamProxyControl, 0, 0, m_addStreamProxyStruct.url, 0, szShareMediaURL);
+		boost::shared_ptr<CNetRevcBase> pClient = CreateNetRevcBaseClient(NetRevcBaseClient_addStreamProxyControl, 0, 0, m_addStreamProxyStruct.url, 0, szShareMediaURL);
+
 		if (pClient != NULL)
 		{
 			memcpy((char*)&pClient->m_addStreamProxyStruct, (char*)&m_addStreamProxyStruct, sizeof(addStreamProxyStruct));
@@ -825,11 +896,42 @@ bool  CNetServerHTTP::index_api_addStreamProxy()
 			if (strlen(m_addStreamProxyStruct.H264DecodeEncode_enable) > 0)
 				pClient->m_h265ConvertH264Struct.H264DecodeEncode_enable = atoi(m_addStreamProxyStruct.H264DecodeEncode_enable);
 
-			WriteLog(Log_Debug, "\"rtsp://%s:%d/%s/%s\",", "190.168.24.112",ABL_MediaServerPort.nRtspPort,m_addStreamProxyStruct.app,m_addStreamProxyStruct.stream);
-            pClient->nClient_http = nClient ; //赋值给http请求连接 
-			WriteLog(Log_Debug, "代理拉流 nClient_http = %d ",nClient );
+			WriteLog(Log_Debug, "\"rtsp://%s:%d/%s/%s\",", "190.168.24.112", ABL_MediaServerPort.nRtspPort, m_addStreamProxyStruct.app, m_addStreamProxyStruct.stream);
+			pClient->nClient_http = nClient; //赋值给http请求连接 
+			WriteLog(Log_Debug, "代理拉流 nClient_http = %d ", nClient);
 			pClient->SendFirstRequst();//执行第一个命令
 		}
+#else
+		auto tmpMediaSource = GetMediaStreamSource(szShareMediaURL);
+		if (tmpMediaSource != NULL)
+		{
+			sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"MediaSource: %s Already exists \",\"key\":%d}", IndexApiCode_ParamError, szShareMediaURL, 0);
+			ResponseSuccess(szResponseBody);
+			return false;
+		}
+
+		auto pClient = CreateNetRevcBaseClient(NetRevcBaseClient_addStreamProxyControl, 0, 0, m_addStreamProxyStruct.url, 0, szShareMediaURL);
+
+		if (pClient != NULL)
+		{
+			memcpy((char*)&pClient->m_addStreamProxyStruct, (char*)&m_addStreamProxyStruct, sizeof(addStreamProxyStruct));
+			if (strlen(m_addStreamProxyStruct.convertOutWidth) > 0 && strlen(m_addStreamProxyStruct.convertOutHeight) > 0)
+			{//把宽、高赋值给转码结构
+				pClient->m_h265ConvertH264Struct.convertOutWidth = atoi(m_addStreamProxyStruct.convertOutWidth);
+				pClient->m_h265ConvertH264Struct.convertOutHeight = atoi(m_addStreamProxyStruct.convertOutHeight);
+			}
+			if (strlen(m_addStreamProxyStruct.H264DecodeEncode_enable) > 0)
+				pClient->m_h265ConvertH264Struct.H264DecodeEncode_enable = atoi(m_addStreamProxyStruct.H264DecodeEncode_enable);
+
+			WriteLog(Log_Debug, "\"rtsp://%s:%d/%s/%s\",", "190.168.24.112", ABL_MediaServerPort.nRtspPort, m_addStreamProxyStruct.app, m_addStreamProxyStruct.stream);
+			pClient->nClient_http = nClient; //赋值给http请求连接 
+			WriteLog(Log_Debug, "代理拉流 nClient_http = %d ", nClient);
+			pClient->SendFirstRequst();//执行第一个命令
+		}
+#endif
+
+
+		
 	}
 	else
 	{//参数错误 
@@ -864,8 +966,11 @@ bool  CNetServerHTTP::index_api_delRequest()
 		ResponseSuccess(szResponseBody);
 		return false;
 	}
-
-	std::shared_ptr<CNetRevcBase> pClient = GetNetRevcBaseClient(atoi(m_delRequestStruct.key));
+#ifdef USE_BOOST
+	boost::shared_ptr<CNetRevcBase> pClient = GetNetRevcBaseClient(atoi(m_delRequestStruct.key));
+#else
+	auto pClient = GetNetRevcBaseClient(atoi(m_delRequestStruct.key));
+#endif
 	if (pClient == NULL)
 	{
 		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"key %s Not Found .\"}", IndexApiCode_KeyNotFound, m_delRequestStruct.key, 0);
@@ -945,7 +1050,12 @@ bool CNetServerHTTP::index_api_addPushProxy()
 	{
 		//检测 app stream 是否存在
 		sprintf(szShareMediaURL, "/%s/%s", m_addPushProxyStruct.app, m_addPushProxyStruct.stream);
-		std::shared_ptr<CMediaStreamSource> tmpMediaSource = GetMediaStreamSource(szShareMediaURL);
+#ifdef USE_BOOST
+		boost::shared_ptr<CMediaStreamSource> tmpMediaSource = GetMediaStreamSource(szShareMediaURL);
+#else
+		auto tmpMediaSource = GetMediaStreamSource(szShareMediaURL);
+#endif
+
 		if (tmpMediaSource == NULL)
 		{
 			sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"MediaSource: %s Not Found \",\"key\":%d}", IndexApiCode_ParamError, szShareMediaURL, 0);
@@ -960,9 +1070,13 @@ bool CNetServerHTTP::index_api_addPushProxy()
 			ResponseSuccess(szResponseBody);
 			return false;
 		}
+#ifdef USE_BOOST
+		boost::shared_ptr<CNetRevcBase> pClient = CreateNetRevcBaseClient(NetRevcBaseClient_addPushProxyControl, 0, 0, m_addPushProxyStruct.url, 0, szShareMediaURL);
 
-		std::shared_ptr<CNetRevcBase> pClient = CreateNetRevcBaseClient(NetRevcBaseClient_addPushProxyControl, 0, 0, m_addPushProxyStruct.url, 0, szShareMediaURL);
-		if (pClient != NULL)
+#else
+		auto pClient = CreateNetRevcBaseClient(NetRevcBaseClient_addPushProxyControl, 0, 0, m_addPushProxyStruct.url, 0, szShareMediaURL);
+#endif
+	if (pClient != NULL)
 		{
 			memcpy((char*)&pClient->m_addPushProxyStruct, (char*)&m_addPushProxyStruct, sizeof(m_addPushProxyStruct));
 
@@ -1103,8 +1217,12 @@ bool  CNetServerHTTP::index_api_openRtpServer()
 			ResponseSuccess(szResponseBody);
 			return false;
 		}
- 
-		std::shared_ptr<CMediaStreamSource> tmpMediaSource = GetMediaStreamSourceNoLock(szShareMediaURL);
+#ifdef USE_BOOST
+		boost::shared_ptr<CMediaStreamSource> tmpMediaSource = GetMediaStreamSourceNoLock(szShareMediaURL);
+#else
+		auto tmpMediaSource = GetMediaStreamSourceNoLock(szShareMediaURL);
+#endif
+	
 		if (tmpMediaSource != NULL)
 		{
 			sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"MediaSource: %s Already exists \",\"key\":%d}", IndexApiCode_ParamError, szShareMediaURL, 0);
@@ -1168,8 +1286,13 @@ int   CNetServerHTTP::bindRtpServerPort()
 
 		if (nRet == 0 && nRet2 == 0)
 		{//rtp ,rtcp 都绑定成功
-			std::shared_ptr<CNetRevcBase> pClient = CreateNetRevcBaseClient(NetBaseNetType_NetGB28181RtpServerUDP, 0, nMediaClient, "", ABL_nGB28181Port, szTemp);
- 			if (pClient != NULL)
+#ifdef USE_BOOST
+			boost::shared_ptr<CNetRevcBase> pClient = CreateNetRevcBaseClient(NetBaseNetType_NetGB28181RtpServerUDP, 0, nMediaClient, "", ABL_nGB28181Port, szTemp);
+
+#else
+			auto pClient = CreateNetRevcBaseClient(NetBaseNetType_NetGB28181RtpServerUDP, 0, nMediaClient, "", ABL_nGB28181Port, szTemp);
+#endif
+			if (pClient != NULL)
 			{
 				pClient->m_gbPayload = atoi(m_openRtpServerStruct.payload);//更新为正确的paylad
 				pClient->nClientRtcp = nMediaClient2;//rtcp 连接
@@ -1214,8 +1337,14 @@ int   CNetServerHTTP::bindRtpServerPort()
 
 		if (nRet == 0)
 		{
- 			std::shared_ptr<CNetRevcBase> pClient = CreateNetRevcBaseClient(NetBaseNetType_NetGB28181RtpServerListen, 0, nMediaClient, "", ABL_nGB28181Port, szTemp);
-			if (pClient != NULL)
+#ifdef USE_BOOST
+			boost::shared_ptr<CNetRevcBase> pClient = CreateNetRevcBaseClient(NetBaseNetType_NetGB28181RtpServerListen, 0, nMediaClient, "", ABL_nGB28181Port, szTemp);
+
+#else
+			auto pClient = CreateNetRevcBaseClient(NetBaseNetType_NetGB28181RtpServerListen, 0, nMediaClient, "", ABL_nGB28181Port, szTemp);
+
+#endif
+ 			if (pClient != NULL)
 			{
  		      	memcpy((char*)&pClient->m_addStreamProxyStruct,(char*)&m_addStreamProxyStruct,sizeof(m_addStreamProxyStruct));
 				memcpy((char*)&pClient->m_openRtpServerStruct,(char*)&m_openRtpServerStruct,sizeof(m_openRtpServerStruct));
@@ -1356,6 +1485,17 @@ bool  CNetServerHTTP::index_api_startSendRtp()
 
 		//检测 app stream 是否存在
 		sprintf(szShareMediaURL, "/%s/%s", m_startSendRtpStruct.app, m_startSendRtpStruct.stream);
+#ifdef USE_BOOST
+		boost::shared_ptr<CMediaStreamSource> tmpMediaSource = GetMediaStreamSource(szShareMediaURL);
+		if (tmpMediaSource == NULL)
+		{
+			sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"MediaSource: %s Not Found \",\"key\":%d}", IndexApiCode_ParamError, szShareMediaURL, 0);
+			ResponseSuccess(szResponseBody);
+			return false;
+		}
+
+		boost::shared_ptr<CNetRevcBase> pClient = NULL;
+#else
 		std::shared_ptr<CMediaStreamSource> tmpMediaSource = GetMediaStreamSource(szShareMediaURL);
 		if (tmpMediaSource == NULL)
 		{
@@ -1365,6 +1505,8 @@ bool  CNetServerHTTP::index_api_startSendRtp()
 		}
 
 		std::shared_ptr<CNetRevcBase> pClient = NULL;
+#endif
+
 		if (is_udp == 1)
 		{
 			if (atoi(m_startSendRtpStruct.src_port) == 0)
@@ -1615,7 +1757,12 @@ bool  CNetServerHTTP::index_api_startStopRecord(bool bFlag)
 	{
 		//检测 app stream 是否存在
 		sprintf(szShareMediaURL, "/%s/%s", m_startStopRecordStruct.app, m_startStopRecordStruct.stream);
-		std::shared_ptr<CMediaStreamSource> tmpMediaSource = GetMediaStreamSource(szShareMediaURL);
+#ifdef USE_BOOST
+		boost::shared_ptr<CMediaStreamSource> tmpMediaSource = GetMediaStreamSource(szShareMediaURL);
+#else
+		auto tmpMediaSource = GetMediaStreamSource(szShareMediaURL);
+#endif
+
 		if (tmpMediaSource == NULL)
 		{
 			sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"MediaSource: %s Not Found \"}", IndexApiCode_ParamError, szShareMediaURL);
@@ -1694,13 +1841,22 @@ bool  CNetServerHTTP::index_api_queryRecordList()
 		ResponseSuccess(szResponseBody);
 		return false;
 	}
-	if (ABL::is_digits(m_queryRecordListStruct.starttime) == false || ABL::is_digits(m_queryRecordListStruct.endtime) == false)
-	//if ( boost::all(m_queryRecordListStruct.starttime, boost::is_digit()) == false || boost::all(m_queryRecordListStruct.endtime, boost::is_digit()) == false )
+#ifdef USE_BOOST
+	if (boost::all(m_queryRecordListStruct.starttime, boost::is_digit()) == false || boost::all(m_queryRecordListStruct.endtime, boost::is_digit()) == false)
 	{//检测开始时间、结束时间 是否是数字的字符串（0 ~ 9）
 		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"[starttime , endtime ] error , must is number \"}", IndexApiCode_secretError);
 		ResponseSuccess(szResponseBody);
 		return false;
 	}
+#else
+	if (ABL::is_digits(m_queryRecordListStruct.starttime) == false || ABL::is_digits(m_queryRecordListStruct.endtime) == false)
+	{//检测开始时间、结束时间 是否是数字的字符串（0 ~ 9）
+		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"[starttime , endtime ] error , must is number \"}", IndexApiCode_secretError);
+		ResponseSuccess(szResponseBody);
+		return false;
+	}
+#endif
+
 
 	if ( atoll(m_queryRecordListStruct.endtime) < atoll(m_queryRecordListStruct.starttime))
 	{//结束时间必须大于开始时间
@@ -1741,7 +1897,12 @@ bool  CNetServerHTTP::index_api_queryRecordList()
 
 	//先简单判断是否存储录像
 	sprintf(szShareMediaURL, "/%s/%s", m_queryRecordListStruct.app, m_queryRecordListStruct.stream);
+#ifdef USE_BOOST
+	boost::shared_ptr<CRecordFileSource> pRecord = GetRecordFileSource(szShareMediaURL);
+#else
 	std::shared_ptr<CRecordFileSource> pRecord = GetRecordFileSource(szShareMediaURL);
+#endif
+
 	if (pRecord == NULL)
 	{
 		sprintf(szResponseBody, "{\"code\":%d,\"count\":0,\"memo\":\"MediaSource [app: %s , stream: %s] RecordFile Not Found .\"}", IndexApiCode_OK, m_queryRecordListStruct.app, m_queryRecordListStruct.stream);
@@ -1784,13 +1945,22 @@ bool  CNetServerHTTP::index_api_getSnap()
 		ResponseSuccess(szResponseBody);
 		return false;
 	}
-	if (ABL::is_digits(m_getSnapStruct.timeout_sec)==false)
-	//if (boost::all(m_getSnapStruct.timeout_sec, boost::is_digit()) == false )
+#ifdef USE_BOOST
+	if (boost::all(m_getSnapStruct.timeout_sec, boost::is_digit()) == false)
 	{//检测超时必须是数字
 		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"[timeout_sec ] error , must is number \"}", IndexApiCode_secretError);
 		ResponseSuccess(szResponseBody);
 		return false;
 	}
+#else
+	if (ABL::is_digits(m_getSnapStruct.timeout_sec) == false)
+	{//检测超时必须是数字
+		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"[timeout_sec ] error , must is number \"}", IndexApiCode_secretError);
+		ResponseSuccess(szResponseBody);
+		return false;
+	}
+#endif
+
 
 	//app ,stream 这两个字符串里面不能有 / 
 	if (strstr(m_getSnapStruct.app, "/") != NULL)
@@ -1820,7 +1990,18 @@ bool  CNetServerHTTP::index_api_getSnap()
 	{
 		//检测 app stream 是否存在
 		sprintf(szShareMediaURL, "/%s/%s", m_getSnapStruct.app, m_getSnapStruct.stream);
-		std::shared_ptr<CMediaStreamSource> tmpMediaSource = GetMediaStreamSource(szShareMediaURL);
+#ifdef USE_BOOST
+		boost::shared_ptr<CMediaStreamSource> tmpMediaSource = GetMediaStreamSource(szShareMediaURL);
+		if (tmpMediaSource == NULL)
+		{
+			sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"MediaSource: %s Not Found \"}", IndexApiCode_ParamError, szShareMediaURL);
+			ResponseSuccess(szResponseBody);
+			return false;
+		}
+
+		boost::shared_ptr<CNetRevcBase>  pClient = NULL;
+#else
+		auto tmpMediaSource = GetMediaStreamSource(szShareMediaURL);
 		if (tmpMediaSource == NULL)
 		{
 			sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"MediaSource: %s Not Found \"}", IndexApiCode_ParamError, szShareMediaURL);
@@ -1829,6 +2010,8 @@ bool  CNetServerHTTP::index_api_getSnap()
 		}
 
 		std::shared_ptr<CNetRevcBase>  pClient = NULL;
+#endif
+	
 		pClient = GetNetRevcBaseClientByNetTypeShareMediaURL(NetBaseNetType_SnapPicture_JPEG, szShareMediaURL,true );
 		if (pClient)
 		{//复用以前对象
@@ -1891,13 +2074,22 @@ bool  CNetServerHTTP::index_api_queryPictureList()
 		ResponseSuccess(szResponseBody);
 		return false;
 	}
-	if (ABL::is_digits(m_queryPictureListStruct.starttime) == false || ABL::is_digits(m_queryPictureListStruct.endtime) == false)
-	//if (boost::all(m_queryPictureListStruct.starttime, boost::is_digit()) == false || boost::all(m_queryPictureListStruct.endtime, boost::is_digit()) == false)
+#ifdef USE_BOOST
+	if (boost::all(m_queryPictureListStruct.starttime, boost::is_digit()) == false || boost::all(m_queryPictureListStruct.endtime, boost::is_digit()) == false)
 	{//检测开始时间、结束时间 是否是数字的字符串（0 ~ 9）
 		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"[starttime , endtime ] error , must is number \"}", IndexApiCode_secretError);
 		ResponseSuccess(szResponseBody);
 		return false;
 	}
+#else
+	if (ABL::is_digits(m_queryPictureListStruct.starttime) == false || ABL::is_digits(m_queryPictureListStruct.endtime) == false)
+	{//检测开始时间、结束时间 是否是数字的字符串（0 ~ 9）
+		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"[starttime , endtime ] error , must is number \"}", IndexApiCode_secretError);
+		ResponseSuccess(szResponseBody);
+		return false;
+	}
+#endif
+
 
 	if (atoll(m_queryPictureListStruct.endtime) < atoll(m_queryPictureListStruct.starttime))
 	{//结束时间必须大于开始时间
@@ -1930,7 +2122,12 @@ bool  CNetServerHTTP::index_api_queryPictureList()
 
 	//先简单判断是否存储图片
 	sprintf(szShareMediaURL, "/%s/%s", m_queryPictureListStruct.app, m_queryPictureListStruct.stream);
-	std::shared_ptr<CPictureFileSource> pPicture = GetPictureFileSource(szShareMediaURL,true);
+#ifdef USE_BOOST
+	boost::shared_ptr<CPictureFileSource> pPicture = GetPictureFileSource(szShareMediaURL, true);
+#else
+	std::shared_ptr<CPictureFileSource> pPicture = GetPictureFileSource(szShareMediaURL, true);
+#endif
+
 	if (pPicture == NULL)
 	{
 		sprintf(szResponseBody, "{\"code\":%d,\"count\":0,\"memo\":\"MediaSource [app: %s , stream: %s] PictureFile Not Found .\"}", IndexApiCode_OK, m_queryPictureListStruct.app, m_queryPictureListStruct.stream);
@@ -1967,7 +2164,13 @@ bool  CNetServerHTTP::index_api_downloadImage(char* szHttpURL)
 	if (nPos > 0)
 	{
 		memcpy(szMediaURL, szHttpURL, nPos);
-	    std::shared_ptr<CPictureFileSource> pPicture = GetPictureFileSource(szMediaURL,true);
+#ifdef USE_BOOST
+		boost::shared_ptr<CPictureFileSource> pPicture = GetPictureFileSource(szMediaURL, true);
+#else
+		auto pPicture = GetPictureFileSource(szMediaURL, true);
+#endif 
+
+	   
 		if (pPicture)
 		{
 			memcpy(szFileNumber, szHttpURL + nPos + 1, strlen(szHttpURL) - nPos - 5);
@@ -1978,7 +2181,12 @@ bool  CNetServerHTTP::index_api_downloadImage(char* szHttpURL)
 
 #ifdef OS_System_Windows
 				strHttpURL = szHttpURL;
+#ifdef USE_BOOST
+				replace_all(strHttpURL, "/", "\\");
+#else
 				ABL::replace_all(strHttpURL, "/", "\\");
+#endif
+			
 				sprintf(szImageFileName, "%s%s", ABL_MediaServerPort.picturePath, strHttpURL.c_str());
  				struct _stat64 fileBuf;
 				int error = _stat64(szImageFileName, &fileBuf);
@@ -2074,7 +2282,11 @@ bool CNetServerHTTP::index_api_setTransFilter()
 	//检测 app stream 是否存在
 	char szShareMediaURL[256] = { 0 };
 	sprintf(szShareMediaURL, "/%s/%s", app, stream);
-	std::shared_ptr<CMediaStreamSource> tmpMediaSource = GetMediaStreamSource(szShareMediaURL);
+#ifdef USE_BOOST
+	boost::shared_ptr<CMediaStreamSource> tmpMediaSource = GetMediaStreamSource(szShareMediaURL);
+#else
+	auto tmpMediaSource = GetMediaStreamSource(szShareMediaURL);
+#endif
 	if (tmpMediaSource == NULL)
 	{
 		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"MediaSource: %s Not Found \"}", IndexApiCode_ParamError, szShareMediaURL);
@@ -2173,14 +2385,14 @@ bool  CNetServerHTTP::index_api_controlStreamProxy()
 			return false;
 		}
 	}*/
-
-	std::shared_ptr<CNetRevcBase> pClientProxy = GetNetRevcBaseClient(atoi(m_controlStreamProxy.key));
-	if (pClientProxy != NULL )
+#ifdef USE_BOOST
+	boost::shared_ptr<CNetRevcBase> pClientProxy = GetNetRevcBaseClient(atoi(m_controlStreamProxy.key));
+	if (pClientProxy != NULL)
 	{
- 		if (pClientProxy->netBaseNetType == NetBaseNetType_addStreamProxyControl && pClientProxy->nMediaClient > 0 )
+		if (pClientProxy->netBaseNetType == NetBaseNetType_addStreamProxyControl && pClientProxy->nMediaClient > 0)
 		{//CNetClientRecvRtsp
-			std::shared_ptr<CNetRevcBase> pClientRtspPtr = GetNetRevcBaseClient(pClientProxy->nMediaClient);
- 			if (pClientRtspPtr != NULL)
+			boost::shared_ptr<CNetRevcBase> pClientRtspPtr = GetNetRevcBaseClient(pClientProxy->nMediaClient);
+			if (pClientRtspPtr != NULL)
 			{
 				CNetClientRecvRtsp* pRtspClient = (CNetClientRecvRtsp*)pClientRtspPtr.get();
 				if (strcmp(m_controlStreamProxy.command, "pause") == 0)
@@ -2199,9 +2411,10 @@ bool  CNetServerHTTP::index_api_controlStreamProxy()
 				{
 					pRtspClient->RtspSpeed(m_controlStreamProxy.value);
 				}
-			   sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"command %s is success \"}", IndexApiCode_OK, m_controlStreamProxy.command);
-			}else 
-			   sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"Key %s Not Found \"}", IndexApiCode_KeyNotFound, m_controlStreamProxy.key);
+				sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"command %s is success \"}", IndexApiCode_OK, m_controlStreamProxy.command);
+			}
+			else
+				sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"Key %s Not Found \"}", IndexApiCode_KeyNotFound, m_controlStreamProxy.key);
 		}
 		else
 		{
@@ -2209,6 +2422,45 @@ bool  CNetServerHTTP::index_api_controlStreamProxy()
 		}
 		ResponseSuccess(szResponseBody);
 	}
+#else
+	auto pClientProxy = GetNetRevcBaseClient(atoi(m_controlStreamProxy.key));
+	if (pClientProxy != NULL)
+	{
+		if (pClientProxy->netBaseNetType == NetBaseNetType_addStreamProxyControl && pClientProxy->nMediaClient > 0)
+		{//CNetClientRecvRtsp
+			auto pClientRtspPtr = GetNetRevcBaseClient(pClientProxy->nMediaClient);
+			if (pClientRtspPtr != NULL)
+			{
+				CNetClientRecvRtsp* pRtspClient = (CNetClientRecvRtsp*)pClientRtspPtr.get();
+				if (strcmp(m_controlStreamProxy.command, "pause") == 0)
+				{
+					pRtspClient->RtspPause();
+				}
+				else if (strcmp(m_controlStreamProxy.command, "resume") == 0)
+				{
+					pRtspClient->RtspResume();
+				}
+				else if (strcmp(m_controlStreamProxy.command, "seek") == 0)
+				{
+					pRtspClient->RtspSeek(m_controlStreamProxy.value);
+				}
+				else if (strcmp(m_controlStreamProxy.command, "scale") == 0)
+				{
+					pRtspClient->RtspSpeed(m_controlStreamProxy.value);
+				}
+				sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"command %s is success \"}", IndexApiCode_OK, m_controlStreamProxy.command);
+			}
+			else
+				sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"Key %s Not Found \"}", IndexApiCode_KeyNotFound, m_controlStreamProxy.key);
+		}
+		else
+		{
+			sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"Key %s is Not Rtsp \"}", IndexApiCode_ErrorRequest, m_controlStreamProxy.key);
+		}
+		ResponseSuccess(szResponseBody);
+	}
+#endif
+	
 	else
 	{//参数错误 
 		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"Key %s Not Found \"}", IndexApiCode_KeyNotFound, m_controlStreamProxy.key);

@@ -4,12 +4,16 @@
 #include "MediaStreamSource.h"
 #include "rtp_packet.h"
 #include "RtcpPacket.h"
+#ifdef USE_BOOST
+#include <boost/unordered/unordered_map.hpp>
+#include <boost/smart_ptr/shared_ptr.hpp>
+#include <boost/unordered/unordered_map.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/algorithm/string.hpp>
+#else
 
-//#include <boost/unordered/unordered_map.hpp>
-//#include <boost/smart_ptr/shared_ptr.hpp>
-//#include <boost/unordered/unordered_map.hpp>
-//#include <boost/make_shared.hpp>
-//#include <boost/algorithm/string.hpp>
+#endif
+
 
 #include "mpeg4-avc.h"
 
@@ -192,7 +196,12 @@ public:
    char           szAudioSDP[512];
    CABLSipParse   sipParseV, sipParseA;   //sdp 信息分析
 
+#ifdef USE_BOOST
+   boost::shared_ptr<CMediaStreamSource> pMediaSource;
+#else
    std::shared_ptr<CMediaStreamSource> pMediaSource;
+#endif
+
 
    volatile bool  bIsInvalidConnectFlag; //是否为非法连接 
    volatile bool  bExitProcessFlagArray[3];

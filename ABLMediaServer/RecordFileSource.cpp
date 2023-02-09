@@ -15,9 +15,16 @@ E-Mail  79941308@qq.com
 
 #include "stdafx.h"
 #include "RecordFileSource.h"
+#ifdef USE_BOOST
+extern MediaServerPort                       ABL_MediaServerPort;
+extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
+extern CMediaFifo                            pMessageNoticeFifo;          //消息通知FIFO
+#else
 extern MediaServerPort                       ABL_MediaServerPort;
 extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
 extern CMediaFifo                            pMessageNoticeFifo;          //消息通知FIFO
+#endif
+
 
 CRecordFileSource::CRecordFileSource(char* app, char* stream)
 {
@@ -130,10 +137,16 @@ bool  CRecordFileSource::queryRecordFile(char* szRecordFileName)
 	if (strstr(szRecordFileName, ".m3u8") != NULL )
 		szRecordFileName[strlen(szRecordFileName) - 5] = 0x00;
 
+#ifdef USE_BOOST
+	//判断是否为数字
+	if (!boost::all(szRecordFileName, boost::is_digit()))
+		return false;
+#else
 	//判断是否为数字
 	if (!ABL::is_digits(szRecordFileName))
-	//if (!boost::all(szRecordFileName, boost::is_digit()))
 		return false;
+#endif
+
  
 	list<uint64_t>::iterator it2;
 	for (it2 = fileList.begin(); it2 != fileList.end(); it2++)

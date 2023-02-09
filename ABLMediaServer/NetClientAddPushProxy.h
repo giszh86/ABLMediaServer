@@ -1,13 +1,17 @@
 #ifndef _NetClientAddPushProxy_H
 #define _NetClientAddPushProxy_H
+#ifdef USE_BOOST
+#include <boost/unordered/unordered_map.hpp>
+#include <boost/smart_ptr/shared_ptr.hpp>
+#include <boost/unordered/unordered_map.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/algorithm/string.hpp>
 
-//#include <boost/unordered/unordered_map.hpp>
-//#include <boost/smart_ptr/shared_ptr.hpp>
-//#include <boost/unordered/unordered_map.hpp>
-//#include <boost/make_shared.hpp>
-//#include <boost/algorithm/string.hpp>
-//
-//using namespace boost;
+using namespace boost;
+#else
+
+#endif
+
 
 class CNetClientAddPushProxy : public CNetRevcBase
 {

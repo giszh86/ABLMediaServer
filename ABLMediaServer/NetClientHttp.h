@@ -1,13 +1,17 @@
 #ifndef _NetClientHttp_H
 #define _NetClientHttp_H
+#ifdef USE_BOOST
+#include <boost/unordered/unordered_map.hpp>
+#include <boost/smart_ptr/shared_ptr.hpp>
+#include <boost/unordered/unordered_map.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/algorithm/string.hpp>
 
-//#include <boost/unordered/unordered_map.hpp>
-//#include <boost/smart_ptr/shared_ptr.hpp>
-//#include <boost/unordered/unordered_map.hpp>
-//#include <boost/make_shared.hpp>
-//#include <boost/algorithm/string.hpp>
-//
-//using namespace boost;
+using namespace boost;
+#else
+
+#endif
+
 
 #define Send_ResponseHttp_MaxPacketCount   1024*48  //回复http包最大发送一次字节
 

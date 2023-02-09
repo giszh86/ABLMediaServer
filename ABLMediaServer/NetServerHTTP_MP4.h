@@ -17,14 +17,18 @@
 #include "MediaFifo.h"
 #include "mpeg4-hevc.h"
 #include "mpeg4-aac.h"
+#ifdef USE_BOOST
+#include <boost/unordered/unordered_map.hpp>
+#include <boost/smart_ptr/shared_ptr.hpp>
+#include <boost/unordered/unordered_map.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/algorithm/string.hpp>
 
-//#include <boost/unordered/unordered_map.hpp>
-//#include <boost/smart_ptr/shared_ptr.hpp>
-//#include <boost/unordered/unordered_map.hpp>
-//#include <boost/make_shared.hpp>
-//#include <boost/algorithm/string.hpp>
-//
-//using namespace boost;
+using namespace boost;
+#else
+
+#endif
+
 
 #define     Send_MP4File_MaxPacketCount          1024*64
 #define     Send_DownloadFile_MaxPacketCount     1024*256

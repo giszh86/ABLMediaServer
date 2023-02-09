@@ -15,13 +15,24 @@ E-Mail  79941308@qq.com
 
 #include "stdafx.h"
 #include "NetRecvBase.h"
-extern CMediaSendThreadPool*                 pMediaSendThreadPool;
+#ifdef USE_BOOST
+extern CMediaSendThreadPool* pMediaSendThreadPool;
+extern CMediaFifo                            pDisconnectBaseNetFifo;             //清理断裂的链接 
+extern MediaServerPort                       ABL_MediaServerPort;
+extern boost::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
+extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
+extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
+extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClientNoLock(NETHANDLE CltHandle);
+#else
+extern CMediaSendThreadPool* pMediaSendThreadPool;
 extern CMediaFifo                            pDisconnectBaseNetFifo;             //清理断裂的链接 
 extern MediaServerPort                       ABL_MediaServerPort;
 extern std::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
 extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
 extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
 extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClientNoLock(NETHANDLE CltHandle);
+#endif
+
 
 CNetRevcBase::CNetRevcBase()
 {
@@ -140,7 +151,13 @@ bool  CNetRevcBase::ParseRtspRtmpHttpURL(char* szURL)
 
 	//全部转为小写
 	strcpy(szSrcRtspPullUrl, szURL);
+
+
+#ifdef USE_BOOST
+	to_lower(szSrcRtspPullUrl);
+#else
 	ABL::StrToLwr(szSrcRtspPullUrl);
+#endif
 
 	if ( !(memcmp(szSrcRtspPullUrl, "rtsp://", 7) == 0 || memcmp(szSrcRtspPullUrl, "rtmp://", 7) == 0 || memcmp(szSrcRtspPullUrl, "http://", 7) == 0))
 		return false;
@@ -260,9 +277,13 @@ bool  CNetRevcBase::ParseRtspRtmpHttpURL(char* szURL)
 		//拷贝域名，判断是否需要转换为IP
 		strcpy(domainName, m_rtspStruct.szIP);
 		string strDomainName = m_rtspStruct.szIP;
+#ifdef USE_BOOST
+		replace_all(strDomainName, ".", "");
+		if (!boost::all(strDomainName, boost::is_digit()))
+#else
 		ABL::replace_all(strDomainName, ".", "");
 		if (!ABL::is_digits(strDomainName))
-		//if (!boost::all(strDomainName, boost::is_digit()))
+#endif
 		{//不是数字，需要域名转换为IP
 			ifConvertFlag = true;
 
@@ -468,15 +489,29 @@ bool  CNetRevcBase::ResponseHttp(uint64_t nHttpClient,char* szSuccessInfo,bool b
 	//功能实现类已经回复
 	bResponseHttpFlag = true;
 
-	std::shared_ptr<CNetRevcBase>  pClient = GetNetRevcBaseClientNoLock(nHttpClient);
+
+#ifdef USE_BOOST
+	boost::shared_ptr<CNetRevcBase>  pClient = GetNetRevcBaseClientNoLock(nHttpClient);
 	if (pClient == NULL)
- 		return true;
+		return true;
 	if (pClient->bResponseHttpFlag)
 		return true;
 
 	//回复http请求
-	string strReponseError = szSuccessInfo ;
+	string strReponseError = szSuccessInfo;
+	replace_all(strReponseError, "\r\n", " ");
+#else
+	auto  pClient = GetNetRevcBaseClientNoLock(nHttpClient);
+	if (pClient == NULL)
+		return true;
+	if (pClient->bResponseHttpFlag)
+		return true;
+
+	//回复http请求
+	string strReponseError = szSuccessInfo;
 	ABL::replace_all(strReponseError, "\r\n", " ");
+#endif
+
 	strcpy(szSuccessInfo, strReponseError.c_str());
 
 	int nLength = strlen(szSuccessInfo);
@@ -505,7 +540,12 @@ bool  CNetRevcBase::ResponseHttp2(uint64_t nHttpClient, char* szSuccessInfo, boo
 
 	//回复http请求
 	string strReponseError = szSuccessInfo;
+#ifdef USE_BOOST
+	replace_all(strReponseError, "\r\n", " ");
+#else
 	ABL::replace_all(strReponseError, "\r\n", " ");
+#endif
+
 	strcpy(szSuccessInfo, strReponseError.c_str());
 
 	int nLength = strlen(szSuccessInfo);
@@ -835,9 +875,9 @@ bool   CNetRevcBase::QueryRecordFileIsExiting(char* szReplayRecordFileURL)
 
 	return true;
 }
-
+#ifdef USE_BOOST
 //根据录像文件创建点播的录像媒体源
-std::shared_ptr<CMediaStreamSource>   CNetRevcBase::CreateReplayClient(char* szReplayURL,uint64_t* nReturnReplayClient)
+boost::shared_ptr<CMediaStreamSource>   CNetRevcBase::CreateReplayClient(char* szReplayURL, uint64_t* nReturnReplayClient)
 {
 #ifdef OS_System_Windows
 	sprintf(szRequestReplayRecordFile, "%s%s\\%s\\%s.mp4", ABL_MediaServerPort.recordPath, szSplliterApp, szSplliterStream, szReplayRecordFile);
@@ -845,12 +885,12 @@ std::shared_ptr<CMediaStreamSource>   CNetRevcBase::CreateReplayClient(char* szR
 	sprintf(szRequestReplayRecordFile, "%s%s/%s/%s.mp4", ABL_MediaServerPort.recordPath, szSplliterApp, szSplliterStream, szReplayRecordFile);
 #endif
 
-	std::shared_ptr<CMediaStreamSource> pTempSource = GetMediaStreamSource(szReplayURL);
+	boost::shared_ptr<CMediaStreamSource> pTempSource = GetMediaStreamSource(szReplayURL);
 	if (pTempSource == NULL)
 	{
-		std::shared_ptr<CNetRevcBase> replayClient = CreateNetRevcBaseClient(ReadRecordFileInput_ReadFMP4File, 0, 0, szRequestReplayRecordFile, 0, szSplliterShareURL);
+		boost::shared_ptr<CNetRevcBase> replayClient = CreateNetRevcBaseClient(ReadRecordFileInput_ReadFMP4File, 0, 0, szRequestReplayRecordFile, 0, szSplliterShareURL);
 		if (replayClient)//记录录像点播的client 
-		 *nReturnReplayClient = replayClient->nClient;
+			*nReturnReplayClient = replayClient->nClient;
 
 		pTempSource = GetMediaStreamSource(szReplayURL);
 		if (pTempSource == NULL)
@@ -873,3 +913,43 @@ std::shared_ptr<CMediaStreamSource>   CNetRevcBase::CreateReplayClient(char* szR
 
 	return  pTempSource;
 }
+#else
+//根据录像文件创建点播的录像媒体源
+std::shared_ptr<CMediaStreamSource>   CNetRevcBase::CreateReplayClient(char* szReplayURL, uint64_t* nReturnReplayClient)
+{
+#ifdef OS_System_Windows
+	sprintf(szRequestReplayRecordFile, "%s%s\\%s\\%s.mp4", ABL_MediaServerPort.recordPath, szSplliterApp, szSplliterStream, szReplayRecordFile);
+#else
+	sprintf(szRequestReplayRecordFile, "%s%s/%s/%s.mp4", ABL_MediaServerPort.recordPath, szSplliterApp, szSplliterStream, szReplayRecordFile);
+#endif
+
+	std::shared_ptr<CMediaStreamSource> pTempSource = GetMediaStreamSource(szReplayURL);
+	if (pTempSource == NULL)
+	{
+		std::shared_ptr<CNetRevcBase> replayClient = CreateNetRevcBaseClient(ReadRecordFileInput_ReadFMP4File, 0, 0, szRequestReplayRecordFile, 0, szSplliterShareURL);
+		if (replayClient)//记录录像点播的client 
+			*nReturnReplayClient = replayClient->nClient;
+
+		pTempSource = GetMediaStreamSource(szReplayURL);
+		if (pTempSource == NULL)
+		{
+			if (replayClient)
+				pDisconnectBaseNetFifo.push((unsigned char*)&replayClient->nClient, sizeof(replayClient->nClient));
+			return NULL;
+		}
+		int nWaitCount = 0;
+		while (!pTempSource->bUpdateVideoSpeed)
+		{
+			nWaitCount++;
+			Sleep(200);
+			if (nWaitCount >= 10)
+				break;
+		}
+	}
+	nMediaSourceType = MediaSourceType_ReplayMedia;
+	duration = pTempSource->nMediaDuration;
+
+	return  pTempSource;
+}
+#endif
+

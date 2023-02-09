@@ -33,8 +33,7 @@
 #include <d3dx9tex.h>
 
 #include "cudaCodecDLL.h"
-#include "ABLString.h"
-#include <cctype>
+
 #else 
 #include <stdlib.h>
 #include <stdio.h>
@@ -925,6 +924,10 @@ struct MessageNoticeStruct
 unsigned long GetTickCount();
 unsigned long GetTickCount64();
 
+#ifdef USE_BOOST
+void          Sleep(int mMicroSecond);
+#endif
+
 #endif
 
 #include "XHNetSDK.h"
@@ -941,16 +944,31 @@ void malloc_trim(int n);
 #include "Ini.h"
 #endif
 
-//#include <boost/unordered/unordered_map.hpp>
-//#include <boost/smart_ptr/shared_ptr.hpp>
-//#include <boost/unordered/unordered_map.hpp>
-//#include <boost/make_shared.hpp>
-//#include <boost/algorithm/string.hpp>
-//#include <boost/algorithm/string/replace.hpp>
-//
-//#include <boost/uuid/uuid.hpp>
-//#include <boost/uuid/uuid_io.hpp>
-//#include <boost/uuid/uuid_generators.hpp>
+#ifdef USE_BOOST
+#include <boost/unordered/unordered_map.hpp>
+#include <boost/smart_ptr/shared_ptr.hpp>
+#include <boost/unordered/unordered_map.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/replace.hpp>
+
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+
+using namespace boost;
+
+
+
+
+
+#else
+
+#include "ABLString.h"
+#include <cctype>
+
+#endif
+
 
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
@@ -970,9 +988,7 @@ extern "C"
 #include <libswresample/swresample.h>
 }
 using namespace std;
-//using namespace boost;
 using namespace rapidjson;
-
 typedef list<int> LogFileVector;
 
 #define SAFE_ARRAY_DELETE(x) if( x != NULL ) { delete[] x; x = NULL; }

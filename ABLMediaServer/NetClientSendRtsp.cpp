@@ -14,11 +14,18 @@ E-Mail  79941308@qq.com
 
 #include "netBase64.h"
 #include "Base64.hh"
-
+#ifdef USE_BOOST
+uint64_t                                     CNetClientSendRtsp::Session = 1000;
+extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
+extern boost::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szURL, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
+extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
+#else
 uint64_t                                     CNetClientSendRtsp::Session = 1000;
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 extern std::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szURL, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
 extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
+#endif
+
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
@@ -729,8 +736,11 @@ void  CNetClientSendRtsp::InputRtspData(unsigned char* pRecvData, int nDataLengt
 	else if (memcmp(data_, "RTSP/1.0 200", 12) == 0 && nRtspProcessStep == RtspProcessStep_OPTIONS && strstr((char*)pRecvData, "\r\n\r\n") != NULL)
 	{
 		RtspSDPContentStruct sdpContent;
-
-		std::shared_ptr<CMediaStreamSource> pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
+#ifdef USE_BOOST
+		boost::shared_ptr<CMediaStreamSource> pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
+#else
+		auto pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
+#endif	
 		if (pMediaSource == NULL)
 		{
 			WriteLog(Log_Debug, "CNetClientSendRtsp = %X ,媒体源 %s 不存在 , nClient = %llu ", this, m_szShareMediaURL,nClient);
@@ -809,7 +819,11 @@ void  CNetClientSendRtsp::InputRtspData(unsigned char* pRecvData, int nDataLengt
 	else if (memcmp(data_, "RTSP/1.0 200", 12) == 0 && nRtspProcessStep == RtspProcessStep_RECORD && strstr((char*)pRecvData, "\r\n\r\n") != NULL)
 	{
 		WriteLog(Log_Debug, "收到 RECORD 回复命令，rtsp交互完毕 nClient = %llu ", nClient);
-		std::shared_ptr<CMediaStreamSource> pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
+#ifdef USE_BOOST
+		boost::shared_ptr<CMediaStreamSource> pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
+#else
+		auto pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
+#endif	
 		if (pMediaSource == NULL )
 		{
 			WriteLog(Log_Debug, "CNetClientSendRtsp = %X nClient = %llu ,不存在媒体源 %s", this, nClient, m_szShareMediaURL);
@@ -1168,7 +1182,12 @@ void  CNetClientSendRtsp::FindVideoAudioInSDP()
 		return;
 
 	strcpy(szTemp, szRtspContentSDP);
+
+#ifdef USE_BOOST
+	to_lower(szTemp);
+#else
 	ABL::StrToLwr(szTemp);
+#endif
 	string strSDP = szTemp;
 	string strTraceID;
 	char   szTempTraceID[512] = { 0 };

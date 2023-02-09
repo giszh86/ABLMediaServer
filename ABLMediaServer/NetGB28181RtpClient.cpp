@@ -10,18 +10,33 @@ E-Mail  79941308@qq.com
 
 #include "stdafx.h"
 #include "NetGB28181RtpClient.h"
+#ifdef USE_BOOST
+extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
+extern boost::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
+extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
+extern bool                                  DeleteMediaStreamSource(char* szURL);
+extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 
+extern CMediaSendThreadPool* pMediaSendThreadPool;
+extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
+extern char                                  ABL_MediaSeverRunPath[256]; //当前路径
+extern boost::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
+extern MediaServerPort                       ABL_MediaServerPort;
+
+#else
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 extern std::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
 extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 
-extern CMediaSendThreadPool*                 pMediaSendThreadPool;
+extern CMediaSendThreadPool* pMediaSendThreadPool;
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
 extern char                                  ABL_MediaSeverRunPath[256]; //当前路径
 extern std::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
 extern MediaServerPort                       ABL_MediaServerPort;
+
+#endif
 
 void PS_MUX_CALL_METHOD GB28181_Send_mux_callback(_ps_mux_cb* cb)
 {
@@ -146,8 +161,12 @@ CNetGB28181RtpClient::CNetGB28181RtpClient(NETHANDLE hServer, NETHANDLE hClient,
 
 	if (nPort == 0) 
 	{//作为udp 使用，当为tcp时， 在SendFirstRequst() 这函数调用 
-		
-		std::shared_ptr<CMediaStreamSource> pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
+#ifdef USE_BOOST
+		boost::shared_ptr<CMediaStreamSource> pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
+#else
+		auto pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
+#endif
+	
 		if (pMediaSource != NULL)
 		{
 			memcpy((char*)&mediaCodecInfo,(char*)&pMediaSource->m_mediaCodecInfo, sizeof(MediaCodecInfo));
@@ -360,8 +379,12 @@ int CNetGB28181RtpClient::SendFirstRequst()
 		sprintf(szResponseBody, "{\"code\":0,\"port\":%d,\"memo\":\"success\",\"key\":%llu}", nReturnPort, nClient);
 		ResponseHttp(nClient_http, szResponseBody, false);
 	}
+#ifdef USE_BOOST
+	boost::shared_ptr<CMediaStreamSource> pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
+#else
+	auto pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
+#endif
 
-	std::shared_ptr<CMediaStreamSource> pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
 	if (pMediaSource != NULL)
 	{
 		memcpy((char*)&mediaCodecInfo, (char*)&pMediaSource->m_mediaCodecInfo, sizeof(MediaCodecInfo));

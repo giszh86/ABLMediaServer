@@ -10,7 +10,22 @@ E-Mail  79941308@qq.com
 
 #include "stdafx.h"
 #include "NetClientSnap.h"
+#ifdef USE_BOOST
+extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
+extern boost::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
+extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
+extern bool                                  DeleteMediaStreamSource(char* szURL);
+extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
+extern boost::shared_ptr<CPictureFileSource> GetPictureFileSource(char* szShareURL, bool bLock);
 
+extern CMediaSendThreadPool* pMediaSendThreadPool;
+extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
+extern char                                  ABL_MediaSeverRunPath[256]; //当前路径
+extern MediaServerPort                       ABL_MediaServerPort;
+extern boost::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
+extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
+int CNetClientSnap::nPictureNumber = 1;
+#else
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 extern std::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
 extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
@@ -18,13 +33,16 @@ extern bool                                  DeleteMediaStreamSource(char* szURL
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 extern std::shared_ptr<CPictureFileSource> GetPictureFileSource(char* szShareURL, bool bLock);
 
-extern CMediaSendThreadPool*                 pMediaSendThreadPool;
+extern CMediaSendThreadPool* pMediaSendThreadPool;
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
 extern char                                  ABL_MediaSeverRunPath[256]; //当前路径
-extern MediaServerPort                       ABL_MediaServerPort; 
+extern MediaServerPort                       ABL_MediaServerPort;
 extern std::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
 extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
-int CNetClientSnap::nPictureNumber           = 1;
+int CNetClientSnap::nPictureNumber = 1;
+#endif
+
+
 
 CNetClientSnap::CNetClientSnap(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort,char* szShareMediaURL)
 {
@@ -129,8 +147,12 @@ int CNetClientSnap::SendVideo()
 				nPictureNumber ++;
 				if (nPictureNumber > 99)
 					nPictureNumber = 1;
-
- 				std::shared_ptr<CPictureFileSource> pPicture = GetPictureFileSource(m_szShareMediaURL,true);
+#ifdef USE_BOOST
+				boost::shared_ptr<CPictureFileSource> pPicture = GetPictureFileSource(m_szShareMediaURL, true);
+#else
+				std::shared_ptr<CPictureFileSource> pPicture = GetPictureFileSource(m_szShareMediaURL, true);
+#endif
+ 			
 				if (pPicture)
 				{
 					sprintf(szPictureFileName, "%s%s", szPicturePath, szFileName);
@@ -148,7 +170,13 @@ int CNetClientSnap::SendVideo()
 					   }
 					   else
 					   {//直接返回图片
-						   std::shared_ptr<CNetRevcBase>  pHttpClient =  GetNetRevcBaseClient(nClient_http);
+#ifdef USE_BOOST
+
+						   boost::shared_ptr<CNetRevcBase>  pHttpClient = GetNetRevcBaseClient(nClient_http);
+#else
+
+						   auto  pHttpClient = GetNetRevcBaseClient(nClient_http);
+#endif
 						   if (pHttpClient != NULL)
 						   {
 							   CNetServerHTTP* httResponse = (CNetServerHTTP*) pHttpClient.get();
@@ -165,7 +193,12 @@ int CNetClientSnap::SendVideo()
 					   else
 					   {//从拷贝线程、发送线程移除
 						   bWaitIFrameFlag = true;//需要等等I帧
+#ifdef USE_BOOST
+						   boost::shared_ptr<CMediaStreamSource> pMediaSouce = GetMediaStreamSource(m_szShareMediaURL);
+#else
 						   std::shared_ptr<CMediaStreamSource> pMediaSouce = GetMediaStreamSource(m_szShareMediaURL);
+#endif
+			
 						   if (pMediaSouce)
 						   {//从拷贝线程，发送线程移除
 							   pMediaSouce->DeleteClientFromMap(nClient);
@@ -206,13 +239,24 @@ int CNetClientSnap::ProcessNetData()
 //发送第一个请求
 int CNetClientSnap::SendFirstRequst()
 {
-	std::shared_ptr<CMediaStreamSource> pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
+#ifdef USE_BOOST
+	boost::shared_ptr<CMediaStreamSource> pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
 	if (pMediaSource == NULL)
 	{
 		WriteLog(Log_Debug, "CNetClientSnap = %X nClient = %llu ,不存在媒体源 %s", this, nClient, m_szShareMediaURL);
 		pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
-		return -1 ;
+		return -1;
 	}
+#else
+	auto pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
+	if (pMediaSource == NULL)
+	{
+		WriteLog(Log_Debug, "CNetClientSnap = %X nClient = %llu ,不存在媒体源 %s", this, nClient, m_szShareMediaURL);
+		pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
+		return -1;
+	}
+#endif
+
 	bSnapSuccessFlag = false; //复位为尚未抓拍成功
 	nPrintTime = nCreateDateTime = GetTickCount64();//刷新时间
 	pMediaSendThreadPool->AddClientToThreadPool(nClient);

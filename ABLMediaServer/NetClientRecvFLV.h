@@ -6,14 +6,18 @@
 #include "flv-muxer.h"
 
 #include "MediaStreamSource.h"
+#ifdef USE_BOOST
+#include <boost/unordered/unordered_map.hpp>
+#include <boost/smart_ptr/shared_ptr.hpp>
+#include <boost/unordered/unordered_map.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/algorithm/string.hpp>
 
-//#include <boost/unordered/unordered_map.hpp>
-//#include <boost/smart_ptr/shared_ptr.hpp>
-//#include <boost/unordered/unordered_map.hpp>
-//#include <boost/make_shared.hpp>
-//#include <boost/algorithm/string.hpp>
-//
-//using namespace boost;
+using namespace boost;
+#else
+
+#endif
+
 
 //#define          SaveNetDataToFlvFile          1 
 //#define         WriteHTTPFlvToEsFileFlag       1 
@@ -58,8 +62,12 @@ public:
    flv_demuxer_t*               flvDemuxer;
    char                         szURL[512];
    char                         szRequestFLVFile[512];
-
+#ifdef USE_BOOST
+   boost::shared_ptr<CMediaStreamSource> pMediaSource;
+#else
    std::shared_ptr<CMediaStreamSource> pMediaSource;
+#endif
+ 
    volatile bool                         bDeleteRtmpPushH265Flag; //因为推rtmp265被删除标志 
 
 #ifdef  SaveNetDataToFlvFile

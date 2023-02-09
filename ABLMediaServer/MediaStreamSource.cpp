@@ -8,20 +8,36 @@ E-Mail  79941308@qq.com
 */
 #include "stdafx.h"
 #include "MediaStreamSource.h"
-
+#ifdef USE_BOOST
+extern boost::shared_ptr<CNetRevcBase> GetNetRevcBaseClient(NETHANDLE CltHandle);
+extern boost::shared_ptr<CNetRevcBase> GetNetRevcBaseClientNoLock(NETHANDLE CltHandle);
+extern bool                            DeleteNetRevcBaseClient(NETHANDLE CltHandle);
+extern CMediaSendThreadPool* pMediaSendThreadPool;
+extern CMediaFifo                      pDisconnectBaseNetFifo; //清理断裂的链接 
+extern MediaServerPort                 ABL_MediaServerPort;
+extern char                            ABL_wwwMediaPath[256]; //www 子路径
+extern char                            ABL_MediaSeverRunPath[256]; //当前路径
+extern int64_t                         nTestRtmpPushID;
+extern boost::shared_ptr<CNetRevcBase> CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
+extern boost::shared_ptr<CRecordFileSource>  CreateRecordFileSource(char* app, char* stream);
+extern uint64_t                        GetCurrentSecond();
+extern boost::shared_ptr<CPictureFileSource> CreatePictureFileSource(char* app, char* stream);
+#else
 extern std::shared_ptr<CNetRevcBase> GetNetRevcBaseClient(NETHANDLE CltHandle);
 extern std::shared_ptr<CNetRevcBase> GetNetRevcBaseClientNoLock(NETHANDLE CltHandle);
 extern bool                            DeleteNetRevcBaseClient(NETHANDLE CltHandle);
-extern CMediaSendThreadPool*           pMediaSendThreadPool;
+extern CMediaSendThreadPool* pMediaSendThreadPool;
 extern CMediaFifo                      pDisconnectBaseNetFifo; //清理断裂的链接 
 extern MediaServerPort                 ABL_MediaServerPort;
-extern char                            ABL_wwwMediaPath[256] ; //www 子路径
+extern char                            ABL_wwwMediaPath[256]; //www 子路径
 extern char                            ABL_MediaSeverRunPath[256]; //当前路径
 extern int64_t                         nTestRtmpPushID;
 extern std::shared_ptr<CNetRevcBase> CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
 extern std::shared_ptr<CRecordFileSource>  CreateRecordFileSource(char* app, char* stream);
 extern uint64_t                        GetCurrentSecond();
 extern std::shared_ptr<CPictureFileSource> CreatePictureFileSource(char* app, char* stream);
+#endif
+
 int                                    CMediaStreamSource::nConvertObjectCount = 0;
 extern bool 	                       ABL_bCudaFlag ;
 extern int                             ABL_nCudaCount ;
@@ -367,8 +383,12 @@ CMediaStreamSource::~CMediaStreamSource()
 	if (enable_mp4 && recordMP4 > 0)
 		pDisconnectBaseNetFifo.push((unsigned char*)&recordMP4, sizeof(recordMP4));
 
+#ifdef USE_BOOST
+	boost::shared_ptr<CNetRevcBase> pClient = GetNetRevcBaseClientNoLock(nClient);
+#else
+	auto pClient = GetNetRevcBaseClientNoLock(nClient);
+#endif
 	//把媒体源 提供者 加入删除链表 
-	std::shared_ptr<CNetRevcBase> pClient = GetNetRevcBaseClientNoLock(nClient);
 	if (pClient)
 	{
 		if (pClient->netBaseNetType == NetBaseNetType_addStreamProxyControl || pClient->netBaseNetType == NetBaseNetType_addPushProxyControl)
@@ -1193,7 +1213,12 @@ bool CMediaStreamSource::PushVideo(unsigned char* szVideo, int nLength, char* sz
 		}
  
  		recordMP4 = XHNetSDK_GenerateIdentifier();
+#ifdef USE_BOOST
+		boost::shared_ptr<CNetRevcBase> mp4Client = NULL;
+#else
 		std::shared_ptr<CNetRevcBase> mp4Client = NULL;
+#endif
+	
 		if(ABL_MediaServerPort.videoFileFormat == 1)//fmp4
 		   mp4Client = CreateNetRevcBaseClient(NetBaseNetType_RecordFile_FMP4, 0, recordMP4, "", 0, m_szURL);
 		else if(ABL_MediaServerPort.videoFileFormat == 2)//mp4
@@ -1276,7 +1301,11 @@ bool CMediaStreamSource::PushVideo(unsigned char* szVideo, int nLength, char* sz
 	uint64_t               nClient;
 	for (it = mediaSendMap.begin(); it != mediaSendMap.end(); )
 	{
-		std::shared_ptr<CNetRevcBase> pClient = GetNetRevcBaseClient((*it).second);
+#ifdef USE_BOOST
+		boost::shared_ptr<CNetRevcBase> pClient = GetNetRevcBaseClient((*it).second);
+#else
+		auto pClient = GetNetRevcBaseClient((*it).second);
+#endif
 		if (pClient != NULL)
 		{
 			pClient->mediaCodecInfo.nVideoFrameRate = m_mediaCodecInfo.nVideoFrameRate;
@@ -1502,7 +1531,11 @@ bool CMediaStreamSource::PushAudio(unsigned char* szAudio, int nLength, char* sz
 	uint64_t   nClient;
 	for (it = mediaSendMap.begin(); it != mediaSendMap.end();)
 	{
-		std::shared_ptr<CNetRevcBase> pClient = GetNetRevcBaseClient((*it).second);
+#ifdef USE_BOOST
+		boost::shared_ptr<CNetRevcBase> pClient = GetNetRevcBaseClient((*it).second);
+#else
+		auto pClient = GetNetRevcBaseClient((*it).second);
+#endif	
 		if (pClient != NULL)
 		{
 			//把音频编码信息拷贝给分发对象

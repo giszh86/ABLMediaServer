@@ -1,11 +1,19 @@
 #ifndef _NetBaseThreadPool_H
 #define _NetBaseThreadPool_H
 
+
+#ifdef USE_BOOST
+#include <boost/lockfree/queue.hpp>
+#include <condition_variable> 
+#define   MaxNetHandleQueueCount    512 
+typedef boost::unordered_map<NETHANDLE, NETHANDLE>   ClientProcessThreadMap;//固定客户端的线程序号 
+#else
 #include <queue>
 #include <condition_variable> 
-
 #define   MaxNetHandleQueueCount    512 
 typedef map<NETHANDLE, NETHANDLE>   ClientProcessThreadMap;//固定客户端的线程序号 
+#endif
+
 
 class CNetBaseThreadPool
 {
@@ -25,7 +33,12 @@ private:
 	std::mutex              threadLock;
 	ClientProcessThreadMap  clientThreadMap;
     uint64_t              nTrueNetThreadPoolCount; 
-    std::queue<uint64_t> m_NetHandleQueue[MaxNetHandleQueueCount];
+#ifdef USE_BOOST
+	boost::lockfree::queue<uint64_t, boost::lockfree::capacity<2048>> m_NetHandleQueue[MaxNetHandleQueueCount];
+#else
+	std::queue<uint64_t> m_NetHandleQueue[MaxNetHandleQueueCount];
+#endif
+
     volatile bool         bExitProcessThreadFlag[MaxNetHandleQueueCount];
     volatile bool         bCreateThreadFlag;
 #ifdef  OS_System_Windows

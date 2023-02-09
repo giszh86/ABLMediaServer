@@ -11,7 +11,20 @@ E-Mail  79941308@qq.com
 
 #include "stdafx.h"
 #include "NetClientHttp.h"
+#ifdef USE_BOOST
+extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
+extern boost::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
+extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
+extern bool                                  DeleteMediaStreamSource(char* szURL);
+extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 
+extern CMediaFifo                            pDisconnectBaseNetFifo; //ÇåÀí¶ÏÁÑµÄÁ´½Ó 
+extern char                                  ABL_MediaSeverRunPath[256]; //µ±Ç°Â·¾¶
+extern boost::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
+extern MediaServerPort                       ABL_MediaServerPort;
+extern CNetBaseThreadPool* MessageSendThreadPool;//ÏûÏ¢·¢ËÍÏß³Ì³Ø
+extern CMediaFifo                            pMessageNoticeFifo; //ÏûÏ¢Í¨ÖªFIFO
+#else
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 extern std::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
 extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
@@ -22,8 +35,11 @@ extern CMediaFifo                            pDisconnectBaseNetFifo; //ÇåÀí¶ÏÁÑµ
 extern char                                  ABL_MediaSeverRunPath[256]; //µ±Ç°Â·¾¶
 extern std::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
 extern MediaServerPort                       ABL_MediaServerPort;
-extern CNetBaseThreadPool*                   MessageSendThreadPool;//ÏûÏ¢·¢ËÍÏß³Ì³Ø
+extern CNetBaseThreadPool* MessageSendThreadPool;//ÏûÏ¢·¢ËÍÏß³Ì³Ø
 extern CMediaFifo                            pMessageNoticeFifo; //ÏûÏ¢Í¨ÖªFIFO
+#endif
+
+
 
 extern void LIBNET_CALLMETHOD	             onconnect(NETHANDLE clihandle,uint8_t result);
 extern void LIBNET_CALLMETHOD                onread(NETHANDLE srvhandle,NETHANDLE clihandle,uint8_t* data,uint32_t datasize,void* address);

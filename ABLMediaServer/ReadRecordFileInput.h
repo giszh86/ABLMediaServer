@@ -9,14 +9,18 @@
 #include "opus-head.h"
 #include "webm-vpx.h"
 #include "aom-av1.h"
+#ifdef USE_BOOST
+#include <boost/unordered/unordered_map.hpp>
+#include <boost/smart_ptr/shared_ptr.hpp>
+#include <boost/unordered/unordered_map.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/algorithm/string.hpp>
 
-//#include <boost/unordered/unordered_map.hpp>
-//#include <boost/smart_ptr/shared_ptr.hpp>
-//#include <boost/unordered/unordered_map.hpp>
-//#include <boost/make_shared.hpp>
-//#include <boost/algorithm/string.hpp>
-//
-//using namespace boost;
+using namespace boost;
+#else
+
+#endif
+
 
 #define     ReadRecordFileInput_MaxPacketCount     1024*1024*3 
 
@@ -49,7 +53,12 @@ public:
    bool                 UpdatePauseFlag(bool bFlag);
 
    uint64_t              nDownloadFrameCount;
+#ifdef USE_BOOST
+   boost::shared_ptr<CMediaStreamSource> pMediaSource;
+#else
    std::shared_ptr<CMediaStreamSource> pMediaSource;
+#endif
+
    int                   nRetLength;
    std::mutex            readRecordFileInputLock;
    unsigned char         s_buffer[ReadRecordFileInput_MaxPacketCount];

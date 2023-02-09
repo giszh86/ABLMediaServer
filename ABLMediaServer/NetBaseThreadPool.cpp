@@ -10,8 +10,12 @@ E-Mail  79941308@qq.com
 
 #include "stdafx.h"
 #include "NetBaseThreadPool.h"
-
+#ifdef USE_BOOST
+extern boost::shared_ptr<CNetRevcBase> GetNetRevcBaseClient(NETHANDLE CltHandle);
+#else
 extern std::shared_ptr<CNetRevcBase> GetNetRevcBaseClient(NETHANDLE CltHandle);
+#endif
+
 
 CNetBaseThreadPool::CNetBaseThreadPool(int nThreadCount)
 {
@@ -66,11 +70,30 @@ void CNetBaseThreadPool::ProcessFunc()
 	int nCurrentThreadID = nGetCurrentThreadOrder;
  	bExitProcessThreadFlag[nCurrentThreadID] = false;
 	uint64_t nClientID;
-
 	bCreateThreadFlag = true; //创建线程完毕
 	while (bRunFlag)
 	{
-		if (!m_NetHandleQueue[nCurrentThreadID].empty()&& bRunFlag)
+#ifdef USE_BOOST
+		if (m_NetHandleQueue[nCurrentThreadID].pop(nClientID) && bRunFlag)
+		{
+			boost::shared_ptr<CNetRevcBase> pClient = GetNetRevcBaseClient(nClientID);
+			if (pClient != NULL)
+			{
+				pClient->ProcessNetData();//任务执行
+			}
+		}
+		else
+		{
+			if (bRunFlag)
+			{
+				std::unique_lock<std::mutex> lck(mtx[nCurrentThreadID]);
+				cv[nCurrentThreadID].wait(lck);
+			}
+			else
+				break;
+		}
+#else
+		if (!m_NetHandleQueue[nCurrentThreadID].empty() && bRunFlag)
 		{
 			nClientID = m_NetHandleQueue[nCurrentThreadID].front();
 			m_NetHandleQueue[nCurrentThreadID].pop();
@@ -88,9 +111,12 @@ void CNetBaseThreadPool::ProcessFunc()
 				cv[nCurrentThreadID].wait(lck);
 			}
 			else
-				break;		
+				break;
 		}
+#endif
 
+
+	
  	}
 	bExitProcessThreadFlag[nCurrentThreadID] = true;
 }

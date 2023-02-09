@@ -1,13 +1,17 @@
 #ifndef _NetGB28181RtpClient_H
 #define _NetGB28181RtpClient_H
+#ifdef USE_BOOST
+#include <boost/unordered/unordered_map.hpp>
+#include <boost/smart_ptr/shared_ptr.hpp>
+#include <boost/unordered/unordered_map.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/algorithm/string.hpp>
 
-//#include <boost/unordered/unordered_map.hpp>
-//#include <boost/smart_ptr/shared_ptr.hpp>
-//#include <boost/unordered/unordered_map.hpp>
-//#include <boost/make_shared.hpp>
-//#include <boost/algorithm/string.hpp>
-//
-//using namespace boost;
+using namespace boost;
+#else
+
+#endif
+
 
 #define  MaxGB28181RtpSendVideoMediaBufferLength  1024*64 
 #define  GB28181VideoStartTimestampFlag           0xEFEFEFEF   //视频开始时间戳 

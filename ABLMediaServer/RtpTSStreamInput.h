@@ -1,13 +1,17 @@
 #ifndef _RtpTSStreamInput_H
 #define _RtpTSStreamInput_H
+#ifdef USE_BOOST
+#include <boost/unordered/unordered_map.hpp>
+#include <boost/smart_ptr/shared_ptr.hpp>
+#include <boost/unordered/unordered_map.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/algorithm/string.hpp>
 
-//#include <boost/unordered/unordered_map.hpp>
-//#include <boost/smart_ptr/shared_ptr.hpp>
-//#include <boost/unordered/unordered_map.hpp>
-//#include <boost/make_shared.hpp>
-//#include <boost/algorithm/string.hpp>
-//
-//using namespace boost;
+using namespace boost;
+#else
+
+#endif
+
 
 class CRtpTSStreamInput : public CNetRevcBase
 {
@@ -28,7 +32,12 @@ public:
    mpeg4_aac_t                           aacInfo;
    std::mutex                            tsRecvLock;
    ts_demuxer_t                          *ts;
+#ifdef USE_BOOST
+   boost::shared_ptr<CMediaStreamSource> pMediaSource;
+#else
    std::shared_ptr<CMediaStreamSource> pMediaSource;
+#endif
+
    _rtp_header                           rtpHead;
 
 };
