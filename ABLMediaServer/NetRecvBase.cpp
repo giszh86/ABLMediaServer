@@ -941,7 +941,8 @@ std::shared_ptr<CMediaStreamSource>   CNetRevcBase::CreateReplayClient(char* szR
 		while (!pTempSource->bUpdateVideoSpeed)
 		{
 			nWaitCount++;
-			Sleep(200);
+			//Sleep(200);
+			std::this_thread::sleep_for(std::chrono::milliseconds(200));
 			if (nWaitCount >= 10)
 				break;
 		}

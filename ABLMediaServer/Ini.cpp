@@ -150,9 +150,16 @@ INI_RES CIni::GetKey(const char* mAttr, const char* cAttr, char* pValue)
 
 	string sTemp = mKey[cAttr];
 
+
+#ifdef USE_BOOST
+
 	//去掉空格 
 	boost::trim(sTemp);
-
+#else
+	
+	//去掉空格 
+	ABL::trim(sTemp);
+#endif
 	strcpy(pValue, sTemp.c_str());
 
 	return INI_SUCCESS;

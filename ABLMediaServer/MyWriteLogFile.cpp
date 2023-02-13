@@ -1,5 +1,5 @@
 #include <mutex>
-#include "Stdafx.h"
+#include "stdafx.h"
 #include "WriteAVFile.h"
 #include "MyWriteLogFile.h"
 

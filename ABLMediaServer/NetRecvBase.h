@@ -6,7 +6,7 @@
 #include "Unit_ReadSPS.h"
 #include "MediaStreamSource.h"
 #include "AACEncode.h"
-
+#include <memory>
 #define CalcMaxVideoFrameSpeed         20  //计算视频帧速度次数
 #define Send_ImageFile_MaxPacketCount  1024*32
 

@@ -1,6 +1,7 @@
-#include "stdafx.h"
-#include "ABLString.h"
 
+#include "ABLString.h"
+#include <thread>
+#include <algorithm>
 namespace ABL {
 
 	std::string& trim(std::string& s)
@@ -27,8 +28,8 @@ namespace ABL {
 		{
 			return strBuf.size();
 		}
-
-		for (;; Sleep(1))
+	
+		for (;;)
 		{
 			char* pFind = strstr(pStart, (char*)strDel.c_str());
 			if (NULL == pFind)
@@ -42,6 +43,7 @@ namespace ABL {
 			{
 				break;
 			}
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		}
 		strBuf = strReturn;
 		return strBuf.size();

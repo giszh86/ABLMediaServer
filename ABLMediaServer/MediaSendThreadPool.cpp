@@ -51,7 +51,8 @@ CMediaSendThreadPool::~CMediaSendThreadPool()
 	{
 		cv[i].notify_one();
 		while (!bExitProcessThreadFlag[i])
-	  		Sleep(50);
+			std::this_thread::sleep_for(std::chrono::milliseconds(50));
+	  	//	Sleep(50);
 		if (hProcessHandle[i] != NULL)
 		{
 #ifdef      OS_System_Windows
@@ -117,7 +118,8 @@ bool  CMediaSendThreadPool::AddClientToThreadPool(uint64_t nClient)
 		pthread_create(&hProcessHandle[nCreateThreadProcessCount], NULL, OnProcessThread, (void*)this);
 #endif
 		while (bCreateThreadFlag == false)
-			Sleep(5);
+			std::this_thread::sleep_for(std::chrono::milliseconds(5));
+		//	Sleep(5);
 
 		threadContainClient[nCreateThreadProcessCount].nThreadOrder = nCreateThreadProcessCount; //当前线程序号
 		threadContainClient[nCreateThreadProcessCount].nTrueClientsCount = 1;//当前线程所包含的客户端总数 
@@ -210,9 +212,11 @@ bool  CMediaSendThreadPool::DeleteClientToThreadPool(uint64_t nClient)
 void CMediaSendThreadPool::MySleep(int nSleepTime)
 {
 	if (nSleepTime <= 0)
-		Sleep(5);
+		std::this_thread::sleep_for(std::chrono::milliseconds(50));
+		//Sleep(5);
 	else
-		Sleep(nSleepTime);
+		std::this_thread::sleep_for(std::chrono::milliseconds(nSleepTime));
+		//Sleep(nSleepTime);
 }
 
 void CMediaSendThreadPool::ProcessFunc()
@@ -242,7 +246,8 @@ void CMediaSendThreadPool::ProcessFunc()
 					   {//用于HLS视频，音频均匀塞入媒体源、以后还可以支持别的没有视频、音频发送的类
 						   pClient->SendVideo();
 						   pClient->SendAudio();
-						   Sleep(5);
+						   std::this_thread::sleep_for(std::chrono::milliseconds(5));
+						  // Sleep(5);
  					   }
 					   else
 					   {
@@ -252,12 +257,14 @@ void CMediaSendThreadPool::ProcessFunc()
 						   {
 							   if (threadContainClient[nCurrentThreadID].nTrueClientsCount == 1)
 							   {//如果该线程只有1个连接，可以等待5毫秒
-								   Sleep(5);
+								   std::this_thread::sleep_for(std::chrono::milliseconds(5));
+								 //  Sleep(5);
 								   continue;
 							   }
 							   else //如果该线程超过2个连接，本次循环不能等待时间 ，因为还需要发送下一个链接的数据 
 							   {
-								   Sleep(5); //防止死循环
+								  // Sleep(5); //防止死循环
+								   std::this_thread::sleep_for(std::chrono::milliseconds(5));
 								   continue;
 							   }
 						   }

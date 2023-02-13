@@ -532,7 +532,8 @@ int CNetServerHTTP_MP4::ProcessNetData()
 			{
 				if (nHttpDownloadSpeed != 10)
 				{
-				   Sleep(1);
+				 //  Sleep(1);
+				   std::this_thread::sleep_for(std::chrono::milliseconds(1));
 				}
  			}
   		   RecordReplayThreadPool->InsertIntoTask(nClient); //Í¶µİÈÎÎñ

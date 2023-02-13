@@ -511,7 +511,9 @@ int32_t  CNetClientRecvRtsp::XHNetSDKRead(NETHANDLE clihandle, uint8_t* buffer, 
 			bExitProcessFlagArray[0] = true;
 			return 0;
 		}
-		Sleep(20);
+		std::this_thread::sleep_for(std::chrono::milliseconds(20));
+		
+		//Sleep(20);
 		
 		nWaitCount ++;
 		if (nWaitCount >= 100 * 5)

@@ -1,5 +1,7 @@
 #pragma once
-
+#include <stdio.h>
+#include <string>
+#include <cstring>
 namespace ABL {
 
 	std::string& trim(std::string& s);
