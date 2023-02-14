@@ -1,29 +1,163 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="..\ABLMediaServer\AACEncode.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\ABLMediaServer\ABLMediaServer.cpp">
+    <ClCompile Include="..\ABLMediaServer\main.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\ABLMediaServer\ABLogFile.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\ABLMediaServer\ABLogSDK.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\ABLMediaServer\ABLSipParse.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\ABLMediaServer\ABLString.cpp">
+    <ClCompile Include="..\ABLMediaServer\CNetRtmpServerRecv.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\Ini.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\DigestAuthentication.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\LCbase64.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\MediaFifo.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\MediaSendThreadPool.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\MediaStreamSource.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\netBase64.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\NetBaseThreadPool.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\NetClientAddStreamProxy.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\NetClientRecvHttpHLS.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\NetClientRecvFLV.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\NetClientSendRtmp.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\NetClientSendRtsp.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\NetGB28181RtpClient.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\NetGB28181RtpServer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\NetRecvBase.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\NetRtspServer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\NetServerHLS.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\NetServerHTTP.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\NetServerHTTP_FLV.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\ourMD5.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\RtcpPacket.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\strDup.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\SHA1.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\NetServerWS_FLV.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\Unit_ReadSPS.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\NetServerHTTP_MP4.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\StreamRecordFMP4.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\StreamRecordMP4.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\RecordFileSource.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\g711.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\g711_table.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\AACEncode.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\NetClientHttp.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\VideoDecode.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\PictureFileSource.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\NetClientSnap.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\ABLMediaServer\AVFrameSWS.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\ABLMediaServer\Base64.cpp">
+    <ClCompile Include="..\ABLMediaServer\FFVideoDecode.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\FFVideoEncode.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\NetServerRecvRtpTS_PS.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\RtpPSStreamInput.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\RtpTSStreamInput.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\NetGB28181Listen.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\ABLString.cpp">
+      <Filter>include</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\NetClientRecvRtsp.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\ReadRecordFileInput.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\NetClientRecvRtmp.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\NetClientAddPushProxy.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
@@ -34,31 +168,309 @@
     <Filter Include="src">
       <UniqueIdentifier>{64ef8c58-33a0-4508-abcd-c04ab33afe2f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="lib">
+      <UniqueIdentifier>{aabf6387-ffad-40ed-9296-cf1a732de4bd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3rd">
+      <UniqueIdentifier>{db2811fd-3510-44ea-a443-d909578ad706}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3rd\rapidjson">
+      <UniqueIdentifier>{1c0fb9b7-c434-4406-9e26-52ee5c0d3a6f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3rd\rapidjson\error">
+      <UniqueIdentifier>{a086699e-9d72-487f-b062-5cbbc13ba0ee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3rd\rapidjson\internal">
+      <UniqueIdentifier>{2bc4886b-d51a-47ff-8224-411ba52aa3ca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3rd\rapidjson\msinttypes">
+      <UniqueIdentifier>{61621fad-7ad9-410c-8ec6-232151552a1d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3rd\ffmpeg">
+      <UniqueIdentifier>{b1386b3b-e766-414c-8857-7b90cb57b721}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="rtspMD5">
+      <UniqueIdentifier>{d76a341e-c305-4577-98af-2f88369f7607}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\ABLMediaServer\AACEncode.h">
-      <Filter>include</Filter>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\allocators.h">
+      <Filter>3rd\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\cursorstreamwrapper.h">
+      <Filter>3rd\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\document.h">
+      <Filter>3rd\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\encodedstream.h">
+      <Filter>3rd\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\encodings.h">
+      <Filter>3rd\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\filereadstream.h">
+      <Filter>3rd\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\filewritestream.h">
+      <Filter>3rd\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\fwd.h">
+      <Filter>3rd\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\istreamwrapper.h">
+      <Filter>3rd\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\memorybuffer.h">
+      <Filter>3rd\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\memorystream.h">
+      <Filter>3rd\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\ostreamwrapper.h">
+      <Filter>3rd\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\pointer.h">
+      <Filter>3rd\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\prettywriter.h">
+      <Filter>3rd\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\rapidjson.h">
+      <Filter>3rd\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\reader.h">
+      <Filter>3rd\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\schema.h">
+      <Filter>3rd\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\stream.h">
+      <Filter>3rd\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\stringbuffer.h">
+      <Filter>3rd\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\writer.h">
+      <Filter>3rd\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\error\en.h">
+      <Filter>3rd\rapidjson\error</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\error\error.h">
+      <Filter>3rd\rapidjson\error</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\internal\biginteger.h">
+      <Filter>3rd\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\internal\diyfp.h">
+      <Filter>3rd\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\internal\dtoa.h">
+      <Filter>3rd\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\internal\ieee754.h">
+      <Filter>3rd\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\internal\itoa.h">
+      <Filter>3rd\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\internal\meta.h">
+      <Filter>3rd\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\internal\pow10.h">
+      <Filter>3rd\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\internal\regex.h">
+      <Filter>3rd\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\internal\stack.h">
+      <Filter>3rd\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\internal\strfunc.h">
+      <Filter>3rd\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\internal\strtod.h">
+      <Filter>3rd\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\internal\swap.h">
+      <Filter>3rd\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\msinttypes\inttypes.h">
+      <Filter>3rd\rapidjson\msinttypes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rapidjson-master\include\rapidjson\msinttypes\stdint.h">
+      <Filter>3rd\rapidjson\msinttypes</Filter>
     </ClInclude>
     <ClInclude Include="..\ABLMediaServer\ABLogFile.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\ABLMediaServer\ABLogSDK.h">
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\ABLMediaServer\ABLSipParse.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\ABLMediaServer\ABLString.h">
+    <ClInclude Include="..\ABLMediaServer\Ini.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\DigestAuthentication.hh">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\LCbase64.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\MediaFifo.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\MediaSendThreadPool.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\MediaStreamSource.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\netBase64.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\NetBaseThreadPool.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\NetClientAddStreamProxy.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\NetClientRecvHttpHLS.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\NetClientRecvFLV.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\NetClientSendRtsp.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\NetGB28181RtpClient.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\NetGB28181RtpServer.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\NetRecvBase.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\NetRtspServer.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\NetServerHLS.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\NetServerHTTP.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\NetServerHTTP_FLV.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\ourMD5.hh">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\RtcpPacket.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\strDup.hh">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\SHA1.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\NetServerWS_FLV.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\NetServerHTTP_MP4.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\StreamRecordMP4.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\RecordFileSource.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\g711.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\g711_table.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\AACEncode.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\NetClientHttp.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\VideoDecode.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\PictureFileSource.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\NetClientSnap.h">
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\ABLMediaServer\AVFrameSWS.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\ABLMediaServer\ConfigFile.h">
+    <ClInclude Include="..\ABLMediaServer\FFVideoEncode.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\ABLMediaServer\stdafx.h">
+    <ClInclude Include="..\ABLMediaServer\FFVideoDecode.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\NetServerRecvRtpTS_PS.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\RtpPSStreamInput.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\RtpTSStreamInput.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\NetGB28181Listen.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\ABLString.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\NetClientRecvRtsp.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\ReadRecordFileInput.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\NetClientRecvRtmp.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\NetClientAddPushProxy.h">
+      <Filter>include</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="..\bin\libdash.a">
+      <Filter>lib</Filter>
+    </Library>
+    <Library Include="..\bin\libflv.a">
+      <Filter>lib</Filter>
+    </Library>
+    <Library Include="..\bin\libhls.a">
+      <Filter>lib</Filter>
+    </Library>
+    <Library Include="..\bin\libmkv.a">
+      <Filter>lib</Filter>
+    </Library>
+    <Library Include="..\bin\libmov.a">
+      <Filter>lib</Filter>
+    </Library>
+    <Library Include="..\bin\libmpeg.a">
+      <Filter>lib</Filter>
+    </Library>
+    <Library Include="..\bin\librtmp.a">
+      <Filter>lib</Filter>
+    </Library>
+    <Library Include="..\bin\librtp.a">
+      <Filter>lib</Filter>
+    </Library>
   </ItemGroup>
 </Project>

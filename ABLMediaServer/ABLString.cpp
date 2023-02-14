@@ -2,8 +2,33 @@
 #include "ABLString.h"
 #include <thread>
 #include <algorithm>
+#include<ctype.h>
+
+
 namespace ABL {
 
+	char* strlwr(char* str)
+	{
+		if (str == NULL)
+			return NULL;
+
+		char* p = str;
+		while (*p != '\0')
+		{
+			if (*p >= 'A' && *p <= 'Z')
+				*p = (*p) + 0x20;
+			p++;
+		}
+		return str;
+	}
+
+	inline char* strupr_(char* str)
+	{
+		char* origin = str;
+		while (*str != '\0')
+			*str++ = toupper(*str);
+		return origin;
+	}
 	std::string& trim(std::string& s)
 	{
 		if (s.empty())
@@ -57,9 +82,9 @@ namespace ABL {
 		{
 			return "";
 		}
-
-		_strlwr_s((char*)strBuf.c_str(), strBuf.length() + 1);
-		return strBuf;
+		return strlwr((char*)strBuf.c_str());
+	//	_strlwr_s((char*)strBuf.c_str(), strBuf.length() + 1);
+	//	return strBuf;
 
 	}
 
@@ -101,6 +126,7 @@ namespace ABL {
 
 		return nCount;
 	}
+
 	bool is_digits(const std::string& str)
 	{
 		return std::all_of(str.begin(), str.end(), ::isdigit); // C++11
@@ -118,8 +144,8 @@ namespace ABL {
 		{
 			return "";
 		}
-
-		_strlwr_s((char*)strBuf.c_str(), strBuf.length() + 1);
+		return strlwr((char*)strBuf.c_str());
+	//	_strlwr_s((char*)strBuf.c_str(), strBuf.length() + 1);
 		return strBuf;
 	}
 	/*
@@ -134,9 +160,9 @@ namespace ABL {
 		{
 			return "";
 		}
-
-		_strupr_s((char*)strBuf.c_str(), strBuf.length() + 1);
-		return strBuf;
+		return strupr_((char*)strBuf.c_str());
+	//	_strupr_s((char*)strBuf.c_str(), strBuf.length() + 1);
+		//return strBuf;
 
 	}
 

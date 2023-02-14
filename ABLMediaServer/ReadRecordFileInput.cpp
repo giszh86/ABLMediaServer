@@ -407,7 +407,8 @@ int CReadRecordFileInput::ProcessNetData()
 
 	if (mov == NULL || m_bPauseFlag == true )
 	{
-		Sleep(2);
+		//Sleep(2);
+		std::this_thread::sleep_for(std::chrono::milliseconds(2));
 		mov_readerTime = GetTickCount64();
 		RecordReplayThreadPool->InsertIntoTask(nClient);
 		return -1;
@@ -426,9 +427,11 @@ int CReadRecordFileInput::ProcessNetData()
 				if (nReadVideoFrameCount % 25 == 0)
 				{
 					if (abs(m_dScaleValue - 8.0) <= 0.01)
-						Sleep(60);
+						std::this_thread::sleep_for(std::chrono::milliseconds(60));
+						//Sleep(60);
 					else
-						Sleep(30);
+						std::this_thread::sleep_for(std::chrono::milliseconds(30));
+						//Sleep(30);
 				}
 			}
 			else//录像下载
@@ -437,9 +440,11 @@ int CReadRecordFileInput::ProcessNetData()
 				if (nDownloadFrameCount % 10 == 0)
 				{
 				  if (abs(m_dScaleValue - 8.0) <= 0.01)
-					 Sleep(50);
+					  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+					 //Sleep(50);
 				  else if (abs(m_dScaleValue - 16.0) <= 0.01)
-					 Sleep(40);
+					  std::this_thread::sleep_for(std::chrono::milliseconds(40));
+					 //Sleep(40);
  				}
 			}
 		}
@@ -447,19 +452,23 @@ int CReadRecordFileInput::ProcessNetData()
 		{//rtsp录像下载
 			nDownloadFrameCount ++;
 			if(nDownloadFrameCount % 10 == 0)
-			   Sleep(35);
+				std::this_thread::sleep_for(std::chrono::milliseconds(35));
+				//Sleep(35);
  		}
 		else if (abs(m_dScaleValue - 1.0) <= 0.01)
 		{//普通的点播回放
 			if (((1000 / mediaCodecInfo.nVideoFrameRate) - 10) > 0)
-				Sleep((1000 / mediaCodecInfo.nVideoFrameRate) - 10);
+				std::this_thread::sleep_for(std::chrono::milliseconds((1000 / mediaCodecInfo.nVideoFrameRate) - 10));
+				//Sleep((1000 / mediaCodecInfo.nVideoFrameRate) - 10);
 			else
-				Sleep(10);
+				std::this_thread::sleep_for(std::chrono::milliseconds(10));
+				//Sleep(10);
 		}
 		else 
 		{//读取视频的时间尚未到，需要Sleep(2) ,否则CPU会狂跑
 			  if ( !(abs(m_dScaleValue - 8.0) <= 0.01 || abs(m_dScaleValue - 16.0) <= 0.01) )
-			    Sleep(2); //8倍速、16倍速，不需要Sleeep
+				  std::this_thread::sleep_for(std::chrono::milliseconds(2));
+			    //Sleep(2); //8倍速、16倍速，不需要Sleeep
  		}
  	}
 	else if (nAVType == AVType_Audio)  
