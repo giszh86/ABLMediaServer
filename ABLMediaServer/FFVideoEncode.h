@@ -15,15 +15,15 @@ public:
    bool             EncodecAVFrame(AVFrame* inAVFrame, unsigned char* pEncodecData, int* nOutLength);
 
    bool				ChangeVideoFilter(char *filterText, int fontSize, char *fontColor, float fontAlpha, int fontLeft, int fontTop); //add
-   char             m_szEncodeName[256];
-   AVPixelFormat    m_nAVPixel;
-   int              m_nWidth;
-   int              m_nHeight;
-   int              m_nFrameRate;
-   volatile  bool   m_bInitFlag;
-   int              got_picture ;
-   uint64_t         nFrameNumber;
-   int              ret;
+   char					m_szEncodeName[256];
+   AVPixelFormat		m_nAVPixel;
+   int					m_nWidth;
+   int					m_nHeight;
+   int					m_nFrameRate;
+   std::atomic<bool>    m_bInitFlag;
+   int					got_picture ;
+   uint64_t				nFrameNumber;
+   int					ret;
 
    AVCodecContext* pCodecCtx;
    AVCodec*        pCodec;
@@ -36,6 +36,7 @@ public:
    CFFVideoFilter  *videoFilter;  //新增水印类
 
    std::mutex      enable_Lock;
+
 };
 
 //Add by ZXT

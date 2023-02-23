@@ -21,6 +21,7 @@ CFFVideoEncode::CFFVideoEncode()
 {
 	m_bInitFlag = enableFilter = false;
 	videoFilter = NULL;
+
 	WriteLog(Log_Debug, "CFFVideoEncode 构造函数 = %X 创建编码器成功 line= %d ", this, __LINE__);
 }
 
@@ -76,8 +77,9 @@ bool CFFVideoEncode::StartEncode(char* szEncodeName, AVPixelFormat nAVPixel, int
 	 pCodecCtx->bit_rate = nEncodeByteRate * 1024 ;
 	 pCodecCtx->gop_size = 25;
 
-	 pCodecCtx->time_base.num = 1;
-	 pCodecCtx->time_base.den = m_nFrameRate;
+	 pCodecCtx->time_base = { 1, m_nFrameRate };
+	// pCodecCtx->time_base.num = 1;
+	 //pCodecCtx->time_base.den = m_nFrameRate;
 
 	 pCodecCtx->qmin = 10;
 	 pCodecCtx->qmax = 51;
@@ -96,7 +98,7 @@ bool CFFVideoEncode::StartEncode(char* szEncodeName, AVPixelFormat nAVPixel, int
 		 av_dict_set(&param, "tune", "zerolatency", 0);
 	 }
 	 if (pCodecCtx->codec_id == AV_CODEC_ID_HEVC) {
-		 av_dict_set(&param, "preset", "ultrafast", 0);
+		 av_opt_set(&param, "preset", "ultrafast", 0);
 		 av_dict_set(&param, "tune", "zerolatency", 0);
 	 }
 
