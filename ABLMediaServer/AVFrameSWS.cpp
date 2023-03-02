@@ -79,7 +79,7 @@ bool CAVFrameSWS::CreateAVFrameSws(bool bCreeateSrcFrame,AVPixelFormat nSrcImage
 
 	pFrameDest->width = nDstWidth;
 	pFrameDest->height = nDestHeight;
-	pFrameDest->format = AV_PIX_FMT_YUV420P;
+	pFrameDest->format = nDstImage;
 
 	bInitFlag = true;
 	return true;

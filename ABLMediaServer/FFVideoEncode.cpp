@@ -68,7 +68,7 @@ bool CFFVideoEncode::StartEncode(char* szEncodeName, AVPixelFormat nAVPixel, int
 		 printf("Can not allocate video codec context! \n");
 		 return false ;
 	 }
-
+	
 	 pCodecCtx->codec_id = AV_CODEC_ID_H264;
 	 pCodecCtx->codec_type = AVMEDIA_TYPE_VIDEO;
 	 pCodecCtx->pix_fmt = nAVPixel;// AV_PIX_FMT_NV12  AV_PIX_FMT_YUV420P;

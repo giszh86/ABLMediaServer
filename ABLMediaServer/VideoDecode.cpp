@@ -48,18 +48,17 @@ bool CVideoDecode::startDecode(char* szCodecName, int nWidth, int nHeight)
 	else if (strcmp(szCodecName, "H265") == 0)
 		pDCodec = avcodec_find_decoder(AV_CODEC_ID_H265);
 
-	packet = av_packet_alloc();
-	pDCodecCtx = avcodec_alloc_context3(pDCodec);
-	pDPicture = av_frame_alloc();
- 
+
+	pDCodecCtx = avcodec_alloc_context3(pDCodec); 
  	pDCodecCtx->slice_count = 4;
 	pDCodecCtx->thread_count = 4;
-
 	if (avcodec_open2(pDCodecCtx, pDCodec, NULL) < 0)
 	{
 		WriteLog(Log_Debug, "CVideoDecode = %X ´´½¨½âÂëÆ÷Ê§°Ü line= %d,", this, __LINE__);
 		return false  ;
 	}
+	packet = av_packet_alloc();
+	pDPicture = av_frame_alloc();
 	nDecodeErrorCount = 0;
 
 	m_bInitDecode = true;
