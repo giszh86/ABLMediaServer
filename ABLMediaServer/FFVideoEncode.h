@@ -1,6 +1,7 @@
 ﻿#ifndef _ffVideoEncode_H
 #define _ffVideoEncode_H
-
+#include <atomic>
+#include <memory>
 class CFFVideoFilter;
 
 class CFFVideoEncode

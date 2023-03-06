@@ -88,6 +88,7 @@
     <ClCompile Include="..\ABLMediaServer\ABLSipParse.cpp" />
     <ClCompile Include="..\ABLMediaServer\ABLString.cpp" />
     <ClCompile Include="..\ABLMediaServer\AVFrameSWS.cpp" />
+    <ClCompile Include="..\ABLMediaServer\Base64.cpp" />
     <ClCompile Include="..\ABLMediaServer\CNetRtmpServerRecv.cpp" />
     <ClCompile Include="..\ABLMediaServer\DigestAuthentication.cpp" />
     <ClCompile Include="..\ABLMediaServer\FFVideoDecode.cpp" />
@@ -143,11 +144,17 @@
     <ClInclude Include="..\ABLMediaServer\ABLSipParse.h" />
     <ClInclude Include="..\ABLMediaServer\ABLString.h" />
     <ClInclude Include="..\ABLMediaServer\AVFrameSWS.h" />
+    <ClInclude Include="..\ABLMediaServer\Base64.hh" />
+    <ClInclude Include="..\ABLMediaServer\cudaCodecDLL_Linux.h" />
+    <ClInclude Include="..\ABLMediaServer\cudaEncodeDLL.h" />
     <ClInclude Include="..\ABLMediaServer\DigestAuthentication.hh" />
+    <ClInclude Include="..\ABLMediaServer\faac.h" />
+    <ClInclude Include="..\ABLMediaServer\faaccfg.h" />
     <ClInclude Include="..\ABLMediaServer\FFVideoDecode.h" />
     <ClInclude Include="..\ABLMediaServer\FFVideoEncode.h" />
     <ClInclude Include="..\ABLMediaServer\g711.h" />
     <ClInclude Include="..\ABLMediaServer\g711_table.h" />
+    <ClInclude Include="..\ABLMediaServer\H265_SPS_Nal.h" />
     <ClInclude Include="..\ABLMediaServer\Ini.h" />
     <ClInclude Include="..\ABLMediaServer\LCbase64.h" />
     <ClInclude Include="..\ABLMediaServer\MediaFifo.h" />
@@ -160,14 +167,17 @@
     <ClInclude Include="..\ABLMediaServer\NetClientHttp.h" />
     <ClInclude Include="..\ABLMediaServer\NetClientRecvFLV.h" />
     <ClInclude Include="..\ABLMediaServer\NetClientRecvHttpHLS.h" />
+    <ClInclude Include="..\ABLMediaServer\NetClientRecvJTT1078.h" />
     <ClInclude Include="..\ABLMediaServer\NetClientRecvRtmp.h" />
     <ClInclude Include="..\ABLMediaServer\NetClientRecvRtsp.h" />
+    <ClInclude Include="..\ABLMediaServer\NetClientSendRtmp.h" />
     <ClInclude Include="..\ABLMediaServer\NetClientSendRtsp.h" />
     <ClInclude Include="..\ABLMediaServer\NetClientSnap.h" />
     <ClInclude Include="..\ABLMediaServer\NetGB28181Listen.h" />
     <ClInclude Include="..\ABLMediaServer\NetGB28181RtpClient.h" />
     <ClInclude Include="..\ABLMediaServer\NetGB28181RtpServer.h" />
     <ClInclude Include="..\ABLMediaServer\NetRecvBase.h" />
+    <ClInclude Include="..\ABLMediaServer\NetRtmpServerRecv.h" />
     <ClInclude Include="..\ABLMediaServer\NetRtspServer.h" />
     <ClInclude Include="..\ABLMediaServer\NetServerHLS.h" />
     <ClInclude Include="..\ABLMediaServer\NetServerHTTP.h" />
@@ -177,15 +187,24 @@
     <ClInclude Include="..\ABLMediaServer\NetServerWS_FLV.h" />
     <ClInclude Include="..\ABLMediaServer\ourMD5.hh" />
     <ClInclude Include="..\ABLMediaServer\PictureFileSource.h" />
+    <ClInclude Include="..\ABLMediaServer\ps_demux.h" />
+    <ClInclude Include="..\ABLMediaServer\ps_mux.h" />
     <ClInclude Include="..\ABLMediaServer\ReadRecordFileInput.h" />
     <ClInclude Include="..\ABLMediaServer\RecordFileSource.h" />
+    <ClInclude Include="..\ABLMediaServer\RtcpDef.h" />
     <ClInclude Include="..\ABLMediaServer\RtcpPacket.h" />
     <ClInclude Include="..\ABLMediaServer\RtpPSStreamInput.h" />
     <ClInclude Include="..\ABLMediaServer\RtpTSStreamInput.h" />
+    <ClInclude Include="..\ABLMediaServer\rtp_depacket.h" />
+    <ClInclude Include="..\ABLMediaServer\rtp_packet.h" />
     <ClInclude Include="..\ABLMediaServer\SHA1.h" />
+    <ClInclude Include="..\ABLMediaServer\stdafx.h" />
     <ClInclude Include="..\ABLMediaServer\strDup.hh" />
+    <ClInclude Include="..\ABLMediaServer\StreamRecordFMP4.h" />
     <ClInclude Include="..\ABLMediaServer\StreamRecordMP4.h" />
+    <ClInclude Include="..\ABLMediaServer\Unit_ReadSPS.h" />
     <ClInclude Include="..\ABLMediaServer\VideoDecode.h" />
+    <ClInclude Include="..\ABLMediaServer\XHNetSDK.h" />
     <ClInclude Include="..\rapidjson-master\include\rapidjson\allocators.h" />
     <ClInclude Include="..\rapidjson-master\include\rapidjson\cursorstreamwrapper.h" />
     <ClInclude Include="..\rapidjson-master\include\rapidjson\document.h" />
@@ -224,18 +243,18 @@
     <ClInclude Include="..\rapidjson-master\include\rapidjson\writer.h" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="..\bin\libdash.a" />
-    <Library Include="..\bin\libflv.a" />
-    <Library Include="..\bin\libhls.a" />
-    <Library Include="..\bin\libmkv.a" />
-    <Library Include="..\bin\libmov.a" />
-    <Library Include="..\bin\libmpeg.a" />
-    <Library Include="..\bin\librtmp.a" />
-    <Library Include="..\bin\librtp.a" />
+    <Library Include="..\media-server-master\bin\libdash.a" />
+    <Library Include="..\media-server-master\bin\libflv.a" />
+    <Library Include="..\media-server-master\bin\libhls.a" />
+    <Library Include="..\media-server-master\bin\libmkv.a" />
+    <Library Include="..\media-server-master\bin\libmov.a" />
+    <Library Include="..\media-server-master\bin\libmpeg.a" />
+    <Library Include="..\media-server-master\bin\librtmp.a" />
+    <Library Include="..\media-server-master\bin\librtp.a" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Link>
-      <LibraryDependencies>m;dl;z;pthread;rt;boost_system;boost_thread;boost_log;boost_regex;boost_filesystem;boost_date_time;boost_chrono;boost_atomic;rtmp;flv;mpeg;hls;mov;rtp;faac;x264;avcodec;avutil;avformat;swscale;avfilter;postproc;swresample;XHNetSDK;PsDemux;PsMux;RtpDepacket;RtpPacket;%(LibraryDependencies)</LibraryDependencies>
+      <LibraryDependencies>m;dl;z;pthread;rt;boost_system;boost_thread;boost_log;boost_regex;boost_filesystem;boost_date_time;boost_chrono;boost_atomic;mpeg;faac;x264;avcodec;avutil;avformat;swscale;avfilter;postproc;swresample;XHNetSDK;PsDemux;PsMux;RtpDepacket;RtpPacket;%(LibraryDependencies)</LibraryDependencies>
     </Link>
     <ClCompile>
       <CppLanguageStandard>c++14</CppLanguageStandard>

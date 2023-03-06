@@ -160,6 +160,9 @@
     <ClCompile Include="..\ABLMediaServer\NetClientAddPushProxy.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\Base64.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">
@@ -446,30 +449,84 @@
     <ClInclude Include="..\ABLMediaServer\NetClientAddPushProxy.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\stdafx.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\cudaCodecDLL_Linux.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\XHNetSDK.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\H265_SPS_Nal.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\Unit_ReadSPS.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\faac.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\faaccfg.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\rtp_packet.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\RtcpDef.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\NetRtmpServerRecv.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\ps_demux.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\ps_mux.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\rtp_depacket.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\NetClientRecvJTT1078.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\NetClientSendRtmp.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\StreamRecordFMP4.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\cudaEncodeDLL.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\Base64.hh">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Library Include="..\bin\libdash.a">
+    <Library Include="..\media-server-master\bin\libdash.a">
       <Filter>lib</Filter>
     </Library>
-    <Library Include="..\bin\libflv.a">
+    <Library Include="..\media-server-master\bin\libflv.a">
       <Filter>lib</Filter>
     </Library>
-    <Library Include="..\bin\libhls.a">
+    <Library Include="..\media-server-master\bin\libhls.a">
       <Filter>lib</Filter>
     </Library>
-    <Library Include="..\bin\libmkv.a">
+    <Library Include="..\media-server-master\bin\libmkv.a">
       <Filter>lib</Filter>
     </Library>
-    <Library Include="..\bin\libmov.a">
+    <Library Include="..\media-server-master\bin\libmov.a">
       <Filter>lib</Filter>
     </Library>
-    <Library Include="..\bin\libmpeg.a">
+    <Library Include="..\media-server-master\bin\libmpeg.a">
       <Filter>lib</Filter>
     </Library>
-    <Library Include="..\bin\librtmp.a">
+    <Library Include="..\media-server-master\bin\librtmp.a">
       <Filter>lib</Filter>
     </Library>
-    <Library Include="..\bin\librtp.a">
+    <Library Include="..\media-server-master\bin\librtp.a">
       <Filter>lib</Filter>
     </Library>
   </ItemGroup>

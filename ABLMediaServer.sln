@@ -19,6 +19,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "librtp", "media-server-mast
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ABLMediaServer-linux", "ABLMediaServer-linux\ABLMediaServer-linux.vcxproj", "{2F2B657B-4A87-4745-AA6D-737435023B43}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "asio", "asio\asio.vcxproj", "{A3CC8645-220B-4469-9912-E7BD98AED954}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|ARM = Debug|ARM
@@ -139,6 +141,18 @@ Global
 		{2F2B657B-4A87-4745-AA6D-737435023B43}.Release|x86.ActiveCfg = Release|x86
 		{2F2B657B-4A87-4745-AA6D-737435023B43}.Release|x86.Build.0 = Release|x86
 		{2F2B657B-4A87-4745-AA6D-737435023B43}.Release|x86.Deploy.0 = Release|x86
+		{A3CC8645-220B-4469-9912-E7BD98AED954}.Debug|ARM.ActiveCfg = Debug|Win32
+		{A3CC8645-220B-4469-9912-E7BD98AED954}.Debug|ARM64.ActiveCfg = Debug|Win32
+		{A3CC8645-220B-4469-9912-E7BD98AED954}.Debug|x64.ActiveCfg = Debug|x64
+		{A3CC8645-220B-4469-9912-E7BD98AED954}.Debug|x64.Build.0 = Debug|x64
+		{A3CC8645-220B-4469-9912-E7BD98AED954}.Debug|x86.ActiveCfg = Debug|Win32
+		{A3CC8645-220B-4469-9912-E7BD98AED954}.Debug|x86.Build.0 = Debug|Win32
+		{A3CC8645-220B-4469-9912-E7BD98AED954}.Release|ARM.ActiveCfg = Release|Win32
+		{A3CC8645-220B-4469-9912-E7BD98AED954}.Release|ARM64.ActiveCfg = Release|Win32
+		{A3CC8645-220B-4469-9912-E7BD98AED954}.Release|x64.ActiveCfg = Release|x64
+		{A3CC8645-220B-4469-9912-E7BD98AED954}.Release|x64.Build.0 = Release|x64
+		{A3CC8645-220B-4469-9912-E7BD98AED954}.Release|x86.ActiveCfg = Release|Win32
+		{A3CC8645-220B-4469-9912-E7BD98AED954}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
