@@ -1,8 +1,19 @@
-#include <boost/bind.hpp>
+
 #include "udp_session.h"
 #include "udp_session_manager.h"
 #include "identifier_generator.h"
 #include <malloc.h>
+
+
+
+
+#ifdef USE_BOOST
+#include <boost/bind.hpp>
+#else
+#include <functional>
+#endif
+
+
 
 #if (defined _WIN32 || defined _WIN64)
 #include <WS2tcpip.h>
@@ -13,7 +24,8 @@
 #include <arpa/inet.h>
 #endif
 
-udp_session::udp_session(boost::asio::io_context& ioc)
+
+udp_session::udp_session(asio::io_context& ioc)
 	: m_socket(ioc)
 	, m_fnread(NULL)
 	, m_start(false)
@@ -60,10 +72,10 @@ int32_t udp_session::init(const int8_t* localip,
 	}
 
 	boost::system::error_code ec;
-	boost::asio::socket_base::receive_buffer_size recv_buffer_size_option(4 * 1024 * 1024);
+	asio::socket_base::receive_buffer_size recv_buffer_size_option(4 * 1024 * 1024);
 	m_socket.set_option(recv_buffer_size_option, ec);//设置接收缓冲区
 
-	boost::asio::socket_base::send_buffer_size    SendSize_option(4 * 1024 * 1024); //定义发送缓冲区大小
+	asio::socket_base::send_buffer_size    SendSize_option(4 * 1024 * 1024); //定义发送缓冲区大小
 	m_socket.set_option(SendSize_option, ec); //设置发送缓存区大小
 
 	return ret;
@@ -77,7 +89,7 @@ int32_t udp_session::connect(const int8_t* remoteip,
 		return e_libnet_err_invalidparam;
 	}
 	boost::system::error_code ec;
-	boost::asio::ip::address addr = boost::asio::ip::address::from_string(reinterpret_cast<const char*>(remoteip), ec);
+	asio::ip::address addr = asio::ip::address::from_string(reinterpret_cast<const char*>(remoteip), ec);
 	if (ec)
 	{
 		close();
@@ -131,7 +143,7 @@ int32_t udp_session::recv_from(uint8_t* buffer,
 	boost::system::error_code ec;
 	if (blocked)
 	{	
-		size_t readsize = m_socket.receive_from(boost::asio::buffer(buffsize, *buffsize), m_remoteep, 0, ec);
+		size_t readsize = m_socket.receive_from(asio::buffer(buffsize, *buffsize), m_remoteep, 0, ec);
 		if (ec || (0 == readsize))
 		{
 			*buffsize = 0;
@@ -177,12 +189,12 @@ int32_t udp_session::recv_from(uint8_t* buffer,
 		m_inreading = true;
 		m_userreadbuffer = buffer;
 
-		m_socket.async_receive_from(boost::asio::buffer(m_userreadbuffer, *buffsize), m_remoteep,
-			boost::bind(&udp_session::handle_read, 
-				shared_from_this(), 
-				boost::asio::placeholders::error,
-				boost::asio::placeholders::bytes_transferred));
-
+		m_socket.async_receive_from(
+			asio::buffer(m_userreadbuffer, *buffsize), m_remoteep,
+			[this](asio::error_code ec, std::size_t bytes_recvd)
+			{
+				handle_read(ec, bytes_recvd);
+			});
 		return e_libnet_err_noerror;
 	}	
 }
@@ -212,16 +224,16 @@ int32_t udp_session::send_to(uint8_t* data,
 	boost::system::error_code ec;
 	if (m_hasconnected)
 	{
-		m_socket.send(boost::asio::buffer(data, datasize), 0, ec);
+		m_socket.send(asio::buffer(data, datasize), 0, ec);
 		usleep(20);
 	}
 	else
 	{
 		sockaddr_in* addr = static_cast<sockaddr_in*>(remoteaddr);
 
-		m_writeep.address(boost::asio::ip::address::from_string(inet_ntoa(addr->sin_addr)));
+		m_writeep.address(asio::ip::address::from_string(inet_ntoa(addr->sin_addr)));
 		m_writeep.port(ntohs(addr->sin_port));
-		m_socket.send_to(boost::asio::buffer(data, datasize), m_writeep, 0, ec);
+		m_socket.send_to(asio::buffer(data, datasize), m_writeep, 0, ec);
 		usleep(20);
  	}
 
@@ -255,10 +267,10 @@ int32_t udp_session::bind_address(const int8_t* localip,
 {
 	boost::system::error_code ec;
 
-	boost::asio::ip::address addr;
+	asio::ip::address addr;
 	if (localip && (0 != strcmp(reinterpret_cast<const char*>(localip), "")))
 	{
-		addr = boost::asio::ip::address::from_string(reinterpret_cast<const char*>(localip), ec);
+		addr = asio::ip::address::from_string(reinterpret_cast<const char*>(localip), ec);
 		if (ec)
 		{
 			return e_libnet_err_srvinvalidip;
@@ -267,14 +279,14 @@ int32_t udp_session::bind_address(const int8_t* localip,
 
 	if (!m_socket.is_open())
 	{
-		m_socket.open(boost::asio::ip::udp::v4(), ec);
+		m_socket.open(asio::ip::udp::v4(), ec);
 		if (ec)
 		{
 			return e_libnet_err_cliopensock;
 		}
 	}
 
-	m_endpoint = boost::asio::ip::udp::endpoint(addr, localport);
+	m_endpoint = asio::ip::udp::endpoint(addr, localport);
 	m_socket.bind(m_endpoint, ec);
 	if (ec)
 	{
@@ -290,7 +302,7 @@ int32_t udp_session::bind_address(const int8_t* localip,
 	}
 
 	//set option
-	boost::asio::socket_base::reuse_address reuse_address_option(true);
+	asio::socket_base::reuse_address reuse_address_option(true);
 	m_socket.set_option(reuse_address_option, ec);
 	if (ec)
 	{
@@ -298,7 +310,7 @@ int32_t udp_session::bind_address(const int8_t* localip,
 		return e_libnet_err_clisetsockopt;
 	}
 	
-	boost::asio::socket_base::send_buffer_size send_buffer_size_option(UDP_SESSION_SEND_BUFF_SIZE);
+	asio::socket_base::send_buffer_size send_buffer_size_option(UDP_SESSION_SEND_BUFF_SIZE);
 	m_socket.set_option(send_buffer_size_option, ec);
 	if (ec)
 	{
@@ -306,7 +318,7 @@ int32_t udp_session::bind_address(const int8_t* localip,
 		return e_libnet_err_clisetsockopt;
 	}
 
-	boost::asio::socket_base::receive_buffer_size recv_buffer_size_option(UDP_SESSION_RECV_BUFF_SIZE);
+	asio::socket_base::receive_buffer_size recv_buffer_size_option(UDP_SESSION_RECV_BUFF_SIZE);
 	m_socket.set_option(recv_buffer_size_option, ec);
 	if (ec)
 	{
@@ -347,12 +359,12 @@ void udp_session::start_read()
 {
 	if (m_socket.is_open())
 	{
-		m_socket.async_receive_from(boost::asio::buffer(m_readbuff, UDP_SESSION_MAX_BUFF_SIZE),
+		m_socket.async_receive_from(asio::buffer(m_readbuff, UDP_SESSION_MAX_BUFF_SIZE),
 			m_remoteep,
 			boost::bind(&udp_session::handle_read,
 			shared_from_this(),
-			boost::asio::placeholders::error,
-			boost::asio::placeholders::bytes_transferred));
+			asio::placeholders::error,
+			asio::placeholders::bytes_transferred));
 	}
 }
 
@@ -364,7 +376,7 @@ void udp_session::handle_read(const boost::system::error_code& ec,
 		return;
 	}
 
-	if (!ec || ec == boost::asio::error::message_size) 
+	if (!ec || ec == asio::error::message_size) 
 	{
 		if (m_start)
 		{
@@ -443,13 +455,13 @@ int32_t udp_session::multicast(uint8_t option,
 			return e_libnet_err_invalidparam;
 		}
 
-		boost::asio::ip::address addr = boost::asio::ip::address::from_string(reinterpret_cast<const char*>(ip), ec);
+		asio::ip::address addr = asio::ip::address::from_string(reinterpret_cast<const char*>(ip), ec);
 		if (ec)
 		{
 			return e_libnet_err_cliinvalidip;
 		}
 
-		boost::asio::ip::multicast::join_group join_group_option(addr);
+		asio::ip::multicast::join_group join_group_option(addr);
 		m_socket.set_option(join_group_option, ec);
 		if (ec)
 		{
@@ -464,13 +476,13 @@ int32_t udp_session::multicast(uint8_t option,
 			return e_libnet_err_invalidparam;
 		}
 
-		boost::asio::ip::address addr = boost::asio::ip::address::from_string(reinterpret_cast<const char*>(ip), ec);
+		asio::ip::address addr = asio::ip::address::from_string(reinterpret_cast<const char*>(ip), ec);
 		if (ec)
 		{
 			return e_libnet_err_cliinvalidip;
 		}
 
-		boost::asio::ip::multicast::leave_group leave_group_option(addr);
+		asio::ip::multicast::leave_group leave_group_option(addr);
 		m_socket.set_option(leave_group_option, ec);
 		if (ec)
 		{
@@ -480,7 +492,7 @@ int32_t udp_session::multicast(uint8_t option,
 	break;
 	case MULTICAST_OPERATION_LOOPBACK:
 	{
-		boost::asio::ip::multicast::enable_loopback enable_loopback_option(0 == value);
+		asio::ip::multicast::enable_loopback enable_loopback_option(0 == value);
 		m_socket.set_option(enable_loopback_option, ec);
 		if (ec)
 		{
@@ -490,7 +502,7 @@ int32_t udp_session::multicast(uint8_t option,
 	break;
 	case MULTICAST_OPERATION_HOPS:
 	{
-		boost::asio::ip::multicast::hops hop_option(value);
+		asio::ip::multicast::hops hop_option(value);
 		m_socket.set_option(hop_option, ec);
 		if (ec)
 		{
@@ -505,13 +517,13 @@ int32_t udp_session::multicast(uint8_t option,
 			return e_libnet_err_invalidparam;
 		}
 
-		boost::asio::ip::address addr = boost::asio::ip::address::from_string(reinterpret_cast<const char*>(ip), ec);
+		asio::ip::address addr = asio::ip::address::from_string(reinterpret_cast<const char*>(ip), ec);
 		if (ec || (!addr.is_v4()))
 		{
 			return e_libnet_err_cliinvalidip;
 		}
 
-		boost::asio::ip::multicast::outbound_interface outbound_interface_option(addr.to_v4());
+		asio::ip::multicast::outbound_interface outbound_interface_option(addr.to_v4());
 		m_socket.set_option(outbound_interface_option, ec);
 		if (ec)
 		{

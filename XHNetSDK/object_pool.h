@@ -1,11 +1,21 @@
 #pragma  once
 
 #include <stdexcept>
-#include <boost/unordered_set.hpp>
+
 #include <boost/asio.hpp>
+
+#include "identifier_generator.h"
+
+#ifdef USE_BOOST
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/lock_guard.hpp>
-#include "identifier_generator.h"
+
+#include <boost/unordered_set.hpp>
+#else
+#include <memory>
+#include <atomic>
+#endif
+
 
 template<typename T>
 class object_pool
@@ -15,7 +25,7 @@ public:
 	~object_pool();
 
 	NETHANDLE get_id();
-	T* malloc(boost::asio::io_context& ioc,
+	T* malloc(asio::io_context& ioc,
 		NETHANDLE srvid,
 		read_callback fnread,
 		close_callback fnclose,
@@ -95,7 +105,7 @@ template<typename T> NETHANDLE object_pool<T>::get_id()
 }
 #endif
 
-template<typename T> T* object_pool<T>::malloc(boost::asio::io_context& ioc,
+template<typename T> T* object_pool<T>::malloc(asio::io_context& ioc,
 	NETHANDLE srvid,
 	read_callback fnread,
 	close_callback fnclose,

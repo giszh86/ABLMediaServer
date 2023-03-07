@@ -1,4 +1,4 @@
-#include <boost/make_shared.hpp>
+
 #include "io_context_pool.h"
 #include "server.h"
 #include "server_manager.h"
@@ -15,10 +15,18 @@
 #include <arpa/inet.h>
 #endif
 
+#ifdef USE_BOOST
+#include <boost/make_shared.hpp>
+#else
+#include <memory>
+#include <thread>
+#endif
+
+
 extern io_context_pool g_iocpool;
 
-server::server(boost::asio::io_context &ioc,
-	boost::asio::ip::tcp::endpoint& ep,
+server::server(asio::io_context &ioc,
+	asio::ip::tcp::endpoint& ep,
 	accept_callback fnaccept,
 	read_callback fnread,
 	close_callback fnclose,
@@ -45,14 +53,14 @@ int32_t server::run()
 	if (!m_acceptor.is_open())
 	{
 		//open
-		m_acceptor.open(m_endpoint.address().is_v4() ? boost::asio::ip::tcp::v4() : boost::asio::ip::tcp::v6(), ec);
+		m_acceptor.open(m_endpoint.address().is_v4() ? asio::ip::tcp::v4() : asio::ip::tcp::v6(), ec);
 		if (ec)
 		{
 			return e_libnet_err_srvlistensocknotopen;
 		}
 
 		//set option
-		boost::asio::ip::tcp::acceptor::reuse_address reuse_address_option(true);
+		asio::ip::tcp::acceptor::reuse_address reuse_address_option(true);
 		m_acceptor.set_option(reuse_address_option, ec);
 		if (ec)
 		{
@@ -60,7 +68,7 @@ int32_t server::run()
 			return e_libnet_err_srvlistensocksetopt;
 		}
 
-		boost::asio::socket_base::send_buffer_size send_buffer_size_option(LISTEN_SEND_BUFF_SIZE);
+		asio::socket_base::send_buffer_size send_buffer_size_option(LISTEN_SEND_BUFF_SIZE);
 		m_acceptor.set_option(send_buffer_size_option, ec);
 		if (ec)
 		{
@@ -68,7 +76,7 @@ int32_t server::run()
 			return e_libnet_err_srvlistensocksetopt;
 		}
 
-		boost::asio::socket_base::receive_buffer_size recv_buffer_size_option(LISTEN_RECV_BUFF_SIZE);
+		asio::socket_base::receive_buffer_size recv_buffer_size_option(LISTEN_RECV_BUFF_SIZE);
 		m_acceptor.set_option(recv_buffer_size_option, ec);
 		if (ec)
 		{
@@ -85,7 +93,7 @@ int32_t server::run()
 		}
 
 		//listen
-		m_acceptor.listen(boost::asio::socket_base::max_connections, ec);
+		m_acceptor.listen(asio::socket_base::max_connections, ec);
 		if (ec)
 		{
 			close();
@@ -118,21 +126,33 @@ void server::start_accept()
 	client_ptr c;
 	while (m_acceptor.is_open())
 	{
-		c = client_manager_singleton::get_mutable_instance().malloc_client(g_iocpool.get_io_context(), get_id(), m_fnread, m_fnclose, m_autoread);
+		c = client_manager_singleton->malloc_client(g_iocpool.get_io_context(), get_id(), m_fnread, m_fnclose, m_autoread);
 		if (c)
 		{
 			break;
 		}
 		else
 		{
+#ifdef USE_BOOST
 			boost::this_thread::sleep_for(boost::chrono::milliseconds(1000));
+#else
+			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+#endif
+
 		}
 	}
-
+#ifdef USE_BOOST
 	m_acceptor.async_accept(c->socket(),
 		boost::bind(&server::handle_accept,
 			shared_from_this(), c,
-			boost::asio::placeholders::error));
+			asio::placeholders::error));
+#else
+	m_acceptor.async_accept(c->socket(),
+		std::bind(&server::handle_accept,
+			shared_from_this(), c,
+			asio::placeholders::error));
+#endif
+
 }
 
 void server::handle_accept(client_ptr c, const boost::system::error_code& ec)
@@ -144,8 +164,8 @@ void server::handle_accept(client_ptr c, const boost::system::error_code& ec)
 		if (m_fnaccept)
 		{
 			boost::system::error_code ec;
-			boost::asio::ip::tcp::endpoint endpoint = c->socket().remote_endpoint(ec);
-			if (ec || !client_manager_singleton::get_mutable_instance().push_client(c))
+			asio::ip::tcp::endpoint endpoint = c->socket().remote_endpoint(ec);
+			if (ec || !client_manager_singleton->push_client(c))
 			{
 				c->close();
 				start_accept();
@@ -178,7 +198,7 @@ void server::handle_accept(client_ptr c, const boost::system::error_code& ec)
 			}
 		}
 
-		c = client_manager_singleton::get_mutable_instance().get_client(cliid);
+		c = client_manager_singleton->get_client(cliid);
 		if (c)
 		{
 			c->run();

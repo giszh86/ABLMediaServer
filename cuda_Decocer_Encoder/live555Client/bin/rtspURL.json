@@ -1,0 +1,9 @@
+{
+	"rtspLoop":0,
+	"LoopTimer":10,
+	"Record":0,
+	"rtspURL":[
+	"rtsp://44.35.33.39:554/Media/Camera_00001"
+    ]
+}
+

@@ -1,20 +1,34 @@
 #ifndef _UDP_SESSION_H_
 #define _UDP_SESSION_H_
 
-#include <boost/atomic.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/shared_array.hpp>
-#include <boost/enable_shared_from_this.hpp>
+
 #include <boost/asio.hpp>
 #include "libnet.h"
 #include "libnet_error.h"
 #include "data_define.h"
 #include "circular_buffer.h"
 
+
+#ifdef USE_BOOST
+#include <boost/atomic.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/shared_array.hpp>
+#include <boost/enable_shared_from_this.hpp>
+#else
+#include <memory>
+#include <atomic>
+#endif
+
+
+#ifdef USE_BOOST
 class udp_session : public boost::enable_shared_from_this<udp_session>
 {
+#else
+class udp_session : public std::enable_shared_from_this<udp_session>
+{
+#endif
 public:
-	udp_session(boost::asio::io_context& ioc);
+	udp_session(asio::io_context& ioc);
 	~udp_session(void);
 
 	NETHANDLE get_id();
@@ -61,13 +75,18 @@ private:
 	};
 
 private:
+#ifdef USE_BOOST
 	boost::atomic<bool> m_start;
+#else
+	std::atomic<bool> m_start;
+#endif
+
 	bool m_autoread;
 	bool m_hasconnected;
-	boost::asio::ip::udp::socket m_socket;
-	boost::asio::ip::udp::endpoint m_endpoint;
-	boost::asio::ip::udp::endpoint m_remoteep;
-	boost::asio::ip::udp::endpoint m_writeep;
+	asio::ip::udp::socket m_socket;
+	asio::ip::udp::endpoint m_endpoint;
+	asio::ip::udp::endpoint m_remoteep;
+	asio::ip::udp::endpoint m_writeep;
 	read_callback m_fnread;
 	NETHANDLE m_id;
 
@@ -94,8 +113,12 @@ private:
 	bool m_inreading;
 	uint8_t* m_userreadbuffer;
 };
-
+#ifdef USE_BOOST
 typedef boost::shared_ptr<udp_session> udp_session_ptr;
+#else
+typedef std::shared_ptr<udp_session> udp_session_ptr;
+#endif
+
 
 inline NETHANDLE udp_session::get_id()
 {

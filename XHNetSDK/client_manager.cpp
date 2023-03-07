@@ -1,5 +1,13 @@
-#include <boost/make_shared.hpp>
+
 #include "client_manager.h"
+
+
+
+#ifdef USE_BOOST
+#include <boost/make_shared.hpp>
+#else
+#include <memory>
+#endif
 
 struct client_deletor
 {
@@ -7,7 +15,7 @@ struct client_deletor
 	{
 		if (cli)
 		{
-			client_manager_singleton::get_mutable_instance().free_client(cli);
+			client_manager_singleton->free_client(cli);
 		}
 	}
 };
@@ -22,7 +30,7 @@ client_manager::~client_manager(void)
 	pop_all_clients();
 }
 
-client_ptr client_manager::malloc_client(boost::asio::io_context& ioc,
+client_ptr client_manager::malloc_client(asio::io_context& ioc,
 	NETHANDLE srvid,
 	read_callback fnread,
 	close_callback fnclose,

@@ -1,0 +1,62 @@
+2022-11-11
+1、提高编码视频的质量 
+    encodeConfig.encodeCodecConfig.h264Config.idrPeriod = 25;
+ 	encodeConfig.gopLength = 25 ;//gop 25 
+	encodeConfig.frameIntervalP = 1; //编码输出帧类型 I、P、P、
+    encodeConfig.rcParams.rateControlMode = NV_ENC_PARAMS_RC_CBR;
+    encodeConfig.rcParams.multiPass = NV_ENC_TWO_PASS_FULL_RESOLUTION;
+    encodeConfig.rcParams.averageBitRate = (static_cast<unsigned int>(4.0f * initializeParams.encodeWidth * initializeParams.encodeHeight) / (nWidth * nHeight)) * 400000;
+    encodeConfig.rcParams.vbvBufferSize = (encodeConfig.rcParams.averageBitRate * initializeParams.frameRateDen / initializeParams.frameRateNum) * 4;
+    encodeConfig.rcParams.maxBitRate = encodeConfig.rcParams.averageBitRate;
+    encodeConfig.rcParams.vbvInitialDelay = encodeConfig.rcParams.vbvBufferSize;
+
+2022-09-22
+1、解码， 编码都增加 
+  malloc_trim(0);
+
+2022-09-21
+1、修正一个错误,拷贝的长度为 packet.size() 
+	memcpy(pEncodecData+nSpsPpsBufferLength, reinterpret_cast<char*>(packet.data()), packet.size());
+
+2022-08-22
+1、在IDR帧前面把sps,pps 帧拷贝上去，否则客户端解码不了。
+	for (std::vector<uint8_t> &packet : vPacket)
+	{
+	  //拷贝spsp,pps 
+	  CopySpsPpsBuffer((unsigned char*) packet.data(),packet.size()) ;
+	  
+	  if(memcmp((unsigned char*) packet.data(),idrFrame,5) == 0)
+	  {
+		nEncodeLength = packet.size() + nSpsPpsBufferLength;
+		if(nSpsPpsBufferLength > 0)
+		{
+		  memcpy(pEncodecData,pSpsPpsBuffer,nSpsPpsBufferLength);
+		  memcpy(pEncodecData+nSpsPpsBufferLength, reinterpret_cast<char*>(packet.data()), nEncodeLength);
+		}
+		return nEncodeLength;
+	  }else
+	  {
+		nEncodeLength = packet.size();
+		memcpy(pEncodecData, reinterpret_cast<char*>(packet.data()), nEncodeLength);
+		return nEncodeLength;
+	  }
+	}
+		
+2022-08-16
+1、实现cuda解码 ，cudai版面 
+2、rtsp拉流，解码，编码 
+3、设置每隔25帧编码一个I帧
+    encodeConfig.encodeCodecConfig.h264Config.idrPeriod = 25;
+ 	encodeConfig.gopLength = 25 ;//gop 25 
+	encodeConfig.frameIntervalP = 1; //编码输出帧类型 I、P、P、
+
+4、设置编码的输出的码率  （大概2M / 秒 ）
+    encodeConfig.rcParams.rateControlMode = NV_ENC_PARAMS_RC_CBR;
+    encodeConfig.rcParams.multiPass = NV_ENC_TWO_PASS_FULL_RESOLUTION;
+    encodeConfig.rcParams.averageBitRate = (static_cast<unsigned int>(5.0f * initializeParams.encodeWidth * initializeParams.encodeHeight) / (1280 * 720)) * 200000;
+    encodeConfig.rcParams.vbvBufferSize = (encodeConfig.rcParams.averageBitRate * initializeParams.frameRateDen / initializeParams.frameRateNum) * 5;
+    encodeConfig.rcParams.maxBitRate = encodeConfig.rcParams.averageBitRate;
+    encodeConfig.rcParams.vbvInitialDelay = encodeConfig.rcParams.vbvBufferSize;
+	
+2022-08-11
+1、linux下硬解成功第一版本

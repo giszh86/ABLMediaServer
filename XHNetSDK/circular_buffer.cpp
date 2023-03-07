@@ -27,7 +27,7 @@ bool circular_buffer::init(uint32_t capacity)
 
 	if (capacity > 0)
 	{
-		m_buffer.reset(new(std::nothrow) uint8_t[capacity]);
+		//m_buffer.reset(new(std::nothrow) uint8_t[capacity]);
 		if (m_buffer)
 		{
 			m_capacity = capacity;
@@ -102,7 +102,7 @@ uint8_t* circular_buffer::try_read(uint32_t wanna, uint32_t& read)
 			read = wanna;
 		}
 
-		addr = m_buffer.get() + m_read;
+		//addr = m_buffer.get() + m_read;
 	}
 
 	return addr;

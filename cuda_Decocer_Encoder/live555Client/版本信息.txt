@@ -1,0 +1,938 @@
+2022-04-12
+1、增加录像回放点播的录像时长
+	//查找录像时间时长
+	char szRangeValue[256] = { 0 };
+	nPos1 = nPos2 = 0;
+	nPos1 = strSDPTemp.find("a=range: npt=0-", 0);
+	if (nPos1 > 0 )
+		nPos2 = strSDPTemp.find("\r\n", nPos1);
+	if (nPos1 > 0 && nPos2 > 0)
+	{
+		memcpy(szRangeValue, szRtspContentSDP + nPos1 + strlen("a=range: npt=0-"), nPos2 - nPos1 - strlen("a=range: npt=0-"));
+		dRange = atof(szRangeValue);
+	}
+
+2、把 session 里面; 后面字符串去掉 ，否则有些摄像头连接不上，因为会检测session 
+
+ 	string strSession = szSessionID;
+	int    nPos2 = strSession.find(";", 0);
+	if (nPos2 > 0)
+	{
+		szSessionID[nPos2] = 0x00;
+		Rtsp_WriteLog(Log_Debug, "SendPlay() ，nClient = %llu ,strSessionID = %s , szSessionID = %s ", nClient, strSession.c_str(), szSessionID);
+	}
+
+3、修复Setup,Play 中的md5 签名验证  szSrcRtspPullUrl 
+	else if (wwwType == WWW_Authenticate_MD5)
+	{
+		Authenticator author;
+		char*         szResponse;
+
+		author.setRealmAndNonce(m_rtspStruct.szRealm, m_rtspStruct.szNonce);
+		author.setUsernameAndPassword(m_rtspStruct.szUser, m_rtspStruct.szPwd);
+		szResponse = (char*)author.computeDigestResponse("SETUP", m_rtspStruct.szSrcRtspPullUrl); //要注意 uri ,有时候没有最后的 斜杠 /
+
+		if (nSendSetupCount == 1)
+		{
+			if (m_rtspStruct.szRtspURLTrim[strlen(m_rtspStruct.szRtspURLTrim) - 1] == '/')
+				sprintf(szResponseBuffer, "SETUP %s%s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nAuthorization: Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", response=\"%s\"\r\nTransport: RTP/AVP/TCP;unicast;interleaved=0-1\r\n\r\n", m_rtspStruct.szRtspURLTrim, szTrackIDArray[nSendSetupCount], CSeq, MediaServerVerson, m_rtspStruct.szUser, m_rtspStruct.szRealm, m_rtspStruct.szNonce, m_rtspStruct.szSrcRtspPullUrl, szResponse);
+			else
+				sprintf(szResponseBuffer, "SETUP %s/%s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nAuthorization: Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", response=\"%s\"\r\nTransport: RTP/AVP/TCP;unicast;interleaved=0-1\r\n\r\n", m_rtspStruct.szRtspURLTrim, szTrackIDArray[nSendSetupCount], CSeq, MediaServerVerson, m_rtspStruct.szUser, m_rtspStruct.szRealm, m_rtspStruct.szNonce, m_rtspStruct.szSrcRtspPullUrl, szResponse);
+		}
+		else if (nSendSetupCount == 2)
+		{
+			if (m_rtspStruct.szRtspURLTrim[strlen(m_rtspStruct.szRtspURLTrim) - 1] == '/')
+				sprintf(szResponseBuffer, "SETUP %s%s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nAuthorization: Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", response=\"%s\"\r\nTransport: RTP/AVP/TCP;unicast;interleaved=2-3\r\nSession: %s\r\n\r\n", m_rtspStruct.szRtspURLTrim, szTrackIDArray[nSendSetupCount], CSeq, MediaServerVerson, m_rtspStruct.szUser, m_rtspStruct.szRealm, m_rtspStruct.szNonce, m_rtspStruct.szSrcRtspPullUrl, szResponse, szSessionID);
+			else
+				sprintf(szResponseBuffer, "SETUP %s/%s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nAuthorization: Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", response=\"%s\"\r\nTransport: RTP/AVP/TCP;unicast;interleaved=2-3\r\nSession: %s\r\n\r\n", m_rtspStruct.szRtspURLTrim, szTrackIDArray[nSendSetupCount], CSeq, MediaServerVerson, m_rtspStruct.szUser, m_rtspStruct.szRealm, m_rtspStruct.szNonce, m_rtspStruct.szSrcRtspPullUrl, szResponse, szSessionID);
+		}
+
+		author.reclaimDigestResponse(szResponse);
+	}
+	
+	
+2022-01-25
+1、创建路径时增加权限 ，需要调用 umask(0) 
+	int PlayerSDK_showAllFiles(const char * dir_name, bool& bExitingFlag, int& fileSize)
+	{
+		umask(0);
+		mkdir("./log",0777);
+		umask(0);
+		mkdir(PlayerSDK_LogFilePath, 0777);
+		
+2021-10-08
+1 CreateNetRevcBaseClient 函数增加一个参数 int nXHRtspURLType ，rtsp 类型
+     CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL, void* pCustomerPtr, LIVE555RTSP_AudioVideo callbackFunc, uint64_t hParent, int nXHRtspURLType)
+
+2  网络缓存	netDataCache 修改为按照rtsp类型进行不同大小的字节分配 
+ 
+	if (m_nXHRtspURLType == XHRtspURLType_Liveing)//实况
+	  MaxNetDataCacheCount = MaxNetDataCacheBufferLength * 1 ; 
+	else if (m_nXHRtspURLType == XHRtspURLType_RecordPlay)//录像回放
+	  MaxNetDataCacheCount = MaxNetDataCacheBufferLength * 2;
+	else if (m_nXHRtspURLType == XHRtspURLType_RecordDownload)//录像下载
+	  MaxNetDataCacheCount = MaxNetDataCacheBufferLength * 3 + (1024 * 1024 * 2) ;
+	else 
+	  MaxNetDataCacheCount = MaxNetDataCacheBufferLength * 1;
+
+
+2021-10-04
+1、回调SPS、PPS帧数据
+	if (pUserHandle->m_bHaveSPSPPSFlag && pUserHandle->m_bCallBackSPSFlag == false && pUserHandle->m_nSpsPPSLength > 0)
+	{
+		(*pUserHandle->m_callbackFunc) (pUserHandle->m_hParent, XHRtspDataType_Video, pUserHandle->szVideoName,(unsigned char*)pUserHandle->m_pSpsPPSBuffer, pUserHandle->m_nSpsPPSLength, cb->timestamp, pUserHandle->m_pCustomerPtr);
+		 pUserHandle->m_bCallBackSPSFlag = true;
+	}
+
+2、已经成功连接、并且交互完成，不需要再做重连	
+	else if (memcmp(data_, "RTSP/1.0 200", 12) == 0 && nRtspProcessStep == RtspProcessStep_PLAY && strstr((char*)pRecvData, "\r\n\r\n") != NULL)
+	{
+		nRtspProcessStep = RtspProcessStep_PLAYSucess ;
+		boost::shared_ptr<CNetRevcBase> pParentClient = GetNetRevcBaseClient(m_hParent);
+		if (pParentClient)
+		{
+			pParentClient->bReConnectFlag = false ;//已经成功连接、并且交互完成，不需要再做重连
+			pParentClient->nRtspConnectStatus = RtspConnectStatus_ConnectSuccess;//连接成功 
+		}
+
+		WriteLog(Log_Debug, "收到 Play 回复命令，rtsp交互完毕 nClient = %llu ", nClient);
+	}
+	
+3、 只有失败，并且原来正在连接的状态，修改为连接失败
+	CNetRevcBase_ptr pParent = GetNetRevcBaseClientNoLock(((*iterator1).second)->m_hParent);
+	if (pParent)
+	{
+		if (pParent->nRtspConnectStatus == RtspConnectStatus_AtConnecting)
+		   pParent->nRtspConnectStatus = RtspConnectStatus_ConnectFailed;//连接失败 
+	}
+
+	
+4、把网络断线判断最长时间设置为15秒。
+   #define  MaxRecvDataTimerBySecondDiconnect  30            //最大15秒没数据，即执行删除	
+   
+2021-09-28
+1、测试发现，如果连接失败，nClient 等于0 ，所以删除对象的条件也需要允许等于 0 ，否则会出现有对象删除不了情况 
+	if (nClient >= 0)
+	{
+		DeleteNetRevcBaseClient(nClient);//执行删除 
+	}
+
+2、 rtsp连接失败时，需要立即断开 
+	else if (memcmp(szIP, "rtsp://", 7) == 0)
+	{//rtsp 
+		pXHClient = boost::make_shared<CNetClientRecvRtsp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL, pCustomerPtr, callbackFunc,hParent);
+		CltHandle = pXHClient->nClient; //把nClient赋值给 CltHandle ,作为关键字 ，如果连接失败，会收到回调通知，在回调通知进行删除即可 
+		if (CltHandle == 0)
+		{//连接失败
+			WriteLog(Log_Debug, "CreateNetRevcBaseClient()，连接 rtsp 服务器 失败 szURL = %s , szIP = %s ,port = %d ",szIP,pXHClient->m_rtspStruct.szIP, pXHClient->m_rtspStruct.szPort);
+			pDisconnectBaseNetFifo.push((unsigned char*)&pXHClient->nClient, sizeof(pXHClient->nClient));
+		}
+	}				
+
+3、rtp长度允许大于 1500 ，最大为 65535 	
+	if (nRtpLength > 0 && nRtpLength < 65535 )
+	{
+		if (data_[1] == 0x00)
+		{
+			rtp_depacket_input(hRtpHandle[0], netDataCache + nNetStart , nRtpLength );
+
+			//if(nPrintCount % 200 == 0)
+			//  printf("this =%X, Video Length = %d \r\n",this, nReadLength);
+		}
+		
+4、	优化查找 @ 的位置，因为rtsp密码可能有@这个字符 ，要从后面开始查找 	
+	//查找 @ 的位置
+	nPos2 = strRtspURL.rfind("@", strlen(szURL));
+	if (nPos2 > 0)
+	{
+	
+5、防止真正的rtsp连接尚未创建，就删除了代理连接	
+	if (GetTickCount64() - ((*iterator1).second)->nCreateDateTime >= 1000 * 3 )
+	{//防止真正的rtsp连接尚未创建，就删除了代理连接 
+		if (strlen(((*iterator1).second)->szCBErrorMessage) == 0)
+			strcpy(((*iterator1).second)->szCBErrorMessage, message_ConnectBreak);
+
+		((*iterator1).second)->nRtspConnectStatus = RtspConnectStatus_ConnectFailed;//连接失败 
+
+		WriteLog(Log_Debug, " nClient = %llu , nMediaClient = %llu , %s  拉流已经断开 ，需要销毁代理拉流 ", ((*iterator1).second)->nClient, ((*iterator1).second)->nMediaClient, ((*iterator1).second)->m_addStreamProxyStruct.url);
+
+		pErrorDisconnectBaseNetFifo.push((unsigned char*)&((*iterator1).second)->nClient, sizeof(((*iterator1).second)->nClient));
+	}	
+		
+2021-09-16
+1、 在连接回调函数中，只要连接成功，立即修改为连接成功，不需要交互完成，连接失败立即修改为连接失败 
+	void LIBNET_CALLMETHOD	onconnect(NETHANDLE clihandle,
+		uint8_t result)
+	{
+		std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
+
+		if (result == 0)
+		{
+			CNetRevcBase_ptr pClient = GetNetRevcBaseClientNoLock(clihandle);
+			if (pClient != NULL)
+			{
+				//代理拉流句柄
+				CNetRevcBase_ptr pParent = GetNetRevcBaseClientNoLock(pClient->m_hParent);
+				if (pParent != NULL)
+				{
+					pParent->nRtspConnectStatus = RtspConnectStatus_ConnectFailed; //连接失败 
+					strcpy(pParent->szCBErrorMessage, message_connError);
+				}
+				WriteLog(Log_Debug, "nClient = %llu ,URL: %s ,连接失败 result: %d ", clihandle, pClient->m_rtspStruct.szSrcRtspPullUrl, result);
+			}
+			pDisconnectBaseNetFifo.push((unsigned char*)&clihandle, sizeof(clihandle));
+		}
+		else if (result == 1)
+		{//如果链接成功，发送第一个请求
+			CNetRevcBase_ptr pClient = GetNetRevcBaseClientNoLock(clihandle);
+			if (pClient)
+			{
+				//代理拉流句柄
+				CNetRevcBase_ptr pParent = GetNetRevcBaseClientNoLock(pClient->m_hParent);
+				if (pParent != NULL)
+				{
+					pParent->nRtspConnectStatus = RtspConnectStatus_ConnectSuccess; //连接成功
+				}
+
+				WriteLog(Log_Debug, "nClient = %llu ,URL: %s , 连接成功 result: %d ", clihandle, pClient->m_rtspStruct.szSrcRtspPullUrl, result);
+				pClient->SendFirstRequst();
+			}
+		}
+	}
+	
+2、发现删除连接异常模块有死循环，
+	//执行删除,防止死循环
+	nListSize = pDisconnectBaseNetFifo.GetSize();
+	if (nListSize > 0)
+	{
+		for (i = 0; i < nListSize ;  i++)
+		{
+			pData = pDisconnectBaseNetFifo.pop(&nLength);
+
+			if (nLength == sizeof(nClient))
+			{
+				memcpy((char*)&nClient, pData, sizeof(nClient));
+				if (nClient > 0)
+				{
+					DeleteNetRevcBaseClient(nClient);//执行删除 
+				}
+			}
+
+			pDisconnectBaseNetFifo.pop_front();
+		}
+	}
+	
+3、注释掉在交互过程中的连接成功、失败的状态修改 
+
+	//修改连接成功,把代理拉流状态修改为成功
+	boost::shared_ptr<CNetRevcBase>   pParent = GetNetRevcBaseClient(m_hParent);
+	if (pParent != NULL)
+	   pParent->nRtspConnectStatus = RtspConnectStatus_ConnectSuccess;
+	
+	//修改连接失败,把代理拉流状态修改为失败
+	boost::shared_ptr<CNetRevcBase>   pParent = GetNetRevcBaseClient(m_hParent);
+	if (pParent != NULL)
+		pParent->nRtspConnectStatus = RtspConnectStatus_ConnectFailed;
+	
+4、在读取数据异常退出时加入	pDisconnectBaseNetFifo
+	else
+	{
+		WriteLog(Log_Debug, "ReadDataFunc() ,尚未读取到rtp数据 ! nClient = %llu ", nClient);
+		bExitProcessFlagArray[2] = true;
+		bRunFlag = false;
+		pDisconnectBaseNetFifo.push((unsigned char*)&nClient,sizeof(nClient));
+		return -1;
+	}
+	
+2021-09-14
+1 把断线检测时间延长至30秒 、重连此时增加至20次（共10秒）
+  #define  MaxRecvDataTimerBySecondDiconnect  60            //最大30秒没数据，即执行删除
+  #define  MaxReconnctTimeCount               20            //最大重连次数 
+
+
+2021-09-13
+1 在网络读取函数增加锁，否则会在网络处理时报错，因为是多线程回调的
+	void LIBNET_CALLMETHOD onread(NETHANDLE srvhandle,
+		NETHANDLE clihandle,
+		uint8_t* data,
+		uint32_t datasize,
+		void* address)
+	{
+		std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
+
+		CNetRevcBase_ptr pRtspRecv = GetNetRevcBaseClientNoLock(clihandle);
+		if (pRtspRecv != NULL)
+		{
+			pRtspRecv->InputNetData(srvhandle, clihandle, data, datasize);
+			NetBaseThreadPool->InsertIntoTask(clihandle);
+		}
+	}
+	
+2、连接回调上加个锁
+	void LIBNET_CALLMETHOD	onconnect(NETHANDLE clihandle,
+		uint8_t result)
+	{
+		if (result == 0)
+		{
+			CNetRevcBase_ptr pClient = GetNetRevcBaseClient(clihandle);
+			if (pClient != NULL)
+			{
+				//代理拉流句柄
+				CNetRevcBase_ptr pParent = GetNetRevcBaseClient(pClient->m_hParent);
+				if (pParent != NULL)
+				{
+					pParent->nRtspConnectStatus = RtspConnectStatus_ConnectFailed ; //连接失败 
+					strcpy(pParent->szCBErrorMessage, message_connError);
+				}
+				Rtsp_WriteLog(Log_Debug, "nClient = %llu ,URL: %s ,连接失败 result: %d ", clihandle, pClient->m_rtspStruct.szSrcRtspPullUrl, result);
+			}
+			pDisconnectBaseNetFifo.push((unsigned char*)&clihandle, sizeof(clihandle));
+		}
+		else if (result == 1)
+		{//如果链接成功，发送第一个请求
+			CNetRevcBase_ptr pClient = GetNetRevcBaseClient(clihandle);
+			if (pClient)
+			{
+				Rtsp_WriteLog(Log_Debug, "nClient = %llu ,URL: %s , 连接成功 result: %d ", clihandle, pClient->m_rtspStruct.szSrcRtspPullUrl, result);
+				pClient->SendFirstRequst();
+			}
+		}
+	}
+	
+	
+3 检测如果超过60秒，还在处于连接状态，设置为连接失败 
+	if (((*iterator1).second)->nRtspConnectStatus == RtspConnectStatus_AtConnecting)
+	{
+		time_t tCurrentTime;
+		time(&tCurrentTime);
+		if (tCurrentTime - ((*iterator1).second)->nCreateDateTime >= 60)
+		{
+			((*iterator1).second)->nRtspConnectStatus = RtspConnectStatus_ConnectFailed;
+			Rtsp_WriteLog(Log_Debug, " nClient = %llu , 连接已经超过30秒，设置为连接失败，否则该对象销毁不了 ", ((*iterator1).second)->nClient);
+		}
+	}
+
+4 、媒体信息回调，放在视频、音频回调之前调用	
+	if (pUserHandle->m_callbackFunc && pUserHandle->cbMediaCodecNameFlag == false)
+	{
+		pUserHandle->cbMediaCodecNameFlag = true;
+		(*pUserHandle->m_callbackFunc) (pUserHandle->m_hParent, XHRtspDataType_Message, "success", (unsigned char*)pUserHandle->szMediaCodecName, strlen(pUserHandle->szMediaCodecName), pUserHandle->timeValue, pUserHandle->m_pCustomerPtr);
+	}
+
+live555Client-2021-09-12
+1  onread 函数中，采用 GetNetRevcBaseClientNoLock 该函数，在外层锁住。
+	void LIBNET_CALLMETHOD onread(NETHANDLE srvhandle,
+		NETHANDLE clihandle,
+		uint8_t* data,
+		uint32_t datasize,
+		void* address)
+	{
+		std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
+
+		CNetRevcBase_ptr pRtspRecv = GetNetRevcBaseClientNoLock(clihandle);
+		if (pRtspRecv != NULL)
+		{
+			pRtspRecv->InputNetData(srvhandle, clihandle, data, datasize);
+			NetBaseThreadPool->InsertIntoTask(clihandle);
+		}
+	}
+	
+2 读取网络数据 ，模拟原来底层网络库读取函数 ,如果长度不够，直接返回 
+	int32_t  CNetClientRecvRtsp::XHNetSDKRead(NETHANDLE clihandle, uint8_t* buffer, uint32_t* buffsize, uint8_t blocked, uint8_t certain)
+	{
+		int nWaitCount = 0;
+		bExitProcessFlagArray[0] = false;
+		while (!bIsInvalidConnectFlag && bRunFlag)
+		{
+			if (netDataCacheLength >= *buffsize)
+			{
+				memcpy(buffer, netDataCache + nNetStart, *buffsize);
+				nNetStart += *buffsize;
+				netDataCacheLength -= *buffsize;
+				
+				bExitProcessFlagArray[0] = true;
+				return 0;
+			}
+			else
+				break;
+		}
+		bExitProcessFlagArray[0] = true;
+
+		return -1;  
+	}
+	
+3	处理完毕rtsp，直接跳出循环 
+
+    break; //rtsp 都是一 一交互的，执行完毕立即退出 
+
+live555Client-2021-09-09
+1 修正AAC声音返回的时间戳
+	if (netBaseNetType == NetBaseNetType_RtspClientRecv )
+	{
+		if(m_callbackFunc)
+		   (*m_callbackFunc) (m_hParent, XHRtspDataType_Audio, szAudioName, aacData, SplitterSize[i] + 7, nTimestamp, m_pCustomerPtr);
+
+	}
+
+2 受到非法命令、或者退出命令都设置为代理拉流对象连接失败，这样才能关闭 	
+	else if (memcmp(pRecvData, "ANNOUNCE  RTSP/1.0",18) == 0 && strstr((char*)pRecvData, "\r\n\r\n") != NULL)
+	{//收到华为特殊命令，码流发送结束包
+
+		//修改连接成功,把代理拉流状态修改为连接失败
+		boost::shared_ptr<CNetRevcBase>   pParent = GetNetRevcBaseClient(m_hParent);
+		if (pParent != NULL)
+			pParent->nRtspConnectStatus = RtspConnectStatus_ConnectFailed;
+
+		WriteLog(Log_Debug, "收到华为特殊命令，码流发送结束包 nClient = %llu \r\n%s", nClient, pRecvData);
+	}
+	else
+	{
+		//修改连接成功,把代理拉流状态修改为连接失败
+		boost::shared_ptr<CNetRevcBase>   pParent = GetNetRevcBaseClient(m_hParent);
+		if (pParent != NULL)
+			pParent->nRtspConnectStatus = RtspConnectStatus_ConnectFailed;
+
+		bIsInvalidConnectFlag = true; //确认为非法连接 
+		WriteLog(Log_Debug, "非法的rtsp 命令，立即执行删除 nClient = %llu ",nClient);
+		DeleteNetRevcBaseClient(nClient);
+	}
+	
+3 、为了防止连接异常，增加连接超时限制，超过30秒，如果还在连接状态设置为连接失败 
+
+		//检测如果超过30秒，还在处于连接状态，设置为连接失败 
+		if (((*iterator1).second)->nRtspConnectStatus == RtspConnectStatus_AtConnecting)
+		{
+			if (GetTickCount64() - ((*iterator1).second)->nCreateDateTime >= 1000 * 30)
+			{
+				((*iterator1).second)->nRtspConnectStatus = RtspConnectStatus_ConnectFailed;
+				WriteLog(Log_Debug, " nClient = %llu , 连接已经超过30秒，设置为连接失败，否则该对象销毁不了 ", ((*iterator1).second)->nClient);
+			}
+		}
+			
+live555Client-2021-09-06
+1  收到华为特殊命令，码流发送结束包，不能立即断开，否则在录像回放时会少了几秒，因为网络接收到的视频有些尚未解码播放 
+	else if (memcmp(pRecvData, "ANNOUNCE  RTSP/1.0",18) == 0 && strstr((char*)pRecvData, "\r\n\r\n") != NULL)
+	{//收到华为特殊命令，码流发送结束包
+		WriteLog(Log_Debug, "收到华为特殊命令，码流发送结束包 nClient = %llu \r\n%s", nClient, pRecvData);
+	}
+
+2、任务线程池的创建序号，还是在线程函数里面进行累加 nGetCurrentThreadOrder ++;	 
+	for (int i = 0; i < nTrueNetThreadPoolCount; i++)
+	{
+		bCreateThreadFlag = false;
+		hProcessHandle[i] = ::CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)OnProcessThread, (LPVOID)this, 0, &dwThread);
+		Sleep(20);
+	}
+		
+	void CNetBaseThreadPool::ProcessFunc()
+	{
+		EnterCriticalSection(&pThreadPollLock);
+			int nCurrentThreadID = nGetCurrentThreadOrder;
+			WriteLog(Log_Debug, "CNetBaseThreadPool = %X nCurrentThreadID = %d ", this, nCurrentThreadID);
+			bExitProcessThreadFlag[nCurrentThreadID] = false;
+			bCreateThreadFlag = true; //创建线程完毕
+			nGetCurrentThreadOrder ++;
+		LeaveCriticalSection(&pThreadPollLock);
+		uint64_t nClientID;
+
+live555Client-2021-09-05
+1 完善获取网络状态函数
+	LIVE555CLIENT_API BOOL live555Client_GetNetStreamStatus(int nChan)
+	{
+		boost::shared_ptr<CNetRevcBase> pParent = NULL;
+		pParent = GetNetRevcBaseClient(nChan);
+		BOOL               bNetStreamStatus = TRUE;
+
+		if (pParent != NULL)
+		{
+			boost::shared_ptr<CNetRevcBase> pClient = GetNetRevcBaseClient(pParent->nMediaClient);
+			if (pClient != NULL)
+			{
+				CNetClientRecvRtsp* pRtsp = (CNetClientRecvRtsp*)pClient.get();
+
+				if (pRtsp->m_nXHRtspURLType == XHRtspURLType_RecordPlay)
+				{
+					if (pRtsp->bPauseFlag)
+					{//如果处于暂停状态，认为网络是正常的
+						  bNetStreamStatus = TRUE;
+					}
+					else
+					{//如果接收没有暂停，再判断流接收超时参数
+						if (pRtsp->nRecvDataTimerBySecond >= 30)
+						{
+							bNetStreamStatus = FALSE;
+						}
+					}
+				}
+				else
+					bNetStreamStatus = true;
+
+				return bNetStreamStatus;
+			}
+			else
+				return false;
+		}
+		else
+			return false;
+	}
+
+2 优化rtp数据不在读取，直接复用缓存数据
+	if (nRtpLength > 0 && nRtpLength < 1500)
+	{
+		if (data_[1] == 0x00)
+		{
+			rtp_depacket_input(hRtpHandle[0], netDataCache + nNetStart , nRtpLength );
+
+			//if(nPrintCount % 200 == 0)
+			//  printf("this =%X, Video Length = %d \r\n",this, nReadLength);
+		}
+		else if (data_[1] == 0x02)
+		{
+			rtp_depacket_input(hRtpHandle[1], netDataCache + nNetStart , nRtpLength );
+
+			//if(nPrintCount % 100 == 0 )
+			//	WriteLog(Log_Debug, "this =%X ,Audio Length = %d ",this,nReadLength);
+
+			nPrintCount ++;
+		}
+		else if (data_[1] == 0x01)
+		{//收到RTCP包，需要回复rtcp报告包
+			//SendRtcpReportData(nVideoSSRC, data_[1]);
+			//WriteLog(Log_Debug, "this =%X ,收到 视频 的RTCP包，需要回复rtcp报告包，netBaseNetType = %d  收到RCP包长度 = %d ", this, netBaseNetType, nReadLength);
+		}
+		else if (data_[1] == 0x03)
+		{//收到RTCP包，需要回复rtcp报告包
+			//SendRtcpReportData(nVideoSSRC+1, data_[1]);
+			//WriteLog(Log_Debug, "this =%X ,收到 音频 的RTCP包，需要回复rtcp报告包，netBaseNetType = %d  收到RCP包长度 = %d ", this, netBaseNetType, nReadLength);
+		}
+
+		bExitProcessFlagArray[2] = true;
+		nNetStart           += nRtpLength;
+		netDataCacheLength  -= nRtpLength;
+	}
+	else
+	{
+		WriteLog(Log_Debug, "ReadDataFunc() ,尚未读取到rtp数据 ! ABLRtspChan = %llu ", nClient);
+		bExitProcessFlagArray[2] = true;
+		DeleteNetRevcBaseClient(nClient);
+		return -1;
+	}
+
+3 完成录像下载功能  
+	if (wwwType == WWW_Authenticate_None)
+	{
+		if (m_nXHRtspURLType == XHRtspURLType_RecordDownload)
+			sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nCSeq: %d\r\nScale: 255\r\nUser-Agent: %s\r\nSession: %s\r\nRange: npt=0.000-\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, CSeq, MediaServerVerson, szSessionID);
+		else 
+			sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\nRange: npt=0.000-\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, CSeq, MediaServerVerson, szSessionID);
+	}
+	else if (wwwType == WWW_Authenticate_MD5)
+	{
+		Authenticator author;
+		char*         szResponse;
+
+		author.setRealmAndNonce(m_rtspStruct.szRealm, m_rtspStruct.szNonce);
+		author.setUsernameAndPassword(m_rtspStruct.szUser, m_rtspStruct.szPwd);
+		szResponse = (char*)author.computeDigestResponse("PLAY", m_rtspStruct.szSrcRtspPullUrl); //要注意 uri ,有时候没有最后的 斜杠 /
+
+		if (m_nXHRtspURLType == XHRtspURLType_RecordDownload)
+			sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nCSeq: %d\r\nScale: 255\r\nUser-Agent: %s\r\nSession: %s\r\nAuthorization: Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", response=\"%s\"\r\nRange: npt=0.000-\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, CSeq, MediaServerVerson, MediaServerVerson, szSessionID, m_rtspStruct.szUser, m_rtspStruct.szRealm, m_rtspStruct.szNonce, m_rtspStruct.szSrcRtspPullUrl, szResponse);
+		else 
+		    sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\nAuthorization: Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", response=\"%s\"\r\nRange: npt=0.000-\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, CSeq, MediaServerVerson, MediaServerVerson, szSessionID, m_rtspStruct.szUser, m_rtspStruct.szRealm, m_rtspStruct.szNonce, m_rtspStruct.szSrcRtspPullUrl, szResponse);
+
+		author.reclaimDigestResponse(szResponse);
+	}
+	else if (wwwType == WWW_Authenticate_Basic)
+	{
+		UserPasswordBase64(szBasic);
+
+		if (m_nXHRtspURLType == XHRtspURLType_RecordDownload)
+		  sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nCSeq: %d\r\nScale: 255\r\nUser-Agent: %s\r\nSession: %s\r\nAuthorization: Basic %s\r\nRange: npt=0.000-\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, CSeq, szSessionID, MediaServerVerson, szBasic);
+		else 
+		  sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\nAuthorization: Basic %s\r\nRange: npt=0.000-\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, CSeq, szSessionID, MediaServerVerson, szBasic);
+	}
+
+4 、创建线程池时，产生的需要需要锁住 ，这样防止重复的线程序号出现 
+	void CNetBaseThreadPool::ProcessFunc()
+	{
+		EnterCriticalSection(&pThreadPollLock);
+			int nCurrentThreadID = nGetCurrentThreadOrder;
+			WriteLog(Log_Debug, "CNetBaseThreadPool = %X nCurrentThreadID = %d ", this, nCurrentThreadID);
+			bExitProcessThreadFlag[nCurrentThreadID] = false;
+			nGetCurrentThreadOrder ++;
+		LeaveCriticalSection(&pThreadPollLock);
+		uint64_t nClientID;
+
+		bCreateThreadFlag = true; //创建线程完毕
+		while (bRunFlag)
+		{
+			if (m_NetHandleQueue[nCurrentThreadID].pop(nClientID))
+			{
+				boost::shared_ptr<CNetRevcBase> pClient = GetNetRevcBaseClient(nClientID);
+				if (pClient != NULL)
+				{
+					pClient->ProcessNetData();//任务执行
+				}
+			}else
+			  Sleep(5);
+		}
+		bExitProcessThreadFlag[nCurrentThreadID] = true;
+	}
+
+5 、任务线程能完全退出 
+	LIVE555CLIENT_API BOOL live555Client_Cleanup()
+	{
+		ABL_bLive555ClientRunFlag = false;
+		while (!ABL_bExitMediaServerRunFlag)
+			Sleep(100);
+
+		unsigned char* pData = NULL;
+		int            nLength;
+		uint64_t       nClient;
+		while ((pData = pDisconnectBaseNetFifo.pop(&nLength)) != NULL)
+		{
+			if (nLength == sizeof(nClient))
+			{
+				memcpy((char*)&nClient, pData, sizeof(nClient));
+				if (nClient > 0)
+				{
+					DeleteNetRevcBaseClient(nClient);//执行删除 
+				}
+			}
+
+			pDisconnectBaseNetFifo.pop_front();
+		}
+
+		if (ABL_bInitLive555ClientFlag)
+		{
+			pDisconnectBaseNetFifo.FreeFifo();  //清理断裂的链接 
+			pErrorDisconnectBaseNetFifo.FreeFifo();
+			ABL_bInitLive555ClientFlag = false ;
+		}
+		XHNetSDK_Deinit();
+		NetBaseThreadPool->StopTask();
+		delete NetBaseThreadPool;
+
+		return true;
+	}
+
+6  InputNetData 函数需要加一把锁，InputNetData,ProcessNetData ,析构函数都要加把锁，否则对象访问有冲突 
+
+	//网络数据拼接 
+	int CNetClientRecvRtsp::InputNetData(NETHANDLE nServerHandle, NETHANDLE nClientHandle, uint8_t* pData, uint32_t nDataLength)
+	{
+		std::lock_guard<std::mutex> lock(netDataLock);
+
+		//网络断线检测
+		nRecvDataTimerBySecond = 0;
+
+		if (MaxNetDataCacheCount - nNetEnd >= nDataLength)
+		{//剩余空间足够
+			memcpy(netDataCache + nNetEnd, pData, nDataLength);
+			netDataCacheLength += nDataLength;
+			nNetEnd += nDataLength;
+		}
+		else
+		{//剩余空间不够，需要把剩余的buffer往前移动
+			if (netDataCacheLength > 0)
+			{//如果有少量剩余
+				memmove(netDataCache, netDataCache + nNetStart, netDataCacheLength);
+				nNetStart = 0;
+				nNetEnd = netDataCacheLength;
+			}
+			else
+			{//没有剩余，那么 首，尾指针都要复位 
+				nNetStart = nNetEnd = netDataCacheLength = 0;
+			}
+			memcpy(netDataCache + nNetEnd, pData, nDataLength);
+			netDataCacheLength += nDataLength;
+			nNetEnd += nDataLength;
+		}
+		return 0 ;
+	}
+	
+	//处理网络数据函数也要加一把锁。否则数据会有错乱 
+	int CNetClientRecvRtsp::ProcessNetData()
+	{
+		std::lock_guard<std::mutex> lock(netDataLock);
+
+
+
+live555Client-2021-09-02
+1 增加检测网络断线
+	int  CheckNetRevcBaseClientDisconnect()
+	{
+		std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
+
+		CNetRevcBase_ptrMap::iterator iterator1;
+		int                           nDiconnectCount = 0;
+
+	 
+		for (iterator1 = xh_ABLNetRevcBaseMap.begin(); iterator1 != xh_ABLNetRevcBaseMap.end(); ++iterator1)
+		{
+			if (
+				((*iterator1).second)->netBaseNetType == NetBaseNetType_RtspClientRecv ||      //代理接收Rtsp推流
+				((*iterator1).second)->netBaseNetType == NetBaseNetType_RtmpClientRecv ||      //代理接收Rtmp推流
+				((*iterator1).second)->netBaseNetType == NetBaseNetType_HttpFlvClientRecv ||   //代理接收HttpFlv推流
+				((*iterator1).second)->netBaseNetType == NetBaseNetType_HttpHLSClientRecv    //代理接收HttpHLS推流
+				)
+			{//现在检测 HLS 网络断线 ，还可以增加别的类型检测
+				((*iterator1).second)->nRecvDataTimerBySecond ++;
+
+				if (((*iterator1).second)->nRecvDataTimerBySecond >= MaxRecvDataTimerBySecondDiconnect)
+				{
+					nDiconnectCount++;
+					WriteLog(Log_Debug, "CheckNetRevcBaseClientDisconnect() nClient = %llu 检测到网络异常断开 ", ((*iterator1).second)->nClient);
+
+					pDisconnectBaseNetFifo.push((unsigned char*)&((*iterator1).second)->nClient, sizeof((unsigned char*)&((*iterator1).second)->nClient));
+				}
+
+				//发送rtcp包
+				if (((*iterator1).second)->netBaseNetType == NetBaseNetType_RtspClientRecv)
+				{
+					CNetClientRecvRtsp* pRtspClient = (CNetClientRecvRtsp*)(*iterator1).second.get();
+					if (pRtspClient->bSendRRReportFlag)
+					{
+						if (GetTickCount64() - pRtspClient->nCurrentTime >= 1000 * 3)
+						{
+							pRtspClient->SendRtcpReportData();
+						}
+					}
+				}
+			}
+			else if (((*iterator1).second)->netBaseNetType == NetBaseNetType_addStreamProxyControl || ((*iterator1).second)->netBaseNetType == NetBaseNetType_addPushProxyControl)
+			{//控制代理拉流、代理推流,检测代理拉流是否有断线
+				CNetRevcBase_ptr pClient = GetNetRevcBaseClientNoLock(((*iterator1).second)->nMediaClient);
+				if (pClient == NULL)
+				{//404 错误
+					if (((*iterator1).second)->bReConnectFlag == true)
+					{//需要重连
+						if (((*iterator1).second)->nReconnctTimeCount >= MaxReconnctTimeCount)
+						{
+							strcpy(((*iterator1).second)->szCBErrorMessage, message_timeout); //连接超时
+
+							  WriteLog(Log_Debug, "CheckNetRevcBaseClientDisconnect() , 网络断线回调通知开始 %s   ABLRtspChan = %d ", ((*iterator1).second)->szCBErrorMessage, ((*iterator1).second)->nClient);
+
+							  if (((*iterator1).second)->m_callbackFunc != NULL)
+								 (*((*iterator1).second)->m_callbackFunc) (((*iterator1).second)->nClient, XHRtspDataType_Message, "error", (unsigned char*)((*iterator1).second)->szCBErrorMessage, strlen(((*iterator1).second)->szCBErrorMessage), 0, ((*iterator1).second)->m_pCustomerPtr);
+
+							 WriteLog(Log_Debug, "CheckNetRevcBaseClientDisconnect() , 网络断线回调通知完成 %s   ABLRtspChan = %d ", ((*iterator1).second)->szCBErrorMessage, ((*iterator1).second)->nClient);
+
+							WriteLog(Log_Debug, " nClient = %llu , nMediaClient = %llu 已经重连 %s 达到 %d 次，执行销毁 ", ((*iterator1).second)->nClient, ((*iterator1).second)->nMediaClient, ((*iterator1).second)->m_addStreamProxyStruct.url, ((*iterator1).second)->nReconnctTimeCount);
+							pDisconnectBaseNetFifo.push((unsigned char*)&((*iterator1).second)->nClient, sizeof(((*iterator1).second)->nClient));
+						}
+						else
+						{
+						   ((*iterator1).second)->nReconnctTimeCount ++;
+						   WriteLog(Log_Debug, " nClient = %llu , nMediaClient = %llu 检测到网络异常断开 %s 现在执行第 %d 次重连", ((*iterator1).second)->nClient, ((*iterator1).second)->nMediaClient, ((*iterator1).second)->m_addStreamProxyStruct.url, ((*iterator1).second)->nReconnctTimeCount);
+						   pReConnectStreamProxyFifo.push((unsigned char*)&((*iterator1).second)->nClient, sizeof(((*iterator1).second)->nClient));
+						}
+					}
+					else
+					{//rtsp 拉流已经断开 ，需要销毁代理拉流
+						 if (strlen(((*iterator1).second)->szCBErrorMessage) == 0)
+							 strcpy(((*iterator1).second)->szCBErrorMessage, message_ConnectBreak);
+
+						  WriteLog(Log_Debug, "CheckNetRevcBaseClientDisconnect() , 网络断线回调通知开始 %s   ABLRtspChan = %d ", ((*iterator1).second)->szCBErrorMessage,((*iterator1).second)->nClient);
+						  
+						  if (((*iterator1).second)->m_callbackFunc != NULL )
+							  (*((*iterator1).second)->m_callbackFunc) (((*iterator1).second)->nClient, XHRtspDataType_Message, "error",(unsigned char*)((*iterator1).second)->szCBErrorMessage, strlen(((*iterator1).second)->szCBErrorMessage), 0, ((*iterator1).second)->m_pCustomerPtr);
+
+						  WriteLog(Log_Debug, "CheckNetRevcBaseClientDisconnect() , 网络断线回调通知完成 %s   ABLRtspChan = %d ", ((*iterator1).second)->szCBErrorMessage,((*iterator1).second)->nClient);
+
+						WriteLog(Log_Debug, " nClient = %llu , nMediaClient = %llu , %s  拉流已经断开 ，需要销毁代理拉流 ", ((*iterator1).second)->nClient, ((*iterator1).second)->nMediaClient, ((*iterator1).second)->m_addStreamProxyStruct.url);
+						pDisconnectBaseNetFifo.push((unsigned char*)&((*iterator1).second)->nClient, sizeof(((*iterator1).second)->nClient));
+					}
+				}
+			}
+		}
+
+		return nDiconnectCount;
+	}
+
+2、增加断线执行重连 ，重连10次
+	if (nReconnectTimer >= 5)
+	{
+		nReconnectTimer = 0;
+		CheckNetRevcBaseClientDisconnect();
+
+		while ((pData = pReConnectStreamProxyFifo.pop(&nLength)) != NULL)
+		{
+			if (nLength == sizeof(nClient))
+			{
+				memcpy((char*)&nClient, pData, sizeof(nClient));
+				if (nClient > 0)
+				{
+					CNetRevcBase_ptr pClient = GetNetRevcBaseClient(nClient);
+					if (pClient)
+						pClient->SendFirstRequst(); //执行重连
+				}
+			}
+
+			pReConnectStreamProxyFifo.pop_front();
+		}
+	}
+
+3、优化删除对象函数  	
+	bool  DeleteNetRevcBaseClient(NETHANDLE CltHandle)
+	{
+		std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
+
+		CNetRevcBase_ptrMap::iterator iterator1;
+
+		iterator1 = xh_ABLNetRevcBaseMap.find(CltHandle);
+		if (iterator1 != xh_ABLNetRevcBaseMap.end())
+		{
+			if (((*iterator1).second)->netBaseNetType == NetBaseNetType_RtspClientRecv)
+			{//rtsp 拉流，直接断开
+				xh_ABLNetRevcBaseMap.erase(iterator1);
+			}
+			else if (((*iterator1).second)->netBaseNetType == NetBaseNetType_addStreamProxyControl)
+			{//代理拉流 
+				if (((*iterator1).second)->nRtspConnectStatus == RtspConnectStatus_ConnectSuccess || ((*iterator1).second)->nRtspConnectStatus == RtspConnectStatus_ConnectFailed) //已经成功、失败，直接删除
+					xh_ABLNetRevcBaseMap.erase(iterator1);
+				else if (((*iterator1).second)->nRtspConnectStatus == RtspConnectStatus_AtConnecting)
+				{//正在连接，需要收集起来，等待下一次判断 
+					if (pDisconnectBaseNetFifo.push((unsigned char*)&CltHandle, sizeof(CltHandle))) //收集用户主动断开的连接
+						WriteLog(Log_Debug, "DeleteNetRevcBaseClient(正在连接，不能删除)，收集起来等待一次判断 rtspChan = %llu ", ((*iterator1).second)->nClient );
+				}
+			}else
+				xh_ABLNetRevcBaseMap.erase(iterator1);
+
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	
+4 增加暂停、继续、各种速度倍速播放、拖动播放  	
+	//暂停
+	bool CNetClientRecvRtsp::RtspPause()
+	{
+		if (bPauseFlag || nRtspProcessStep != RtspProcessStep_PLAYSucess || nClient <= 0 || m_nXHRtspURLType != XHRtspURLType_RecordPlay)
+			return false;
+
+		sprintf(szResponseBuffer, "PAUSE %s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, CSeq, MediaServerVerson, szSessionID);
+		XHNetSDK_Write(nClient, (unsigned char*)szResponseBuffer, strlen(szResponseBuffer), 1);
+		CSeq++;
+		bPauseFlag = true;
+		WriteLog(Log_Debug, "CNetClientRecvRtsp = %X,nClient = %d ,RtspPause() \r\n%s", this, nClient, szResponseBuffer);
+		return true;
+	}
+
+	//继续
+	bool CNetClientRecvRtsp::RtspResume()
+	{
+		if (!bPauseFlag || nRtspProcessStep != RtspProcessStep_PLAYSucess || nClient <= 0 || m_nXHRtspURLType != XHRtspURLType_RecordPlay)
+			return false;
+		sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, CSeq, MediaServerVerson, szSessionID);
+		XHNetSDK_Write(nClient, (unsigned char*)szResponseBuffer, strlen(szResponseBuffer), 1);
+		CSeq++;
+		bPauseFlag = false;
+		WriteLog(Log_Debug, "CNetClientRecvRtsp = %X,nClient = %d ,RtspResume() \r\n%s", this, nClient, szResponseBuffer);
+		return true;
+	}
+
+	//倍速播放
+	bool  CNetClientRecvRtsp::RtspSpeed(int nSpeed)
+	{
+		if (nRtspProcessStep != RtspProcessStep_PLAYSucess || nClient <= 0 || m_nXHRtspURLType != XHRtspURLType_RecordPlay)
+			return false;
+
+		sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nScale: %d\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, nSpeed, CSeq, MediaServerVerson,szSessionID);
+		XHNetSDK_Write(nClient, (unsigned char*)szResponseBuffer, strlen(szResponseBuffer), 1);
+		CSeq++;
+		bPauseFlag = false;
+		WriteLog(Log_Debug, "CNetClientRecvRtsp = %X,nClient = %d ,RtspSpeed() \r\n%s", this, nClient, szResponseBuffer);
+		return true;
+	}
+
+	//拖动播放
+	bool CNetClientRecvRtsp::RtspSeek(int64_t nSeekTime)
+	{
+		if (nRtspProcessStep != RtspProcessStep_PLAYSucess || nClient <= 0 || m_nXHRtspURLType != XHRtspURLType_RecordPlay)
+			return false;
+
+		sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nScale: %d\r\nCSeq: %d\r\nRange: npt=%d-0\r\nUser-Agent: %s\r\nSession: %s\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, 1, CSeq, nSeekTime, MediaServerVerson, szSessionID);
+		XHNetSDK_Write(nClient, (unsigned char*)szResponseBuffer, strlen(szResponseBuffer), 1);
+		CSeq++;
+		bPauseFlag = false;
+		WriteLog(Log_Debug, "CNetClientRecvRtsp = %X, nClient = %d ,RtspSeek() \r\n%s", this, nClient, szResponseBuffer);
+		return true;
+	}
+	
+live555Client-2021-09-01
+1 优化rtp读取包模块，有少量丢包不会造成网络主动断线 
+	//查找rtp包标志 
+	bool CNetClientRecvRtsp::FindRtpPacketFlag()
+	{
+		bool bFindFlag = false;
+
+		unsigned char szRtpFlag[2] = { 0x24, 0x00 };
+		int  nPos = 0;
+
+		if (netDataCacheLength > 2)
+		{
+			for (int i = nNetStart; i < nNetEnd; i++)
+			{
+				if (memcmp(netDataCache + i, szRtpFlag, 2) == 0)
+				{
+					nPos = i;
+					bFindFlag = true;
+					break;
+				}
+			}
+		}
+
+		//找到标志，重新计算起点，及长度 
+		if (bFindFlag)
+		{
+			nNetStart = nPos;
+			netDataCacheLength = nNetEnd - nNetStart;
+			WriteLog(Log_Debug, "CNetClientRecvRtsp = %X ,找到RTP位置， nNetStart = %d , nNetEnd = %d , netDataCacheLength = %d ", this, nNetStart, nNetEnd, netDataCacheLength);
+		}
+
+		return bFindFlag;
+	}
+
+	//处理网络数据
+	int CNetClientRecvRtsp::ProcessNetData()
+	{
+		bExitProcessFlagArray[2] = false; 
+		tRtspProcessStartTime = GetTickCount64();
+		while (!bIsInvalidConnectFlag && bRunFlag && netDataCacheLength > 4)
+		{
+			uint32_t nReadLength = 4;
+			data_Length = 0;
+
+			int nRet = XHNetSDKRead(nClient, data_ + data_Length, &nReadLength, true, true);
+			if (nRet == 0 && nReadLength == 4)
+			{
+				//nRTSPPacketCount = 0;//接收到数据，超时清0 
+
+				data_Length = 4;
+
+				if (data_[0] == '$')
+				{//rtp 数据
+					memcpy((char*)&nRtpLength, data_ + 2, 2);
+					nRtpLength = nReadLength = ntohs(nRtpLength);
+
+					if (nRtpLength > netDataCacheLength)
+					{//剩余rtp长度不够读取，需要退出，等待下一次读取
+						bExitProcessFlagArray[2] = true;
+						nNetStart -= 4;
+						netDataCacheLength += 4;
+						return 0;
+					}
+					
+2  增加回调媒体信息 
+	//回调媒体信息
+	sprintf(szMediaCodecName, "{\"video\":\"%s\",\"audio\":\"%s\",\"channels\":%d,\"sampleRate\":%d}", szVideoName, szAudioName, nChannels, nSampleRate);
+	WriteLog(Log_Debug, "在Describe中，szMediaCodecName %s ", szMediaCodecName);
+	if (m_callbackFunc)
+		(*m_callbackFunc) (hParent, XHRtspDataType_Message, "success", (unsigned char*)szMediaCodecName, strlen(szMediaCodecName), timeValue, m_pCustomerPtr);
+					
+live555Client-2021-08-31 
+1 采用服务器的架构技术（线程池 + 异步网络 ）构建rtsp客户端 

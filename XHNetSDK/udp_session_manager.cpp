@@ -20,8 +20,13 @@ bool udp_session_manager::push_udp_session(udp_session_ptr& s)
 
 	if (s)
 	{
+#ifdef USE_BOOST
 		std::pair<boost::unordered_map<NETHANDLE, udp_session_ptr>::iterator, bool> ret = m_sessions.insert(std::make_pair(s->get_id(), s));
-		return ret.second;
+
+#else
+		auto ret = m_sessions.insert(std::make_pair(s->get_id(), s));
+#endif
+	return ret.second;
 	}
 
 	return false;
@@ -35,7 +40,7 @@ bool udp_session_manager::pop_udp_session(NETHANDLE id)
 	auto_lock::al_lock<auto_lock::al_spin> al(m_mutex);
 #endif
 
-	boost::unordered_map<NETHANDLE, udp_session_ptr>::iterator iter = m_sessions.find(id);
+	std::map<NETHANDLE, udp_session_ptr>::iterator iter = m_sessions.find(id);
 	if (m_sessions.end() != iter)
 	{
 		if (iter->second)

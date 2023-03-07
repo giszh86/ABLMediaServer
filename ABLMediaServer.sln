@@ -21,6 +21,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ABLMediaServer-linux", "ABL
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "asio", "asio\asio.vcxproj", "{A3CC8645-220B-4469-9912-E7BD98AED954}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "XHNetSDK", "XHNetSDK\XHNetSDK.vcxproj", "{051B2BB1-162E-4FA0-8877-4C8E98D79088}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|ARM = Debug|ARM
@@ -153,6 +155,18 @@ Global
 		{A3CC8645-220B-4469-9912-E7BD98AED954}.Release|x64.Build.0 = Release|x64
 		{A3CC8645-220B-4469-9912-E7BD98AED954}.Release|x86.ActiveCfg = Release|Win32
 		{A3CC8645-220B-4469-9912-E7BD98AED954}.Release|x86.Build.0 = Release|Win32
+		{051B2BB1-162E-4FA0-8877-4C8E98D79088}.Debug|ARM.ActiveCfg = Debug|Win32
+		{051B2BB1-162E-4FA0-8877-4C8E98D79088}.Debug|ARM64.ActiveCfg = Debug|Win32
+		{051B2BB1-162E-4FA0-8877-4C8E98D79088}.Debug|x64.ActiveCfg = Debug|x64
+		{051B2BB1-162E-4FA0-8877-4C8E98D79088}.Debug|x64.Build.0 = Debug|x64
+		{051B2BB1-162E-4FA0-8877-4C8E98D79088}.Debug|x86.ActiveCfg = Debug|Win32
+		{051B2BB1-162E-4FA0-8877-4C8E98D79088}.Debug|x86.Build.0 = Debug|Win32
+		{051B2BB1-162E-4FA0-8877-4C8E98D79088}.Release|ARM.ActiveCfg = Release|Win32
+		{051B2BB1-162E-4FA0-8877-4C8E98D79088}.Release|ARM64.ActiveCfg = Release|Win32
+		{051B2BB1-162E-4FA0-8877-4C8E98D79088}.Release|x64.ActiveCfg = Release|x64
+		{051B2BB1-162E-4FA0-8877-4C8E98D79088}.Release|x64.Build.0 = Release|x64
+		{051B2BB1-162E-4FA0-8877-4C8E98D79088}.Release|x86.ActiveCfg = Release|Win32
+		{051B2BB1-162E-4FA0-8877-4C8E98D79088}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

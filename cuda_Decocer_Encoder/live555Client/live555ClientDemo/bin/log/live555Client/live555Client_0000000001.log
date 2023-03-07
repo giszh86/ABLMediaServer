@@ -1,0 +1,319 @@
+2022-06-28 14:33:34 Log_Debug CNetBaseThreadPool = 99844010 nCurrentThreadID = 0 
+2022-06-28 14:33:34 Log_Debug CNetBaseThreadPool = 99844010 nCurrentThreadID = 1 
+2022-06-28 14:33:34 Log_Debug CNetBaseThreadPool = 99844010 nCurrentThreadID = 2 
+2022-06-28 14:33:34 Log_Debug CNetBaseThreadPool = 99844010 nCurrentThreadID = 3 
+2022-06-28 14:33:34 Log_Debug CNetBaseThreadPool = 99844010 nCurrentThreadID = 4 
+2022-06-28 14:33:34 Log_Debug CNetBaseThreadPool = 99844010 nCurrentThreadID = 5 
+2022-06-28 14:33:34 Log_Debug CNetBaseThreadPool = 99844010 nCurrentThreadID = 6 
+2022-06-28 14:33:34 Log_Debug CNetBaseThreadPool = 99844010 nCurrentThreadID = 7 
+2022-06-28 14:33:34 Log_Debug CNetBaseThreadPool = 99844010 nCurrentThreadID = 8 
+2022-06-28 14:33:34 Log_Debug CNetBaseThreadPool = 99844010 nCurrentThreadID = 9 
+2022-06-28 14:33:34 Log_Debug CNetBaseThreadPool = 99844010 nCurrentThreadID = 10 
+2022-06-28 14:33:34 Log_Debug CNetBaseThreadPool = 99844010 nCurrentThreadID = 11 
+2022-06-28 14:33:34 Log_Debug CNetBaseThreadPool = 99844010 nCurrentThreadID = 12 
+2022-06-28 14:33:34 Log_Debug CNetBaseThreadPool = 99844010 nCurrentThreadID = 13 
+2022-06-28 14:33:34 Log_Debug CNetBaseThreadPool = 99844010 nCurrentThreadID = 14 
+2022-06-28 14:33:34 Log_Debug CNetBaseThreadPool = 99844010 nCurrentThreadID = 15 
+2022-06-28 14:33:34 Log_Debug CNetBaseThreadPool = 99844010 nCurrentThreadID = 16 
+2022-06-28 14:33:34 Log_Debug CNetBaseThreadPool = 99844010 nCurrentThreadID = 17 
+2022-06-28 14:33:34 Log_Debug CNetBaseThreadPool = 99844010 nCurrentThreadID = 18 
+2022-06-28 14:33:34 Log_Debug CNetBaseThreadPool = 99844010 nCurrentThreadID = 19 
+2022-06-28 14:33:34 Log_Debug CNetBaseThreadPool = 99844010 nCurrentThreadID = 20 
+2022-06-28 14:33:34 Log_Debug CNetBaseThreadPool = 99844010 nCurrentThreadID = 21 
+2022-06-28 14:33:34 Log_Debug CNetBaseThreadPool = 99844010 nCurrentThreadID = 22 
+2022-06-28 14:33:34 Log_Debug CNetBaseThreadPool = 99844010 nCurrentThreadID = 23 
+2022-06-28 14:33:34 Log_Debug CNetBaseThreadPool = 99844010 nCurrentThreadID = 24 
+2022-06-28 14:33:34 Log_Debug CNetBaseThreadPool = 99844010 nCurrentThreadID = 25 
+2022-06-28 14:33:34 Log_Debug CNetBaseThreadPool = 99844010 nCurrentThreadID = 26 
+2022-06-28 14:33:34 Log_Debug CNetBaseThreadPool = 99844010 nCurrentThreadID = 27 
+2022-06-28 14:33:34 Log_Debug CNetBaseThreadPool = 99844010 nCurrentThreadID = 28 
+2022-06-28 14:33:35 Log_Debug CNetBaseThreadPool = 99844010 nCurrentThreadID = 29 
+2022-06-28 14:33:35 Log_Debug CNetBaseThreadPool = 99844010 nCurrentThreadID = 30 
+2022-06-28 14:33:35 Log_Debug CNetBaseThreadPool = 99844010 nCurrentThreadID = 31 
+2022-06-28 14:33:35 Log_Debug CNetBaseThreadPool= 99844010, 构造 
+2022-06-28 14:33:35 Log_Debug CreateNetRevcBaseClient(() 开始 netClientType = 4 serverHandle = 0 CltHandle = 0 
+2022-06-28 14:33:35 Log_Debug CNetClientAddStreamProxy 构造 = 1EF16F0 nClient = 1 , nCreateDateTime = 1656398015
+2022-06-28 14:33:35 Log_Debug CreateNetRevcBaseClient(() 完成 netClientType = 4 serverHandle = 0 CltHandle = 1 
+2022-06-28 14:33:35 Log_Debug CreateNetRevcBaseClient(() 开始 netClientType = 2 serverHandle = 0 CltHandle = 0 
+2022-06-28 14:33:35 Log_Debug CNetClientRecvRtsp step 4 
+2022-06-28 14:33:35 Log_Debug CNetClientRecvRtsp 构造 完成 nClient = 2 , nCreateDateTime = 1656398015  
+2022-06-28 14:33:35 Log_Debug CreateNetRevcBaseClient(() 完成 netClientType = 2 serverHandle = 0 CltHandle = 2 
+2022-06-28 14:33:35 Log_Debug nClient = 2 ,URL: rtsp://44.37.141.40/media/video1 , 连接成功 result: 1 
+2022-06-28 14:33:35 Log_Debug 
+OPTIONS rtsp://44.37.141.40/media/video1 RTSP/1.0
+CSeq: 1
+User-Agent: ABL_RtspServer_3.0.1
+
+
+2022-06-28 14:33:35 Log_Debug CNetClientRecvRtsp= AA753030 , nClient = 2 
+RTSP/1.0 200 OK
+CSeq: 1
+Public: OPTIONS,DESCRIBE,SETUP,PLAY,PAUSE,TEARDOWN,ANNOUNCE,SET_PARAMETER,GET_PARAMETER
+
+
+2022-06-28 14:33:35 Log_Debug 
+DESCRIBE rtsp://44.37.141.40/media/video1 RTSP/1.0
+CSeq: 2
+User-Agent: ABL_RtspServer_3.0.1
+Accept: application/sdp
+
+
+2022-06-28 14:33:35 Log_Debug CreateNetRevcBaseClient(() 开始 netClientType = 4 serverHandle = 0 CltHandle = 0 
+2022-06-28 14:33:35 Log_Debug CNetClientAddStreamProxy 构造 = 1EF35C0 nClient = 3 , nCreateDateTime = 1656398015
+2022-06-28 14:33:35 Log_Debug CreateNetRevcBaseClient(() 完成 netClientType = 4 serverHandle = 0 CltHandle = 3 
+2022-06-28 14:33:35 Log_Debug CreateNetRevcBaseClient(() 开始 netClientType = 2 serverHandle = 0 CltHandle = 0 
+2022-06-28 14:33:35 Log_Debug CNetClientRecvRtsp step 4 
+2022-06-28 14:33:35 Log_Debug CNetClientRecvRtsp 构造 完成 nClient = 4 , nCreateDateTime = 1656398015  
+2022-06-28 14:33:35 Log_Debug CreateNetRevcBaseClient(() 完成 netClientType = 2 serverHandle = 0 CltHandle = 4 
+2022-06-28 14:33:35 Log_Debug nClient = 4 ,URL: rtsp://44.35.33.239:554/Media/TestCamera_8 , 连接成功 result: 1 
+2022-06-28 14:33:35 Log_Debug 
+OPTIONS rtsp://44.35.33.239:554/Media/TestCamera_8 RTSP/1.0
+CSeq: 1
+User-Agent: ABL_RtspServer_3.0.1
+
+
+2022-06-28 14:33:35 Log_Debug CNetClientRecvRtsp= AA753030 , nClient = 2 
+RTSP/1.0 401 ClientUnAuthorized
+CSeq: 2
+WWW-Authenticate: Digest realm="48ea637853a3",nonce="50854c56f7bc5cc5ea16185aa74b48c9", stale="FALSE"
+
+
+2022-06-28 14:33:35 Log_Debug 
+DESCRIBE rtsp://44.37.141.40/media/video1 RTSP/1.0
+CSeq: 3
+User-Agent: ABL_RtspServer_3.0.1
+Authorization: Digest username="admin", realm="48ea637853a3", nonce="50854c56f7bc5cc5ea16185aa74b48c9", uri="rtsp://44.37.141.40/media/video1", response="dd120838671285c742a4f3ad03836b4c"
+Accept: application/sdp
+
+
+2022-06-28 14:33:35 Log_Debug CreateNetRevcBaseClient(() 开始 netClientType = 4 serverHandle = 0 CltHandle = 0 
+2022-06-28 14:33:35 Log_Debug CNetClientAddStreamProxy 构造 = 1EF4F00 nClient = 5 , nCreateDateTime = 1656398015
+2022-06-28 14:33:35 Log_Debug CreateNetRevcBaseClient(() 完成 netClientType = 4 serverHandle = 0 CltHandle = 5 
+2022-06-28 14:33:35 Log_Debug CreateNetRevcBaseClient(() 开始 netClientType = 2 serverHandle = 0 CltHandle = 0 
+2022-06-28 14:33:35 Log_Debug CNetClientRecvRtsp step 4 
+2022-06-28 14:33:35 Log_Debug CNetClientRecvRtsp 构造 完成 nClient = 6 , nCreateDateTime = 1656398015  
+2022-06-28 14:33:35 Log_Debug CreateNetRevcBaseClient(() 完成 netClientType = 2 serverHandle = 0 CltHandle = 6 
+2022-06-28 14:33:35 Log_Debug nClient = 6 ,URL: rtsp://44.35.33.239:554/Media/TestCamera_9 , 连接成功 result: 1 
+2022-06-28 14:33:35 Log_Debug 
+OPTIONS rtsp://44.35.33.239:554/Media/TestCamera_9 RTSP/1.0
+CSeq: 1
+User-Agent: ABL_RtspServer_3.0.1
+
+
+2022-06-28 14:33:35 Log_Debug CNetClientRecvRtsp= 881B6030 , nClient = 6 
+RTSP/1.0 200 OK
+CSeq: 1
+Public: DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE, OPTIONS, ANNOUNCE, RECORD，GET_PARAMETER
+
+
+2022-06-28 14:33:35 Log_Debug 
+DESCRIBE rtsp://44.35.33.239:554/Media/TestCamera_9 RTSP/1.0
+CSeq: 2
+User-Agent: ABL_RtspServer_3.0.1
+Accept: application/sdp
+
+
+2022-06-28 14:33:35 Log_Debug CNetClientRecvRtsp= 882D7030 , nClient = 4 
+RTSP/1.0 200 OK
+CSeq: 1
+Public: DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE, OPTIONS, ANNOUNCE, RECORD，GET_PARAMETER
+
+
+2022-06-28 14:33:35 Log_Debug 
+DESCRIBE rtsp://44.35.33.239:554/Media/TestCamera_8 RTSP/1.0
+CSeq: 2
+User-Agent: ABL_RtspServer_3.0.1
+Accept: application/sdp
+
+
+2022-06-28 14:33:35 Log_Debug CNetClientRecvRtsp= 881B6030 , nClient = 6 
+RTSP/1.0 200 OK
+Content-Length: 219
+Server: ABLMediaServer-5.3.5(2022-06-27)
+CSeq: 2
+Session: 0
+
+v=0
+o=- 0 0 IN IP4 127.0.0.1
+s=No Name
+c=IN IP4 190.15.240.36
+t=0 0
+a=tool:libavformat 55.19.104
+m=video 6000 RTP/AVP 108
+b=AS:832
+a=rtpmap:108 H265/90000
+a=fmtp:108 packetization-mode=1
+a=control:streamid=0
+
+2022-06-28 14:33:35 Log_Debug 在SDP中，获取到的视频格式为 H265 , payload = 108 ！
+2022-06-28 14:33:35 Log_Debug 
+SETUP rtsp://44.35.33.239:554/Media/TestCamera_9/streamid=0 RTSP/1.0
+CSeq: 3
+User-Agent: ABLRtspClient-3.3.9(2021-10-08)
+Transport: RTP/AVP/TCP;unicast;interleaved=0-1
+
+
+2022-06-28 14:33:35 Log_Debug 在Describe中，szMediaCodecName {"video":"H265","audio":"","channels":0,"sampleRate":0} 
+2022-06-28 14:33:35 Log_Debug CNetClientRecvRtsp= 882D7030 , nClient = 4 
+RTSP/1.0 200 OK
+Content-Length: 219
+Server: ABLMediaServer-5.3.5(2022-06-27)
+CSeq: 2
+Session: 0
+
+v=0
+o=- 0 0 IN IP4 127.0.0.1
+s=No Name
+c=IN IP4 190.15.240.36
+t=0 0
+a=tool:libavformat 55.19.104
+m=video 6000 RTP/AVP 108
+b=AS:832
+a=rtpmap:108 H265/90000
+a=fmtp:108 packetization-mode=1
+a=control:streamid=0
+
+2022-06-28 14:33:35 Log_Debug 在SDP中，获取到的视频格式为 H265 , payload = 108 ！
+2022-06-28 14:33:35 Log_Debug 
+SETUP rtsp://44.35.33.239:554/Media/TestCamera_8/streamid=0 RTSP/1.0
+CSeq: 3
+User-Agent: ABLRtspClient-3.3.9(2021-10-08)
+Transport: RTP/AVP/TCP;unicast;interleaved=0-1
+
+
+2022-06-28 14:33:35 Log_Debug 在Describe中，szMediaCodecName {"video":"H265","audio":"","channels":0,"sampleRate":0} 
+2022-06-28 14:33:35 Log_Debug CNetClientRecvRtsp= 881B6030 , nClient = 6 
+RTSP/1.0 200 OK
+Server: ABLMediaServer-5.3.5(2022-06-27)
+CSeq: 3
+Cache-Control: no-cache
+Session: 0
+Date: Tue, 13 Nov 2019 02:49:48 GMT
+Expires: Tue, 13 Nov 2018 02:49:48 GMT
+Transport: RTP/AVP/TCP;unicast;interleaved=0-1
+
+
+2022-06-28 14:33:35 Log_Debug 
+PLAY rtsp://44.35.33.239:554/Media/TestCamera_9 RTSP/1.0
+CSeq: 4
+User-Agent: ABLRtspClient-3.3.9(2021-10-08)
+Session: 0
+Range: npt=0.000-
+
+
+2022-06-28 14:33:35 Log_Debug CNetClientRecvRtsp= 882D7030 , nClient = 4 
+RTSP/1.0 200 OK
+Server: ABLMediaServer-5.3.5(2022-06-27)
+CSeq: 3
+Cache-Control: no-cache
+Session: 0
+Date: Tue, 13 Nov 2019 02:49:48 GMT
+Expires: Tue, 13 Nov 2018 02:49:48 GMT
+Transport: RTP/AVP/TCP;unicast;interleaved=0-1
+
+
+2022-06-28 14:33:35 Log_Debug 
+PLAY rtsp://44.35.33.239:554/Media/TestCamera_8 RTSP/1.0
+CSeq: 4
+User-Agent: ABLRtspClient-3.3.9(2021-10-08)
+Session: 0
+Range: npt=0.000-
+
+
+2022-06-28 14:33:35 Log_Debug CNetClientRecvRtsp= AA753030 , nClient = 2 
+RTSP/1.0 200 OK
+CSeq: 3
+Content-Base: rtsp://44.37.141.40/media/video1
+Content-Length: 516
+Content-Type: application/sdp
+
+v=0
+o=- 1001 1 IN IP4 44.37.141.40
+s=VCP IPC Realtime stream
+m=video 0 RTP/AVP 105
+c=IN IP4 44.37.141.40
+a=control:rtsp://44.37.141.40/media/video1/video
+a=rtpmap:105 H264/90000
+a=fmtp:105 profile-level-id=64002a; packetization-mode=1; sprop-parameter-sets=Z2QAKqwsaoHgCJ+WbgICAoAAAfQAAGGoQg==,aO48sA==
+a=recvonly
+m=application 0 RTP/AVP 107
+c=IN IP4 44.37.141.40
+a=control:rtsp://44.37.141.40/media/video1/metadata
+a=rtpmap:107 vnd.onvif.metadata/90000
+a=fmtp:107 DecoderTag=h3c-v3 RTCP=0
+a=recvonly
+
+2022-06-28 14:33:35 Log_Debug 在SDP中，获取到的视频格式为 H264 , payload = 105 ！
+2022-06-28 14:33:35 Log_Debug 
+SETUP rtsp://admin:Ftfj440304@44.37.141.40/media/video1/video RTSP/1.0
+CSeq: 4
+User-Agent: ABLRtspClient-3.3.9(2021-10-08)
+Authorization: Digest username="admin", realm="48ea637853a3", nonce="50854c56f7bc5cc5ea16185aa74b48c9", uri="rtsp://44.37.141.40/media/video1", response="f1be28cd44c4fd5c67b4f25def843f32"
+Transport: RTP/AVP/TCP;unicast;interleaved=0-1
+
+
+2022-06-28 14:33:35 Log_Debug 在Describe中，szMediaCodecName {"video":"H264","audio":"","channels":0,"sampleRate":0} 
+2022-06-28 14:33:35 Log_Debug CNetClientRecvRtsp= 882D7030 , nClient = 4 
+RTSP/1.0 200 OK
+Server: ABLMediaServer-5.3.5(2022-06-27)
+CSeq: 4
+Session: 0
+RTP-Info: rtsp://44.35.33.239:554/Media/TestCamera_8
+
+
+2022-06-28 14:33:35 Log_Debug 收到 Play 回复命令，rtsp交互完毕 nClient = 4 
+2022-06-28 14:33:35 Log_Debug CNetClientRecvRtsp= 881B6030 , nClient = 6 
+RTSP/1.0 200 OK
+Server: ABLMediaServer-5.3.5(2022-06-27)
+CSeq: 4
+Session: 0
+RTP-Info: rtsp://44.35.33.239:554/Media/TestCamera_9
+
+
+2022-06-28 14:33:35 Log_Debug 收到 Play 回复命令，rtsp交互完毕 nClient = 6 
+2022-06-28 14:33:35 Log_Debug CNetClientRecvRtsp= AA753030 , nClient = 2 
+RTSP/1.0 200 OK
+CSeq: 4
+Transport: RTP/AVP/TCP;unicast;interleaved=0-1;ssrc=80a434;mode="PLAY"
+Session: 9ad71b2ccfc71b2ccdc71b2cc2c71b2;timeout=60
+
+
+2022-06-28 14:33:35 Log_Debug SendPlay() ，nClient = 2 ,strSessionID = 9ad71b2ccfc71b2ccdc71b2cc2c71b2;timeout=60 , szSessionID = 9ad71b2ccfc71b2ccdc71b2cc2c71b2 
+2022-06-28 14:33:35 Log_Debug 
+PLAY rtsp://admin:Ftfj440304@44.37.141.40/media/video1 RTSP/1.0
+CSeq: 5
+User-Agent: ABLRtspClient-3.3.9(2021-10-08)
+Session: 9ad71b2ccfc71b2ccdc71b2cc2c71b2
+Authorization: Digest username="admin", realm="48ea637853a3", nonce="50854c56f7bc5cc5ea16185aa74b48c9", uri="rtsp://44.37.141.40/media/video1", response="79cf36346cea220f18125b7acd18494a"
+Range: npt=0.000-
+
+
+2022-06-28 14:33:35 Log_Debug CNetClientRecvRtsp= AA753030 , nClient = 2 
+RTSP/1.0 200 OK
+CSeq: 5
+Range: npt=0Z-
+Session: 9ad71b2ccfc71b2ccdc71b2cc2c71b2
+
+
+2022-06-28 14:33:35 Log_Debug 收到 Play 回复命令，rtsp交互完毕 nClient = 2 
+2022-06-28 14:33:45 Log_Debug ABLLive555ClientProcessThread() 当前对象总数 xh_ABLNetRevcBaseMap.size() = 6 
+2022-06-28 14:33:46 Log_Debug DeleteNetRevcBaseClient() 用户主动断开 nClient = 1 
+2022-06-28 14:33:46 Log_Debug CNetClientAddStreamProxy 析构 = 1EF16F0  nClient = 1 ,nMediaClient = 2
+2022-06-28 14:33:46 Log_Debug DeleteNetRevcBaseClient() 用户主动断开 nClient = 3 
+2022-06-28 14:33:46 Log_Debug CNetClientAddStreamProxy 析构 = 1EF35C0  nClient = 3 ,nMediaClient = 4
+2022-06-28 14:33:46 Log_Debug DeleteNetRevcBaseClient() 用户主动断开 nClient = 2 
+2022-06-28 14:33:46 Log_Debug CNetClientRecvRtsp 等待任务退出 nTime = 1656398026, nClient = 2 
+2022-06-28 14:33:46 Log_Debug CNetClientRecvRtsp 任务退出完毕 nTime = 1656398026, nClient = 2 
+2022-06-28 14:33:46 Log_Debug CNetClientRecvRtsp 析构 nClient = 2 
+
+2022-06-28 14:33:46 Log_Debug DeleteNetRevcBaseClient() 用户主动断开 nClient = 4 
+2022-06-28 14:33:46 Log_Debug CNetClientRecvRtsp 等待任务退出 nTime = 1656398026, nClient = 4 
+2022-06-28 14:33:46 Log_Debug CNetClientRecvRtsp 任务退出完毕 nTime = 1656398026, nClient = 4 
+2022-06-28 14:33:46 Log_Debug CNetClientRecvRtsp 析构 nClient = 4 
+
+2022-06-28 14:33:46 Log_Debug DeleteNetRevcBaseClient() 用户主动断开 nClient = 5 
+2022-06-28 14:33:46 Log_Debug CNetClientAddStreamProxy 析构 = 1EF4F00  nClient = 5 ,nMediaClient = 6
+2022-06-28 14:33:46 Log_Debug CNetClientRecvRtsp 等待任务退出 nTime = 1656398026, nClient = 6 
+2022-06-28 14:33:46 Log_Debug CNetClientRecvRtsp 任务退出完毕 nTime = 1656398026, nClient = 6 
+2022-06-28 14:33:46 Log_Debug CNetClientRecvRtsp 析构 nClient = 6 
+

@@ -13,12 +13,75 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="timer">
+      <UniqueIdentifier>{f01def56-b8cd-4066-aedd-0f77f509eea6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="framework.h">
+    <ClInclude Include="pch.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="pch.h">
+    <ClInclude Include="auto_lock.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="circular_buffer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="client.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="client_manager.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="data_define.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="identifier_generator.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="io_context_pool.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="libnet.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="libnet_error.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="object_pool.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="server.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="server_manager.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="udp_session.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="udp_session_manager.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="unordered_object_pool.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="XHNetSDK.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ABLsharedarray.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="timer\semaphore.h">
+      <Filter>timer</Filter>
+    </ClInclude>
+    <ClInclude Include="timer\timer_cpp11.h">
+      <Filter>timer</Filter>
+    </ClInclude>
+    <ClInclude Include="HSingleton.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -28,6 +91,42 @@
     </ClCompile>
     <ClCompile Include="pch.cpp">
       <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="circular_buffer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="client.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="client_manager.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="identifier_generator.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="io_context_pool.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="libnet.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="server.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="server_manager.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="udp_session.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="udp_session_manager.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="timer\semaphore.cpp">
+      <Filter>timer</Filter>
+    </ClCompile>
+    <ClCompile Include="timer\timer_cpp11.cpp">
+      <Filter>timer</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

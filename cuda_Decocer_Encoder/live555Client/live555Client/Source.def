@@ -1,0 +1,13 @@
+LIBRARY
+
+EXPORTS
+	live555Client_Init
+	live555Client_Connect
+	live555Client_ConnectCallBack
+	live555Client_Speed
+	live555Client_Seek
+	live555Client_Pause
+	live555Client_Resume
+	live555Client_Disconnect
+	live555Client_Cleanup
+	live555Client_GetNetStreamStatus

@@ -3,12 +3,22 @@
 
 #include <vector>
 #include <boost/asio.hpp>
+#include <boost/asio/detail/thread_group.hpp>
+
+#include "auto_lock.h"
+#ifdef USE_BOOST
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/thread.hpp>
-#include "auto_lock.h"
-
+#else
+#include <memory>
+#include <thread>
+#endif
+#ifdef USE_BOOST
 class io_context_pool : public boost::noncopyable
+#else
+class io_context_pool 
+#endif
 {
 public:
 	io_context_pool();
@@ -25,16 +35,30 @@ public:
 
 	void close();
 
-	boost::asio::io_context& get_io_context();
+	asio::io_context& get_io_context();
 
 private:
-	typedef boost::shared_ptr<boost::asio::io_context> io_context_ptr;
-	typedef boost::shared_ptr<boost::asio::io_context::work> work_ptr;
+#ifdef USE_BOOST
+	typedef boost::shared_ptr<asio::io_context> io_context_ptr;
+	typedef boost::shared_ptr<asio::io_context::work> work_ptr;
+#else
+	typedef std::shared_ptr<asio::io_context> io_context_ptr;
+	typedef std::shared_ptr<asio::io_context::work> work_ptr;
+#endif
+
+
+
+#ifdef USE_BOOST
 	typedef boost::shared_ptr<boost::thread> thread_ptr;
+#else
+	typedef std::shared_ptr<std::thread> thread_ptr;
+#endif
 
 	std::vector<io_context_ptr> m_iocontexts;
 	std::vector<work_ptr> m_works;
-	boost::thread_group m_threads;
+
+	asio::detail::thread_group m_threads;
+
 #ifdef LIBNET_USE_CORE_SYNC_MUTEX
 	auto_lock::al_mutex m_mutex;
 #else

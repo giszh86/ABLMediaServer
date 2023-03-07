@@ -1,9 +1,18 @@
-#include <boost/make_shared.hpp>
-#include <boost/function.hpp>
+
 #include <boost/ref.hpp>
 #include "io_context_pool.h"
 #include "libnet_error.h"
 #include "data_define.h"
+
+
+
+#ifdef USE_BOOST
+#include <boost/make_shared.hpp>
+#include <boost/function.hpp>
+#else
+#include <memory>
+#include <functional>
+#endif
 
 io_context_pool::io_context_pool()
 	: m_nextioc(0)
@@ -31,13 +40,21 @@ int32_t io_context_pool::init(uint32_t iocnum, uint32_t periocthread)
 	{
 		try
 		{
-			ioc = boost::make_shared<boost::asio::io_context>();
-			wo = boost::make_shared<boost::asio::io_context::work>(boost::ref(*ioc));
-			m_iocontexts.push_back(ioc);
+#ifdef USE_BOOST
+			ioc = boost::make_shared<asio::io_context>();
+			wo = boost::make_shared<asio::io_context::work>(boost::ref(*ioc));
+
+#else
+			ioc = std::make_shared<asio::io_context>();
+			wo = std::make_shared<asio::io_context::work>(boost::ref(*ioc));
+
+#endif
+		m_iocontexts.push_back(ioc);
 			m_works.push_back(wo);
 
 			++i;
 		}
+#ifdef USE_BOOST
 		catch (const std::bad_alloc& e)
 		{
 			(void)e;
@@ -49,6 +66,20 @@ int32_t io_context_pool::init(uint32_t iocnum, uint32_t periocthread)
 			boost::this_thread::sleep_for(boost::chrono::milliseconds(1000));
 			continue;
 		}
+#else
+		catch (const std::bad_alloc& e)
+		{
+			(void)e;
+			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+			continue;
+		}
+		catch (...)
+		{
+			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+			continue;
+		}
+#endif
+
 	}
 
 	if (0 == periocthread)
@@ -82,7 +113,12 @@ int32_t io_context_pool::run()
 {
 	int32_t ret = e_libnet_err_nonioc;
 	thread_ptr t;
+#ifdef USE_BOOST
 	boost::function<void(void)> f;
+#else
+	std::function<void(void)> f;
+#endif
+
 
 	for (std::vector<io_context_ptr>::size_type i = 0; i < m_iocontexts.size(); ++i)
 	{
@@ -90,11 +126,18 @@ int32_t io_context_pool::run()
 		{
 			try
 			{
-				f.clear();
+			//	f.clear();
 				
 				do 
 				{
-					f = boost::bind(&boost::asio::io_context::run, m_iocontexts[i]);
+#ifdef USE_BOOST
+					f = boost::bind(&asio::io_context::run, m_iocontexts[i]);
+
+#else
+					f = std::bind(&asio::io_context::run, m_iocontexts[i], std::placeholders::_1);
+
+#endif
+
 				} while (!f);
 
 				m_threads.create_thread(f);
@@ -106,12 +149,12 @@ int32_t io_context_pool::run()
 			catch (const std::bad_alloc& e)
 			{
 				(void)e;
-				boost::this_thread::sleep_for(boost::chrono::milliseconds(1000));
+				std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 				continue;
 			}
 			catch (...)
 			{
-				boost::this_thread::sleep_for(boost::chrono::milliseconds(1000));
+				std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 				continue;
 			}
 		}
@@ -141,7 +184,7 @@ void io_context_pool::close()
 	m_isinit = false;
 }
 
-boost::asio::io_context& io_context_pool::get_io_context()
+asio::io_context& io_context_pool::get_io_context()
 {
 #ifdef LIBNET_USE_CORE_SYNC_MUTEX
 	auto_lock::al_lock<auto_lock::al_mutex> al(m_mutex);
@@ -149,7 +192,7 @@ boost::asio::io_context& io_context_pool::get_io_context()
 	auto_lock::al_lock<auto_lock::al_spin> al(m_mutex);
 #endif
 
-	boost::asio::io_context& ioc = *(m_iocontexts[m_nextioc]);
+	asio::io_context& ioc = *(m_iocontexts[m_nextioc]);
 
 	++m_nextioc;
 

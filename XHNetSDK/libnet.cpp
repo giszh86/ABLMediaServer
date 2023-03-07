@@ -1,5 +1,4 @@
-#include <boost/make_shared.hpp>
-#include <boost/ref.hpp>
+
 #include "libnet.h"
 #include "libnet_error.h"
 #include "io_context_pool.h"
@@ -8,6 +7,10 @@
 #include "udp_session_manager.h"
 #include "identifier_generator.h"
 
+#ifdef USE_BOOST
+#include <boost/make_shared.hpp>
+#include <boost/ref.hpp>
+#endif
 
 io_context_pool g_iocpool;
 uint32_t g_deinittimes = 0;
@@ -66,7 +69,7 @@ LIBNET_API int32_t XHNetSDK_Deinit()
 	else
 	{
 		server_manager_singleton::get_mutable_instance().close_all_servers();
-		client_manager_singleton::get_mutable_instance().pop_all_clients();
+		client_manager_singleton->pop_all_clients();
 		udp_session_manager_singleton::get_mutable_instance().pop_all_udp_sessions();
 		g_iocpool.close();
 		g_initret = e_libnet_err_noninit;
@@ -98,14 +101,14 @@ LIBNET_API int32_t XHNetSDK_Listen(int8_t* localip,
 		*srvhandle = INVALID_NETHANDLE;
 
 		boost::system::error_code ec;
-		boost::asio::ip::address addr = boost::asio::ip::address::from_string(reinterpret_cast<char*>(localip), ec);
+		asio::ip::address addr = asio::ip::address::from_string(reinterpret_cast<char*>(localip), ec);
 		if (ec)
 		{
 			ret = e_libnet_err_srvinvalidip;
 		}
 		else
 		{
-			boost::asio::ip::tcp::endpoint endpoint(addr, localport);
+			asio::ip::tcp::endpoint endpoint(addr, localport);
 
 			try
 			{
@@ -193,10 +196,10 @@ LIBNET_API int32_t XHNetSDK_Connect(int8_t* remoteip,
 	else
 	{
 		*clihandle = INVALID_NETHANDLE;
-		client_ptr cli = client_manager_singleton::get_mutable_instance().malloc_client(g_iocpool.get_io_context(), INVALID_NETHANDLE, fnread, fnclose, (0 != autoread) ? true : false);
+		client_ptr cli = client_manager_singleton->malloc_client(g_iocpool.get_io_context(), INVALID_NETHANDLE, fnread, fnclose, (0 != autoread) ? true : false);
 		if (cli)
 		{
-			if (client_manager_singleton::get_mutable_instance().push_client(cli))
+			if (client_manager_singleton->push_client(cli))
 			{
 				ret = cli->connect(remoteip, remoteport, localip, locaport, (0 != blocked), fnconnect, timeout);
 				if (e_libnet_err_noerror == ret)
@@ -205,7 +208,7 @@ LIBNET_API int32_t XHNetSDK_Connect(int8_t* remoteip,
 				}
 				else
 				{
-					client_manager_singleton::get_mutable_instance().pop_client(cli->get_id());
+					client_manager_singleton->pop_client(cli->get_id());
 				}
 			}
 			else
@@ -237,7 +240,7 @@ LIBNET_API int32_t XHNetSDK_Disconnect(NETHANDLE clihandle)
 	}
 	else
 	{
-		if (!client_manager_singleton::get_mutable_instance().pop_client(clihandle))
+		if (!client_manager_singleton->pop_client(clihandle))
 		{
 			ret = e_libnet_err_invalidhandle;
 		}
@@ -263,7 +266,7 @@ LIBNET_API int32_t XHNetSDK_Write(NETHANDLE clihandle,
 	}
 	else
 	{
-		client_ptr cli = client_manager_singleton::get_mutable_instance().get_client(clihandle);
+		client_ptr cli = client_manager_singleton->get_client(clihandle);
 		if (cli)
 		{
 			ret = cli->write(data, datasize, (0 != blocked) ? true : false);
@@ -295,7 +298,7 @@ LIBNET_API int32_t XHNetSDK_Read(NETHANDLE clihandle,
 	}
 	else
 	{
-		client_ptr cli = client_manager_singleton::get_mutable_instance().get_client(clihandle);
+		client_ptr cli = client_manager_singleton->get_client(clihandle);
 		if (cli)
 		{
 			ret = cli->read(buffer, buffsize, (0 != blocked) ? true : false, (0 != certain) ? true : false);
