@@ -486,8 +486,7 @@ bool client::write_packet()
 				{
 					handle_write(ec, length);
 				}
-			});	
-		
+			});			
 		return true;
 	}
 	
