@@ -3,6 +3,12 @@
 
 #include <stdint.h>
 
+#ifdef   cudaCodecDLL_EXPORTS
+#define cudaCodecDLL_EXPORTSIMPL __declspec(dllexport)
+#else
+#define cudaCodecDLL_EXPORTSIMPL __declspec(dllimport)
+#endif 
+
 //视频格式 
 typedef enum cudaCodecVideo_enum {
 	cudaCodecVideo_MPEG1 = 0,                                         /**<  MPEG1             */
@@ -31,7 +37,7 @@ typedef enum cudaCodecVideo_enum {
 参数：
    无
 */
-extern "C" __attribute__((visibility("default")))  bool cudaCodec_Init();
+extern "C" cudaCodecDLL_EXPORTSIMPL  bool cudaCodec_Init();
 
 /*
 功能：
@@ -42,7 +48,7 @@ extern "C" __attribute__((visibility("default")))  bool cudaCodec_Init();
    0   没有英伟达显卡
    N   有N个英伟达显卡
 */
-extern "C" __attribute__((visibility("default")))  int  cudaCodec_GetDeviceGetCount();
+extern "C" cudaCodecDLL_EXPORTSIMPL  int  cudaCodec_GetDeviceGetCount();
 
 /*
 功能:
@@ -54,7 +60,7 @@ extern "C" __attribute__((visibility("default")))  int  cudaCodec_GetDeviceGetCo
    true            获取成功
    false           获取失败 
 */
-extern "C" __attribute__((visibility("default")))  bool  cudaCodec_GetDeviceName(int nOrder,char* szName);
+extern "C" cudaCodecDLL_EXPORTSIMPL  bool  cudaCodec_GetDeviceName(int nOrder,char* szName);
 
 
 /*
@@ -66,7 +72,7 @@ extern "C" __attribute__((visibility("default")))  bool  cudaCodec_GetDeviceName
 返回值
    显卡使用率 
 */
-extern "C" __attribute__((visibility("default")))  int  cudaCodec_GetDeviceUse(int nOrder);
+extern "C" cudaCodecDLL_EXPORTSIMPL int  cudaCodec_GetDeviceUse(int nOrder);
 
 /*
 功能:
@@ -81,7 +87,7 @@ extern "C" __attribute__((visibility("default")))  int  cudaCodec_GetDeviceUse(i
 返回值
  
 */
-extern "C" __attribute__((visibility("default")))  bool cudaCodec_CreateVideoDecode(cudaCodecVideo_enum videoCodec, cudaCodecVideo_enum outYUVType, int nWidth, int nHeight, uint64_t& nCudaChan);
+extern "C" cudaCodecDLL_EXPORTSIMPL  bool cudaCodec_CreateVideoDecode(cudaCodecVideo_enum videoCodec, cudaCodecVideo_enum outYUVType, int nWidth, int nHeight, uint64_t& nCudaChan);
 
 
 /*
@@ -94,7 +100,7 @@ extern "C" __attribute__((visibility("default")))  bool cudaCodec_CreateVideoDec
   int             nDecodeFrameCount   解码成功后返回多少帧， 1、4 等等 
   int&            nOutDecodeLength    解码返回一帧buffer长度 
 */
-extern "C" __attribute__((visibility("default")))  unsigned char* cudaCodec_CudaVideoDecode(uint64_t nCudaChan,unsigned char* pVideoData,int nVideoLength,int& nDecodeFrameCount,int& nOutDecodeLength);
+extern "C" cudaCodecDLL_EXPORTSIMPL  unsigned char* cudaCodec_CudaVideoDecode(uint64_t nCudaChan,unsigned char* pVideoData,int nVideoLength,int& nDecodeFrameCount,int& nOutDecodeLength);
 
 /*
 功能：
@@ -103,7 +109,7 @@ extern "C" __attribute__((visibility("default")))  unsigned char* cudaCodec_Cuda
 uint64_t        nCudaChan           cuda通道号
  
 */
-extern "C" __attribute__((visibility("default")))  bool cudaCodec_DeleteVideoDecode(uint64_t nCudaChan);
+extern "C" cudaCodecDLL_EXPORTSIMPL  bool cudaCodec_DeleteVideoDecode(uint64_t nCudaChan);
 
 /*
 功能：
@@ -111,7 +117,7 @@ extern "C" __attribute__((visibility("default")))  bool cudaCodec_DeleteVideoDec
 参数：
 无
 */
-extern "C" __attribute__((visibility("default")))  int cudaCodec_GetCudaDecodeCount();
+extern "C" cudaCodecDLL_EXPORTSIMPL  int cudaCodec_GetCudaDecodeCount();
 
 /*
 功能：
@@ -119,7 +125,7 @@ extern "C" __attribute__((visibility("default")))  int cudaCodec_GetCudaDecodeCo
 参数：
   无
 */
-extern "C" __attribute__((visibility("default")))  bool cudaCodec_UnInit();
+extern "C" cudaCodecDLL_EXPORTSIMPL  bool cudaCodec_UnInit();
 
 #endif
 

@@ -60,8 +60,8 @@ class CCudaChanManager
 public:
 	CCudaChanManager();
 	~CCudaChanManager();
-
-	pthread_mutex_t      ManagerLock;
+	std::mutex          m_mutex;
+	//pthread_mutex_t      ManagerLock;
 	CCudaChanManagerMap  cudaManagerMap;
 
 	bool  InitCudaManager(int nCudaCount);

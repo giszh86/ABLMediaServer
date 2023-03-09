@@ -20,6 +20,8 @@
 #include <map>
 #include <list>
 
+
+#ifdef USE_BOOST
 #include <boost/unordered/unordered_map.hpp>
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <boost/unordered/unordered_map.hpp>
@@ -28,6 +30,14 @@
 
 using namespace std;
 using namespace boost;
+#else
+
+using namespace std;
+
+
+#endif
+
+
 
 #include <cuda.h>
 #include "NvDecoder/NvDecoder.h"

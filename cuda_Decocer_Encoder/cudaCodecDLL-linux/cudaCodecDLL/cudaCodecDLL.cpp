@@ -6,8 +6,8 @@
 #include "CudaVideoDecode.h"
 
 bool  ABL_CudeCodecDLL_InitFlag = false;
-typedef boost::shared_ptr<CCudaVideoDecode> CCudaVideoDecode_ptr;
-typedef boost::unordered_map<uint64_t, CCudaVideoDecode_ptr> CCudaVideoDecodeMap;
+typedef std::shared_ptr<CCudaVideoDecode> CCudaVideoDecode_ptr;
+typedef std::map<uint64_t, CCudaVideoDecode_ptr> CCudaVideoDecodeMap;
 uint64_t                                                          ABL_nCudaVideoDecodeNumber = 1;
 CCudaVideoDecodeMap                                               xh_ABLCudaVideoDecodeMap;
 std::mutex                                                        ABL_CudaVideoDecodeLock;
@@ -28,7 +28,7 @@ bool CreateCudaVideoDecodeClient(cudaCodecVideo_enum videoCodec, cudaCodecVideo_
 	{
 		do
 		{
-			pXHClient = boost::make_shared<CCudaVideoDecode>(videoCodec, outYUVType, nWidth, nHeight, ABL_nCudaVideoDecodeNumber);
+			pXHClient = std::make_shared<CCudaVideoDecode>(videoCodec, outYUVType, nWidth, nHeight, ABL_nCudaVideoDecodeNumber);
 		} while (pXHClient == NULL);
  	}
 	catch (const std::exception &e)
@@ -36,7 +36,7 @@ bool CreateCudaVideoDecodeClient(cudaCodecVideo_enum videoCodec, cudaCodecVideo_
  		return false ;
 	}
 
-	std::pair<boost::unordered_map<uint64_t, CCudaVideoDecode_ptr>::iterator, bool> ret =
+	std::pair<std::map<uint64_t, CCudaVideoDecode_ptr>::iterator, bool> ret =
 		xh_ABLCudaVideoDecodeMap.insert(std::make_pair(pXHClient->m_CudaChan, pXHClient));
 	if (!ret.second)
 	{
@@ -100,7 +100,7 @@ CCudaVideoDecode_ptr GetCudaVideoDecodeClient(uint64_t nCudaChan)
 		if (nRet == CUDA_SUCCESS)
 		{
 			ABL_CudeCodecDLL_InitFlag = true;
-			sleep(1);
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 			cuDeviceGetCount(&ABL_nCudaGPUCount) ;
 
 			pCudaChanManager = new CCudaChanManager();

@@ -8,12 +8,19 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
+
 #include <float.h>
-#include <dirent.h>
+
 #include <sys/stat.h>
 #include <malloc.h>
 
+#ifdef   _WIN32
+
+#else
+
+
+#include <dirent.h>
+#include <unistd.h>
 #include<sys/types.h> 
 #include<sys/socket.h>
 #include<sys/time.h>
@@ -24,6 +31,9 @@
 #include <netdb.h>
 
 #include <pthread.h>
+#include <iconv.h>
+#endif 
+
 #include <signal.h>
 #include <string>
 #include <list>
@@ -31,7 +41,7 @@
 #include <mutex>
 #include <vector>
 #include <math.h>
-#include <iconv.h>
+
 #include <malloc.h>
 
 #include <iostream>
@@ -43,14 +53,7 @@
 #include <map>
 #include <list>
 
-#include <boost/unordered/unordered_map.hpp>
-#include <boost/smart_ptr/shared_ptr.hpp>
-#include <boost/unordered/unordered_map.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/algorithm/string.hpp>
-
 using namespace std;
-using namespace boost;
 
 #include <cuda.h>
 #include "NvDecoder/NvDecoder.h"
