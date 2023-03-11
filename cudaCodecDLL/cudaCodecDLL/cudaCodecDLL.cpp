@@ -6,8 +6,8 @@
 #include "CudaVideoDecode.h"
 
 bool  ABL_CudeCodecDLL_InitFlag = false;
-typedef boost::shared_ptr<CCudaVideoDecode> CCudaVideoDecode_ptr;
-typedef boost::unordered_map<uint64_t, CCudaVideoDecode_ptr> CCudaVideoDecodeMap;
+typedef std::shared_ptr<CCudaVideoDecode> CCudaVideoDecode_ptr;
+typedef std::map<uint64_t, CCudaVideoDecode_ptr> CCudaVideoDecodeMap;
 uint64_t                                                          ABL_nCudaVideoDecodeNumber = 1;
 CCudaVideoDecodeMap                                               xh_ABLCudaVideoDecodeMap;
 std::mutex                                                        ABL_CudaVideoDecodeLock;
@@ -28,7 +28,7 @@ bool CreateCudaVideoDecodeClient(cudaCodecVideo_enum videoCodec, cudaCodecVideo_
 	{
 		do
 		{
-			pXHClient = boost::make_shared<CCudaVideoDecode>(videoCodec, outYUVType, nWidth, nHeight, ABL_nCudaVideoDecodeNumber);
+			pXHClient = std::make_shared<CCudaVideoDecode>(videoCodec, outYUVType, nWidth, nHeight, ABL_nCudaVideoDecodeNumber);
 		} while (pXHClient == NULL);
  	}
 	catch (const std::exception &e)
@@ -36,7 +36,7 @@ bool CreateCudaVideoDecodeClient(cudaCodecVideo_enum videoCodec, cudaCodecVideo_
  		return false ;
 	}
 
-	std::pair<boost::unordered_map<uint64_t, CCudaVideoDecode_ptr>::iterator, bool> ret =
+	std::pair<std::map<uint64_t, CCudaVideoDecode_ptr>::iterator, bool> ret =
 		xh_ABLCudaVideoDecodeMap.insert(std::make_pair(pXHClient->m_CudaChan, pXHClient));
 	if (!ret.second)
 	{
@@ -91,7 +91,7 @@ CCudaVideoDecode_ptr GetCudaVideoDecodeClient(uint64_t nCudaChan)
 }
 
 
-CUDACODECDLL_API bool cudaCodec_Init()
+ bool cudaCodec_Init()
 {
 	CUresult nRet = (CUresult)0;
 	if (ABL_CudeCodecDLL_InitFlag == false)
@@ -100,7 +100,8 @@ CUDACODECDLL_API bool cudaCodec_Init()
 		if (nRet == CUDA_SUCCESS)
 		{
 			ABL_CudeCodecDLL_InitFlag = true;
-			ABL_nCudaGPUCount = cudaCodec_GetDeviceGetCount() ;
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			cuDeviceGetCount(&ABL_nCudaGPUCount) ;
 
 			pCudaChanManager = new CCudaChanManager();
 			pCudaChanManager->InitCudaManager(ABL_nCudaGPUCount);
@@ -122,7 +123,7 @@ CUDACODECDLL_API bool cudaCodec_Init()
 	return true;
 }
 
-CUDACODECDLL_API bool cudaCodec_UnInit()
+ bool cudaCodec_UnInit()
 {
 	std::lock_guard<std::mutex> lock(ABL_CudaVideoDecodeLock);
 
@@ -145,7 +146,7 @@ CUDACODECDLL_API bool cudaCodec_UnInit()
 	return true;
 }
 
-CUDACODECDLL_API int cudaCodec_GetDeviceGetCount()
+ int cudaCodec_GetDeviceGetCount()
 {
 	if (!ABL_CudeCodecDLL_InitFlag)
 		return -1;
@@ -157,7 +158,7 @@ CUDACODECDLL_API int cudaCodec_GetDeviceGetCount()
 		return -1;
 }
  
-CUDACODECDLL_API bool  cudaCodec_GetDeviceName(int nOrder, char* szName)
+ bool  cudaCodec_GetDeviceName(int nOrder, char* szName)
 {
 	if (!ABL_CudeCodecDLL_InitFlag)
 		return false ;
@@ -179,7 +180,7 @@ CUDACODECDLL_API bool  cudaCodec_GetDeviceName(int nOrder, char* szName)
 		 return false;
 }
 
-CUDACODECDLL_API int  cudaCodec_GetDeviceUse(int nOrder)
+ int  cudaCodec_GetDeviceUse(int nOrder)
 {
 	if (!ABL_CudeCodecDLL_InitFlag)
 		return -1;
@@ -230,7 +231,7 @@ CUDACODECDLL_API int  cudaCodec_GetDeviceUse(int nOrder)
 }
 
 //创建解码句柄 
-CUDACODECDLL_API bool cudaCodec_CreateVideoDecode(cudaCodecVideo_enum videoCodec, cudaCodecVideo_enum outYUVType, int nWidth, int nHeight, uint64_t& nCudaChan)
+ bool cudaCodec_CreateVideoDecode(cudaCodecVideo_enum videoCodec, cudaCodecVideo_enum outYUVType, int nWidth, int nHeight, uint64_t& nCudaChan)
 {
 	//只支持2两种YUV格式输出
 	if (!(outYUVType == cudaCodecVideo_YV12 || outYUVType == cudaCodecVideo_NV12))
@@ -240,7 +241,7 @@ CUDACODECDLL_API bool cudaCodec_CreateVideoDecode(cudaCodecVideo_enum videoCodec
 }
 
 //视频解码 
-CUDACODECDLL_API unsigned char** cudaCodec_CudaVideoDecode(uint64_t nCudaChan, unsigned char* pVideoData, int nVideoLength, int& nDecodeFrameCount, int& nOutDecodeLength)
+ unsigned char* cudaCodec_CudaVideoDecode(uint64_t nCudaChan, unsigned char* pVideoData, int nVideoLength, int& nDecodeFrameCount, int& nOutDecodeLength)
 {
 	CCudaVideoDecode_ptr cudaDecode = GetCudaVideoDecodeClient(nCudaChan);
 	if (cudaDecode)
@@ -256,13 +257,13 @@ CUDACODECDLL_API unsigned char** cudaCodec_CudaVideoDecode(uint64_t nCudaChan, u
 }
 
 //删除解码句柄
-CUDACODECDLL_API bool cudaCodec_DeleteVideoDecode(uint64_t nCudaChan)
+ bool cudaCodec_DeleteVideoDecode(uint64_t nCudaChan)
 {
 	return DeleteCudaVideoDecodeClient(nCudaChan);
 }
 
 //返回硬解数量 
-CUDACODECDLL_API int cudaCodec_GetCudaDecodeCount()
+ int cudaCodec_GetCudaDecodeCount()
 {
 	std::lock_guard<std::mutex> lock(ABL_CudaVideoDecodeLock);
 

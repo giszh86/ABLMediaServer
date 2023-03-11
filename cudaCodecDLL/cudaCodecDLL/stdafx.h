@@ -39,7 +39,7 @@ using namespace std;
 
 
 
-#include <cuda.h>
+#include "cuda.h"
 #include "NvDecoder/NvDecoder.h"
 #include "../Utils/NvCodecUtils.h"
 

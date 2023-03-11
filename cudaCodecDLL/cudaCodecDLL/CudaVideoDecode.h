@@ -2,6 +2,7 @@
 #define _CUDADecode_H
 
 #include "cudaCodecDLL.h"
+//#define WritePicthFlag   1
 
 class CCudaVideoDecode
 {
@@ -10,6 +11,10 @@ public:
     ~CCudaVideoDecode();
 
 	cudaCodecVideo_enum m_outYUVType;
+#ifdef WritePicthFlag
+   FILE* fWritePitch;
+   int   nWriteCount ;
+#endif
 
 #ifdef WriteYUVFile_Flag
 	FILE*    fWriteYUV;
@@ -39,11 +44,11 @@ public:
 
 	YuvConverter<uint8_t>*  converter8;
 	YuvConverter<uint16_t>* converter16;
-	unsigned char** CudaVideoDecode(unsigned char* pVideo, int nLength, int& nFrameReturnCount, int& nOutDecodeLength);
+	unsigned char* CudaVideoDecode(unsigned char* pVideo, int nLength, int& nFrameReturnCount, int& nOutDecodeLength);
 	void           ConvertSemiplanarToPlanar(uint8_t *pHostFrame, int nWidth, int nHeight, int nBitDepth);
 public:
 	uint64_t             m_CudaChan;
-	uint8_t              **ppFrame;
+	uint8_t*             ppFrame;
 private:
 	std::mutex          cudaVideoDecodeLock;
 

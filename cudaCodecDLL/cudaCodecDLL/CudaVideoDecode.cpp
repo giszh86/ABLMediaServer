@@ -38,9 +38,14 @@ CCudaVideoDecode::CCudaVideoDecode(cudaCodecVideo_enum videoCodec, cudaCodecVide
 	converter16 = new  YuvConverter<uint16_t> (nWidth, nHeight);
 	ppFrame = NULL;
 
+#ifdef WritePicthFlag
+   fWritePitch = fopen("./pitch.txt","wb");
+   nWriteCount = 0;
+#endif
+
 #ifdef WriteYUVFile_Flag
 	nWriteFrameCount = 0;
-	fWriteYUV = fopen("D:\\out-2021-01-07.yuv", "wb");
+	fWriteYUV = fopen("/home/ABLMediaServer/bin/out-2022-08-11.yuv", "wb");
 #endif
 
 #ifdef LibYUVScaleYUVFlag
@@ -55,11 +60,13 @@ CCudaVideoDecode::CCudaVideoDecode(cudaCodecVideo_enum videoCodec, cudaCodecVide
 	if (pCudaChanManager)
 	  pCudaChanManager->AddChanToManager(nGpu, m_CudaChan);
 
-	dec = new NvDecoder(cuContext, nWidth, nHeight, false, (cudaVideoCodec)videoCodec, NULL, false, false, &cropRect, &resizeDim);
+	dec = new NvDecoder(cuContext, false, (cudaVideoCodec)videoCodec, false, false, &cropRect, &resizeDim);
 }
 
 CCudaVideoDecode::~CCudaVideoDecode()
 {
+	std::lock_guard<std::mutex> lock(cudaVideoDecodeLock);
+	
 	if (dec)
 	{
 		delete dec;
@@ -102,6 +109,12 @@ CCudaVideoDecode::~CCudaVideoDecode()
 		pScaleYUVData = NULL;
 	}
 #endif
+
+#ifdef WritePicthFlag
+   if(fWritePitch)
+	 fclose(fWritePitch);
+#endif
+
 }
 
 void CCudaVideoDecode::ConvertSemiplanarToPlanar(uint8_t *pHostFrame, int nWidth, int nHeight, int nBitDepth) 
@@ -116,7 +129,7 @@ void CCudaVideoDecode::ConvertSemiplanarToPlanar(uint8_t *pHostFrame, int nWidth
 	}
 }
 
-unsigned char** CCudaVideoDecode::CudaVideoDecode(unsigned char* pVideo, int nLength,int& nFrameReturnCount, int& nOutDecodeLength)
+unsigned char* CCudaVideoDecode::CudaVideoDecode(unsigned char* pVideo, int nLength,int& nFrameReturnCount, int& nOutDecodeLength)
 {
 	std::lock_guard<std::mutex> lock(cudaVideoDecodeLock);
 
@@ -125,16 +138,18 @@ unsigned char** CCudaVideoDecode::CudaVideoDecode(unsigned char* pVideo, int nLe
 	if (dec == NULL || nLength <= 0 )
 		return NULL;
 
- 	dec->Decode(pVideo, nLength, &ppFrame, &nFrameReturned);
+ 	nFrameReturned = dec->Decode(pVideo, nLength);
 	if (nFrameReturned > 0 )
 	{
  		bDecodeOutSemiPlanar = (dec->GetOutputFormat() == cudaVideoSurfaceFormat_NV12) || (dec->GetOutputFormat() == cudaVideoSurfaceFormat_P016);
 		
  		for (int i = 0; i < nFrameReturned; i++)
 		{
+			ppFrame = dec->GetFrame();
+			
 			if (m_outYUVType == cudaCodecVideo_YV12 && bDecodeOutSemiPlanar)
 			{//当输出 cudaCodecVideo_YV12 才转换，默认NV12 时不转换 
-				ConvertSemiplanarToPlanar(ppFrame[i], dec->GetWidth(), dec->GetHeight(), dec->GetBitDepth());
+				ConvertSemiplanarToPlanar(ppFrame, dec->GetWidth(), dec->GetHeight(), dec->GetBitDepth());
 			}
 
 #ifdef LibYUVScaleYUVFlag
@@ -166,15 +181,24 @@ unsigned char** CCudaVideoDecode::CudaVideoDecode(unsigned char* pVideo, int nLe
 #endif
 
 #ifdef WriteYUVFile_Flag
-			if (nWriteFrameCount <= 25*10 && fWriteYUV && ppFrame[i] != NULL && dec->GetFrameSize() > 0)
+			if (nWriteFrameCount <= 30 && fWriteYUV && ppFrame != NULL && dec->GetFrameSize() > 0)
 			{
-				fwrite(ppFrame[i], 1, dec->GetFrameSize(), fWriteYUV);
+				fwrite(ppFrame, 1, dec->GetFrameSize(), fWriteYUV);
 				//fprintf(fWriteYUV,"nFrameReturned = %d \r\n ", nFrameReturned);
 				fflush(fWriteYUV);
 			}
 			nWriteFrameCount++;
 #endif
 		}
+		
+#ifdef WritePicthFlag
+    if(nWriteCount <= 100)
+	{
+     fprintf(fWritePitch,"pitch=%d\r\n",dec->GetDeviceFramePitch());
+ 	 fflush(fWritePitch);
+	}
+	nWriteCount ++ ;
+#endif
 
 		nFrameReturnCount = nFrameReturned; 
 		nOutDecodeLength = dec->GetFrameSize();

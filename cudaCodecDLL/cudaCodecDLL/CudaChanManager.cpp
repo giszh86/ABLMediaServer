@@ -3,51 +3,45 @@
 
 CCudaChanManager::CCudaChanManager()
 {
-	InitializeCriticalSection(&ManagerLock);
+
 }
 
 CCudaChanManager::~CCudaChanManager()
 {
-	EnterCriticalSection(&ManagerLock);
-	 CUDAChanStore* cudaStore;
- 
-	  for (CCudaChanManagerMap::iterator iterator1 = cudaManagerMap.begin(); iterator1 != cudaManagerMap.end(); ++iterator1)
-	  {
-		cudaStore = (*iterator1).second;
- 
-		delete   cudaStore;
-		cudaStore = NULL;
-	  }
-	  cudaManagerMap.clear();
-	LeaveCriticalSection(&ManagerLock);
+	std::lock_guard<std::mutex> lock(m_mutex);
 
-	DeleteCriticalSection(&ManagerLock);
+	 CUDAChanStore* cudaStore; 
+	 for (auto iterator1  : cudaManagerMap)
+	 {
+		 cudaStore = iterator1.second;
+		 delete   cudaStore;
+		 cudaStore = NULL;
+	 }
+	
+	  cudaManagerMap.clear();
 }
 
 //初始化显卡管理 
 bool  CCudaChanManager::InitCudaManager(int nCudaCount)
 {
-	EnterCriticalSection(&ManagerLock);
+	std::lock_guard<std::mutex> lock(m_mutex);
 	if (nCudaCount <= 0 || cudaManagerMap.size() > 0 )
 	{
-		LeaveCriticalSection(&ManagerLock);
 		return false;
 	}
-
 	for (int i = 0; i < nCudaCount; i++)
 	{
 		CUDAChanStore* cudaStore = new CUDAChanStore(i);
 		cudaManagerMap.insert(CCudaChanManagerMap::value_type(i, cudaStore));
 	}
 
-	LeaveCriticalSection(&ManagerLock);
 	return true;
 }
 
 //获取待使用显卡序号
 int  CCudaChanManager::GetCudaGPUOrder()
 {
-	EnterCriticalSection(&ManagerLock);
+	std::lock_guard<std::mutex> lock(m_mutex);
 	CUDAChanStore* cudaStore;
 	int            nChanCount = 40960000 ;
 	int            nCurrentChan = 0 ;
@@ -55,7 +49,6 @@ int  CCudaChanManager::GetCudaGPUOrder()
 	//只有一个显卡 
 	if (cudaManagerMap.size() <= 1)
 	{
-		LeaveCriticalSection(&ManagerLock);
 		return nCurrentChan ;
 	}
 
@@ -70,14 +63,14 @@ int  CCudaChanManager::GetCudaGPUOrder()
 		}
 	}
 	 
-	LeaveCriticalSection(&ManagerLock);
+
 	return nCurrentChan ;
 }
 
 //把解码序号加入管理 
 bool  CCudaChanManager::AddChanToManager(int nCudaOrder, int64_t nCudaChan)
 {
-	EnterCriticalSection(&ManagerLock);
+	std::lock_guard<std::mutex> lock(m_mutex);
 
 	CCudaChanManagerMap::iterator iterPlayer;
 	CUDAChanStore* tmpPlayer;
@@ -87,13 +80,10 @@ bool  CCudaChanManager::AddChanToManager(int nCudaOrder, int64_t nCudaChan)
 	{//找到该链接
 		tmpPlayer = (*iterPlayer).second;
 		tmpPlayer->AddCudaChan(nCudaChan);
-
-		LeaveCriticalSection(&ManagerLock);
 		return true;
 	}
 	else //没有找到该连接
 	{
-		LeaveCriticalSection(&ManagerLock);
 		return false ;
 	}
 }
@@ -101,7 +91,6 @@ bool  CCudaChanManager::AddChanToManager(int nCudaOrder, int64_t nCudaChan)
 //从管理中删除解码序号 
 bool  CCudaChanManager::DeleteChanFromManager(int64_t nCudaChan)
 {
-  EnterCriticalSection(&ManagerLock);
 	CUDAChanStore* cudaStore;
 	bool           bDeleteFlag = false;
 
@@ -115,7 +104,5 @@ bool  CCudaChanManager::DeleteChanFromManager(int64_t nCudaChan)
 			break; //删除成功 
 		}
  	}
- 
-  LeaveCriticalSection(&ManagerLock);
   return bDeleteFlag;
 }

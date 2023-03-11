@@ -2,13 +2,20 @@
 #define  _cudeCodecDLL_H
 
 #include <stdint.h>
-#include <Windows.h>
+#ifdef _WIN32
 
-#ifdef CUDACODECDLL_EXPORTS
-#define CUDACODECDLL_API __declspec(dllexport)
+#ifdef   cudaCodecDLL_EXPORTS
+#define cudaCodecDLL_EXPORTSIMPL __declspec(dllexport)
 #else
-#define CUDACODECDLL_API __declspec(dllimport)
+#define cudaCodecDLL_EXPORTSIMPL __declspec(dllimport)
+#endif 
+
+#else
+
+#define cudaCodecDLL_EXPORTSIMPL __attribute__((visibility("default"))) 
+
 #endif
+
 
 //视频格式 
 typedef enum cudaCodecVideo_enum {
@@ -38,7 +45,7 @@ typedef enum cudaCodecVideo_enum {
 参数：
    无
 */
-CUDACODECDLL_API bool cudaCodec_Init();
+extern "C" cudaCodecDLL_EXPORTSIMPL  bool cudaCodec_Init();
 
 /*
 功能：
@@ -49,7 +56,7 @@ CUDACODECDLL_API bool cudaCodec_Init();
    0   没有英伟达显卡
    N   有N个英伟达显卡
 */
-CUDACODECDLL_API int  cudaCodec_GetDeviceGetCount();
+extern "C" cudaCodecDLL_EXPORTSIMPL  int  cudaCodec_GetDeviceGetCount();
 
 /*
 功能:
@@ -61,7 +68,7 @@ CUDACODECDLL_API int  cudaCodec_GetDeviceGetCount();
    true            获取成功
    false           获取失败 
 */
-CUDACODECDLL_API bool  cudaCodec_GetDeviceName(int nOrder,char* szName);
+extern "C" cudaCodecDLL_EXPORTSIMPL  bool  cudaCodec_GetDeviceName(int nOrder,char* szName);
 
 
 /*
@@ -73,7 +80,7 @@ CUDACODECDLL_API bool  cudaCodec_GetDeviceName(int nOrder,char* szName);
 返回值
    显卡使用率 
 */
-CUDACODECDLL_API int  cudaCodec_GetDeviceUse(int nOrder);
+extern "C" cudaCodecDLL_EXPORTSIMPL int  cudaCodec_GetDeviceUse(int nOrder);
 
 /*
 功能:
@@ -88,7 +95,7 @@ CUDACODECDLL_API int  cudaCodec_GetDeviceUse(int nOrder);
 返回值
  
 */
-CUDACODECDLL_API bool cudaCodec_CreateVideoDecode(cudaCodecVideo_enum videoCodec, cudaCodecVideo_enum outYUVType, int nWidth, int nHeight, uint64_t& nCudaChan);
+extern "C" cudaCodecDLL_EXPORTSIMPL  bool cudaCodec_CreateVideoDecode(cudaCodecVideo_enum videoCodec, cudaCodecVideo_enum outYUVType, int nWidth, int nHeight, uint64_t& nCudaChan);
 
 
 /*
@@ -101,7 +108,7 @@ CUDACODECDLL_API bool cudaCodec_CreateVideoDecode(cudaCodecVideo_enum videoCodec
   int             nDecodeFrameCount   解码成功后返回多少帧， 1、4 等等 
   int&            nOutDecodeLength    解码返回一帧buffer长度 
 */
-CUDACODECDLL_API unsigned char** cudaCodec_CudaVideoDecode(uint64_t nCudaChan,unsigned char* pVideoData,int nVideoLength,int& nDecodeFrameCount,int& nOutDecodeLength);
+extern "C" cudaCodecDLL_EXPORTSIMPL  unsigned char* cudaCodec_CudaVideoDecode(uint64_t nCudaChan,unsigned char* pVideoData,int nVideoLength,int& nDecodeFrameCount,int& nOutDecodeLength);
 
 /*
 功能：
@@ -110,7 +117,7 @@ CUDACODECDLL_API unsigned char** cudaCodec_CudaVideoDecode(uint64_t nCudaChan,un
 uint64_t        nCudaChan           cuda通道号
  
 */
-CUDACODECDLL_API bool cudaCodec_DeleteVideoDecode(uint64_t nCudaChan);
+extern "C" cudaCodecDLL_EXPORTSIMPL  bool cudaCodec_DeleteVideoDecode(uint64_t nCudaChan);
 
 /*
 功能：
@@ -118,7 +125,7 @@ CUDACODECDLL_API bool cudaCodec_DeleteVideoDecode(uint64_t nCudaChan);
 参数：
 无
 */
-CUDACODECDLL_API int cudaCodec_GetCudaDecodeCount();
+extern "C" cudaCodecDLL_EXPORTSIMPL  int cudaCodec_GetCudaDecodeCount();
 
 /*
 功能：
@@ -126,7 +133,7 @@ CUDACODECDLL_API int cudaCodec_GetCudaDecodeCount();
 参数：
   无
 */
-CUDACODECDLL_API bool cudaCodec_UnInit();
+extern "C" cudaCodecDLL_EXPORTSIMPL  bool cudaCodec_UnInit();
 
 #endif
 
