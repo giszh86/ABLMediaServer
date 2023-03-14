@@ -1,0 +1,41 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.32901.82
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cudaEncodeDLL", "cudaEncodeDLL\cudaEncodeDLL.vcxproj", "{3B7956D6-B1D6-4D0A-807C-9052ED664753}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cudaEncodeDLLDemo", "cudaEncodeDLLDemo\cudaEncodeDLLDemo.vcxproj", "{1212652F-6F8E-4638-BAAD-68B8E4DAEBB8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
+		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3B7956D6-B1D6-4D0A-807C-9052ED664753}.Debug|Win32.ActiveCfg = Debug|Win32
+		{3B7956D6-B1D6-4D0A-807C-9052ED664753}.Debug|Win32.Build.0 = Debug|Win32
+		{3B7956D6-B1D6-4D0A-807C-9052ED664753}.Debug|x64.ActiveCfg = Debug|x64
+		{3B7956D6-B1D6-4D0A-807C-9052ED664753}.Debug|x64.Build.0 = Debug|x64
+		{3B7956D6-B1D6-4D0A-807C-9052ED664753}.Release|Win32.ActiveCfg = Release|Win32
+		{3B7956D6-B1D6-4D0A-807C-9052ED664753}.Release|Win32.Build.0 = Release|Win32
+		{3B7956D6-B1D6-4D0A-807C-9052ED664753}.Release|x64.ActiveCfg = Release|x64
+		{3B7956D6-B1D6-4D0A-807C-9052ED664753}.Release|x64.Build.0 = Release|x64
+		{1212652F-6F8E-4638-BAAD-68B8E4DAEBB8}.Debug|Win32.ActiveCfg = Debug|Win32
+		{1212652F-6F8E-4638-BAAD-68B8E4DAEBB8}.Debug|Win32.Build.0 = Debug|Win32
+		{1212652F-6F8E-4638-BAAD-68B8E4DAEBB8}.Debug|x64.ActiveCfg = Debug|x64
+		{1212652F-6F8E-4638-BAAD-68B8E4DAEBB8}.Debug|x64.Build.0 = Debug|x64
+		{1212652F-6F8E-4638-BAAD-68B8E4DAEBB8}.Release|Win32.ActiveCfg = Release|Win32
+		{1212652F-6F8E-4638-BAAD-68B8E4DAEBB8}.Release|Win32.Build.0 = Release|Win32
+		{1212652F-6F8E-4638-BAAD-68B8E4DAEBB8}.Release|x64.ActiveCfg = Release|x64
+		{1212652F-6F8E-4638-BAAD-68B8E4DAEBB8}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {FD4F0E5B-F998-48E3-A365-2CAF7F25B8D4}
+	EndGlobalSection
+EndGlobal
