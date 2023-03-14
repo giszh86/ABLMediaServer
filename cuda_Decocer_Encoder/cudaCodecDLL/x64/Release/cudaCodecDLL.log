@@ -1,1 +1,6 @@
-﻿LINK : fatal error LNK1181: 无法打开输入文件“nvcuvid.lib”
+﻿    正在创建库 E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\x64\Release\cudaCodecDLL.lib 和对象 E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\x64\Release\cudaCodecDLL.exp
+  正在生成代码
+  Previous IPDB not found, fall back to full compilation.
+  All 1148 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  已完成代码的生成
+  cudaCodecDLL.vcxproj -> E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\x64\Release\cudaCodecDLL.dll
