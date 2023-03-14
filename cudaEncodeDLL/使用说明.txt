@@ -1,4 +1,0 @@
-使用说明：
-1、文件夹 cudaEncodeDLL 编码库的源代码，里面的文件夹 ./X64/release 已经有编译好的dll, 无需再编码  
-2、cudaEncodeDLLDemo 是调用编码器的例子，可以把不同格式的YUV编码为264，生成的文件在 ./cudaEncodeDLLDemo/X64/Debug 里面 
-   用 ffplay 可以直接播放 编码出来的264文件，命令如下： ffplay D:/xxx/xxx/xxx/xxx/Encodec_1920x1080.264 路径要绝对路径 
