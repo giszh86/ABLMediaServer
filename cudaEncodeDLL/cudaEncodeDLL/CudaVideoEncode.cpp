@@ -7,11 +7,15 @@
 #include "CudaVideoEncode.h"
 
 extern CCudaChanManager*     pCudaChanManager ;
+unsigned char spsFrame[5]={0x00,0x00,0x00,0x01,0x67};
+unsigned char idrFrame[5]={0x00,0x00,0x00,0x01,0x65};
 
 CCudaVideoEncode::CCudaVideoEncode(cudaEncodeVideo_enum videoCodec, cudaEncodeVideo_enum yuvType, int nWidth, int nHeight, uint64_t nCudaChan)
 {
 	bInitFlag = false;
-
+	bCopySpsPpsSuccessFlag = false ;
+  	nSpsPpsBufferLength = 0;
+	
  	m_videoCodec = videoCodec;
 	m_nWidth = nWidth;
 	m_nHeight = nHeight;
@@ -43,9 +47,19 @@ CCudaVideoEncode::CCudaVideoEncode(cudaEncodeVideo_enum videoCodec, cudaEncodeVi
 
 	initializeParams.encodeConfig = &encodeConfig;
 	if (videoCodec == cudaEncodeVideo_H264)
-	   enc->CreateDefaultEncoderParams(&initializeParams, NV_ENC_CODEC_H264_GUID, NV_ENC_PRESET_DEFAULT_GUID); //NV_ENC_CODEC_HEVC_GUID
+		enc->CreateDefaultEncoderParams(&initializeParams, NV_ENC_CODEC_H264_GUID, NV_ENC_PRESET_DEFAULT_GUID); //NV_ENC_CODEC_HEVC_GUID
 	else if (videoCodec == cudaEncodeVideo_HEVC)
-	   enc->CreateDefaultEncoderParams(&initializeParams, NV_ENC_CODEC_HEVC_GUID, NV_ENC_PRESET_DEFAULT_GUID); 
+		enc->CreateDefaultEncoderParams(&initializeParams, NV_ENC_CODEC_HEVC_GUID, NV_ENC_PRESET_DEFAULT_GUID);
+
+    encodeConfig.encodeCodecConfig.h264Config.idrPeriod = 25;
+ 	encodeConfig.gopLength = 25 ;//gop 25 
+	encodeConfig.frameIntervalP = 1; //±‡¬Î ‰≥ˆ÷°¿‡–Õ I°¢P°¢P°¢
+    encodeConfig.rcParams.rateControlMode = NV_ENC_PARAMS_RC_CBR;
+   // encodeConfig.rcParams.multiPass = NV_ENC_TWO_PASS_FULL_RESOLUTION;
+    encodeConfig.rcParams.averageBitRate = (static_cast<unsigned int>(5.0f * initializeParams.encodeWidth * initializeParams.encodeHeight) / (nWidth * nHeight)) * 300000;
+    encodeConfig.rcParams.vbvBufferSize = (encodeConfig.rcParams.averageBitRate * initializeParams.frameRateDen / initializeParams.frameRateNum) * 5;
+    encodeConfig.rcParams.maxBitRate = encodeConfig.rcParams.averageBitRate;
+    encodeConfig.rcParams.vbvInitialDelay = encodeConfig.rcParams.vbvBufferSize;
 
 	//encodeCLIOptions.SetInitParams(&initializeParams, nvBufferFormat);
 	enc->CreateEncoder(&initializeParams);
@@ -86,6 +100,7 @@ CCudaVideoEncode::~CCudaVideoEncode()
  	fclose(fWriteMp4);
 	//fclose(fPacketSizeFile);
 #endif
+ //  malloc_trim(0);
 }
 
 bool  CCudaVideoEncode::CheckVideoIsIFrame(int nVideoFrameType, unsigned char* szPVideoData, int nPVideoLength)
@@ -158,11 +173,26 @@ int  CCudaVideoEncode::cudaEncodeVideo(unsigned char* pYUVData, int nLength,char
 
 	if(nSize > 0 )
 	{
-		for (std::vector<uint8_t> &packet : vPacket)
+ 		for (std::vector<uint8_t> &packet : vPacket)
 		{
-		   nEncodeLength = packet.size();
-		   memcpy(pEncodecData, reinterpret_cast<char*>(packet.data()), nEncodeLength);
-		   return nEncodeLength;
+		  //øΩ±¥spsp,pps 
+		  CopySpsPpsBuffer((unsigned char*) packet.data(),packet.size()) ;
+		  
+		  if(memcmp((unsigned char*) packet.data(),idrFrame,5) == 0)
+		  {
+ 		    nEncodeLength = packet.size() + nSpsPpsBufferLength;
+			if(nSpsPpsBufferLength > 0)
+			{
+			  memcpy(pEncodecData,pSpsPpsBuffer,nSpsPpsBufferLength);
+		      memcpy(pEncodecData+nSpsPpsBufferLength, reinterpret_cast<char*>(packet.data()), packet.size());
+			}
+		    return nEncodeLength;
+		  }else
+		  {
+ 		    nEncodeLength = packet.size();
+		    memcpy(pEncodecData, reinterpret_cast<char*>(packet.data()), nEncodeLength);
+		    return nEncodeLength;
+		  }
 		}
 	}
 	else
@@ -191,4 +221,35 @@ int  CCudaVideoEncode::cudaEncodeVideo(unsigned char* pYUVData, int nLength,char
 	//fprintf(fPacketSizeFile, "size() = %d\r\n", nSize);
 	//fflush(fPacketSizeFile);
 #endif
+}
+
+bool  CCudaVideoEncode::CopySpsPpsBuffer(unsigned char* pH264Data,int nLength)
+{
+	if(bCopySpsPpsSuccessFlag)
+		return false ;
+	
+	if(pH264Data == NULL || nLength <= 4)
+		return false;
+			
+	if(memcmp(pH264Data,spsFrame,5) != 0)
+		return false ;
+	
+	int nIdrPos = 0;
+	for(int i=0;i<nLength;i++)
+	{
+		if(memcmp(pH264Data+i,idrFrame,5) == 0)
+		{
+			nIdrPos = i ;
+			break ;
+		}
+	}
+	
+	if(nIdrPos > 0 && nIdrPos <= 4096 )
+	{
+		bCopySpsPpsSuccessFlag = true ;
+		memcpy(pSpsPpsBuffer,pH264Data,nIdrPos);
+		nSpsPpsBufferLength = nIdrPos ;
+	}
+	 else 
+		 return false  ;
 }

@@ -7,12 +7,16 @@
 
 #ifndef _CudaEncodeDLL_H
 #define _CudaEncodeDLL_H
-
+#ifdef _WIN32
 #ifdef CUDAENCODEDLL_EXPORTS
 #define CUDAENCODEDLL_API __declspec(dllexport)
 #else
 #define CUDAENCODEDLL_API __declspec(dllimport)
 #endif
+#else
+#define CUDAENCODEDLL_API __attribute__((visibility("default")))
+#endif
+
 
 //视频格式 
 enum cudaEncodeVideo_enum {
@@ -42,7 +46,7 @@ enum cudaEncodeVideo_enum {
 参数：
 无
 */
-CUDAENCODEDLL_API bool cudaEncode_Init();
+extern "C" CUDAENCODEDLL_API  bool cudaEncode_Init();
 
 /*
 功能：
@@ -53,7 +57,7 @@ CUDAENCODEDLL_API bool cudaEncode_Init();
 0   没有英伟达显卡
 N   有N个英伟达显卡
 */
-CUDAENCODEDLL_API int  cudaEncode_GetDeviceGetCount();
+extern "C" CUDAENCODEDLL_API  int  cudaEncode_GetDeviceGetCount();
 
 /*
 功能:
@@ -65,7 +69,7 @@ char*  szName   显卡名称
 true            获取成功
 false           获取失败
 */
-CUDAENCODEDLL_API bool  cudaEncode_GetDeviceName(int nOrder, char* szName);
+extern "C" CUDAENCODEDLL_API  bool  cudaEncode_GetDeviceName(int nOrder, char* szName);
  
 /*
 功能：创建解码句柄 
@@ -76,14 +80,14 @@ CUDAENCODEDLL_API bool  cudaEncode_GetDeviceName(int nOrder, char* szName);
  int nHeight,                      YUV 数据的高
  uint64_t& nCudaChan               创建编码器成功后 返回的句柄 
 */
-CUDAENCODEDLL_API bool cudaEncode_CreateVideoEncode(cudaEncodeVideo_enum videoCodec, cudaEncodeVideo_enum yuvType, int nWidth, int nHeight, uint64_t& nCudaChan);
+extern "C" CUDAENCODEDLL_API   bool cudaEncode_CreateVideoEncode(cudaEncodeVideo_enum videoCodec, cudaEncodeVideo_enum yuvType, int nWidth, int nHeight, uint64_t& nCudaChan);
 
 //删除解码句柄
-CUDAENCODEDLL_API bool cudaEncode_DeleteVideoEncode(uint64_t nCudaChan);
+extern "C" CUDAENCODEDLL_API   bool cudaEncode_DeleteVideoEncode(uint64_t nCudaChan);
 
-CUDAENCODEDLL_API int  cudaEncode_CudaVideoEncode(uint64_t nCudaChan, unsigned char* pYUVData, int nYUVLength, char* pOutEncodeData);
+extern "C" CUDAENCODEDLL_API  int  cudaEncode_CudaVideoEncode(uint64_t nCudaChan, unsigned char* pYUVData, int nYUVLength, char* pOutEncodeData);
 
-CUDAENCODEDLL_API bool cudaEncode_UnInit();
+extern "C" CUDAENCODEDLL_API   bool cudaEncode_UnInit();
 
 #endif
 

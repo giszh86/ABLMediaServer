@@ -15,6 +15,9 @@ std::mutex                                                        ABL_CudaVideoE
 int                                                               ABL_nCudaGPUCount = 0; //英伟达显卡数量
 CCudaChanManager*                                                 pCudaChanManager = NULL;
 
+//要首先创建一个日志类实例 
+//simplelogger::Logger *logger                                      = simplelogger::LoggerFactory::CreateConsoleLogger();
+
 //创建编码客户端
 bool CreateCudaVideoEncodeClient(cudaEncodeVideo_enum videoCodec, cudaEncodeVideo_enum yuvType, int nWidth, int nHeight, uint64_t& nCudaChan)
 {
@@ -88,7 +91,7 @@ CCudaVideoEncode_ptr GetCudaVideoEncodeClient(uint64_t nCudaChan)
 	}
 }
 
-CUDAENCODEDLL_API int cudaEncode_GetDeviceGetCount()
+ int cudaEncode_GetDeviceGetCount()
 {
 	if (!ABL_CudeCodecDLL_InitFlag)
 		return -1;
@@ -100,7 +103,7 @@ CUDAENCODEDLL_API int cudaEncode_GetDeviceGetCount()
 		return -1;
 }
 
-CUDAENCODEDLL_API bool cudaEncode_Init()
+ bool cudaEncode_Init()
 {
 	CUresult nRet = (CUresult)0;
 	if (ABL_CudeCodecDLL_InitFlag == false)
@@ -123,7 +126,7 @@ CUDAENCODEDLL_API bool cudaEncode_Init()
 	return true;
 }
 
-CUDAENCODEDLL_API bool cudaEncode_UnInit()
+ bool cudaEncode_UnInit()
 {
 	//清除硬编资源 
 	std::lock_guard<std::mutex> lock(ABL_CudaVideoEncodeLock);
@@ -144,7 +147,7 @@ CUDAENCODEDLL_API bool cudaEncode_UnInit()
 	return true;
 }
 
-CUDAENCODEDLL_API bool  cudaEncode_GetDeviceName(int nOrder, char* szName)
+ bool  cudaEncode_GetDeviceName(int nOrder, char* szName)
 {
 	if (!ABL_CudeCodecDLL_InitFlag)
 		return false;
@@ -167,13 +170,13 @@ CUDAENCODEDLL_API bool  cudaEncode_GetDeviceName(int nOrder, char* szName)
 }
 
 //创建解码句柄 
-CUDAENCODEDLL_API bool cudaEncode_CreateVideoEncode(cudaEncodeVideo_enum videoCodec, cudaEncodeVideo_enum yuvType, int nWidth, int nHeight, uint64_t& nCudaChan)
+ bool cudaEncode_CreateVideoEncode(cudaEncodeVideo_enum videoCodec, cudaEncodeVideo_enum yuvType, int nWidth, int nHeight, uint64_t& nCudaChan)
 {
 	return CreateCudaVideoEncodeClient(videoCodec, yuvType, nWidth, nHeight, nCudaChan);
 }
 
 //视频解码 
-CUDAENCODEDLL_API int cudaEncode_CudaVideoEncode(uint64_t nCudaChan, unsigned char* pYUVData, int nYUVLength,char* pOutEncodeData)
+ int cudaEncode_CudaVideoEncode(uint64_t nCudaChan, unsigned char* pYUVData, int nYUVLength,char* pOutEncodeData)
 {
 	CCudaVideoEncode_ptr cudaEncode = GetCudaVideoEncodeClient(nCudaChan);
 	if (cudaEncode)
@@ -187,7 +190,7 @@ CUDAENCODEDLL_API int cudaEncode_CudaVideoEncode(uint64_t nCudaChan, unsigned ch
  	}
 }
 
-CUDAENCODEDLL_API bool cudaEncode_DeleteVideoEncode(uint64_t nCudaChan)
+ bool cudaEncode_DeleteVideoEncode(uint64_t nCudaChan)
 {
 	return DeleteCudaVideoEncodeClient(nCudaChan);
 }

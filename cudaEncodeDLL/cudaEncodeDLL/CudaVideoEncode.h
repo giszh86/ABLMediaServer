@@ -5,6 +5,9 @@
 
 #include <cuda.h>
 #include "NvEncoder/NvEncoderCuda.h"
+//#include "../Utils/Logger.h"
+//#include "../Utils/NvEncoderCLIOptions.h"
+
 //#define    WriteMp4File_Flag    1
 
 class CCudaVideoEncode
@@ -15,7 +18,11 @@ public:
 
 	int nSize ;
 	int nEncodeLength ;
-
+    bool                 bCopySpsPpsSuccessFlag ;
+	unsigned char        pSpsPpsBuffer[4096] ;
+	int                  nSpsPpsBufferLength ;
+ 
+    bool                 CopySpsPpsBuffer(unsigned char* pH264Data,int nLength);
 #ifdef WriteMp4File_Flag 
 	//FILE*                fPacketSizeFile;
 	FILE*                fWriteMp4;

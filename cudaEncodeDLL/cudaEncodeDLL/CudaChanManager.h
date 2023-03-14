@@ -2,7 +2,7 @@
 #define _CudaChanManager_H
 
 #include <map>
-
+#include <mutex>
 using namespace std;
 
 typedef map<int64_t,int64_t> CUDAChan;
@@ -53,15 +53,15 @@ public:
 
 };
 
-typedef map<LONG, CUDAChanStore*, less<LONG> > CCudaChanManagerMap; //cuda通道号存储
+typedef map<long, CUDAChanStore*, less<long> > CCudaChanManagerMap; //cuda通道号存储
 
 class CCudaChanManager
 {
 public:
 	CCudaChanManager();
 	~CCudaChanManager();
-
-	CRITICAL_SECTION     ManagerLock;
+	std::mutex              m_mutex;
+	//pthread_mutex_t      ManagerLock;
 	CCudaChanManagerMap  cudaManagerMap;
 
 	bool  InitCudaManager(int nCudaCount);
