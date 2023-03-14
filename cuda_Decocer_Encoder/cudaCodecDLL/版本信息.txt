@@ -1,0 +1,139 @@
+2022-06-30
+1、增加调用例子
+
+2021-02-04
+1  创建硬解码时，增加一个YUV格式输出参数 ，现在只支持YV12、NV12两种格式输出 
+	/*
+	功能:
+	   创建视频解码句柄
+	参数：
+	   cudaCodecVideo_enum videoCodec,      待解码的视频格式 cudaCodecVideo_H264 、 cudaCodecVideo_HEVC 等等 
+	   cudaCodecVideo_enum outYUVType       解码后支持输出的YUV格式，现在只支持输出两种YUV格式　cudaCodecVideo_NV12　、cudaCodecVideo_YV12　
+	   int                 nWidth,          比如 1920 
+	   int                 nHeight,         比如 1080 
+	   uint64_t&           nCudaChan        如果成功，返回大于0 的数字 
+
+	返回值
+	 
+	*/
+	CUDACODECDLL_API bool cudaCodec_CreateVideoDecode(cudaCodecVideo_enum videoCodec, cudaCodecVideo_enum outYUVType, int nWidth, int nHeight, uint64_t& nCudaChan);
+
+2  增加 libyuv 库的 NV12 的格式下的YUV图片裁剪例子 
+	#ifdef LibYUVScaleYUVFlag
+			src_width_uv = (Abs(dec->GetWidth()) + 1) >> 1;
+			src_height_uv = (Abs(dec->GetHeight()) + 1) >> 1;
+
+			src_stride_y = Abs(dec->GetWidth());
+			src_stride_uv = src_width_uv * 2;
+
+			dst_width_uv = (Abs(nScaleWidth) + 1) >> 1;
+			dst_height_uv = (Abs(nScaleHeight) + 1) >> 1;
+
+			dst_stride_y = Abs(nScaleWidth);
+			dst_stride_uv = dst_width_uv * 2;
+ 
+			nStartTime = ::GetTickCount64();
+			nRet = libyuv::NV12Scale((uint8_t*)ppFrame[i], Abs(dec->GetWidth()), (uint8_t*)ppFrame[i] + (dec->GetWidth()*dec->GetHeight()), src_stride_uv, dec->GetWidth(), dec->GetHeight(), pScaleYUVData, nScaleWidth, pScaleYUVData + (nScaleWidth*nScaleHeight), dst_stride_uv, nScaleWidth, nScaleHeight, (libyuv::FilterMode)0);
+			nEndTime = ::GetTickCount64();
+			if (nWriteFrameScaleCount <= 100 && nRet == 0 && fWriteYUVScale && ppFrame[i] != NULL && dec->GetFrameSize() > 0)
+			{
+				//sprintf(szTimeBuffer, "Scale, Width %d ,Height %d , Count Time %llu \r\n", nScaleWidth, nScaleHeight, nEndTime - nStartTime);
+				//fwrite(szTimeBuffer, 1, strlen(szTimeBuffer), fWriteYUVScale);
+				//fflush(fWriteYUVScale);
+
+				fwrite(pScaleYUVData, 1, (nScaleWidth*nScaleHeight*3)/2, fWriteYUVScale);
+				fflush(fWriteYUVScale);
+			}
+			nWriteFrameScaleCount ++;
+	#endif
+
+2021-02-01
+
+1 创建cuda硬解时，减少一个参数，减少显卡序号，该参数由库进行统一管理 
+	/*
+	功能:
+	   创建视频解码句柄
+	参数：
+	   cudaCodecVideo_enum videoCodec,      cudaCodecVideo_H264 、 cudaCodecVideo_HEVC 等等 
+	   int                 nWidth,          比如 1920 
+	   int                 nHeight,         比如 1080 
+	   uint64_t&           nCudaChan        如果成功，返回大于0 的数字 
+
+	返回值
+	 
+	*/
+	CUDACODECDLL_API bool cudaCodec_CreateVideoDecode(cudaCodecVideo_enum videoCodec, int nWidth, int nHeight, uint64_t& nCudaChan);
+
+2 显卡序号由库进行统一管理
+   1) 创建管理器
+	pCudaChanManager = new CCudaChanManager();
+	pCudaChanManager->InitCudaManager(ABL_nCudaGPUCount);
+	
+   2） 加入管理器 
+	if (pCudaChanManager)
+	  pCudaChanManager->AddChanToManager(nGpu, m_CudaChan);
+	  
+   3） 从管理器移除  
+	  if(pCudaChanManager)
+		pCudaChanManager->DeleteChanFromManager(m_CudaChan) ;
+ 
+   4） 销毁管理器
+		if (pCudaChanManager != NULL)
+		{
+			delete pCudaChanManager;
+			pCudaChanManager = NULL;
+		}
+   
+2021-01-29
+1 增加获取硬解通道数量
+	//返回硬解数量 
+	CUDACODECDLL_API int cudaCodec_GetCudaDecodeCount()
+	{
+		std::lock_guard<std::mutex> lock(ABL_CudaVideoDecodeLock);
+
+		return xh_ABLCudaVideoDecodeMap.size();
+	}
+
+2  完善 cudaCodec_UnInit() 函数 
+	CUDACODECDLL_API bool cudaCodec_UnInit()
+	{
+		std::lock_guard<std::mutex> lock(ABL_CudaVideoDecodeLock);
+
+		CCudaVideoDecodeMap::iterator iterator1;
+		CCudaVideoDecode_ptr   pClient = NULL;
+		 
+		for (iterator1 = xh_ABLCudaVideoDecodeMap.begin(); iterator1 != xh_ABLCudaVideoDecodeMap.end();++iterator1)
+		{
+			pClient = (*iterator1).second;
+			pClient.reset();
+		}
+		xh_ABLCudaVideoDecodeMap.clear();
+
+		return true;
+	}
+	
+3  库退出时调用销毁资源 
+	case DLL_PROCESS_DETACH:
+		cudaCodec_UnInit();
+		break;
+
+2021-01-19
+1 解码返回值修改为 指针数组 unsigned char** ，返回有几块指针  nDecodeFrameCount 
+  CUDACODECDLL_API unsigned char** cudaCodec_CudaVideoDecode(uint64_t nCudaChan,unsigned char* pVideoData,int nVideoLength,int& nDecodeFrameCount,int& nOutDecodeLength);
+
+2 解决内存泄漏问题 ，在销毁解码器时，需要 删除 cuContext 对象 ，否则会造成内存泄漏 
+  
+	if(cuContext)
+	  cuCtxDestroy(cuContext);
+
+  
+2021-01-08
+1 保存YUV视频正常版本 
+2 优化调用例子，支持多路视频解码、多路视频写入功能 。
+
+2021-01-07
+1 增加视频解码接口函数
+
+
+2021-01-06
+1 刚刚创建第一版，刚刚搭建好框架 
