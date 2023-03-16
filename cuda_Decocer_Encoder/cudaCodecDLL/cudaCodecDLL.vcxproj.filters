@@ -38,7 +38,7 @@
     <ClInclude Include="stdafx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="NvDecoder\NvDecoder.h">
+    <ClInclude Include="..\..\3rd\Video_Codec_SDK_11.1.5\Samples\NvCodec\NvDecoder\NvDecoder.h">
       <Filter>NvEncoder</Filter>
     </ClInclude>
   </ItemGroup>
@@ -55,7 +55,7 @@
     <ClCompile Include="dllmain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="NvDecoder\NvDecoder.cpp">
+    <ClCompile Include="..\..\3rd\Video_Codec_SDK_11.1.5\Samples\NvCodec\NvDecoder\NvDecoder.cpp">
       <Filter>NvEncoder</Filter>
     </ClCompile>
   </ItemGroup>

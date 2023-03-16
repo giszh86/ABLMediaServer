@@ -1,11 +1,11 @@
 # 设置 CMake 最低版本要求
 cmake_minimum_required(VERSION 3.5)
 
-# 设置 CMake 最低版本要求
-cmake_minimum_required(VERSION 3.5)
-
 # 设置项目名称和版本号
 project(cudaCodecDLL VERSION 1.0)
+
+# 设置编译选项
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 
 # 定义宏定义，根据操作系统平台添加 _WIN32 宏定义
 if(WIN32)
@@ -31,10 +31,10 @@ add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES})
 
 # 设置头文件位置
 target_include_directories(${PROJECT_NAME} PRIVATE
-	./NvEncoder
     ../../3rd/Video_Codec_SDK_11.1.5
 	../../3rd/Video_Codec_SDK_11.1.5/Interface
 	../../3rd/Video_Codec_SDK_11.1.5/Samples
+	../../3rd/Video_Codec_SDK_11.1.5/Samples/NvCodec
 )
 
 # 设置头文件位置 暴露给其他项目
@@ -43,7 +43,7 @@ target_include_directories(${PROJECT_NAME} INTERFACE
 )
 
 # 设置依赖库位置
-target_link_directories(${PROJECT_NAME} INTERFACE      ${CMAKE_CURRENT_SOURCE_DIR}/../../3rd/Video_Codec_SDK_11.1.5/Lib/linux/stubs/x86_64
+target_link_directories(${PROJECT_NAME} INTERFACE  ${CMAKE_CURRENT_SOURCE_DIR}/../../3rd/Video_Codec_SDK_11.1.5/Lib/linux/stubs/x86_64
 )
 
 find_library(LIBNVENCODE nvidia-encode HINTS ${CMAKE_CURRENT_SOURCE_DIR}/../../3rd/Video_Codec_SDK_11.1.5/Lib/linux/stubs/x86_64)
@@ -69,7 +69,7 @@ target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_11)
 
 # 设置输出路径，建议使用 set_target_properties 替代
 set_target_properties(${PROJECT_NAME} PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../bin
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../bin
 )
 
 # 打印编译信息
