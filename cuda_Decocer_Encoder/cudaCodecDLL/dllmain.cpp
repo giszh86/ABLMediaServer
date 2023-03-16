@@ -2,6 +2,7 @@
 #include "stdafx.h"
 #include "cudaCodecDLL.h"
 
+#ifdef _WIN32
 extern "C" cudaCodecDLL_EXPORTSIMPL bool cudaCodec_UnInit();
 
 BOOL APIENTRY DllMain(HMODULE hModule,
@@ -23,4 +24,4 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 	}
 	return TRUE;
 }
-
+#endif

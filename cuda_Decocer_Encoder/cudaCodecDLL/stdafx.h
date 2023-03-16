@@ -7,19 +7,32 @@
 
 
 
+
+#ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
-// Windows Header Files:
 #include <windows.h>
+
+#ifdef LibYUVScaleYUVFlag
+#include "libyuv.h"
+#pragma comment(lib, "yuv.lib")
+#endif 
+
+
+#endif
+
 
 #include <iostream>
 #include <algorithm>
 #include <thread>
-
 #include <mutex>
 #include <string>
 #include <map>
 #include <list>
 
+#include "cuda.h"
+#include "NvDecoder/NvDecoder.h"
+
+#include "CudaChanManager.h"
 
 #ifdef USE_BOOST
 #include <boost/unordered/unordered_map.hpp>
@@ -39,19 +52,11 @@ using namespace std;
 
 
 
-#include "cuda.h"
-#include "NvDecoder/NvDecoder.h"
-#include "../Utils/NvCodecUtils.h"
 
-#include "CudaChanManager.h"
 
 //#define    WriteYUVFile_Flag 1
 //#define    LibYUVScaleYUVFlag  1 // «∑ÒÀı–°YUV
 
-#ifdef LibYUVScaleYUVFlag
-  #include "libyuv.h"
-  #pragma comment(lib, "yuv.lib")
-#endif 
 
 
 static __inline int Abs(int v) {

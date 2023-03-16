@@ -1,6 +1,40 @@
-﻿    正在创建库 E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\x64\Release\cudaCodecDLL.lib 和对象 E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\x64\Release\cudaCodecDLL.exp
+﻿  CudaChanManager.cpp
+E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\CudaChanManager.cpp(1,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\CudaChanManager.h(1,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\CudaChanManager.h(51,1): warning C4267: “return”: 从“size_t”转换到“int”，可能丢失数据
+  CudaVideoDecode.cpp
+E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\CudaChanManager.h(1,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\CudaChanManager.h(51,1): warning C4267: “return”: 从“size_t”转换到“int”，可能丢失数据
+  cudaCodecDLL.cpp
+E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\CudaChanManager.h(1,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\CudaChanManager.h(51,1): warning C4267: “return”: 从“size_t”转换到“int”，可能丢失数据
+E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\cudaCodecDLL.cpp(34,31): warning C4101: “e”: 未引用的局部变量
+E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\cudaCodecDLL.cpp(95,1): warning C4273: “cudaCodec_Init”: dll 链接不一致
+E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\cudaCodecDLL.h(48,43): message : 参见“cudaCodec_Init”的前一个定义
+E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\cudaCodecDLL.cpp(127,1): warning C4273: “cudaCodec_UnInit”: dll 链接不一致
+E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\cudaCodecDLL.h(136,43): message : 参见“cudaCodec_UnInit”的前一个定义
+E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\cudaCodecDLL.cpp(150,1): warning C4273: “cudaCodec_GetDeviceGetCount”: dll 链接不一致
+E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\cudaCodecDLL.h(59,43): message : 参见“cudaCodec_GetDeviceGetCount”的前一个定义
+E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\cudaCodecDLL.cpp(162,1): warning C4273: “cudaCodec_GetDeviceName”: dll 链接不一致
+E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\cudaCodecDLL.h(71,44): message : 参见“cudaCodec_GetDeviceName”的前一个定义
+E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\cudaCodecDLL.cpp(184,1): warning C4273: “cudaCodec_GetDeviceUse”: dll 链接不一致
+E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\cudaCodecDLL.h(83,42): message : 参见“cudaCodec_GetDeviceUse”的前一个定义
+E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\cudaCodecDLL.cpp(235,1): warning C4273: “cudaCodec_CreateVideoDecode”: dll 链接不一致
+E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\cudaCodecDLL.h(98,43): message : 参见“cudaCodec_CreateVideoDecode”的前一个定义
+E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\cudaCodecDLL.cpp(245,1): warning C4273: “cudaCodec_CudaVideoDecode”: dll 链接不一致
+E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\cudaCodecDLL.h(111,53): message : 参见“cudaCodec_CudaVideoDecode”的前一个定义
+E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\cudaCodecDLL.cpp(261,1): warning C4273: “cudaCodec_DeleteVideoDecode”: dll 链接不一致
+E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\cudaCodecDLL.h(120,43): message : 参见“cudaCodec_DeleteVideoDecode”的前一个定义
+E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\cudaCodecDLL.cpp(267,1): warning C4273: “cudaCodec_GetCudaDecodeCount”: dll 链接不一致
+E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\cudaCodecDLL.h(128,42): message : 参见“cudaCodec_GetCudaDecodeCount”的前一个定义
+E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\cudaCodecDLL.cpp(270,41): warning C4267: “return”: 从“size_t”转换到“int”，可能丢失数据
+  dllmain.cpp
+E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\CudaChanManager.h(1,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\CudaChanManager.h(51,1): warning C4267: “return”: 从“size_t”转换到“int”，可能丢失数据
+    正在创建库 E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\x64\Release\cudaCodecDLL.lib 和对象 E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\x64\Release\cudaCodecDLL.exp
   正在生成代码
-  Previous IPDB not found, fall back to full compilation.
-  All 1148 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  0 of 1148 functions ( 0.0%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    0 functions had inline decision re-evaluated but remain unchanged
   已完成代码的生成
   cudaCodecDLL.vcxproj -> E:\study\ABLMediaServer\cuda_Decocer_Encoder\cudaCodecDLL\x64\Release\cudaCodecDLL.dll

@@ -19,8 +19,8 @@
 #include <iostream>
 #include <sstream>
 #include <string.h>
-#include "../Interface/nvcuvid.h"
-#include "../Utils/NvCodecUtils.h"
+#include "nvcuvid.h"
+#include "Utils/NvCodecUtils.h"
 #include <map>
 
 /**

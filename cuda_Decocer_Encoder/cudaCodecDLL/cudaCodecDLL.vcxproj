@@ -86,7 +86,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>./NvEncoder;./;./Interface;$(IncludePath)</IncludePath>
+    <IncludePath>./NvDecoder;./;../../3rd/Video_Codec_SDK_11.1.5/Interface;../../3rd/Video_Codec_SDK_11.1.5/Samples;../../3rd/Video_Codec_SDK_11.1.5;$(IncludePath)</IncludePath>
     <LibraryPath>../../3rd/Video_Codec_SDK_11.1.5/Lib/$(Platform)/;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
