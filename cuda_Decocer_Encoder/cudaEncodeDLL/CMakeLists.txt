@@ -21,9 +21,9 @@ set(BUILD_SHARED_LIBS ON)
 # 设置输出目录
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
-aux_source_directory(./ SOURCE_FILES)
-
-aux_source_directory(../../3rd/Samples/NvCodec/ SOURCE_FILES)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} SOURCE_FILES)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/NvEncoder SOURCE_FILES)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/../../3rd/Samples/NvCodec/ SOURCE_FILES)
 
 # 指定编译为动态库
 #cuda_add_library(cudaCodecDLL SHARED ${SOURCES})
@@ -31,6 +31,7 @@ add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES})
 
 # 设置头文件位置
 target_include_directories(${PROJECT_NAME} PRIVATE
+	 ${CMAKE_CURRENT_SOURCE_DIR}/NvEncoder
     ../../3rd/Video_Codec_SDK_11.1.5
 	../../3rd/Video_Codec_SDK_11.1.5/Interface
 	../../3rd/Video_Codec_SDK_11.1.5/Samples

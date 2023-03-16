@@ -42,9 +42,6 @@
     <ClInclude Include="NvEncoder\NvEncoderCuda.h">
       <Filter>NvEncoder</Filter>
     </ClInclude>
-    <ClInclude Include="NvEncoder\NvEncoderD3D11.h">
-      <Filter>NvEncoder</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cudaEncodeDLL.cpp">
@@ -63,9 +60,6 @@
       <Filter>NvEncoder</Filter>
     </ClCompile>
     <ClCompile Include="NvEncoder\NvEncoderCuda.cpp">
-      <Filter>NvEncoder</Filter>
-    </ClCompile>
-    <ClCompile Include="NvEncoder\NvEncoderD3D11.cpp">
       <Filter>NvEncoder</Filter>
     </ClCompile>
   </ItemGroup>

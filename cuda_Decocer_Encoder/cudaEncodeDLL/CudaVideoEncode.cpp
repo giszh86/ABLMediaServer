@@ -39,7 +39,7 @@ CCudaVideoEncode::CCudaVideoEncode(cudaEncodeVideo_enum videoCodec, cudaEncodeVi
 		nvBufferFormat = NV_ENC_BUFFER_FORMAT_NV12;
 
 	enc = new NvEncoderCuda(cuContext, nWidth, nHeight, nvBufferFormat);
-	if (enc == false)
+	if (enc == nullptr)
 		return;
 
 	initializeParams = { NV_ENC_INITIALIZE_PARAMS_VER };
