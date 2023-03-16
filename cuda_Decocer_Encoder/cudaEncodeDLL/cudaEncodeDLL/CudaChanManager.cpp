@@ -32,8 +32,7 @@ bool  CCudaChanManager::InitCudaManager(int nCudaCount)
 {
 	std::lock_guard<std::mutex> lock(m_mutex);
 	if (nCudaCount <= 0 || cudaManagerMap.size() > 0 )
-	{
-	
+	{	
 		return false;
 	}
 
