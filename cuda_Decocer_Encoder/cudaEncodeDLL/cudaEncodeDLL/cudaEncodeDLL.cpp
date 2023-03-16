@@ -82,7 +82,6 @@ CCudaVideoEncode_ptr GetCudaVideoEncodeClient(uint64_t nCudaChan)
 	if (iterator1 != xh_ABLCudaVideoEncodeMap.end())
 	{
 		pClient = (*iterator1).second;
-
 		return pClient;
 	}
 	else

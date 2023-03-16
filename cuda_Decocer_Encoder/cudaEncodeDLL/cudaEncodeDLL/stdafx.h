@@ -13,7 +13,6 @@
 
 #endif
 
-
 #include <iostream>
 #include <algorithm>
 #include <thread>

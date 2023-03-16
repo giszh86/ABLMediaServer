@@ -162,6 +162,10 @@ int main()
 			fwrite(szEncodeBuffer, 1, nEncodeLength, fFileH264);
 			fflush(fFileH264);
 		}
+		else
+		{
+			printf("nEncodeLength %d", nEncodeLength);
+		}
 	}
 
 	if (szYUVBuffer)

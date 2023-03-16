@@ -16,9 +16,10 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 	case DLL_THREAD_ATTACH:
 		break;
 	case DLL_THREAD_DETACH:
-		cudaEncode_UnInit();
+		//cudaEncode_UnInit();
 		break;
 	case DLL_PROCESS_DETACH:
+		cudaEncode_UnInit();
 		break;
 	}
 	return TRUE;
