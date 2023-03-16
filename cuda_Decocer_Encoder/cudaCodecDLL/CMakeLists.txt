@@ -42,11 +42,12 @@ target_include_directories(${PROJECT_NAME} INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-
-
 # 设置依赖库位置
-target_link_directories(${PROJECT_NAME} INTERFACE    ../../3rd/Video_Codec_SDK_11.1.5/Lib/linux/stubs/x86_64
+target_link_directories(${PROJECT_NAME} INTERFACE      ${CMAKE_CURRENT_SOURCE_DIR}/../../3rd/Video_Codec_SDK_11.1.5/Lib/linux/stubs/x86_64
 )
+
+find_library(LIBNVENCODE nvidia-encode HINTS ${CMAKE_CURRENT_SOURCE_DIR}/../../3rd/Video_Codec_SDK_11.1.5/Lib/linux/stubs/x86_64)
+find_library(LIBNVDEC nvcuvid HINTS ${CMAKE_CURRENT_SOURCE_DIR}/../../3rd/Video_Codec_SDK_11.1.5/Lib/linux/stubs/x86_64)
 
 # 查找需要链接的库
 #find_library(LIBNVENCODE nvidia-encode)
@@ -54,12 +55,10 @@ target_link_directories(${PROJECT_NAME} INTERFACE    ../../3rd/Video_Codec_SDK_1
 #find_library(LIBCUDA cuda)
 
 # 添加需要链接的依赖库
-target_link_libraries(${PROJECT_NAME} PRIVATE
-    pthread
-    nvcuvid
-    nvidia-encode
-)
-
+target_link_libraries(${PROJECT_NAME} PRIVATE 
+pthread
+${LIBNVENCODE} 
+${LIBNVDEC})
 
 # 链接CUDA库
 #target_link_libraries(cudaCodecDLL ${CUDA_LIBRARIES})
@@ -70,7 +69,7 @@ target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_11)
 
 # 设置输出路径，建议使用 set_target_properties 替代
 set_target_properties(${PROJECT_NAME} PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../bin/${PROJECT_NAME}
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../bin
 )
 
 # 打印编译信息
