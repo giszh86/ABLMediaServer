@@ -4,9 +4,15 @@
 //
 
 #pragma once
+
+#ifdef _WIN32
 #include <stdio.h>
 #include <tchar.h>
 #include <Windows.h>
+#else
+#include <cstring>
+#endif
+
 
 #include <string>
 

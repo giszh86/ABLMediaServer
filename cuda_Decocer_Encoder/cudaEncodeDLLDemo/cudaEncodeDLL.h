@@ -7,6 +7,12 @@
 
 #ifndef _CudaEncodeDLL_H
 #define _CudaEncodeDLL_H
+#ifdef _WIN32
+#define WINAPI      __stdcall
+#else
+#define WINAPI      
+#endif
+
 
 // ”∆µ∏Ò Ω 
 enum cudaEncodeVideo_enum {

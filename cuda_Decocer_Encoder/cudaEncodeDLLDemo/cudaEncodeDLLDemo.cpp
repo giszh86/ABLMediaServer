@@ -42,7 +42,8 @@ unsigned char* szEncodeBuffer = NULL;
 FILE*          fFileH264;//编码后，写入264文件句柄
 char           szCurrentPath[256] = { 0 };//当前路径
 
-bool GetCurrentPath(char *szCurPath)
+#ifdef _WIN32
+bool GetCurrentPath(char* szCurPath)
 {
 	char    szPath[255] = { 0 };
 	string  strTemp;
@@ -60,7 +61,6 @@ bool GetCurrentPath(char *szCurPath)
 	else
 		return false;
 }
-
 //cuda 编码 
 HINSTANCE             hInstance;
 ABL_cudaEncode_Init  cudaEncode_Init = NULL;
@@ -70,6 +70,29 @@ ABL_cudaEncode_CreateVideoEncode cudaEncode_CreateVideoEncode = NULL;
 ABL_cudaEncode_DeleteVideoEncode cudaEncode_DeleteVideoEncode = NULL;
 ABL_cudaEncode_CudaVideoEncode cudaEncode_CudaVideoEncode = NULL;
 ABL_cudaEncode_UnInit cudaEncode_UnInit = NULL;
+#else
+
+bool GetCurrentPath(char* szCurPath)
+{
+	strcpy(szCurPath, get_current_dir_name());	
+   return true;
+}
+
+//cuda 编码 
+
+ABL_cudaEncode_Init  cudaEncode_Init = NULL;
+ABL_cudaEncode_GetDeviceGetCount cudaEncode_GetDeviceGetCount = NULL;
+ABL_cudaEncode_GetDeviceName cudaEncode_GetDeviceName = NULL;
+ABL_cudaEncode_CreateVideoEncode cudaEncode_CreateVideoEncode = NULL;
+ABL_cudaEncode_DeleteVideoEncode cudaEncode_DeleteVideoEncode = NULL;
+ABL_cudaEncode_CudaVideoEncode cudaEncode_CudaVideoEncode = NULL;
+ABL_cudaEncode_UnInit cudaEncode_UnInit = NULL;
+#endif
+
+
+
+
+
 
 int main()
 {
@@ -77,7 +100,7 @@ int main()
 	char szOutH264Name[256] = { 0 };
 	bool bInitCudaFlag = false;
 	int  nCudaCount = 0;
-
+#ifdef _WIN32
 	//采用动态加载的方式，因为有些电脑有英伟达显卡，有些电脑没有英伟达显卡 
 	hInstance = ::LoadLibrary(TEXT("cudaEncodeDLL.dll"));
 	if (hInstance != NULL)
@@ -90,7 +113,21 @@ int main()
 		cudaEncode_CudaVideoEncode = (ABL_cudaEncode_CudaVideoEncode) ::GetProcAddress(hInstance, "cudaEncode_CudaVideoEncode");
 		cudaEncode_UnInit = (ABL_cudaEncode_UnInit) ::GetProcAddress(hInstance, "cudaEncode_UnInit");
 	}
- 
+#else
+	void* pCudaEncodeHandle = NULL;
+	pCudaEncodeHandle = dlopen("libcudaEncodeDLL.so", RTLD_LAZY);
+	if (pCudaEncodeHandle != NULL)
+	{
+		WriteLog(Log_Debug, " dlopen libcudaEncodeDLL.so success , NVIDIA graphics card installed  ");
+		cudaEncode_Init = (ABL_cudaEncode_Init)dlsym(pCudaEncodeHandle, "cudaEncode_Init");
+		cudaEncode_GetDeviceGetCount = (ABL_cudaEncode_GetDeviceGetCount)dlsym(pCudaEncodeHandle, "cudaEncode_GetDeviceGetCount");
+		cudaEncode_GetDeviceName = (ABL_cudaEncode_GetDeviceName)dlsym(pCudaEncodeHandle, "cudaEncode_GetDeviceName");
+		cudaEncode_CreateVideoEncode = (ABL_cudaEncode_CreateVideoEncode)dlsym(pCudaEncodeHandle, "cudaEncode_CreateVideoEncode");
+		cudaEncode_DeleteVideoEncode = (ABL_cudaEncode_DeleteVideoEncode)dlsym(pCudaEncodeHandle, "cudaEncode_DeleteVideoEncode");
+		cudaEncode_CudaVideoEncode = (ABL_cudaEncode_CudaVideoEncode)dlsym(pCudaEncodeHandle, "cudaEncode_CudaVideoEncode");
+		cudaEncode_UnInit = (ABL_cudaEncode_UnInit)dlsym(pCudaEncodeHandle, "cudaEncode_UnInit");
+	}
+#endif
 	//初始化cuda编码库
 	if(cudaEncode_Init)
 		bInitCudaFlag = cudaEncode_Init();
