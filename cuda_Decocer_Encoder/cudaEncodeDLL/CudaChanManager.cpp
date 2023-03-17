@@ -61,16 +61,26 @@ int  CCudaChanManager::GetCudaGPUOrder()
 		return nCurrentChan ;
 	}
 
-	for (CCudaChanManagerMap::iterator iterator1 = cudaManagerMap.begin(); iterator1 != cudaManagerMap.end(); ++iterator1)
+	for (auto iter : cudaManagerMap)
 	{
-		cudaStore = (*iterator1).second;
-
+		cudaStore = iter.second;
 		if (cudaStore->GetSize() < nChanCount)
 		{
 			nCurrentChan = cudaStore->nCudaGPUOrder;
 			nChanCount = cudaStore->GetSize();
 		}
 	}
+
+	//for (CCudaChanManagerMap::iterator iterator1 = cudaManagerMap.begin(); iterator1 != cudaManagerMap.end(); ++iterator1)
+	//{
+	//	cudaStore = (*iterator1).second;
+
+	//	if (cudaStore->GetSize() < nChanCount)
+	//	{
+	//		nCurrentChan = cudaStore->nCudaGPUOrder;
+	//		nChanCount = cudaStore->GetSize();
+	//	}
+	//}
 	return nCurrentChan ;
 }
 
