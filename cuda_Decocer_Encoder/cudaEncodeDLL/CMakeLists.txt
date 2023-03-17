@@ -21,6 +21,7 @@ set(BUILD_SHARED_LIBS ON)
 # 设置输出目录
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
+# 设置源码路径
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} SOURCE_FILES)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/NvEncoder SOURCE_FILES)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/../../3rd/Samples/NvCodec/ SOURCE_FILES)

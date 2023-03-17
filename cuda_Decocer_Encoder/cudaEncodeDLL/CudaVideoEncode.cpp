@@ -150,7 +150,12 @@ int  CCudaVideoEncode::cudaEncodeVideo(unsigned char* pYUVData, int nLength,char
 	//H264±àÂë -----------------------------------------------------------
 	const NvEncInputFrame* encoderInputFrame = enc->GetNextInputFrame();
 	if (encoderInputFrame == NULL)
+	{
+		printf("encoderInputFrame  ==  null");
 		return 0;
+
+	}
+	
 
 	NvEncoderCuda::CopyToDeviceFrame(cuContext, pYUVData, 0, (CUdeviceptr)encoderInputFrame->inputPtr,
 		(int)encoderInputFrame->pitch,
@@ -197,6 +202,7 @@ int  CCudaVideoEncode::cudaEncodeVideo(unsigned char* pYUVData, int nLength,char
 	}
 	else
 	{
+		printf("cudaEncodeVideo  == 0");
 		return 0 ;
 	}
 

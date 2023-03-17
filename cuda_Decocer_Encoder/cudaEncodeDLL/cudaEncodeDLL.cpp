@@ -129,8 +129,8 @@ CCudaVideoEncode_ptr GetCudaVideoEncodeClient(uint64_t nCudaChan)
 {
 	//Çå³ýÓ²±à×ÊÔ´ 
 	std::lock_guard<std::mutex> lock(ABL_CudaVideoEncodeLock);
+	printf("cudaEncode_UnInit");
 	CCudaVideoEncodeMap::iterator iterator1;
-
 	for (iterator1 = xh_ABLCudaVideoEncodeMap.begin(); iterator1 != xh_ABLCudaVideoEncodeMap.end(); ++iterator1)
 	{
 		CCudaVideoEncode_ptr  pClient = (*iterator1).second;
@@ -180,10 +180,12 @@ CCudaVideoEncode_ptr GetCudaVideoEncodeClient(uint64_t nCudaChan)
 	CCudaVideoEncode_ptr cudaEncode = GetCudaVideoEncodeClient(nCudaChan);
 	if (cudaEncode)
 	{
+	
 		return  cudaEncode->cudaEncodeVideo(pYUVData, nYUVLength, pOutEncodeData);
  	}
 	else
 	{
+		printf("cudaEncode_CudaVideoEncode cudaEncode=NULL   ");
 		pOutEncodeData = NULL;
 		return 0 ;
  	}
