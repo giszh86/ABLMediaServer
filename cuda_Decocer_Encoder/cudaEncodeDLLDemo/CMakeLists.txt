@@ -13,14 +13,18 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 
 # 设置可执行文件输出路径
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/../bin)
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/../../bin)
 
 # 添加头文件路径
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/cudaEncodeDLL)
 
 # 添加动态库路径
-link_directories(${PROJECT_SOURCE_DIR}/../bin)
+link_directories(${PROJECT_SOURCE_DIR}/../../bin)
+
+# 先执行这个目录下的cmake
+# 添加子目录
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../cudaEncodeDLL ${CMAKE_CURRENT_SOURCE_DIR}../../bin)
 
 # 添加可执行文件编译目标
 add_executable(${PROJECT_NAME} cudaEncodeDLLDemo.cpp)
@@ -33,9 +37,12 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 
 # 添加依赖库搜索路径
 target_link_directories(${PROJECT_NAME} PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/../bin
+   ${CMAKE_CURRENT_BINARY_DIR}
+   ${CMAKE_CURRENT_SOURCE_DIR}/../../bin
 )
 
 # 添加需要链接的依赖库
 target_link_libraries(${PROJECT_NAME} PRIVATE 
+pthread
+dl
 cudaEncodeDLL)

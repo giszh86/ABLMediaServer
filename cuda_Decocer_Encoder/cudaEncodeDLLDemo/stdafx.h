@@ -11,8 +11,10 @@
 #include <Windows.h>
 #else
 #include <cstring>
+#include <unistd.h>
+#include <dlfcn.h>
+#include <stdio.h>
 #endif
-
 
 #include <string>
 

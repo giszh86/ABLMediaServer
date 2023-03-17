@@ -49,7 +49,7 @@ target_link_directories(${PROJECT_NAME} INTERFACE  ${CMAKE_CURRENT_SOURCE_DIR}/.
 
 find_library(LIBNVENCODE nvidia-encode HINTS ${CMAKE_CURRENT_SOURCE_DIR}/../../3rd/Video_Codec_SDK_11.1.5/Lib/linux/stubs/x86_64)
 find_library(LIBNVDEC nvcuvid HINTS ${CMAKE_CURRENT_SOURCE_DIR}/../../3rd/Video_Codec_SDK_11.1.5/Lib/linux/stubs/x86_64)
-
+find_library(LIBCUDA cuda HINTS ${CMAKE_CURRENT_SOURCE_DIR}/../../3rd/Video_Codec_SDK_11.1.5/Lib/linux/stubs/x86_64)
 # 查找需要链接的库
 #find_library(LIBNVENCODE nvidia-encode)
 #find_library(LIBNVDEC nvcuvid)
@@ -59,7 +59,9 @@ find_library(LIBNVDEC nvcuvid HINTS ${CMAKE_CURRENT_SOURCE_DIR}/../../3rd/Video_
 target_link_libraries(${PROJECT_NAME} PRIVATE 
 pthread
 ${LIBNVENCODE} 
-${LIBNVDEC})
+${LIBNVDEC}
+${LIBCUDA}
+)
 
 # 链接CUDA库
 #target_link_libraries(cudaCodecDLL ${CUDA_LIBRARIES})

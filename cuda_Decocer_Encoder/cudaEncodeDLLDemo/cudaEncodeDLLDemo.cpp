@@ -35,7 +35,7 @@ char szYUVName[256] = { 0 };
 unsigned char* szYUVBuffer = NULL ;
 
 uint64_t       nCudaEncode;//cuda硬件编码句柄
-FILE*          fFile;//输入的YUV文件
+
 int            nSize = (YUV_Width*YUV_Height * 3) / 2;//源尺寸一帧YUV大小
 int            nEncodeLength;
 unsigned char* szEncodeBuffer = NULL;
@@ -118,7 +118,7 @@ int main()
 	pCudaEncodeHandle = dlopen("libcudaEncodeDLL.so", RTLD_LAZY);
 	if (pCudaEncodeHandle != NULL)
 	{
-		WriteLog(Log_Debug, " dlopen libcudaEncodeDLL.so success , NVIDIA graphics card installed  ");
+		printf(" dlopen libcudaEncodeDLL.so success , NVIDIA graphics card installed! \r\n ");
 		cudaEncode_Init = (ABL_cudaEncode_Init)dlsym(pCudaEncodeHandle, "cudaEncode_Init");
 		cudaEncode_GetDeviceGetCount = (ABL_cudaEncode_GetDeviceGetCount)dlsym(pCudaEncodeHandle, "cudaEncode_GetDeviceGetCount");
 		cudaEncode_GetDeviceName = (ABL_cudaEncode_GetDeviceName)dlsym(pCudaEncodeHandle, "cudaEncode_GetDeviceName");
@@ -138,8 +138,13 @@ int main()
 
 	if (bInitCudaFlag == false || nCudaCount == 0)
 	{
-		printf("当前电脑没有英伟达显卡或者英伟达显卡官方驱动没有安装好！");
+		printf("error NVIDIA graphics card installed ! nCudaCount=[%d]  bInitCudaFlag=[%d]\r\n ", nCudaCount , bInitCudaFlag);
 		return -1;
+	}
+	else
+	{
+
+		printf(" nCudaCount =[%d] ! \r\n", nCudaCount);
 	}
 
 	//获取英伟达第一个显卡名称
@@ -151,39 +156,50 @@ int main()
 
 	if (YUV_Width == 1920)
 	{
- 		sprintf(szYUVName, "%sYV12_1920x1080.yuv", szCurrentPath);
-		sprintf(szOutH264Name, "%sEncodec_1920x1080.264", szCurrentPath);
+ 		sprintf(szYUVName, "%s/YV12_1920x1080.yuv", szCurrentPath);
+		sprintf(szOutH264Name, "%s/Encodec_1920x1080.264", szCurrentPath);
 	}
 	else if (YUV_Width == 704)
 	{
-		sprintf(szYUVName, "%sYV12_704x576.yuv", szCurrentPath);
-		sprintf(szOutH264Name, "%sEncodec_704x576.264", szCurrentPath);
+		sprintf(szYUVName, "%s/YV12_704x576.yuv", szCurrentPath);
+		sprintf(szOutH264Name, "%s/Encodec_704x576.264", szCurrentPath);
 	}
 	else if (YUV_Width == 640)
 	{
-		sprintf(szYUVName, "%sYV12_640x480.yuv", szCurrentPath);
-		sprintf(szOutH264Name, "%sEncodec_640x480.264", szCurrentPath);
+		sprintf(szYUVName, "%s/YV12_640x480.yuv", szCurrentPath);
+		sprintf(szOutH264Name, "%s/Encodec_640x480.264", szCurrentPath);
 	}
 	else if (YUV_Width == 352)
 	{
-		sprintf(szYUVName, "%sYV12_352x288.yuv", szCurrentPath);
-		sprintf(szOutH264Name, "%sEncodec_352x288.264", szCurrentPath);
+		sprintf(szYUVName, "%s/YV12_352x288.yuv", szCurrentPath);
+		sprintf(szOutH264Name, "%s/Encodec_352x288.264", szCurrentPath);
 	}
 	else //非法的YUV
 		return -1;
-
+	printf("open file [%s]  \r\n", szYUVName);
 	//打开原始的YUV文件
+	FILE* fFile;//输入的YUV文件
 	fFile = fopen(szYUVName, "rb");
 	if (fFile == NULL)
+	{
+		printf("open fail errno = % d reason = % s \n", errno);
+		printf("open file error =[%s] \r\n", szYUVName);
 		return 0;
-
+	}
+	
+	printf("open file [%s]  \r\n", szOutH264Name);
 	//创建准备写入264编码数据的文件句柄
 	fFileH264 = fopen(szOutH264Name, "wb");
 	if (fFileH264 == NULL)
+	{
+		printf("open file error =[%s] \r\n", szOutH264Name);
 		return 0;
-
+	}
+	
 	//创建cuda 的 H264 编码器，输入的YUV格式为  cudaEncodeVideo_YV12 ，宽、高分别为  YUV_Width, YUV_Height
-	cudaEncode_CreateVideoEncode(cudaEncodeVideo_H264, cudaEncodeVideo_YV12, YUV_Width, YUV_Height, nCudaEncode);
+	bool bres= cudaEncode_CreateVideoEncode(cudaEncodeVideo_H264, cudaEncodeVideo_YV12, YUV_Width, YUV_Height, nCudaEncode);
+
+	printf("cudaEncode_CreateVideoEncode =[%d] \r\n", bres);
 
 	szYUVBuffer = new unsigned char[(YUV_Width*YUV_Height * 3) / 2];
 	szEncodeBuffer = new unsigned char[(YUV_Width*YUV_Height * 3) / 2];
@@ -192,7 +208,11 @@ int main()
 		//每次读取一帧的YUV数据，长度为 nSize =  (YUV_Width*YUV_Height * 3) / 2 
 		nRead = fread(szYUVBuffer, 1, nSize, fFile);
 		if (nRead <= 0)
+		{
+			printf("open file nRead =[%d] \r\n", nRead);
 			break;
+		}
+		
 		nEncodeLength = cudaEncode_CudaVideoEncode(nCudaEncode, szYUVBuffer, nSize,(char*)szEncodeBuffer);
 		if (nEncodeLength > 0)
 		{//如果编码成功 nEncodeLength 大于 0 ，写入编码文件中  fFileH264
