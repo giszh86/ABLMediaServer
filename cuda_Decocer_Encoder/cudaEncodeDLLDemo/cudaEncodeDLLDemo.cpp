@@ -1,9 +1,5 @@
 /*
 功能： cuda 英伟达显卡硬件编码调用例子 
- 	Author 罗家兄弟
-	Date   2022-07-15
-	QQ     79941308
-	E-mail 79941308@qq.com
 */
 
 #include "stdafx.h"
