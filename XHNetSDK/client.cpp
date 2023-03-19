@@ -8,7 +8,7 @@
 #ifdef USE_BOOST
 #include <boost/bind.hpp>
 #else
-#include <boost/bind.hpp>
+
 #endif
 
 
@@ -187,7 +187,11 @@ int32_t client::connect(int8_t* remoteip,
 	else //sync connect
 	{
 		// Start the asynchronous connect operation.
-		m_socket.async_connect(srvep, std::bind(&client::handle_connect, shared_from_this(), asio::placeholders::error));
+		m_socket.async_connect(srvep,
+			std::bind(&client::handle_connect, shared_from_this(),
+				std::placeholders::_1));
+
+		//m_socket.async_connect(srvep, std::bind(&client::handle_connect, shared_from_this(), asio::placeholders::error));
 		return e_libnet_err_noerror;
 	}
 }
@@ -246,7 +250,7 @@ void client::handle_read(const std::error_code& ec, size_t transize)
 		if (m_socket.is_open())
 		{
 			m_socket.async_read_some(asio::buffer(m_readbuff, CLIENT_MAX_RECV_BUFF_SIZE),
-				[this, shared_from_this()](std::error_code ec, std::size_t length)
+				[this](std::error_code ec, std::size_t length)
 				{
 					handle_read(ec, length);
 				});

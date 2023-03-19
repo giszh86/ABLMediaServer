@@ -4,7 +4,7 @@
 #include <vector>
 #include <asio.hpp>
 #include <asio/detail/thread_group.hpp>
-
+#include <functional>
 #include "auto_lock.h"
 #ifdef USE_BOOST
 #include <boost/noncopyable.hpp>

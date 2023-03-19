@@ -40,7 +40,10 @@ udp_session::udp_session(asio::io_context& ioc)
 udp_session::~udp_session(void)
 {
 	recycle_identifier(m_id);
+#ifndef _WIN32
 	malloc_trim(0);
+#endif
+
 }
 
 int32_t udp_session::init(const int8_t* localip,
@@ -148,7 +151,7 @@ int32_t udp_session::recv_from(uint8_t* buffer,
 		{
 			*buffsize = 0;
 			//close();
-			udp_session_manager_singleton::get_mutable_instance().pop_udp_session(get_id());
+			udp_session_manager_singleton->pop_udp_session(get_id());
 			return e_libnet_err_clireaddata;
 		}
 		else
@@ -225,7 +228,7 @@ int32_t udp_session::send_to(uint8_t* data,
 	if (m_hasconnected)
 	{
 		m_socket.send(asio::buffer(data, datasize), 0, ec);
-		usleep(20);
+		std::this_thread::sleep_for(std::chrono::milliseconds(20));
 	}
 	else
 	{
@@ -234,12 +237,12 @@ int32_t udp_session::send_to(uint8_t* data,
 		m_writeep.address(asio::ip::address::from_string(inet_ntoa(addr->sin_addr)));
 		m_writeep.port(ntohs(addr->sin_port));
 		m_socket.send_to(asio::buffer(data, datasize), m_writeep, 0, ec);
-		usleep(20);
+		std::this_thread::sleep_for(std::chrono::milliseconds(20));
  	}
 
 	if (ec)
 	{
-		udp_session_manager_singleton::get_mutable_instance().pop_udp_session(get_id());
+		udp_session_manager_singleton->pop_udp_session(get_id());
 		return e_libnet_err_cliwritedata;
 	}
 	else 
@@ -359,12 +362,13 @@ void udp_session::start_read()
 {
 	if (m_socket.is_open())
 	{
-		m_socket.async_receive_from(asio::buffer(m_readbuff, UDP_SESSION_MAX_BUFF_SIZE),
+		m_socket.async_receive_from(
+			asio::buffer(m_readbuff, UDP_SESSION_MAX_BUFF_SIZE), 
 			m_remoteep,
-			boost::bind(&udp_session::handle_read,
-			shared_from_this(),
-			asio::placeholders::error,
-			asio::placeholders::bytes_transferred));
+			[this](asio::error_code ec, std::size_t bytes_recvd)
+			{
+				handle_read(ec, bytes_recvd);
+			});
 	}
 }
 

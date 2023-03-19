@@ -27,7 +27,7 @@ private:
 #ifdef USE_BOOST
 	boost::unordered_map<NETHANDLE, udp_session_ptr> m_sessions;
 #else
-	std::unordered_map<NETHANDLE, udp_session_ptr> m_sessions;
+	std::map<NETHANDLE, udp_session_ptr> m_sessions;
 #endif
 
 #ifdef LIBNET_USE_CORE_SYNC_MUTEX

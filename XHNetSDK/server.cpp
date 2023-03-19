@@ -44,7 +44,10 @@ server::server(asio::io_context &ioc,
 server::~server(void)
 {
 	recycle_identifier(m_id);
+#ifndef _WIN32
 	malloc_trim(0);
+#endif
+
 }
 
 int32_t server::run()
@@ -208,7 +211,7 @@ void server::handle_accept(client_ptr c, const asio::error_code& ec)
 	}
 	else
 	{
-		if (server_manager_singleton::get_mutable_instance().pop_server(get_id()))
+		if (server_manager_singleton->pop_server(get_id()))
 		{
 			if (m_fnclose)
 			{

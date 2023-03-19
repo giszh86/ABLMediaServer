@@ -1,5 +1,5 @@
 
-#include <boost/ref.hpp>
+
 #include "io_context_pool.h"
 #include "libnet_error.h"
 #include "data_define.h"
@@ -9,6 +9,7 @@
 #ifdef USE_BOOST
 #include <boost/make_shared.hpp>
 #include <boost/function.hpp>
+#include <boost/ref.hpp>
 #else
 #include <memory>
 #include <functional>
@@ -46,7 +47,7 @@ int32_t io_context_pool::init(uint32_t iocnum, uint32_t periocthread)
 
 #else
 			ioc = std::make_shared<asio::io_context>();
-			wo = std::make_shared<asio::io_context::work>(boost::ref(*ioc));
+			wo = std::make_shared<asio::io_context::work>(*ioc);
 
 #endif
 		m_iocontexts.push_back(ioc);
@@ -134,13 +135,16 @@ int32_t io_context_pool::run()
 					f = boost::bind(&asio::io_context::run, m_iocontexts[i]);
 
 #else
-					f = std::bind(&asio::io_context::run, m_iocontexts[i], std::placeholders::_1);
+					
+
+			
+					m_threads.create_thread(m_iocontexts[i]->run());
 
 #endif
 
 				} while (!f);
 
-				m_threads.create_thread(f);
+			//	m_threads.create_thread(f);
 				num_threads++;
 
 				ret = e_libnet_err_noerror;
@@ -180,7 +184,7 @@ void io_context_pool::close()
 
 	m_iocontexts.clear();
 
-	m_threads.join_all();
+	m_threads.join();
 
 	m_isinit = false;
 }

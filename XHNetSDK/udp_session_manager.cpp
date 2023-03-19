@@ -63,7 +63,7 @@ void udp_session_manager::pop_all_udp_sessions()
 	auto_lock::al_lock<auto_lock::al_spin> al(m_mutex);
 #endif
 
-	for (boost::unordered_map<NETHANDLE, udp_session_ptr>::iterator iter = m_sessions.begin(); m_sessions.end() != iter; )
+	for (std::map<NETHANDLE, udp_session_ptr>::iterator iter = m_sessions.begin(); m_sessions.end() != iter; )
 	{
 		if (iter->second)
 		{
@@ -83,7 +83,7 @@ udp_session_ptr udp_session_manager::get_udp_session(NETHANDLE id)
 #endif
 
 	udp_session_ptr s;
-	boost::unordered_map<NETHANDLE, udp_session_ptr>::iterator iter = m_sessions.find(id);
+	std::map<NETHANDLE, udp_session_ptr>::iterator iter = m_sessions.find(id);
 	if (m_sessions.end() != iter)
 	{
 		s = iter->second;

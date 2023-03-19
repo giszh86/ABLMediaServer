@@ -56,7 +56,7 @@ void client_manager::free_client(client* cli)
 	auto_lock::al_lock<auto_lock::al_spin> al(m_poolmtx);
 #endif
 	
-	m_pool.destroy(cli);
+	m_pool.free(cli);
 }
 
 bool client_manager::push_client(client_ptr& cli)
