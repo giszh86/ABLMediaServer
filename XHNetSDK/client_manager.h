@@ -1,7 +1,7 @@
 #ifndef _CLIENT_MANAGER_H_
 #define _CLIENT_MANAGER_H_ 
 
-
+#include "asio/detail/object_pool.hpp"
 #include "client.h"
 
 #ifdef USE_BOOST
@@ -23,7 +23,7 @@
 typedef simple_pool::unordered_object_pool<client> client_pool;
 typedef boost::shared_ptr<client_pool> client_pool_ptr;
 #else
-//typedef simple_pool::unordered_object_pool<client> client_pool;
+typedef asio::detail::object_pool<client> client_pool;
 typedef std::shared_ptr<client> client_pool_ptr;
 #endif
 
