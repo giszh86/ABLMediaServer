@@ -57,7 +57,7 @@ public:
 
 private:
 	void handle_write(const std::error_code& ec, size_t transize);
-	void handle_read(const std::error_code& ec, size_t transize);
+	void handle_read(const std::error_code &ec, std::size_t length);
 	void handle_connect(const std::error_code& ec);
 	void handle_connect_timeout(const std::error_code& ec);
 	bool write_packet();

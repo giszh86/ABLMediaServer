@@ -60,7 +60,7 @@ private:
 	std::vector<io_context_ptr> m_iocontexts;
 	std::vector<work_ptr> m_works;
 
-	asio::detail::thread_group m_threads;
+	asio::thread_pool m_threads;
 	std::size_t num_threads=0;
 
 #ifdef LIBNET_USE_CORE_SYNC_MUTEX

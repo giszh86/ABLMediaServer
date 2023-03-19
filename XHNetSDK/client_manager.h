@@ -23,8 +23,8 @@
 typedef simple_pool::unordered_object_pool<client> client_pool;
 typedef boost::shared_ptr<client_pool> client_pool_ptr;
 #else
-typedef asio::detail::object_pool<client> client_pool;
-typedef std::shared_ptr<client> client_pool_ptr;
+//typedef asio::detail::object_pool<client> client_pool;
+//typedef std::shared_ptr<client> client_pool_ptr;
 #endif
 
 
@@ -60,7 +60,7 @@ private:
 
 
 private:
-	client_pool m_pool;
+	//client_pool m_pool;
 #ifdef LIBNET_USE_CORE_SYNC_MUTEX
 	auto_lock::al_mutex m_poolmtx;
 #else

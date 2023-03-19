@@ -21,7 +21,6 @@ struct client_deletor
 };
 
 client_manager::client_manager(void)
-	: m_pool(CLIENT_POOL_OBJECT_COUNT, CLIENT_POOL_OBJECT_COUNT)
 {
 }
 
@@ -43,7 +42,8 @@ client_ptr client_manager::malloc_client(asio::io_context& ioc,
 #endif
 
 	client_ptr cli;
-	cli.reset(m_pool.construct(ioc, srvid, fnread, fnclose, autoread), client_deletor());
+
+//	cli.reset(m_pool.construct(ioc, srvid, fnread, fnclose, autoread), client_deletor());
 
 	return cli;
 }
@@ -56,7 +56,7 @@ void client_manager::free_client(client* cli)
 	auto_lock::al_lock<auto_lock::al_spin> al(m_poolmtx);
 #endif
 	
-	m_pool.free(cli);
+	//m_pool.free(cli);
 }
 
 bool client_manager::push_client(client_ptr& cli)

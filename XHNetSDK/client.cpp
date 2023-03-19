@@ -62,12 +62,12 @@ int32_t client::run()
 	setsockopt(m_socket.native_handle(), SOL_SOCKET, SO_SNDTIMEO, (const char*)&nSendRecvTimer, sizeof(nSendRecvTimer)); //设置发送超时
 	setsockopt(m_socket.native_handle(), SOL_SOCKET, SO_RCVTIMEO, (const char*)&nSendRecvTimer, sizeof(nSendRecvTimer)); //设置接收超时
 
+	auto self(shared_from_this());
 	m_socket.async_read_some(asio::buffer(m_readbuff, CLIENT_MAX_RECV_BUFF_SIZE),
-		[this](std::error_code ec, std::size_t length)
+		[this, self](std::error_code ec, std::size_t length)
 		{
-			handle_read(ec, length);	
+			handle_read(ec, length);		
 		});
-
 
 	//m_socket.async_read_some(asio::buffer(m_readbuff, CLIENT_MAX_RECV_BUFF_SIZE),
 	//	boost::bind(&client::handle_read,
@@ -160,8 +160,9 @@ int32_t client::connect(int8_t* remoteip,
 	//connect timeout
 	if (timeout > 0)
 	{
-		m_timer.start_timer(1, timeout * 1000, [=](const asio::error_code& ec)
+		m_timer.start_timer(1, timeout * 1000, [&]()
 			{
+				std::error_code ec;
 				handle_connect_timeout(ec);
 			});
 		//m_timer.expires_from_now(boost::posix_time::milliseconds(timeout));
@@ -222,10 +223,10 @@ void client::handle_write(const std::error_code& ec, size_t transize)
 #endif
 	m_onwriting = write_packet();
 }
-
-void client::handle_read(const std::error_code& ec, size_t transize)
+void client::handle_read(const std::error_code & error,
+	size_t bytes_transferred)
 {
-	if (ec)
+	if (error)
 	{
 		if (client_manager_singleton->pop_client(get_id()))
 		{
@@ -242,7 +243,7 @@ void client::handle_read(const std::error_code& ec, size_t transize)
 	{
 		if (m_fnread)
 		{
-			m_fnread(get_server_id(), get_id(), m_readbuff, static_cast<uint32_t>(transize), NULL);
+			m_fnread(get_server_id(), get_id(), m_readbuff, static_cast<uint32_t>(bytes_transferred), NULL);
 		}
 		else
 			return; //不再读取 
@@ -266,7 +267,7 @@ void client::handle_read(const std::error_code& ec, size_t transize)
 	{
 		if (m_fnread)
 		{
-			m_fnread(get_server_id(), get_id(), m_usrreadbuffer, static_cast<uint32_t>(transize), NULL);
+			m_fnread(get_server_id(), get_id(), m_usrreadbuffer, static_cast<uint32_t>(bytes_transferred), NULL);
 		}
 
 		m_usrreadbuffer = NULL;
@@ -373,22 +374,22 @@ int32_t client::read(uint8_t* buffer,
 
 		if (certain)
 		{
-			asio::async_read(m_socket, asio::buffer(m_usrreadbuffer, *buffsize),
-				[this](asio::error_code& ec, size_t transize)
-				{
-					handle_read(ec, transize);
-				});		
+			/*		asio::async_read(m_socket, asio::buffer(m_usrreadbuffer, *buffsize),
+						[this](std::error_code& ec, size_t transize)
+						{
+							handle_read(ec, transize);
+						});	*/
 		
 		}
 		else
 		{
 
-			m_socket.async_read_some(asio::buffer(m_usrreadbuffer, *buffsize),
-				[this](asio::error_code& ec, size_t transize)
+	/*		m_socket.async_read_some(asio::buffer(m_usrreadbuffer, *buffsize),
+				[this](std::error_code& ec, size_t transize)
 				{
 					handle_read(ec, transize);
 				
-				});	
+				});	*/
 		}
 
 		return e_libnet_err_noerror;

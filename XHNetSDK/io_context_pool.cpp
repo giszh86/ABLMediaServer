@@ -18,6 +18,7 @@
 io_context_pool::io_context_pool()
 	: m_nextioc(0)
 	, m_isinit(false)
+	,m_threads(4)
 	, m_periocthread(IOC_POOL_PREDEFINE_PER_IOC_THREAS)
 {
 }
@@ -135,16 +136,16 @@ int32_t io_context_pool::run()
 					f = boost::bind(&asio::io_context::run, m_iocontexts[i]);
 
 #else
-					
-
-			
-					m_threads.create_thread(m_iocontexts[i]->run());
+				//	asio::io_context io_context;
+					//asio::thread t(std::bind(&asio::io_context::run, &io_context));
+					//f = std::bind(&asio::io_context::run, m_iocontexts[i]);
+		
 
 #endif
 
 				} while (!f);
-
-			//	m_threads.create_thread(f);
+				asio::post(m_threads, f);
+				//m_threads.create_thread(f);
 				num_threads++;
 
 				ret = e_libnet_err_noerror;
