@@ -141,6 +141,7 @@ int32_t io_context_pool::run()
 				} while (!f);
 
 				m_threads.create_thread(f);
+				num_threads++;
 
 				ret = e_libnet_err_noerror;
 

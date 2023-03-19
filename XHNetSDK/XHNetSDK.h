@@ -15,7 +15,7 @@
 #endif 
 #else
 #define LIBNET_CALLMETHOD
-#define LIBNET_API
+#define LIBNET_API __attribute__((visibility("default")))
 #endif 
 
 #ifndef NETHANDLE
@@ -56,12 +56,12 @@ extern "C"
 		NETHANDLE clihandle);
 
 
-	__attribute__((visibility("default"))) LIBNET_API int32_t XHNetSDK_Init(uint32_t ioccount,
+	 LIBNET_API int32_t XHNetSDK_Init(uint32_t ioccount,
 		uint32_t periocthread);
 
-	__attribute__((visibility("default"))) LIBNET_API int32_t XHNetSDK_Deinit();
+	LIBNET_API int32_t XHNetSDK_Deinit();
 
-	__attribute__((visibility("default"))) LIBNET_API int32_t XHNetSDK_Listen(int8_t* localip,
+	 LIBNET_API int32_t XHNetSDK_Listen(int8_t* localip,
 		uint16_t localport,
 		NETHANDLE* srvhandle,
 		accept_callback fnaccept,
@@ -69,9 +69,9 @@ extern "C"
 		close_callback fnclose,
 		uint8_t autoread);
 
-	__attribute__((visibility("default"))) LIBNET_API int32_t XHNetSDK_Unlisten(NETHANDLE srvhandle);
+	 LIBNET_API int32_t XHNetSDK_Unlisten(NETHANDLE srvhandle);
 
-	__attribute__((visibility("default"))) LIBNET_API int32_t XHNetSDK_Connect(int8_t* remoteip,
+	 LIBNET_API int32_t XHNetSDK_Connect(int8_t* remoteip,
 		uint16_t remoteport,
 		int8_t* localip,
 		uint16_t locaport,
@@ -83,45 +83,45 @@ extern "C"
 		uint32_t timeout,
 		uint8_t autoread);
 
-	__attribute__((visibility("default"))) LIBNET_API int32_t XHNetSDK_Disconnect(NETHANDLE clihandle);
+	 LIBNET_API int32_t XHNetSDK_Disconnect(NETHANDLE clihandle);
 
-	__attribute__((visibility("default"))) LIBNET_API int32_t XHNetSDK_Write(NETHANDLE clihandle,
+	 LIBNET_API int32_t XHNetSDK_Write(NETHANDLE clihandle,
 		uint8_t* data,
 		uint32_t datasize,
 		uint8_t blocked);
 
-	__attribute__((visibility("default"))) LIBNET_API int32_t XHNetSDK_Read(NETHANDLE clihandle,
+	LIBNET_API int32_t XHNetSDK_Read(NETHANDLE clihandle,
 		uint8_t* buffer,
 		uint32_t* buffsize,
 		uint8_t blocked,
 		uint8_t certain);
 
-	__attribute__((visibility("default"))) LIBNET_API int32_t XHNetSDK_BuildUdp(int8_t* localip,
+	 LIBNET_API int32_t XHNetSDK_BuildUdp(int8_t* localip,
 		uint16_t localport,
 		void* bindaddr,
 		NETHANDLE* udphandle,
 		read_callback fnread,
 		uint8_t autoread);
 
-	__attribute__((visibility("default"))) LIBNET_API int32_t XHNetSDK_DestoryUdp(NETHANDLE udphandle);
+	 LIBNET_API int32_t XHNetSDK_DestoryUdp(NETHANDLE udphandle);
 
-	__attribute__((visibility("default"))) LIBNET_API int32_t XHNetSDK_Sendto(NETHANDLE udphandle,
+	 LIBNET_API int32_t XHNetSDK_Sendto(NETHANDLE udphandle,
 		uint8_t* data,
 		uint32_t datasize,
 		void* remoteaddress);
 
-	__attribute__((visibility("default"))) LIBNET_API int32_t XHNetSDK_Recvfrom(NETHANDLE udphandle,
+	 LIBNET_API int32_t XHNetSDK_Recvfrom(NETHANDLE udphandle,
 		uint8_t* buffer,
 		uint32_t* buffsize,
 		void* remoteaddress,
 		uint8_t blocked);
 
-	__attribute__((visibility("default"))) LIBNET_API int32_t XHNetSDK_Multicast(NETHANDLE udphandle,
+	 LIBNET_API int32_t XHNetSDK_Multicast(NETHANDLE udphandle,
 		uint8_t option,
 		int8_t* multicastip,
 		uint8_t value);
 
-	__attribute__((visibility("default"))) LIBNET_API NETHANDLE XHNetSDK_GenerateIdentifier();
+	 LIBNET_API NETHANDLE XHNetSDK_GenerateIdentifier();
 
 #ifdef __cplusplus
 }

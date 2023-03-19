@@ -2,14 +2,15 @@
 #define _IO_CONTEXT_POOL_H_ 
 
 #include <vector>
-#include <boost/asio.hpp>
-#include <boost/asio/detail/thread_group.hpp>
+#include <asio.hpp>
+#include <asio/detail/thread_group.hpp>
 
 #include "auto_lock.h"
 #ifdef USE_BOOST
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/thread.hpp>
+
 #else
 #include <memory>
 #include <thread>
@@ -17,15 +18,17 @@
 #ifdef USE_BOOST
 class io_context_pool : public boost::noncopyable
 #else
-class io_context_pool 
+class io_context_pool : public asio::detail::noncopyable
 #endif
 {
+
 public:
 	io_context_pool();
+	
 
 	~io_context_pool();
 
-	uint32_t get_thread_count() const { return static_cast<uint32_t>(m_threads.size()); }
+	uint32_t get_thread_count() const { return static_cast<uint32_t>(num_threads); }
 
 	bool is_init();
 
@@ -58,6 +61,7 @@ private:
 	std::vector<work_ptr> m_works;
 
 	asio::detail::thread_group m_threads;
+	std::size_t num_threads=0;
 
 #ifdef LIBNET_USE_CORE_SYNC_MUTEX
 	auto_lock::al_mutex m_mutex;

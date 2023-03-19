@@ -71,7 +71,7 @@ int32_t udp_session::init(const int8_t* localip,
 		m_start = true;
 	}
 
-	boost::system::error_code ec;
+	asio::error_code ec;
 	asio::socket_base::receive_buffer_size recv_buffer_size_option(4 * 1024 * 1024);
 	m_socket.set_option(recv_buffer_size_option, ec);//设置接收缓冲区
 
@@ -88,7 +88,7 @@ int32_t udp_session::connect(const int8_t* remoteip,
 	{
 		return e_libnet_err_invalidparam;
 	}
-	boost::system::error_code ec;
+	asio::error_code ec;
 	asio::ip::address addr = asio::ip::address::from_string(reinterpret_cast<const char*>(remoteip), ec);
 	if (ec)
 	{
@@ -140,7 +140,7 @@ int32_t udp_session::recv_from(uint8_t* buffer,
 		return e_libnet_err_clisocknotopen;
 	}
 
-	boost::system::error_code ec;
+	asio::error_code ec;
 	if (blocked)
 	{	
 		size_t readsize = m_socket.receive_from(asio::buffer(buffsize, *buffsize), m_remoteep, 0, ec);
@@ -221,7 +221,7 @@ int32_t udp_session::send_to(uint8_t* data,
 		return e_libnet_err_clisocknotopen;
 	}
 
-	boost::system::error_code ec;
+	asio::error_code ec;
 	if (m_hasconnected)
 	{
 		m_socket.send(asio::buffer(data, datasize), 0, ec);
@@ -254,7 +254,7 @@ int32_t	udp_session::close()
 	m_fnread = NULL;
 	if (m_socket.is_open())
 	{
-		boost::system::error_code ec;
+		asio::error_code ec;
 		m_socket.close(ec);
 	}
 
@@ -265,7 +265,7 @@ int32_t udp_session::bind_address(const int8_t* localip,
 	uint16_t localport,
 	void* bindaddr)
 {
-	boost::system::error_code ec;
+	asio::error_code ec;
 
 	asio::ip::address addr;
 	if (localip && (0 != strcmp(reinterpret_cast<const char*>(localip), "")))
@@ -368,7 +368,7 @@ void udp_session::start_read()
 	}
 }
 
-void udp_session::handle_read(const boost::system::error_code& ec,
+void udp_session::handle_read(const asio::error_code& ec,
 	size_t transize)
 {
 	if (!m_socket.is_open())
@@ -444,7 +444,7 @@ int32_t udp_session::multicast(uint8_t option,
 		return e_libnet_err_clisocknotopen;
 	}
 
-	boost::system::error_code ec;
+	asio::error_code ec;
 
 	switch (option)
 	{

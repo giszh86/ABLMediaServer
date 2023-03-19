@@ -49,7 +49,7 @@ server::~server(void)
 
 int32_t server::run()
 {
-	boost::system::error_code ec;
+	asio::error_code ec;
 	if (!m_acceptor.is_open())
 	{
 		//open
@@ -116,7 +116,7 @@ void server::close()
 
 	if (m_acceptor.is_open())
 	{
-		boost::system::error_code ec;
+		asio::error_code ec;
 		m_acceptor.close(ec);
 	}
 }
@@ -147,15 +147,15 @@ void server::start_accept()
 			shared_from_this(), c,
 			asio::placeholders::error));
 #else
-	m_acceptor.async_accept(c->socket(),
-		std::bind(&server::handle_accept,
-			shared_from_this(), c,
-			asio::placeholders::error));
+
+	m_acceptor.async_accept(c->socket(), [&](asio::error_code err) {
+		handle_accept(c, err);
+		});
 #endif
 
 }
 
-void server::handle_accept(client_ptr c, const boost::system::error_code& ec)
+void server::handle_accept(client_ptr c, const asio::error_code& ec)
 {
 	if (!ec)
 	{
@@ -163,7 +163,7 @@ void server::handle_accept(client_ptr c, const boost::system::error_code& ec)
 
 		if (m_fnaccept)
 		{
-			boost::system::error_code ec;
+			asio::error_code ec;
 			asio::ip::tcp::endpoint endpoint = c->socket().remote_endpoint(ec);
 			if (ec || !client_manager_singleton->push_client(c))
 			{

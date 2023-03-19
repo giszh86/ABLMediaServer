@@ -37,7 +37,6 @@ client::client(asio::io_context& ioc,
 client::~client(void)
 {
 	recycle_identifier(m_id);
-	malloc_trim(0);
 }
 
 int32_t client::run()
@@ -187,7 +186,8 @@ int32_t client::connect(int8_t* remoteip,
 	}
 	else //sync connect
 	{
-		m_socket.async_connect(srvep, boost::bind(&client::handle_connect, shared_from_this(), asio::placeholders::error));
+		// Start the asynchronous connect operation.
+		m_socket.async_connect(srvep, std::bind(&client::handle_connect, shared_from_this(), asio::placeholders::error));
 		return e_libnet_err_noerror;
 	}
 }
@@ -326,7 +326,7 @@ int32_t client::read(uint8_t* buffer,
 
 	if (blocked)
 	{
-		boost::system::error_code err;
+		asio::error_code err;
 		if (certain)
 		{
 			readsize = static_cast<uint32_t>(asio::read(m_socket, asio::buffer(buffer, *buffsize), err));
@@ -418,7 +418,7 @@ int32_t client::write(uint8_t* data,
 
 	if (blocked)
 	{
-		boost::system::error_code ec;
+		asio::error_code ec;
 		unsigned long nSendPos = 0, nSendRet = 0 ;
 
 		while (datasize2 > 0)
@@ -516,7 +516,7 @@ void client::handle_connect_timeout(const std::error_code& ec)
 	{
 		if (m_socket.is_open())
 		{
-			boost::system::error_code ec;
+			asio::error_code ec;
 			m_socket.close(ec);
 		}
 	}

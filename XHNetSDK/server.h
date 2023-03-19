@@ -31,7 +31,7 @@ public:
 
 private:
 	void start_accept();
-	void handle_accept(client_ptr c, const boost::system::error_code& error);
+	void handle_accept(client_ptr c, const asio::error_code& error);
 	void disconnect_clients();
 
 private:

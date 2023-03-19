@@ -100,7 +100,7 @@ LIBNET_API int32_t XHNetSDK_Listen(int8_t* localip,
 	{
 		*srvhandle = INVALID_NETHANDLE;
 
-		boost::system::error_code ec;
+		asio::error_code ec;
 		asio::ip::address addr = asio::ip::address::from_string(reinterpret_cast<char*>(localip), ec);
 		if (ec)
 		{

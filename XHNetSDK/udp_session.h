@@ -61,7 +61,7 @@ private:
 		uint16_t localport, 
 		void* bindaddr);
 	void start_read();
-	void handle_read(const boost::system::error_code& ec,
+	void handle_read(const asio::error_code& ec,
 		size_t transize); 
 
 private:

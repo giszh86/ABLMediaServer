@@ -3,8 +3,9 @@
 
 
 #include "client.h"
-#include "unordered_object_pool.h"
+
 #ifdef USE_BOOST
+#include "unordered_object_pool.h"
 #include <boost/unordered_map.hpp>
 #include <boost/serialization/singleton.hpp>
 #include <boost/smart_ptr/shared_ptr.hpp>
@@ -22,8 +23,8 @@
 typedef simple_pool::unordered_object_pool<client> client_pool;
 typedef boost::shared_ptr<client_pool> client_pool_ptr;
 #else
-typedef simple_pool::unordered_object_pool<client> client_pool;
-typedef std::shared_ptr<client_pool> client_pool_ptr;
+//typedef simple_pool::unordered_object_pool<client> client_pool;
+typedef std::shared_ptr<client> client_pool_ptr;
 #endif
 
 
