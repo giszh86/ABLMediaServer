@@ -16,9 +16,17 @@
 #else
 #include <memory>
 #include <atomic>
-#include "timer/timer_cpp11.h"
+
 #endif
+struct MyStruct
+{
+public:
+	asio::ip::tcp::socket m_socket;
+}; 
+
+
 #ifdef USE_BOOST
+
 class client : public boost::enable_shared_from_this<client>
 {
 #else
@@ -27,18 +35,26 @@ class client : public std::enable_shared_from_this<client>
 #endif
 
 public:
-	client(asio::io_context& ioc,
+	client(	asio::io_context& ioc,
 		NETHANDLE srvhandle,
 		read_callback fnread,
 		close_callback fnclose,
 		bool autoread);
+	client(asio::io_context& ioc);
 	~client();
+	void init(NETHANDLE srvhandle,
+		read_callback fnread,
+		close_callback fnclose,
+		bool autoread);
 
 	NETHANDLE get_id();
+
 	NETHANDLE get_server_id() const;
+
 	asio::ip::tcp::socket& socket();
 
 	int32_t run();
+
 	int32_t connect(int8_t* remoteip,
 		uint16_t remoteport,
 		int8_t* localip,
@@ -46,22 +62,25 @@ public:
 		bool blocked,
 		connect_callback fnconnect,
 		uint32_t timeout);
+
 	int32_t write(uint8_t* data,
 		uint32_t datasize,
 		bool blocked);
+
 	int32_t read(uint8_t* buffer,
 		uint32_t* buffsize,
 		bool blocked,
 		bool certain);
+
 	void close();
 
 private:
 	void handle_write(const std::error_code& ec, size_t transize);
-	void handle_read(const std::error_code &ec, std::size_t length);
+	void handle_read(const asio::error_code& err, size_t length);
 	void handle_connect(const std::error_code& ec);
 	void handle_connect_timeout(const std::error_code& ec);
 	bool write_packet();
-
+	void handle_timeout();
 private:
 	NETHANDLE m_srvid;
 	NETHANDLE m_id;
@@ -78,7 +97,8 @@ private:
 
 	//connect
 	//asio::deadline_timer m_timer;
-	zhb::timer    m_timer;
+	//zhb::timer    m_timer;
+	asio::steady_timer stop_timer_;
 	//read
 #ifdef LIBNET_MULTI_THREAD_RECV
 #ifdef LIBNET_USE_CORE_SYNC_MUTEX
@@ -87,7 +107,7 @@ private:
 	auto_lock::al_spin m_readmtx;
 #endif
 #endif
-	const bool m_autoread;
+	bool m_autoread;
 	uint8_t m_readbuff[CLIENT_MAX_RECV_BUFF_SIZE];
 	bool m_inreading;
 	uint8_t* m_usrreadbuffer;
@@ -110,6 +130,9 @@ private:
 	circular_buffer m_circularbuff;
 	uint8_t* m_currwriteaddr;
 	uint32_t m_currwritesize;
+public:
+	client* prev_;
+	 client* next_;
 };
 #ifdef USE_BOOST
 typedef boost::shared_ptr<client>  client_ptr;

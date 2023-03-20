@@ -3,7 +3,10 @@
 
 #include "asio/detail/object_pool.hpp"
 #include "client.h"
-
+#include <iostream>
+#include <memory>
+#include <asio.hpp>
+#include <asio/detail/object_pool.hpp>
 #ifdef USE_BOOST
 #include "unordered_object_pool.h"
 #include <boost/unordered_map.hpp>
@@ -13,8 +16,10 @@
 #include <map>
 #include "HSingleton.h"
 #include <memory>
+#include "class_obj_pool.h"
 #endif
 
+#include "zzc_object_pool.h"
 
 #define CLIENT_POOL_OBJECT_COUNT 1000
 #define CLIENT_POOL_MAX_KEEP_COUNT 100 
@@ -23,10 +28,40 @@
 typedef simple_pool::unordered_object_pool<client> client_pool;
 typedef boost::shared_ptr<client_pool> client_pool_ptr;
 #else
-//typedef asio::detail::object_pool<client> client_pool;
-//typedef std::shared_ptr<client> client_pool_ptr;
+typedef zzc::detail::object_pool<client> client_pool;
+typedef std::shared_ptr<client> client_pool_ptr;
 #endif
 
+
+
+//class client_pool : public asio::detail::object_pool<client>
+//{
+//public:
+//	using base_type = asio::detail::object_pool<std::shared_ptr<client>>;
+//	using base_type::base_type;
+//
+//	template<typename... Args>
+//	std::shared_ptr<client> alloc(asio::io_context& ioc, Args&&... args)
+//	{
+//		auto ptr = base_type::construct(std::forward<Args>(args)...);
+//		ptr->socket().emplace(ioc);
+//		return std::shared_ptr<client>(std::move(ptr), [this](client* p) { this->destroy(p); });
+//	}
+//
+//	void destroy(client* p)
+//	{
+//	
+//		if (p)
+//		{
+//			delete p;
+//			p = nullptr;
+//		}
+//	
+//	}
+//public:
+//	client* prev_;
+//	client* next_;
+//};
 
 class client_manager
 {
@@ -47,13 +82,12 @@ public:
 	client_ptr get_client(NETHANDLE id);
 
 private:
+	client_pool m_pool;
 #ifdef USE_BOOST
 	typedef boost::unordered_map<NETHANDLE, client_ptr>::iterator climapiter;
 	typedef boost::unordered_map<NETHANDLE, client_ptr>::const_iterator const_climapiter;
 	boost::unordered_map<NETHANDLE, client_ptr> m_clients;
 #else
-	typedef std::map<NETHANDLE, client_ptr>::iterator climapiter;
-	typedef std::map<NETHANDLE, client_ptr>::const_iterator const_climapiter;
 	std::map<NETHANDLE, client_ptr> m_clients;
 #endif
 

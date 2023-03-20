@@ -19,7 +19,7 @@ bool server_manager::push_server(server_ptr& s)
 
 	if (s)
 	{
-		std::pair<const_servermapiter, bool> ret = m_servers.insert(std::make_pair(s->get_id(), s));
+		auto ret = m_servers.insert(std::make_pair(s->get_id(), s));
 		return ret.second;
 	}	
 
@@ -34,7 +34,7 @@ bool server_manager::pop_server(NETHANDLE id)
 	auto_lock::al_lock<auto_lock::al_spin> al(m_mutex);
 #endif
 
-	const_servermapiter iter = m_servers.find(id);
+	auto iter = m_servers.find(id);
 	if (m_servers.end() != iter)
 	{
 		if (iter->second)
@@ -57,11 +57,12 @@ void server_manager::close_all_servers()
 	auto_lock::al_lock<auto_lock::al_spin> al(m_mutex);
 #endif
 
-	for (const_servermapiter iter = m_servers.begin();  m_servers.end() != iter; ++iter)
+
+	for (auto iter: m_servers)
 	{
-		if (iter->second)
+		if (iter.second)
 		{
-			iter->second->close();
+			iter.second->close();
 		}
 	}
 
@@ -77,7 +78,7 @@ server_ptr server_manager::get_server(NETHANDLE id)
 #endif
 
 	server_ptr s;
-	const_servermapiter iter = m_servers.find(id);
+	auto iter = m_servers.find(id);
 	if (m_servers.end() != iter)
 	{
 		s = iter->second;

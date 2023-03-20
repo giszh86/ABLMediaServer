@@ -12,7 +12,7 @@
 #endif
 
 
-client::client(asio::io_context& ioc,
+client::client( asio::io_context& ioc,
 	NETHANDLE srvid,
 	read_callback fnread,
 	close_callback fnclose,
@@ -24,19 +24,41 @@ client::client(asio::io_context& ioc,
 	, m_fnclose(fnclose)
 	, m_fnconnect(NULL)
 	, m_closeflag(false)
+	, stop_timer_(ioc)
 	, m_autoread(autoread)
 	, m_inreading(false)
 	, m_usrreadbuffer(NULL)
 	, m_onwriting(false)
 	, m_currwriteaddr(NULL)
 	, m_currwritesize(0)
-	
 {
 }
+
+client::client(asio::io_context& ioc)
+	:m_socket(ioc)
+	,stop_timer_(ioc)
+{
+
+
+}
+
 
 client::~client(void)
 {
 	recycle_identifier(m_id);
+}
+
+void client::init(
+	NETHANDLE srvid,
+	read_callback fnread,
+	close_callback fnclose,
+	bool autoread) 
+{
+
+	m_srvid = srvid;
+	m_fnread = fnread;
+	m_fnclose = fnclose;
+	m_autoread = autoread;
 }
 
 int32_t client::run()
@@ -160,11 +182,10 @@ int32_t client::connect(int8_t* remoteip,
 	//connect timeout
 	if (timeout > 0)
 	{
-		m_timer.start_timer(1, timeout * 1000, [&]()
-			{
-				std::error_code ec;
-				handle_connect_timeout(ec);
-			});
+		stop_timer_.expires_after(asio::chrono::seconds(timeout));
+		stop_timer_.async_wait(std::bind(&client::handle_timeout, this));
+
+
 		//m_timer.expires_from_now(boost::posix_time::milliseconds(timeout));
 		//m_timer.async_wait(boost::bind(&client::handle_connect_timeout, shared_from_this(), asio::placeholders::error));
 	}
@@ -173,7 +194,7 @@ int32_t client::connect(int8_t* remoteip,
 	if (blocked)
 	{
 		m_socket.connect(srvep, err);
-		m_timer.delete_all();
+		stop_timer_.cancel();
 		if (!err)
 		{
 			run();
@@ -223,8 +244,7 @@ void client::handle_write(const std::error_code& ec, size_t transize)
 #endif
 	m_onwriting = write_packet();
 }
-void client::handle_read(const std::error_code & error,
-	size_t bytes_transferred)
+void client::handle_read(const asio::error_code& error, size_t bytes_transferred)
 {
 	if (error)
 	{
@@ -277,8 +297,7 @@ void client::handle_read(const std::error_code & error,
 
 void client::handle_connect(const std::error_code& ec)
 {
-	m_timer.delete_all();
-
+	stop_timer_.cancel();
 	if (ec)
 	{
 		if (client_manager_singleton->pop_client(get_id()))
@@ -374,22 +393,22 @@ int32_t client::read(uint8_t* buffer,
 
 		if (certain)
 		{
-			/*		asio::async_read(m_socket, asio::buffer(m_usrreadbuffer, *buffsize),
-						[this](std::error_code& ec, size_t transize)
+					asio::async_read(m_socket, asio::buffer(m_usrreadbuffer, *buffsize),
+						[this](const asio::error_code& err, size_t length)
 						{
-							handle_read(ec, transize);
-						});	*/
+							handle_read(err, length);
+						});	
 		
 		}
 		else
 		{
 
-	/*		m_socket.async_read_some(asio::buffer(m_usrreadbuffer, *buffsize),
-				[this](std::error_code& ec, size_t transize)
+			m_socket.async_read_some(asio::buffer(m_usrreadbuffer, *buffsize),
+				[this](const asio::error_code& err, size_t length)
 				{
-					handle_read(ec, transize);
-				
-				});	*/
+					handle_read(err, length);
+
+				});
 		}
 
 		return e_libnet_err_noerror;
@@ -504,8 +523,7 @@ void client::close()
 	{
 		//m_fnconnect = NULL; //注释掉，否则异步方式连接失败时，通知不了 
 		m_fnread = NULL;
-		m_timer.delete_all();
-
+		stop_timer_.cancel();
 		if (m_socket.is_open())
 		{
 			std::error_code ec;
@@ -524,5 +542,14 @@ void client::handle_connect_timeout(const std::error_code& ec)
 			asio::error_code ec;
 			m_socket.close(ec);
 		}
+	}
+}
+
+void client::handle_timeout()
+{
+	if (m_socket.is_open())
+	{
+		asio::error_code ec;
+		m_socket.close(ec);
 	}
 }

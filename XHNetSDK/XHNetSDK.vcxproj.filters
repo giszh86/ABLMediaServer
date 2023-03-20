@@ -72,16 +72,13 @@
     <ClInclude Include="XHNetSDK.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="ABLsharedarray.hpp">
+    <ClInclude Include="HSingleton.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="timer\semaphore.h">
-      <Filter>timer</Filter>
+    <ClInclude Include="class_obj_pool.h">
+      <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="timer\timer_cpp11.h">
-      <Filter>timer</Filter>
-    </ClInclude>
-    <ClInclude Include="HSingleton.h">
+    <ClInclude Include="zzc_object_pool.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -121,12 +118,6 @@
     </ClCompile>
     <ClCompile Include="udp_session_manager.cpp">
       <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="timer\semaphore.cpp">
-      <Filter>timer</Filter>
-    </ClCompile>
-    <ClCompile Include="timer\timer_cpp11.cpp">
-      <Filter>timer</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

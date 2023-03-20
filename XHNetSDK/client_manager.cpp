@@ -1,8 +1,6 @@
 
 #include "client_manager.h"
 
-
-
 #ifdef USE_BOOST
 #include <boost/make_shared.hpp>
 #else
@@ -22,6 +20,7 @@ struct client_deletor
 
 client_manager::client_manager(void)
 {
+	//m_pool.init(CLIENT_POOL_OBJECT_COUNT, CLIENT_POOL_OBJECT_COUNT);
 }
 
 client_manager::~client_manager(void)
@@ -42,9 +41,8 @@ client_ptr client_manager::malloc_client(asio::io_context& ioc,
 #endif
 
 	client_ptr cli;
-
-//	cli.reset(m_pool.construct(ioc, srvid, fnread, fnclose, autoread), client_deletor());
-
+	cli.reset(m_pool.allocA(ioc), client_deletor());
+	cli->init(srvid, fnread, fnclose, autoread);
 	return cli;
 }
 
@@ -56,7 +54,7 @@ void client_manager::free_client(client* cli)
 	auto_lock::al_lock<auto_lock::al_spin> al(m_poolmtx);
 #endif
 	
-	//m_pool.free(cli);
+	m_pool.free(cli);
 }
 
 bool client_manager::push_client(client_ptr& cli)
@@ -69,7 +67,7 @@ bool client_manager::push_client(client_ptr& cli)
 
 	if (cli)
 	{
-		std::pair<const_climapiter, bool> ret = m_clients.insert(std::make_pair(cli->get_id(), cli));
+		auto ret = m_clients.insert(std::make_pair(cli->get_id(), cli));
 		return ret.second;
 	}
 
@@ -84,7 +82,7 @@ bool client_manager::pop_client(NETHANDLE id)
 	auto_lock::al_lock<auto_lock::al_spin> al(m_climtx);
 #endif
 
-	const_climapiter iter = m_clients.find(id);
+	auto iter = m_clients.find(id);
 	if (m_clients.end() != iter)
 	{
 		if (iter->second)
@@ -108,7 +106,7 @@ void client_manager::pop_server_clients(NETHANDLE srvid)
 	auto_lock::al_lock<auto_lock::al_spin> al(m_climtx);
 #endif
 
-	for (const_climapiter iter = m_clients.begin(); m_clients.end() != iter;)
+	for (auto iter = m_clients.begin(); m_clients.end() != iter;)
 	{
 		if (iter->second && (iter->second->get_server_id() == srvid))
 		{
@@ -130,7 +128,7 @@ void client_manager::pop_all_clients()
 	auto_lock::al_lock<auto_lock::al_spin> al(m_climtx);
 #endif
 
-	for (const_climapiter iter = m_clients.begin(); iter != m_clients.end(); ++iter)
+	for (auto iter = m_clients.begin(); iter != m_clients.end(); ++iter)
 	{
 		if (iter->second)
 		{
@@ -150,7 +148,7 @@ client_ptr client_manager::get_client(NETHANDLE id)
 #endif
 
 	client_ptr cli;
-	const_climapiter iter = m_clients.find(id);
+	auto iter = m_clients.find(id);
 	if (m_clients.end() != iter)
 	{
 		cli = iter->second;

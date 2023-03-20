@@ -24,10 +24,6 @@ public:
 	server_ptr get_server(NETHANDLE id);
 
 private:
-	typedef std::map<NETHANDLE, server_ptr>::iterator servermapiter;
-	typedef std::map<NETHANDLE, server_ptr>::const_iterator const_servermapiter;
-
-private:
 	std::map<NETHANDLE, server_ptr> m_servers;
 #ifdef LIBNET_USE_CORE_SYNC_MUTEX
 	auto_lock::al_mutex m_mutex;

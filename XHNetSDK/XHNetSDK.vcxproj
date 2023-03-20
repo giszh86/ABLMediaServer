@@ -142,7 +142,10 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <LanguageStandard>stdcpp14</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <Optimization>Disabled</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -155,6 +158,7 @@
   <ItemGroup>
     <ClInclude Include="auto_lock.h" />
     <ClInclude Include="circular_buffer.h" />
+    <ClInclude Include="class_obj_pool.h" />
     <ClInclude Include="client.h" />
     <ClInclude Include="client_manager.h" />
     <ClInclude Include="data_define.h" />
@@ -168,13 +172,11 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="server.h" />
     <ClInclude Include="server_manager.h" />
-    <ClInclude Include="ABLsharedarray.hpp" />
-    <ClInclude Include="timer\semaphore.h" />
-    <ClInclude Include="timer\timer_cpp11.h" />
     <ClInclude Include="udp_session.h" />
     <ClInclude Include="udp_session_manager.h" />
     <ClInclude Include="unordered_object_pool.h" />
     <ClInclude Include="XHNetSDK.h" />
+    <ClInclude Include="zzc_object_pool.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="circular_buffer.cpp" />
@@ -191,8 +193,6 @@
     </ClCompile>
     <ClCompile Include="server.cpp" />
     <ClCompile Include="server_manager.cpp" />
-    <ClCompile Include="timer\semaphore.cpp" />
-    <ClCompile Include="timer\timer_cpp11.cpp" />
     <ClCompile Include="udp_session.cpp" />
     <ClCompile Include="udp_session_manager.cpp" />
     <ClCompile Include="XHNetSDK.cpp" />
