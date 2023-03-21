@@ -20,9 +20,6 @@
 				7、WebRTC        视频H264、H265，音频AAC、G711A、G711U) 
 				8、ws-flv        视频H264、H265，音频AAC、G711A、G711U) 
 
-日期    2021-04-02
-作者    罗家兄弟
-QQ      79941308
 E-Mail  79941308@qq.com
 */
 
@@ -1864,7 +1861,7 @@ int  CheckNetRevcBaseClientDisconnect()
 
 	ABL_nPrintCheckNetRevcBaseClientDisconnect ++;
 	if(ABL_nPrintCheckNetRevcBaseClientDisconnect % 20 == 0)//1分钟打印一次
-	  WriteLog(Log_Debug, "CheckNetRevcBaseClientDisconnect() 当前连接总数 nSize = %llu ", xh_ABLNetRevcBaseMap.size());
+	  WriteLog(Log_Debug, "CheckNetRevcBaseClientDisconnect() 当前对象总数 nSize = %llu ", xh_ABLNetRevcBaseMap.size());
 
 	for (iterator1 = xh_ABLNetRevcBaseMap.begin(); iterator1 != xh_ABLNetRevcBaseMap.end(); ++iterator1)
 	{
@@ -2948,14 +2945,14 @@ ABL_Restart:
 
 	rtp_packet_setsize(65535);
 
-	//获取显卡名称 
-	LPDIRECT3D9			        m_pD3D;
-	D3DADAPTER_IDENTIFIER9      pD3DName;
-	m_pD3D = Direct3DCreate9(D3D_SDK_VERSION);
-	m_pD3D->GetAdapterIdentifier(D3DADAPTER_DEFAULT, 0, &pD3DName);
-	SAFE_RELEASE(m_pD3D);
+	////获取显卡名称 
+	//LPDIRECT3D9			        m_pD3D;
+	//D3DADAPTER_IDENTIFIER9      pD3DName;
+	//m_pD3D = Direct3DCreate9(D3D_SDK_VERSION);
+	//m_pD3D->GetAdapterIdentifier(D3DADAPTER_DEFAULT, 0, &pD3DName);
+	//SAFE_RELEASE(m_pD3D);
 
-	WriteLog(Log_Debug, "获取到显卡名称 : %s  ", pD3DName.Description);
+	//WriteLog(Log_Debug, "获取到显卡名称 : %s  ", pD3DName.Description);
 
 	if (ABL_MediaServerPort.H265ConvertH264_enable == 1 && ABL_MediaServerPort.H265DecodeCpuGpuType == 1 && ABL_bInitCudaSDKFlag == false)
 	{///英伟达

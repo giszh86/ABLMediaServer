@@ -29,8 +29,8 @@
 #include <string.h>
 #include <malloc.h>
 
-#include <d3d9.h>
-#include <d3dx9tex.h>
+//#include <d3d9.h>
+//#include <d3dx9tex.h>
 
 #include "cudaCodecDLL.h"
 
