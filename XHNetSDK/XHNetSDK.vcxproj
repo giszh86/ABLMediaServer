@@ -165,7 +165,6 @@
     <ClInclude Include="HSingleton.h" />
     <ClInclude Include="identifier_generator.h" />
     <ClInclude Include="io_context_pool.h" />
-    <ClInclude Include="libnet.h" />
     <ClInclude Include="libnet_error.h" />
     <ClInclude Include="object_pool.h" />
     <ClInclude Include="pch.h" />

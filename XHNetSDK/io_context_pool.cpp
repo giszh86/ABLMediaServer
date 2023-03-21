@@ -6,6 +6,7 @@
 
 
 
+
 #ifdef USE_BOOST
 #include <boost/make_shared.hpp>
 #include <boost/function.hpp>
@@ -17,12 +18,10 @@
 
 io_context_pool::io_context_pool()
 	: m_nextioc(0)
-	, m_threads(1)
 	, m_isinit(false)
 	, m_periocthread(IOC_POOL_PREDEFINE_PER_IOC_THREAS)
 {
-	
-	m_threads.executor();
+
 }
 
 io_context_pool::~io_context_pool()
@@ -129,11 +128,14 @@ int32_t io_context_pool::run()
 		for (uint32_t c = 0; c < m_periocthread; )
 		{
 			try
-			{				
-				asio::post(m_threads, [&]() { m_iocontexts[i]->run(); });
-	
-				num_threads++;
-
+			{		
+				std::function<void()> f;
+				do
+				{
+					f = [&, i]() { m_iocontexts[i]->run(); };
+				} while (!f);
+							
+				m_threads.create_thread(f);				
 				ret = e_libnet_err_noerror;
 
 				++c;
@@ -171,7 +173,7 @@ void io_context_pool::close()
 
 	m_iocontexts.clear();
 
-	//m_threads.join();
+	m_threads.join();
 
 	m_isinit = false;
 }

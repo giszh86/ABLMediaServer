@@ -1,4 +1,3 @@
-
 #include "io_context_pool.h"
 #include "server.h"
 #include "server_manager.h"
@@ -151,9 +150,11 @@ void server::start_accept()
 			asio::placeholders::error));
 #else
 
-	m_acceptor.async_accept(c->socket(), [&](asio::error_code err) {
-		handle_accept(c, err);
-		});
+	m_acceptor.async_accept(c->socket(),
+		std::bind(&server::handle_accept,
+			shared_from_this(), c,
+			std::placeholders::_1));
+
 #endif
 
 }

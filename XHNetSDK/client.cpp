@@ -5,14 +5,8 @@
 #include <malloc.h>
 
 
-#ifdef USE_BOOST
-#include <boost/bind.hpp>
-#else
 
-#endif
-
-
-client::client( asio::io_context& ioc,
+client::client(asio::io_context& ioc,
 	NETHANDLE srvid,
 	read_callback fnread,
 	close_callback fnclose,
@@ -31,12 +25,21 @@ client::client( asio::io_context& ioc,
 	, m_onwriting(false)
 	, m_currwriteaddr(NULL)
 	, m_currwritesize(0)
+
 {
 }
 
 client::client(asio::io_context& ioc)
 	:m_socket(ioc)
 	,stop_timer_(ioc)
+	, m_id(generate_identifier())
+	, m_fnconnect(NULL)
+	, m_closeflag(false)
+	, m_inreading(false)
+	, m_usrreadbuffer(NULL)
+	, m_onwriting(false)
+	, m_currwriteaddr(NULL)
+	, m_currwritesize(0)
 {
 
 
@@ -54,7 +57,6 @@ void client::init(
 	close_callback fnclose,
 	bool autoread) 
 {
-
 	m_srvid = srvid;
 	m_fnread = fnread;
 	m_fnclose = fnclose;
@@ -84,18 +86,12 @@ int32_t client::run()
 	setsockopt(m_socket.native_handle(), SOL_SOCKET, SO_SNDTIMEO, (const char*)&nSendRecvTimer, sizeof(nSendRecvTimer)); //设置发送超时
 	setsockopt(m_socket.native_handle(), SOL_SOCKET, SO_RCVTIMEO, (const char*)&nSendRecvTimer, sizeof(nSendRecvTimer)); //设置接收超时
 
-	auto self(shared_from_this());
-	m_socket.async_read_some(asio::buffer(m_readbuff, CLIENT_MAX_RECV_BUFF_SIZE),
-		[this, self](std::error_code ec, std::size_t length)
-		{
-			handle_read(ec, length);		
-		});
 
-	//m_socket.async_read_some(asio::buffer(m_readbuff, CLIENT_MAX_RECV_BUFF_SIZE),
-	//	boost::bind(&client::handle_read,
-	//		shared_from_this(),
-	//		asio::placeholders::error,
-	//		asio::placeholders::bytes_transferred));
+	m_socket.async_read_some(asio::buffer(m_readbuff, CLIENT_MAX_RECV_BUFF_SIZE),
+		std::bind(&client::handle_read,
+			shared_from_this(),
+			std::placeholders::_1,
+			std::placeholders::_2));
 
 	return e_libnet_err_noerror;
 }
@@ -183,7 +179,8 @@ int32_t client::connect(int8_t* remoteip,
 	if (timeout > 0)
 	{
 		stop_timer_.expires_after(asio::chrono::seconds(timeout));
-		stop_timer_.async_wait(std::bind(&client::handle_timeout, this));
+		stop_timer_.async_wait(std::bind(&client::handle_connect_timeout, shared_from_this(), std::placeholders::_1));
+		//stop_timer_.async_wait(std::bind(&client::handle_timeout, this));
 
 
 		//m_timer.expires_from_now(boost::posix_time::milliseconds(timeout));
@@ -208,12 +205,7 @@ int32_t client::connect(int8_t* remoteip,
 	}
 	else //sync connect
 	{
-		// Start the asynchronous connect operation.
-		m_socket.async_connect(srvep,
-			std::bind(&client::handle_connect, shared_from_this(),
-				std::placeholders::_1));
-
-		//m_socket.async_connect(srvep, std::bind(&client::handle_connect, shared_from_this(), asio::placeholders::error));
+		m_socket.async_connect(srvep, std::bind(&client::handle_connect, shared_from_this(), std::placeholders::_1));
 		return e_libnet_err_noerror;
 	}
 }
@@ -271,16 +263,11 @@ void client::handle_read(const asio::error_code& error, size_t bytes_transferred
 		if (m_socket.is_open())
 		{
 			m_socket.async_read_some(asio::buffer(m_readbuff, CLIENT_MAX_RECV_BUFF_SIZE),
-				[this](std::error_code ec, std::size_t length)
-				{
-					handle_read(ec, length);
-				});
+				std::bind(&client::handle_read,
+					shared_from_this(),
+					std::placeholders::_1,
+					std::placeholders::_2));
 
-			/*	m_socket.async_read_some(asio::buffer(m_readbuff, CLIENT_MAX_RECV_BUFF_SIZE),
-					boost::bind(&client::handle_read,
-						shared_from_this(),
-						asio::placeholders::error,
-						asio::placeholders::bytes_transferred));*/
 		}
 	}
 	else
@@ -393,22 +380,21 @@ int32_t client::read(uint8_t* buffer,
 
 		if (certain)
 		{
-					asio::async_read(m_socket, asio::buffer(m_usrreadbuffer, *buffsize),
-						[this](const asio::error_code& err, size_t length)
-						{
-							handle_read(err, length);
-						});	
-		
+			asio::async_read(m_socket, asio::buffer(m_usrreadbuffer, *buffsize),
+				std::bind(&client::handle_read,
+					shared_from_this(),
+					std::placeholders::_1,
+					std::placeholders::_2));
+
 		}
 		else
 		{
 
 			m_socket.async_read_some(asio::buffer(m_usrreadbuffer, *buffsize),
-				[this](const asio::error_code& err, size_t length)
-				{
-					handle_read(err, length);
-
-				});
+				std::bind(&client::handle_read,
+					shared_from_this(),
+					std::placeholders::_1,
+					std::placeholders::_2));
 		}
 
 		return e_libnet_err_noerror;
@@ -502,15 +488,12 @@ bool client::write_packet()
 	m_currwriteaddr = m_circularbuff.try_read(CLIENT_PER_SEND_PACKET_SIZE, m_currwritesize);
 	if (m_currwriteaddr && (m_currwritesize > 0))
 	{
-		auto self(shared_from_this());
 		asio::async_write(m_socket, asio::buffer(m_currwriteaddr, m_currwritesize),
-			[this, self](std::error_code ec, std::size_t length)
-			{
-				if (!ec)
-				{
-					handle_write(ec, length);
-				}
-			});			
+			std::bind(&client::handle_write,
+				shared_from_this(),
+				std::placeholders::_1,
+				std::placeholders::_2));
+
 		return true;
 	}
 	
@@ -519,8 +502,10 @@ bool client::write_packet()
 
 void client::close()
 {
+
 	if (!m_closeflag.exchange(true))
 	{
+
 		//m_fnconnect = NULL; //注释掉，否则异步方式连接失败时，通知不了 
 		m_fnread = NULL;
 		stop_timer_.cancel();
@@ -545,11 +530,3 @@ void client::handle_connect_timeout(const std::error_code& ec)
 	}
 }
 
-void client::handle_timeout()
-{
-	if (m_socket.is_open())
-	{
-		asio::error_code ec;
-		m_socket.close(ec);
-	}
-}

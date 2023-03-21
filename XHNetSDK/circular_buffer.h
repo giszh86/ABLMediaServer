@@ -8,8 +8,6 @@
 #include <boost/shared_array.hpp>
 #else
 #include <map>
-#include "ABLsharedarray.hpp"
-//#include <boost/shared_array.hpp>
 #include <vector>
 #endif
 

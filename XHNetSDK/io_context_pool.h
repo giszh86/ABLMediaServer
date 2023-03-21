@@ -15,6 +15,7 @@
 #include <memory>
 #include <thread>
 #endif
+
 #ifdef USE_BOOST
 class io_context_pool : public boost::noncopyable
 #else
@@ -60,7 +61,9 @@ private:
 	std::vector<io_context_ptr> m_iocontexts;
 	std::vector<work_ptr> m_works;
 
-	asio::static_thread_pool m_threads;
+	asio::detail::thread_group m_threads;
+	//std::vector<std::thread *> threads;
+	//asio::thread_pool m_threads;
 	std::size_t num_threads=0;
 
 #ifdef LIBNET_USE_CORE_SYNC_MUTEX

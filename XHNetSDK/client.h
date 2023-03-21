@@ -80,7 +80,7 @@ private:
 	void handle_connect(const std::error_code& ec);
 	void handle_connect_timeout(const std::error_code& ec);
 	bool write_packet();
-	void handle_timeout();
+
 private:
 	NETHANDLE m_srvid;
 	NETHANDLE m_id;
