@@ -51,15 +51,29 @@ CCudaVideoEncode::CCudaVideoEncode(cudaEncodeVideo_enum videoCodec, cudaEncodeVi
 	else if (videoCodec == cudaEncodeVideo_HEVC)
 		enc->CreateDefaultEncoderParams(&initializeParams, NV_ENC_CODEC_HEVC_GUID, NV_ENC_PRESET_DEFAULT_GUID);
 
-    encodeConfig.encodeCodecConfig.h264Config.idrPeriod = 25;
- 	encodeConfig.gopLength = 25 ;//gop 25 
-	encodeConfig.frameIntervalP = 1; //编码输出帧类型 I、P、P、
-    encodeConfig.rcParams.rateControlMode = NV_ENC_PARAMS_RC_CBR;
-   // encodeConfig.rcParams.multiPass = NV_ENC_TWO_PASS_FULL_RESOLUTION;
-    encodeConfig.rcParams.averageBitRate = (static_cast<unsigned int>(5.0f * initializeParams.encodeWidth * initializeParams.encodeHeight) / (nWidth * nHeight)) * 300000;
-    encodeConfig.rcParams.vbvBufferSize = (encodeConfig.rcParams.averageBitRate * initializeParams.frameRateDen / initializeParams.frameRateNum) * 5;
-    encodeConfig.rcParams.maxBitRate = encodeConfig.rcParams.averageBitRate;
-    encodeConfig.rcParams.vbvInitialDelay = encodeConfig.rcParams.vbvBufferSize;
+ //   encodeConfig.encodeCodecConfig.h264Config.idrPeriod = 25;
+ //	encodeConfig.gopLength = 25 ;//gop 25 
+	//encodeConfig.frameIntervalP = 1; //编码输出帧类型 I、P、P、
+ //   encodeConfig.rcParams.rateControlMode = NV_ENC_PARAMS_RC_CBR;
+ //   //encodeConfig.rcParams.multiPass = NV_ENC_TWO_PASS_FULL_RESOLUTION;
+ //   encodeConfig.rcParams.averageBitRate = static_cast<unsigned int>(5.0f * initializeParams.encodeWidth * initializeParams.encodeHeight);
+ //   encodeConfig.rcParams.vbvBufferSize = (encodeConfig.rcParams.averageBitRate * initializeParams.frameRateDen / initializeParams.frameRateNum) * 5;
+ //   encodeConfig.rcParams.maxBitRate = encodeConfig.rcParams.averageBitRate;
+ //   encodeConfig.rcParams.vbvInitialDelay = encodeConfig.rcParams.vbvBufferSize;
+
+
+
+	encodeConfig.gopLength = NVENC_INFINITE_GOPLENGTH;
+	encodeConfig.frameIntervalP = 1;
+	encodeConfig.encodeCodecConfig.h264Config.idrPeriod = NVENC_INFINITE_GOPLENGTH;
+	encodeConfig.rcParams.rateControlMode = NV_ENC_PARAMS_RC_CBR;
+	//encodeConfig.rcParams.multiPass = NV_ENC_TWO_PASS_FULL_RESOLUTION;
+	encodeConfig.rcParams.averageBitRate = static_cast<unsigned int>(3.0f * initializeParams.encodeWidth * initializeParams.encodeHeight);
+	encodeConfig.rcParams.vbvBufferSize =(encodeConfig.rcParams.averageBitRate * initializeParams.frameRateDen /initializeParams.frameRateNum) *5;
+	encodeConfig.rcParams.maxBitRate = encodeConfig.rcParams.averageBitRate;
+	encodeConfig.rcParams.vbvInitialDelay = encodeConfig.rcParams.vbvBufferSize;
+
+
 
 	//encodeCLIOptions.SetInitParams(&initializeParams, nvBufferFormat);
 	enc->CreateEncoder(&initializeParams);
