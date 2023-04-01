@@ -107,7 +107,14 @@ static int rtmp_server_onpublish(void* param, const char* app, const char* strea
 		}
 
  		sprintf(pClient->szURL, "/%s/%s", app, szStream);
+#ifdef USE_BOOST
 		boost::shared_ptr<CMediaStreamSource> pTempSource = NULL;
+
+#else
+		std::shared_ptr<CMediaStreamSource> pTempSource = NULL;
+
+#endif
+
 		pTempSource = GetMediaStreamSource(pClient->szURL);
 		if (pTempSource != NULL)
 		{//推流地址已经存在 
@@ -165,7 +172,15 @@ static int rtmp_server_onplay(void* param, const char* app, const char* stream, 
 	char szTemp[512] = { 0 };
 	sprintf(szTemp, "/%s/%s", app, szStream);
 	strcpy(pClient->szMediaSourceURL, szTemp);
+
+#ifdef USE_BOOST
+
 	boost::shared_ptr<CMediaStreamSource> pushClient = NULL;
+#else
+
+	std::shared_ptr<CMediaStreamSource> pushClient = NULL;
+#endif
+
 
 	//确定网络类型
 	pClient->netBaseNetType = NetBaseNetType_RtmpServerSendPush;

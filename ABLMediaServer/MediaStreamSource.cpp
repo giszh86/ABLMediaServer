@@ -233,7 +233,14 @@ CMediaStreamSource::CMediaStreamSource(char* szURL, uint64_t nClientTemp, MediaS
 	//发布事件通知，用于发布鉴权
 	if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nPublish > 0 )
 	{
+#ifdef USE_BOOST
 		boost::shared_ptr<CNetRevcBase> pClient = GetNetRevcBaseClientNoLock(nClient);
+
+#else
+		std::shared_ptr<CNetRevcBase> pClient = GetNetRevcBaseClientNoLock(nClient);
+
+#endif
+
 		if (pClient)
 		{
  			MessageNoticeStruct msgNotice;

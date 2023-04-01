@@ -137,9 +137,17 @@ bool  CRecordFileSource::queryRecordFile(char* szRecordFileName)
 	if (strstr(szRecordFileName, ".m3u8") != NULL )
 		szRecordFileName[strlen(szRecordFileName) - 5] = 0x00;
 
+#ifdef USE_BOOST
+
 	//判断是否为数字
 	if (!boost::all(szRecordFileName, boost::is_digit()))
 		return false;
+#else
+	//判断是否为数字
+	if (!ABL::is_digits(szRecordFileName))
+		return false;
+#endif
+
  
 	list<uint64_t>::iterator it2;
 	for (it2 = fileList.begin(); it2 != fileList.end(); it2++)

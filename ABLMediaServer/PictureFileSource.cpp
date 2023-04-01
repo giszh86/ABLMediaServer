@@ -122,7 +122,7 @@ bool  CPictureFileSource::queryPictureFile(char* szPictureFileName)
 		return false;
 #else
 	//ÅÐ¶ÏÊÇ·ñÎªÊý×Ö
-	if (!ABL::is_digitss(szPictureFileName))
+	if (!ABL::is_digits(szPictureFileName))
 		return false;
 #endif
 

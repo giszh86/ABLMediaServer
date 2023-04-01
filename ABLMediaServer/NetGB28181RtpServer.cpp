@@ -69,7 +69,16 @@ void RTP_DEPACKET_CALL_METHOD GB28181_rtppacket_callback_recv(_rtp_depacket_cb* 
 				{
 					pThis->bUpdateVideoFrameSpeedFlag = true;
   					//不管UDP、TCP都设置为码流已经到达 
+
+#ifdef USE_BOOST
+
+
 					boost::shared_ptr<CNetRevcBase>  pGB28181Proxy = GetNetRevcBaseClient(pThis->hParent);
+#else
+
+					std::shared_ptr<CNetRevcBase>  pGB28181Proxy = GetNetRevcBaseClient(pThis->hParent);
+
+#endif
 					if (pGB28181Proxy != NULL)
 						pGB28181Proxy->bUpdateVideoFrameSpeedFlag = true;
 
@@ -159,9 +168,16 @@ static int on_gb28181_unpacket(void* param, int stream, int avtype, int flags, i
 		if (nVideoSpeed > 0 && pThis->pMediaSource != NULL)
 		{
 			pThis->bUpdateVideoFrameSpeedFlag = true;
+#ifdef USE_BOOST
 
 			//不管UDP、TCP都设置为码流已经到达 
 			boost::shared_ptr<CNetRevcBase>  pGB28181Proxy = GetNetRevcBaseClient(pThis->hParent);
+#else
+			//不管UDP、TCP都设置为码流已经到达 
+			std::shared_ptr<CNetRevcBase>  pGB28181Proxy = GetNetRevcBaseClient(pThis->hParent);
+
+#endif
+	
 			if (pGB28181Proxy != NULL)
 				pGB28181Proxy->bUpdateVideoFrameSpeedFlag = true;
 

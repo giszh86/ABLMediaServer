@@ -264,7 +264,15 @@ bool CStreamRecordMP4::OpenMp4File(int nWidth, int nHeight)
 			sprintf(szFileName, "%s%04d%02d%02d%02d%02d%02d.mp4", szRecordPath, local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);
 			sprintf(szFileNameOrder, "%04d%02d%02d%02d%02d%02d.mp4", local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);;
 #endif
+#ifdef USE_BOOST
+
 			boost::shared_ptr<CRecordFileSource> pRecord = GetRecordFileSource(m_szShareMediaURL);
+#else
+
+			std::shared_ptr<CRecordFileSource> pRecord = GetRecordFileSource(m_szShareMediaURL);
+#endif
+
+		
 			if (pRecord)
 			{
 				bUpdateFlag = pRecord->UpdateExpireRecordFile(szFileName);

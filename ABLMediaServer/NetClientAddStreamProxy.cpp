@@ -91,8 +91,15 @@ int CNetClientAddStreamProxy::SendFirstRequst()
 
 	if (strlen(m_szShareMediaURL) > 0)
 	{
-	  boost::shared_ptr<CNetRevcBase> pClient = CreateNetRevcBaseClient(NetRevcBaseClient_addStreamProxy, 0, 0, m_addStreamProxyStruct.url, 0, m_szShareMediaURL);
-	  if (pClient)
+#ifdef USE_BOOST
+
+		boost::shared_ptr<CNetRevcBase> pClient = CreateNetRevcBaseClient(NetRevcBaseClient_addStreamProxy, 0, 0, m_addStreamProxyStruct.url, 0, m_szShareMediaURL);
+
+#else
+		std::shared_ptr<CNetRevcBase> pClient = CreateNetRevcBaseClient(NetRevcBaseClient_addStreamProxy, 0, 0, m_addStreamProxyStruct.url, 0, m_szShareMediaURL);
+
+#endif
+	 if (pClient)
 	  {
 		 ParseRtspRtmpHttpURL(m_addStreamProxyStruct.url);
 		 strcpy(szClientIP, m_rtspStruct.szIP);

@@ -2141,7 +2141,7 @@ bool  CNetServerHTTP::index_api_queryPictureList()
 	sprintf(szShareMediaURL, "/%s/%s", m_queryPictureListStruct.app, m_queryPictureListStruct.stream);
 #ifdef USE_BOOST
 	boost::shared_ptr<CPictureFileSource> pPicture = GetPictureFileSource(szShareMediaURL,true);
-else
+#else
 	std::shared_ptr<CPictureFileSource> pPicture = GetPictureFileSource(szShareMediaURL,true);
 #endif
 	if (pPicture == NULL)
