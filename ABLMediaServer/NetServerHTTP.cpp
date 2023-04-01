@@ -21,8 +21,9 @@ extern bool                                  DeleteClientMediaStreamSource(uint6
 extern boost::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
 extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
 extern bool                                  QueryMediaSource(char* pushURL);
+extern int                                   GetPushRtspClientToJson(char* szMediaSourceInfo);
 
-extern CMediaSendThreadPool* pMediaSendThreadPool;
+extern CMediaSendThreadPool*                 pMediaSendThreadPool;
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
 extern MediaServerPort                       ABL_MediaServerPort;
 extern int                                   GetAllMediaStreamSource(char* szMediaSourceInfo, getMediaListStruct mediaListStruct);
@@ -39,10 +40,10 @@ extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClientByNetTypeShareM
 extern bool                                  CheckPortAlreadyUsed(int nPort, int nPortType, bool bLockFlag);
 extern bool                                  CheckSSRCAlreadyUsed(int nSSRC, bool bLockFlag);
 extern bool                                  CheckAppStreamExisting(char* szAppStreamURL);
-extern volatile bool                         ABL_bMediaServerRunFlag;
+extern volatile bool                         ABL_bMediaServerRunFlag ;
 extern volatile bool                         ABL_bRestartServerFlag;
-extern char                                  ABL_MediaSeverRunPath[256];
-extern char                                  ABL_wwwMediaPath[256];
+extern char                                  ABL_MediaSeverRunPath[256] ;  
+extern char                                  ABL_wwwMediaPath[256];  
 
 
 #else
@@ -55,6 +56,7 @@ extern bool                                  DeleteClientMediaStreamSource(uint6
 extern std::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
 extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
 extern bool                                  QueryMediaSource(char* pushURL);
+extern int                                   GetPushRtspClientToJson(char* szMediaSourceInfo);
 
 extern CMediaSendThreadPool* pMediaSendThreadPool;
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
@@ -593,7 +595,8 @@ bool CNetServerHTTP::ResponseHttpRequest(char* szModem, char* httpURL, char* req
 		(strcmp(httpURL, "/index/api/stopRecord") == 0) || (strcmp(httpURL, "/index/api/queryRecordList") == 0) || (strcmp(httpURL, "/index/api/getSnap") == 0) || (strstr(httpURL, ".jpg") != 0)  || //jpg 下载需要
 		(strcmp(httpURL, "/index/hook/on_stream_none_reader") == 0 || strcmp(httpURL, "/index/hook/on_stream_not_found") == 0 || strcmp(httpURL, "/index/hook/on_record_mp4") == 0) || //测试事件回复
 		(strcmp(httpURL, "/index/api/queryPictureList") == 0) || (strcmp(httpURL, "/index/api/controlStreamProxy") == 0) || (strcmp(httpURL, "/index/api/setTransFilter") == 0) ||
-		(strcmp(httpURL, "/index/api/setConfigParamValue") == 0) || (strcmp(httpURL, "/index/api/shutdownServer") == 0) || (strcmp(httpURL, "/index/api/restartServer") == 0)))
+		(strcmp(httpURL, "/index/api/setConfigParamValue") == 0) || (strcmp(httpURL, "/index/api/shutdownServer") == 0) || (strcmp(httpURL, "/index/api/restartServer") == 0) || 
+		(strcmp(httpURL, "/stats/pushers") == 0 )  ))
 	{
 		bRunFlag = false;
 		WriteLog(Log_Debug, "CNetServerHTTP = %X  nClient = %llu http 请求非法的文件 ，httpURL = %s", this, nClient, httpURL);
@@ -755,6 +758,10 @@ bool CNetServerHTTP::ResponseHttpRequest(char* szModem, char* httpURL, char* req
 	else if (strcmp(httpURL, "/index/api/restartServer") == 0)
 	{//重启服务器
 		index_api_restartServer();
+	} 
+	else if (strcmp(httpURL, "/stats/pushers") == 0)
+	{//一个公司专用
+		index_api_statsPushers();
 	}
 	else
 	{
@@ -780,6 +787,7 @@ bool  CNetServerHTTP::index_api_addStreamProxy()
 	memset(szRtspURLTemp,0x00,sizeof(szRtspURLTemp));
 	memset((char*)&m_addStreamProxyStruct, 0x00, sizeof(m_addStreamProxyStruct));
 	strcpy(m_addStreamProxyStruct.enable_mp4, "0");
+	strcpy(m_addStreamProxyStruct.disableVideo, "0");
 	GetKeyValue("secret", m_addStreamProxyStruct.secret);
 	GetKeyValue("vhost", m_addStreamProxyStruct.vhost);
 	GetKeyValue("app", m_addStreamProxyStruct.app);
@@ -792,6 +800,7 @@ bool  CNetServerHTTP::index_api_addStreamProxy()
 	GetKeyValue("convertOutWidth", m_addStreamProxyStruct.convertOutWidth);
 	GetKeyValue("convertOutHeight", m_addStreamProxyStruct.convertOutHeight);
 	GetKeyValue("H264DecodeEncode_enable", m_addStreamProxyStruct.H264DecodeEncode_enable);
+	GetKeyValue("disableVideo", m_addStreamProxyStruct.disableVideo);
 	//GetKeyValue("url", m_addStreamProxyStruct.url);
 	GetKeyValue("url",szRtspURLTemp);
 	DecodeUrl(szRtspURLTemp, m_addStreamProxyStruct.url, sizeof(szRtspURLTemp)) ;
@@ -896,9 +905,9 @@ bool  CNetServerHTTP::index_api_addStreamProxy()
 			if (strlen(m_addStreamProxyStruct.H264DecodeEncode_enable) > 0)
 				pClient->m_h265ConvertH264Struct.H264DecodeEncode_enable = atoi(m_addStreamProxyStruct.H264DecodeEncode_enable);
 
-			WriteLog(Log_Debug, "\"rtsp://%s:%d/%s/%s\",", "190.168.24.112", ABL_MediaServerPort.nRtspPort, m_addStreamProxyStruct.app, m_addStreamProxyStruct.stream);
-			pClient->nClient_http = nClient; //赋值给http请求连接 
-			WriteLog(Log_Debug, "代理拉流 nClient_http = %d ", nClient);
+			WriteLog(Log_Debug, "\"rtsp://%s:%d/%s/%s\",", "190.168.24.112",ABL_MediaServerPort.nRtspPort,m_addStreamProxyStruct.app,m_addStreamProxyStruct.stream);
+            pClient->nClient_http = nClient ; //赋值给http请求连接 
+			WriteLog(Log_Debug, "代理拉流 nClient_http = %d ",nClient );
 			pClient->SendFirstRequst();//执行第一个命令
 		}
 #else
@@ -931,7 +940,6 @@ bool  CNetServerHTTP::index_api_addStreamProxy()
 #endif
 
 
-		
 	}
 	else
 	{//参数错误 
@@ -1102,6 +1110,8 @@ bool  CNetServerHTTP::index_api_openRtpServer()
 	memset((char*)&m_openRtpServerStruct, 0x00, sizeof(m_openRtpServerStruct));
 
 	strcpy(m_openRtpServerStruct.enable_mp4, "0");
+	strcpy(m_openRtpServerStruct.RtpPayloadDataType, "1");
+	strcpy(m_openRtpServerStruct.disableVideo, "0");
 	GetKeyValue("secret", m_openRtpServerStruct.secret);
 	GetKeyValue("vhost", m_openRtpServerStruct.vhost);
 	GetKeyValue("app", m_openRtpServerStruct.app);
@@ -1114,6 +1124,8 @@ bool  CNetServerHTTP::index_api_openRtpServer()
 	GetKeyValue("convertOutWidth", m_openRtpServerStruct.convertOutWidth);
 	GetKeyValue("convertOutHeight", m_openRtpServerStruct.convertOutHeight);
 	GetKeyValue("H264DecodeEncode_enable", m_openRtpServerStruct.H264DecodeEncode_enable);
+	GetKeyValue("RtpPayloadDataType", m_openRtpServerStruct.RtpPayloadDataType);
+	GetKeyValue("disableVideo", m_openRtpServerStruct.disableVideo);
 
 	if (strlen(m_openRtpServerStruct.secret) == 0 || strlen(m_openRtpServerStruct.app) == 0 || strlen(m_openRtpServerStruct.stream_id) == 0 || strlen(m_openRtpServerStruct.port) == 0 ||
 		strlen(m_openRtpServerStruct.enable_tcp) == 0 || strlen(m_openRtpServerStruct.payload) == 0 )
@@ -1261,6 +1273,8 @@ int   CNetServerHTTP::bindRtpServerPort()
 	strcpy(m_addStreamProxyStruct.convertOutWidth, m_openRtpServerStruct.convertOutWidth);//转码宽
 	strcpy(m_addStreamProxyStruct.convertOutHeight, m_openRtpServerStruct.convertOutHeight);//转码高
 	strcpy(m_addStreamProxyStruct.H264DecodeEncode_enable, m_openRtpServerStruct.H264DecodeEncode_enable);//转码高
+	strcpy(m_addStreamProxyStruct.RtpPayloadDataType, m_openRtpServerStruct.RtpPayloadDataType);//Pt 数据类型
+	strcpy(m_addStreamProxyStruct.disableVideo, m_openRtpServerStruct.disableVideo);//是否过滤视频
 
 	if (nTcp_Switch == 0)
 	{//udp方式
@@ -1321,7 +1335,7 @@ int   CNetServerHTTP::bindRtpServerPort()
 		{
 			do
 			{
-				nRet = XHNetSDK_Listen((int8_t*)("0.0.0.0"), ABL_nGB28181Port, &nMediaClient, onaccept, onread, onclose, true);
+ 				nRet =  XHNetSDK_Listen((int8_t*)("0.0.0.0"), ABL_nGB28181Port, &nMediaClient, onaccept, onread, onclose, true);
 				if (nRet != 0)
 					ABL_nGB28181Port += 2;
 			} while (nRet != 0);
@@ -1338,13 +1352,16 @@ int   CNetServerHTTP::bindRtpServerPort()
 		if (nRet == 0)
 		{
 #ifdef USE_BOOST
-			boost::shared_ptr<CNetRevcBase> pClient = CreateNetRevcBaseClient(NetBaseNetType_NetGB28181RtpServerListen, 0, nMediaClient, "", ABL_nGB28181Port, szTemp);
+ 			boost::shared_ptr<CNetRevcBase> pClient = CreateNetRevcBaseClient(NetBaseNetType_NetGB28181RtpServerListen, 0, nMediaClient, "", ABL_nGB28181Port, szTemp);
+			
 
 #else
-			auto pClient = CreateNetRevcBaseClient(NetBaseNetType_NetGB28181RtpServerListen, 0, nMediaClient, "", ABL_nGB28181Port, szTemp);
 
+			auto pClient = CreateNetRevcBaseClient(NetBaseNetType_NetGB28181RtpServerListen, 0, nMediaClient, "", ABL_nGB28181Port, szTemp);
+	
 #endif
- 			if (pClient != NULL)
+
+if (pClient != NULL)
 			{
  		      	memcpy((char*)&pClient->m_addStreamProxyStruct,(char*)&m_addStreamProxyStruct,sizeof(m_addStreamProxyStruct));
 				memcpy((char*)&pClient->m_openRtpServerStruct,(char*)&m_openRtpServerStruct,sizeof(m_openRtpServerStruct));
@@ -1384,6 +1401,7 @@ bool  CNetServerHTTP::index_api_startSendRtp()
 	unsigned short nReturnPort ;
 	int  nRet = 0 ;
 	memset((char*)&m_startSendRtpStruct, 0x00, sizeof(m_startSendRtpStruct));
+	strcpy(m_startSendRtpStruct.RtpPayloadDataType, "1");//默认PS打包
 
 	GetKeyValue("secret", m_startSendRtpStruct.secret);
 	GetKeyValue("vhost", m_startSendRtpStruct.vhost);
@@ -1395,6 +1413,7 @@ bool  CNetServerHTTP::index_api_startSendRtp()
 	GetKeyValue("dst_port", m_startSendRtpStruct.dst_port);
 	GetKeyValue("is_udp", m_startSendRtpStruct.is_udp);
 	GetKeyValue("payload", m_startSendRtpStruct.payload);
+ 	GetKeyValue("RtpPayloadDataType", m_startSendRtpStruct.RtpPayloadDataType);
 
 	if (strlen(m_startSendRtpStruct.secret) == 0 || strlen(m_startSendRtpStruct.app) == 0 || strlen(m_startSendRtpStruct.stream) == 0 || strlen(m_startSendRtpStruct.ssrc) == 0 ||
 		strlen(m_startSendRtpStruct.src_port) == 0 || strlen(m_startSendRtpStruct.dst_url) == 0 || strlen(m_startSendRtpStruct.dst_port) == 0 || strlen(m_startSendRtpStruct.is_udp) == 0 ||
@@ -1857,7 +1876,6 @@ bool  CNetServerHTTP::index_api_queryRecordList()
 	}
 #endif
 
-
 	if ( atoll(m_queryRecordListStruct.endtime) < atoll(m_queryRecordListStruct.starttime))
 	{//结束时间必须大于开始时间
 		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"endtime must greater than starttime \"}", IndexApiCode_secretError);
@@ -2090,7 +2108,6 @@ bool  CNetServerHTTP::index_api_queryPictureList()
 	}
 #endif
 
-
 	if (atoll(m_queryPictureListStruct.endtime) < atoll(m_queryPictureListStruct.starttime))
 	{//结束时间必须大于开始时间
 		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"endtime must greater than starttime \"}", IndexApiCode_secretError);
@@ -2123,11 +2140,10 @@ bool  CNetServerHTTP::index_api_queryPictureList()
 	//先简单判断是否存储图片
 	sprintf(szShareMediaURL, "/%s/%s", m_queryPictureListStruct.app, m_queryPictureListStruct.stream);
 #ifdef USE_BOOST
-	boost::shared_ptr<CPictureFileSource> pPicture = GetPictureFileSource(szShareMediaURL, true);
-#else
-	std::shared_ptr<CPictureFileSource> pPicture = GetPictureFileSource(szShareMediaURL, true);
+	boost::shared_ptr<CPictureFileSource> pPicture = GetPictureFileSource(szShareMediaURL,true);
+else
+	std::shared_ptr<CPictureFileSource> pPicture = GetPictureFileSource(szShareMediaURL,true);
 #endif
-
 	if (pPicture == NULL)
 	{
 		sprintf(szResponseBody, "{\"code\":%d,\"count\":0,\"memo\":\"MediaSource [app: %s , stream: %s] PictureFile Not Found .\"}", IndexApiCode_OK, m_queryPictureListStruct.app, m_queryPictureListStruct.stream);
@@ -2165,12 +2181,11 @@ bool  CNetServerHTTP::index_api_downloadImage(char* szHttpURL)
 	{
 		memcpy(szMediaURL, szHttpURL, nPos);
 #ifdef USE_BOOST
-		boost::shared_ptr<CPictureFileSource> pPicture = GetPictureFileSource(szMediaURL, true);
+	    boost::shared_ptr<CPictureFileSource> pPicture = GetPictureFileSource(szMediaURL,true);
 #else
-		auto pPicture = GetPictureFileSource(szMediaURL, true);
+		auto pPicture = GetPictureFileSource(szMediaURL,true);
 #endif 
 
-	   
 		if (pPicture)
 		{
 			memcpy(szFileNumber, szHttpURL + nPos + 1, strlen(szHttpURL) - nPos - 5);
@@ -2721,6 +2736,19 @@ bool   CNetServerHTTP::index_api_restartServer()
 
 	ABL_bMediaServerRunFlag = false;
 	ABL_bRestartServerFlag = true;
+
+	return true;
+}
+
+//专用
+bool CNetServerHTTP::index_api_statsPushers()
+{
+ 	memset(szMediaSourceInfoBuffer, 0x00, MaxMediaSourceInfoLength);
+	int nMediaCount = GetPushRtspClientToJson(szMediaSourceInfoBuffer);
+	if (nMediaCount >= 0)
+	{
+		ResponseSuccess(szMediaSourceInfoBuffer);
+	}
 
 	return true;
 }

@@ -350,6 +350,9 @@ int CNetServerHTTP_FLV::ProcessNetData()
 				nPos2 = strFlvName.find("?", 0);
 				if (nPos2 > 0)
 				{//有？，需要去掉？后面的字符串 
+					if(strlen(szPlayParams) == 0)//拷贝鉴权参数
+					  memcpy(szPlayParams, szTempName + (nPos2 + 1), strlen(szTempName) - nPos2 - 1);
+
 					memset(szFlvName, 0x00, sizeof(szFlvName));
 					memcpy(szFlvName, szTempName, nPos2);
 				}

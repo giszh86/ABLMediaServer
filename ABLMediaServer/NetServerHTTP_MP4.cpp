@@ -17,12 +17,14 @@ extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 
-extern CMediaSendThreadPool* pMediaSendThreadPool;
+extern CMediaSendThreadPool*                 pMediaSendThreadPool;
 extern CMediaFifo                            pDisconnectBaseNetFifo; //ÇåÀí¶ÏÁÑµÄÁ´½Ó 
 extern char                                  ABL_MediaSeverRunPath[256]; //µ±Ç°Â·¾¶
 extern MediaServerPort                       ABL_MediaServerPort;
 extern boost::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
-extern CNetBaseThreadPool* RecordReplayThreadPool;
+extern CNetBaseThreadPool*                   RecordReplayThreadPool;
+extern CMediaFifo                            pMessageNoticeFifo;  //ÏûÏ¢Í¨ÖªFIFO
+
 
 #else
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
@@ -37,9 +39,8 @@ extern char                                  ABL_MediaSeverRunPath[256]; //µ±Ç°Â
 extern MediaServerPort                       ABL_MediaServerPort;
 extern std::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
 extern CNetBaseThreadPool* RecordReplayThreadPool;
-
+extern CMediaFifo                            pMessageNoticeFifo;  //ÏûÏ¢Í¨ÖªFIFO
 #endif
-
 static int fmp4_hls_segment(void* param, const void* data, size_t bytes, int64_t pts, int64_t dts, int64_t duration)
 {
 	CNetServerHTTP_MP4* pNetServerHttpMp4 = (CNetServerHTTP_MP4*)param;
@@ -83,6 +84,7 @@ static int fmp4_hls_segment(void* param, const void* data, size_t bytes, int64_t
 
 CNetServerHTTP_MP4::CNetServerHTTP_MP4(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort,char* szShareMediaURL)
 {
+	bOn_playFlag = false;
 	memset((char*)&avc, 0x00, sizeof(avc));
 	memset((char*)&hevc, 0x00, sizeof(hevc));
 	bRunFlag = true;
@@ -378,6 +380,15 @@ int CNetServerHTTP_MP4::ProcessNetData()
 		if (strlen(szOrigin) == 0)
 			strcpy(szOrigin, "*");
 
+		//È¥µô£¿ºóÃæ²ÎÊý×Ö·û´®
+		string strMP4Name = szMP4Name;
+		int    nPos = strMP4Name.find("?", 0);
+		if (nPos > 0 && strlen(szMP4Name) > 0)
+		{
+			if (strlen(szPlayParams) == 0)//¿½±´¼øÈ¨²ÎÊý
+				memcpy(szPlayParams, szMP4Name + (nPos + 1), strlen(szMP4Name) - nPos - 1);
+ 		}
+
 		//¸ù¾Ýmp4ÎÄ¼þ£¬½øÐÐ²éÕÒÍÆÁ÷¶ÔÏó 
 		if (memcmp(szMP4Name + strlen(szMP4Name) - 4, ".mp4", 4) == 0 || memcmp(szMP4Name + strlen(szMP4Name) - 4, ".MP4", 4) == 0)
 		{
@@ -437,6 +448,16 @@ int CNetServerHTTP_MP4::ProcessNetData()
 			if (QueryRecordFileIsExiting(szMediaSourceURL) == false)
 			{
  				return ResponseError("Ã»ÓÐÂ¼ÏñÎÄ¼þ");
+			}
+
+			//·¢ËÍ²¥·ÅÊÂ¼þÍ¨Öª£¬ÓÃÓÚ²¥·Å¼øÈ¨
+			if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nPlay > 0 && bOn_playFlag == false)
+			{
+				bOn_playFlag = true;
+				MessageNoticeStruct msgNotice;
+				msgNotice.nClient = ABL_MediaServerPort.nPlay;
+				sprintf(msgNotice.szMsg, "{\"app\":\"%s\",\"stream\":\"%s\",\"mediaServerId\":\"%s\",\"networkType\":%d,\"key\":%llu,\"ip\":\"%s\" ,\"port\":%d,\"params\":\"%s\"}", szSplliterApp, szSplliterStream, ABL_MediaServerPort.mediaServerID, netBaseNetType, nClient, szClientIP, nClientPort, szPlayParams);
+				pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
 			}
 
 			//Â¼ÏñÏÂÔØ

@@ -26,7 +26,6 @@ extern bool                                  DeleteMediaStreamSource(char* szURL
 extern MediaServerPort                       ABL_MediaServerPort;
 #endif
 
-
 #if defined(_WIN32) || defined(_WIN64)
 #define fseek64 _fseeki64
 #define ftell64 _ftelli64
@@ -158,16 +157,25 @@ static void ReadRecordFileInput_onread(void* param, uint32_t track, const void* 
 			pThis->bRestoreAudioFrameFlag = false;
 		}
 		else
-			pThis->nReadAudioFrameCount++;
+			pThis->nReadAudioFrameCount ++;
 
-		pThis->nRetLength = mpeg4_aac_adts_save(&pThis->s_aac, bytes, pThis->audioBuffer+4, sizeof(pThis->audioBuffer));
-		if (pThis->nRetLength > 0)
+		if (strcmp(pThis->mediaCodecInfo.szAudioName, "AAC") == 0)
+		{
+			pThis->nRetLength = mpeg4_aac_adts_save(&pThis->s_aac, bytes, pThis->audioBuffer+4, sizeof(pThis->audioBuffer));
+			if (pThis->nRetLength > 0)
+			{
+				memcpy(pThis->audioBuffer, (unsigned char*)&pThis->nReadAudioFrameCount, sizeof(pThis->nReadAudioFrameCount));
+				memcpy(pThis->audioBuffer + (4 + pThis->nRetLength), buffer, bytes);
+				pThis->pMediaSource->PushAudio(pThis->audioBuffer, 4 + pThis->nRetLength + bytes,pThis->mediaCodecInfo.szAudioName, pThis->mediaCodecInfo.nChannels, pThis->mediaCodecInfo.nSampleRate);
+			}
+		}
+		else if (strcmp(pThis->mediaCodecInfo.szAudioName, "G711_A") == 0 || strcmp(pThis->mediaCodecInfo.szAudioName, "G711_U") == 0)
 		{
 			memcpy(pThis->audioBuffer, (unsigned char*)&pThis->nReadAudioFrameCount, sizeof(pThis->nReadAudioFrameCount));
-			memcpy(pThis->audioBuffer + (4 + pThis->nRetLength), buffer, bytes);
-			pThis->pMediaSource->PushAudio(pThis->audioBuffer, 4 + pThis->nRetLength + bytes,pThis->mediaCodecInfo.szAudioName, pThis->mediaCodecInfo.nChannels, pThis->mediaCodecInfo.nSampleRate);
+			memcpy(pThis->audioBuffer + 4 , buffer, bytes);
+			pThis->pMediaSource->PushAudio(pThis->audioBuffer, 4 + bytes, pThis->mediaCodecInfo.szAudioName, pThis->mediaCodecInfo.nChannels, pThis->mediaCodecInfo.nSampleRate);
 		}
- 	}
+  	}
 	else if (pThis->s_opus_track == track)
 	{
  
@@ -225,13 +233,13 @@ static void ReadRecordFileInput_mov_audio_info(void*  param, uint32_t track, uin
 
 	if (MOV_OBJECT_AAC == object)// MOV_OBJECT_AAC
 	{
-		//记录音频信息
-		strcpy(pThis->mediaCodecInfo.szAudioName, "AAC");
-		pThis->mediaCodecInfo.nChannels = channel_count;
-		pThis->mediaCodecInfo.nSampleRate = sample_rate;
-
 		pThis->s_aac_track = track;
 		mpeg4_aac_audio_specific_config_load((const uint8_t*)extra, bytes, &pThis->s_aac);
+
+		//记录音频信息
+		strcpy(pThis->mediaCodecInfo.szAudioName, "AAC");
+		pThis->mediaCodecInfo.nChannels = pThis->s_aac.channels;
+		pThis->mediaCodecInfo.nSampleRate = pThis->s_aac.sampling_frequency;
 	}
 	else if (MOV_OBJECT_OPUS == object)
 	{
@@ -243,13 +251,17 @@ static void ReadRecordFileInput_mov_audio_info(void*  param, uint32_t track, uin
 	}
 	else
 	{
+		pThis->s_aac_track = track;
 		if (object == MOV_OBJECT_G711a || object == MOV_OBJECT_G711u)
 		{
-			//s_aac_track = track;
-			//s_aac.channel_configuration = channel_count;
-		}
+			pThis->mediaCodecInfo.nChannels = 1;
+			pThis->mediaCodecInfo.nSampleRate = 8000;
 
-		//s_aac.sampling_frequency_index = mpeg4_aac_audio_frequency_from(sample_rate);
+			if(object == MOV_OBJECT_G711a)
+			  strcpy(pThis->mediaCodecInfo.szAudioName, "G711_A");
+			else if (object == MOV_OBJECT_G711u)
+				strcpy(pThis->mediaCodecInfo.szAudioName, "G711_U");
+		}
 	}
 }
 
@@ -288,6 +300,8 @@ bool  CReadRecordFileInput::GetMediaShareURLFromFileName(char* szRecordFileName,
 
 CReadRecordFileInput::CReadRecordFileInput(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort, char* szShareMediaURL)
 {
+	nWaitTime = OpenMp4FileToReadWaitMaxMilliSecond;
+
 	nDownloadFrameCount = 0;
 	if (strlen(szIP) <= 4 || memcmp(szIP+(strlen(szIP) - 4),".mp4",4) != 0)
 	{
@@ -355,8 +369,7 @@ CReadRecordFileInput::CReadRecordFileInput(NETHANDLE hServer, NETHANDLE hClient,
 	strcpy(m_addStreamProxyStruct.stream, pMediaSource->stream);
 	strcpy(m_addStreamProxyStruct.url, szIP);
 
-	nAVType = AVType_Audio;
-	mov_readerTime = GetTickCount64();
+	nAVType = nOldAVType = AVType_Audio;
 	nOldPTS = 0;
 	nVidepSpeedTime = 40;
 	dBaseSpeed = 40.00;
@@ -370,6 +383,8 @@ CReadRecordFileInput::CReadRecordFileInput(NETHANDLE hServer, NETHANDLE hClient,
 	bRestoreVideoFrameFlag = false ;//是否需要恢复视频帧总数
 	bRestoreAudioFrameFlag = false ;//是否需要恢复音频帧总数
 
+	mov_readerTime = GetTickCount64();
+ 
  	RecordReplayThreadPool->InsertIntoTask(nClient);
 	WriteLog(Log_Debug, "CReadRecordFileInput 构造函数 = %X ,nClient = %llu , m_szShareMediaURL = %s , 录像文件 %s 时长 %llu 秒 ", this, hClient, m_szShareMediaURL, szIP, duration / 1000 );
 }
@@ -407,74 +422,102 @@ int CReadRecordFileInput::ProcessNetData()
 
 	if (mov == NULL || m_bPauseFlag == true )
 	{
-		//Sleep(2);
-		std::this_thread::sleep_for(std::chrono::milliseconds(2));
-		mov_readerTime = GetTickCount64();
-		RecordReplayThreadPool->InsertIntoTask(nClient);
+std::this_thread::sleep_for(std::chrono::milliseconds(2));
+ 		RecordReplayThreadPool->InsertIntoTask(nClient);
 		return -1;
 	}
 
-	nReadRet = mov_reader_read(mov, s_buffer, sizeof(s_buffer), ReadRecordFileInput_onread, this);
+	if (nWaitTime == OpenMp4FileToReadWaitMaxMilliSecond)
+	{//打开mp4文件后需要等待一段事件，否则读取文件会失败
+		if (GetTickCount64() - mov_readerTime < nWaitTime)
+		{
+			Sleep(2);
+			RecordReplayThreadPool->InsertIntoTask(nClient);
+			return 0;
+		}
+	}
 
+    if( GetTickCount64() - mov_readerTime >= nWaitTime)
+	{
+	   mov_readerTime = GetTickCount64();
+	   nReadRet = mov_reader_read(mov, s_buffer, sizeof(s_buffer), ReadRecordFileInput_onread, this);
+	}
+ 
 	if (nAVType == AVType_Video)
 	{//读取视频
-		mov_readerTime = GetTickCount64();
-
-		if ((abs(m_dScaleValue - 8.0) <= 0.01 || abs(m_dScaleValue - 16.0) <= 0.01))
+ 		if ((abs(m_dScaleValue - 8.0) <= 0.01 || abs(m_dScaleValue - 16.0) <= 0.01))
 		{//8、16倍速不需要等待 
 			if (m_rtspPlayerType == RtspPlayerType_RecordReplay)
 			{//录像回放
-				if (nReadVideoFrameCount % 25 == 0)
-				{
-					if (abs(m_dScaleValue - 8.0) <= 0.01)
-						std::this_thread::sleep_for(std::chrono::milliseconds(60));
-						//Sleep(60);
-					else
-						std::this_thread::sleep_for(std::chrono::milliseconds(30));
-						//Sleep(30);
-				}
-			}
-			else//录像下载
-			{
-				nDownloadFrameCount++;
-				if (nDownloadFrameCount % 10 == 0)
+				if (nAVType == AVType_Video && nOldAVType == AVType_Video)
 				{
 				  if (abs(m_dScaleValue - 8.0) <= 0.01)
-					  std::this_thread::sleep_for(std::chrono::milliseconds(50));
-					 //Sleep(50);
-				  else if (abs(m_dScaleValue - 16.0) <= 0.01)
-					  std::this_thread::sleep_for(std::chrono::milliseconds(40));
-					 //Sleep(40);
- 				}
+ 					nWaitTime = ((1000 / mediaCodecInfo.nVideoFrameRate)) / 8;
+ 				  else if (abs(m_dScaleValue - 16.0) <= 0.01)
+ 					nWaitTime = ((1000 / mediaCodecInfo.nVideoFrameRate)) / 16;
+				 }
+				 else 
+					nWaitTime = 1;
+ 			}
+			else//录像下载
+			{
+			  if (abs(m_dScaleValue - 8.0) <= 0.01)
+				 nWaitTime = ((1000 / mediaCodecInfo.nVideoFrameRate)) / 8 ;
+			  else if (abs(m_dScaleValue - 16.0) <= 0.01)
+				  nWaitTime = ((1000 / mediaCodecInfo.nVideoFrameRate)) / 16 ;
 			}
 		}
  		else if (abs(m_dScaleValue - 255.0) <= 0.01 )
 		{//rtsp录像下载
-			nDownloadFrameCount ++;
-			if(nDownloadFrameCount % 10 == 0)
-				std::this_thread::sleep_for(std::chrono::milliseconds(35));
-				//Sleep(35);
+            nWaitTime = ((1000 / mediaCodecInfo.nVideoFrameRate)) / 16 ;
  		}
 		else if (abs(m_dScaleValue - 1.0) <= 0.01)
-		{//普通的点播回放
-			if (((1000 / mediaCodecInfo.nVideoFrameRate) - 10) > 0)
-				std::this_thread::sleep_for(std::chrono::milliseconds((1000 / mediaCodecInfo.nVideoFrameRate) - 10));
-				//Sleep((1000 / mediaCodecInfo.nVideoFrameRate) - 10);
+		{//1倍速
+			if (((1000 / mediaCodecInfo.nVideoFrameRate)) > 0)
+			{
+#ifdef  OS_System_Windows
+				nWaitTime = ((1000 / mediaCodecInfo.nVideoFrameRate)) - 10;
+#else 
+				nWaitTime = ((1000 / mediaCodecInfo.nVideoFrameRate)) ;
+#endif   
+			}
 			else
-				std::this_thread::sleep_for(std::chrono::milliseconds(10));
-				//Sleep(10);
-		}
+				nWaitTime = 1;
+ 		}else if (abs(m_dScaleValue - 2.0) <= 0.01)
+		{//2倍速
+			if (nAVType == AVType_Video && nOldAVType == AVType_Video)
+			{
+#ifdef  OS_System_Windows
+				nWaitTime = ((1000 / mediaCodecInfo.nVideoFrameRate)) / 2 - 5 ;
+ #else 
+				nWaitTime = ((1000 / mediaCodecInfo.nVideoFrameRate)) / 2;
+#endif   
+	        }
+		    else
+			  nWaitTime = 1;
+ 		}else if (abs(m_dScaleValue - 4.0) <= 0.01)
+		{//4倍速
+			if (nAVType == AVType_Video && nOldAVType == AVType_Video)
+			{
+#ifdef  OS_System_Windows
+				nWaitTime = ((1000 / mediaCodecInfo.nVideoFrameRate)) / 4 - 5;
+#else 
+			nWaitTime = ((1000 / mediaCodecInfo.nVideoFrameRate)) / 4 ;
+#endif   
+			}
+			else
+				nWaitTime = 1;
+	    }
 		else 
 		{//读取视频的时间尚未到，需要Sleep(2) ,否则CPU会狂跑
 			  if ( !(abs(m_dScaleValue - 8.0) <= 0.01 || abs(m_dScaleValue - 16.0) <= 0.01) )
-				  std::this_thread::sleep_for(std::chrono::milliseconds(2));
-			    //Sleep(2); //8倍速、16倍速，不需要Sleeep
+			   nWaitTime = 5 ; //8倍速、16倍速，不需要Sleeep
  		}
  	}
 	else if (nAVType == AVType_Audio)  
 	{//音频直接读取
-
-  	}
+		nWaitTime = 1;
+	}
 
 	if (nReadRet == 0)
 	{//录像文件读取完毕 
@@ -497,7 +540,9 @@ int CReadRecordFileInput::ProcessNetData()
 		DeleteNetRevcBaseClient(nClient);
 		return -1;
 	}
- 
+  std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	nOldAVType = nAVType;
+
 	RecordReplayThreadPool->InsertIntoTask(nClient);
 
     return 0 ;	

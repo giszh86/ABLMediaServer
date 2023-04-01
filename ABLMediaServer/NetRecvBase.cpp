@@ -33,9 +33,10 @@ extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHan
 extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClientNoLock(NETHANDLE CltHandle);
 #endif
 
-
 CNetRevcBase::CNetRevcBase()
 {
+	memset(szPlayParams, 0x00, sizeof(szPlayParams));
+	bOn_playFlag = false;
 	m_rtspPlayerType = RtspPlayerType_Liveing;
 	nCurrentVideoFrames = 0;//当前视频帧数
 	nTotalVideoFrames = 0;//录像视频总帧数

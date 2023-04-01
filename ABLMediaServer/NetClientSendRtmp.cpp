@@ -107,12 +107,7 @@ static int rtmp_client_pushCB(void* param, const void* header, size_t len, const
 			{
 				pClient->bUpdateVideoFrameSpeedFlag = true; //用于成功交互
 				pClient->bAddMediaSourceFlag = true;
-#ifdef USE_BOOST
 				boost::shared_ptr<CMediaStreamSource> pMediaSource = GetMediaStreamSource(pClient->m_szShareMediaURL);
-#else
-				auto pMediaSource = GetMediaStreamSource(pClient->m_szShareMediaURL);
-#endif
-		
 				if (pMediaSource != NULL)
 				{
  					//记下媒体源

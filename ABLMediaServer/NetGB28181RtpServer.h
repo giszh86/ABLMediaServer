@@ -32,7 +32,11 @@ public:
    void         ProcessRtcpData(unsigned char* szRtcpData, int nDataLength, int nChan);
    void         GetAACAudioInfo(unsigned char* nAudioData, int nLength);
 
+#ifdef  WriteRtpFileFlag
+   FILE*                  fWriteRtpFile;
+#endif
    _rtp_header*            rtpHeadPtr;
+   ps_demuxer_t*           psBeiJingLaoChen;
 
    int                     nRtpRtcpPacketType;//是否是RTP包，0 未知，2 rtp 包
    unsigned char           szRtcpDataOverTCP[1024];
@@ -49,7 +53,6 @@ public:
 #else
    std::shared_ptr<CMediaStreamSource> pMediaSource;
 #endif
-
 
    volatile  bool bInitFifoFlag;
 

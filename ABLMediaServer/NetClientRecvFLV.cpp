@@ -386,6 +386,7 @@ int CNetClientRecvFLV::SendFirstRequst()
 				pMediaSource = CreateMediaStreamSource(m_szShareMediaURL, hParent, MediaSourceType_LiveMedia,0, m_h265ConvertH264Struct);
 				if (pMediaSource)
 				{
+					pMediaSource->netBaseNetType = netBaseNetType;
 					pMediaSource->enable_mp4 = (strcmp(m_addStreamProxyStruct.enable_mp4, "1") == 0) ? true : false;
 					pMediaSource->enable_hls = (strcmp(m_addStreamProxyStruct.enable_hls, "1") == 0) ? true : false;
 				}

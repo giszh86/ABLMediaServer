@@ -43,7 +43,6 @@ int CNetClientSnap::nPictureNumber = 1;
 #endif
 
 
-
 CNetClientSnap::CNetClientSnap(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort,char* szShareMediaURL)
 {
 	bWaitIFrameFlag = false;

@@ -48,17 +48,18 @@ bool CVideoDecode::startDecode(char* szCodecName, int nWidth, int nHeight)
 	else if (strcmp(szCodecName, "H265") == 0)
 		pDCodec = avcodec_find_decoder(AV_CODEC_ID_H265);
 
-
-	pDCodecCtx = avcodec_alloc_context3(pDCodec); 
+	packet = av_packet_alloc();
+	pDCodecCtx = avcodec_alloc_context3(pDCodec);
+	pDPicture = av_frame_alloc();
+ 
  	pDCodecCtx->slice_count = 4;
 	pDCodecCtx->thread_count = 4;
+
 	if (avcodec_open2(pDCodecCtx, pDCodec, NULL) < 0)
 	{
 		WriteLog(Log_Debug, "CVideoDecode = %X ´´½¨½âÂëÆ÷Ê§°Ü line= %d,", this, __LINE__);
 		return false  ;
 	}
-	packet = av_packet_alloc();
-	pDPicture = av_frame_alloc();
 	nDecodeErrorCount = 0;
 
 	m_bInitDecode = true;
@@ -178,7 +179,7 @@ bool CVideoDecode::CaptureJpegFromAVFrame(char* OutputFileName, int quality)
 		return false;
 	}
 
-	pFormatCtx = avformat_alloc_context();
+	pFormatCtx = NULL ;
 	avformat_alloc_output_context2(&pFormatCtx, NULL, NULL, OutputFileName);
 	if (pFormatCtx == NULL)
 	{
@@ -220,6 +221,7 @@ bool CVideoDecode::CaptureJpegFromAVFrame(char* OutputFileName, int quality)
 	pCodec = avcodec_find_encoder(pCodecCtx->codec_id);
 	if (!pCodec)
 	{
+		avcodec_free_context(&pCodecCtx);
 		avformat_free_context(pFormatCtx);		
 		WriteLog(Log_Debug, "CVideoDecode = %X avcodec_find_encoder() Failed line= %d,", this, __LINE__);
 		return false;
@@ -267,6 +269,7 @@ bool CVideoDecode::CaptureJpegFromAVFrame(char* OutputFileName, int quality)
 	{
 		avcodec_close(pCodecCtx);
 		avcodec_free_context(&pCodecCtx);
+		avformat_close_input(&pFormatCtx);
 		avformat_free_context(pFormatCtx);
 		av_packet_free(&pkt);
 

@@ -95,13 +95,19 @@ static int rtmp_server_onpublish(void* param, const char* app, const char* strea
 			return 0;
 		}
 
- 		sprintf(pClient->szURL, "/%s/%s", app, stream);
-#ifdef USE_BOOST
+		//去掉？后面参数字符串
+		string strMP4Name = stream;
+		char   szStream[256] = { 0 };
+		strcpy(szStream, stream);
+		int    nPos = strMP4Name.find("?", 0);
+		if (nPos > 0 && strlen(stream) > 0)
+		{//拷贝鉴权参数
+			memcpy(pClient->szPlayParams, stream + (nPos + 1), strlen(stream) - nPos - 1);
+			szStream[nPos] = 0x00;
+		}
+
+ 		sprintf(pClient->szURL, "/%s/%s", app, szStream);
 		boost::shared_ptr<CMediaStreamSource> pTempSource = NULL;
-#else
-		std::shared_ptr<CMediaStreamSource> pTempSource = NULL;
-#endif
-		
 		pTempSource = GetMediaStreamSource(pClient->szURL);
 		if (pTempSource != NULL)
 		{//推流地址已经存在 
@@ -112,10 +118,11 @@ static int rtmp_server_onpublish(void* param, const char* app, const char* strea
 
 		//完善代理拉流结构 
 		strcpy(pClient->m_addStreamProxyStruct.app, app);
-		strcpy(pClient->m_addStreamProxyStruct.stream, stream);
-		sprintf(pClient->m_addStreamProxyStruct.url, "rtmp://%s:%d/%s/%s", pClient->szClientIP, ABL_MediaServerPort.nRtmpPort, app, stream);
+		strcpy(pClient->m_addStreamProxyStruct.stream, szStream);
+		sprintf(pClient->m_addStreamProxyStruct.url, "rtmp://%s:%d/%s/%s", pClient->szClientIP, ABL_MediaServerPort.nRtmpPort, app, szStream);
 
 		pClient->flvDemuxer = flv_demuxer_create(NetRtmpServerRecvCallBackFLV, pClient);
+		pClient->netBaseNetType = NetBaseNetType_RtmpServerRecvPush;
 
  		pClient->bPushMediaSuccessFlag = true; //成功推流 
 		pClient->pMediaSource =  CreateMediaStreamSource(pClient->szURL,pClient->nClient, MediaSourceType_LiveMedia, 0, pClient->m_h265ConvertH264Struct);
@@ -126,6 +133,7 @@ static int rtmp_server_onpublish(void* param, const char* app, const char* strea
 			return 0;
 		}
 
+		pClient->pMediaSource->netBaseNetType = pClient->netBaseNetType;
 		//如果配置推流录像，则开启录像标志
 		if(pClient->pMediaSource && ABL_MediaServerPort.pushEnable_mp4 == 1)
  		   pClient->pMediaSource->enable_mp4 = true;
@@ -142,22 +150,31 @@ static int rtmp_server_onplay(void* param, const char* app, const char* stream, 
  
     if(!pClient->bRunFlag)
 		return -1 ;
- 
-	char szTemp[512] = { 0 };
-	sprintf(szTemp, "/%s/%s", app, stream);
-	strcpy(pClient->szMediaSourceURL, szTemp);
-#ifdef USE_BOOST
-	boost::shared_ptr<CMediaStreamSource> pushClient = NULL;
-#else
-	std::shared_ptr<CMediaStreamSource> pushClient = NULL;
-#endif
 
+	//去掉？后面参数字符串
+	string strMP4Name = stream;
+	char   szStream[256] = { 0 };
+	strcpy(szStream, stream);
+	int    nPos = strMP4Name.find("?", 0);
+	if (nPos > 0 && strlen(stream) > 0)
+	{//拷贝鉴权参数
+		memcpy(pClient->szPlayParams, stream + (nPos + 1), strlen(stream) - nPos - 1);
+		szStream[nPos] = 0x00;
+	}
+
+	char szTemp[512] = { 0 };
+	sprintf(szTemp, "/%s/%s", app, szStream);
+	strcpy(pClient->szMediaSourceURL, szTemp);
+	boost::shared_ptr<CMediaStreamSource> pushClient = NULL;
+
+	//确定网络类型
+	pClient->netBaseNetType = NetBaseNetType_RtmpServerSendPush;
 
 	//判断源流媒体是否存在
 	if (strstr(szTemp, RecordFileReplaySplitter) == NULL)
 	{//观看实况
 		pushClient = GetMediaStreamSource(szTemp);
-		if (pushClient == NULL || strlen(pushClient->m_mediaCodecInfo.szVideoName) == 0)
+		if (pushClient == NULL || !(strlen(pushClient->m_mediaCodecInfo.szVideoName) > 0 || strlen(pushClient->m_mediaCodecInfo.szAudioName) > 0))
 		{
 			WriteLog(Log_Debug, "CNetRtmpServerRecv=%X, 没有推流对象的地址 %s nClient = %llu ", pClient, szTemp, pClient->nClient);
  			if (pClient)
@@ -188,10 +205,10 @@ static int rtmp_server_onplay(void* param, const char* app, const char* stream, 
 	}
 
 	//记下媒体源
-	sprintf(pClient->szMediaSourceURL, "/%s/%s", app, stream);
+	sprintf(pClient->szMediaSourceURL, "/%s/%s", app, szStream);
 	strcpy(pClient->m_addStreamProxyStruct.app, app);
-	strcpy(pClient->m_addStreamProxyStruct.stream, stream);
-	sprintf(pClient->m_addStreamProxyStruct.url, "rtmp://localhost:%d/%s/%s", ABL_MediaServerPort.nRtmpPort, app, stream);
+	strcpy(pClient->m_addStreamProxyStruct.stream, szStream);
+	sprintf(pClient->m_addStreamProxyStruct.url, "rtmp://localhost:%d/%s/%s", ABL_MediaServerPort.nRtmpPort, app, szStream);
  
 	//把客户端加入媒体拷贝线程 
 	if (pClient && pushClient)
@@ -558,6 +575,8 @@ int CNetRtmpServerRecv::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, cha
 
 int CNetRtmpServerRecv::PushAudio(uint8_t* pVideoData, uint32_t nDataLength, char* szAudioCodec, int nChannels, int SampleRate)
 {
+	nRecvDataTimerBySecond = 0;
+
 	if (strlen(mediaCodecInfo.szAudioName) == 0)
 	{
 		strcpy(mediaCodecInfo.szAudioName, szAudioCodec);

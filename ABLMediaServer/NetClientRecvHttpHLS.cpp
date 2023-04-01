@@ -255,6 +255,7 @@ CNetClientRecvHttpHLS::~CNetClientRecvHttpHLS()
 		DeleteMediaStreamSource(m_szShareMediaURL);
 		pMediaSource = NULL;
 	}
+	malloc_trim(0);
 
 	WriteLog(Log_Debug, "CNetClientRecvHttpHLS= %X, Îö¹¹ nClient = %llu ", this, nClient);
 }

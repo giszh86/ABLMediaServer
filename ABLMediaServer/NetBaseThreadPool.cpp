@@ -72,6 +72,7 @@ void CNetBaseThreadPool::ProcessFunc()
 	int nCurrentThreadID = nGetCurrentThreadOrder;
  	bExitProcessThreadFlag[nCurrentThreadID] = false;
 	uint64_t nClientID;
+
 	bCreateThreadFlag = true; //创建线程完毕
 	while (bRunFlag)
 	{

@@ -84,7 +84,7 @@ static void mpeg_ts_dec_testonstream(void* param, int stream, int codecid, const
 {
 	//printf("stream %d, codecid: %d, finish: %s\n", stream, codecid, finish ? "true" : "false");
 }
-struct ts_demuxer_notify_t notify = {
+struct ts_demuxer_notify_t notify_RtpTSStream = {
 	mpeg_ts_dec_testonstream,
 };
 
@@ -94,21 +94,16 @@ CRtpTSStreamInput::CRtpTSStreamInput(NETHANDLE hServer, NETHANDLE hClient, char*
 	strcpy(m_szShareMediaURL, szShareMediaURL);
 	nClient = hClient;
 	bRunFlag = true;
-	
+	strcpy(szClientIP, szIP);
+	nClientPort = nPort;
+
 	ts = ts_demuxer_create(on_ts_packet, this);
 	if(ts)
-	  ts_demuxer_set_notify(ts, &notify, this);
-
+	  ts_demuxer_set_notify(ts, &notify_RtpTSStream, this);
+	pMediaSource = NULL;
 	SplitterAppStream(m_szShareMediaURL);
-	strcpy(m_addStreamProxyStruct.url, szIP);
-	pMediaSource = CreateMediaStreamSource(m_szShareMediaURL, nClient, MediaSourceType_LiveMedia, 0, m_h265ConvertH264Struct);
-	if (pMediaSource == NULL)
-	{
-		WriteLog(Log_Debug, "CRtpTSStreamInput 构造 = %X 创建媒体源失败  nClient = %llu ,m_szShareMediaURL = %s ", this, nClient, m_szShareMediaURL);
-		pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
-		return;
-	}
-	pMediaSource->netBaseNetType = NetBaseNetType_NetGB28181UDPTSStreamInput;//指定为TS流接入
+	sprintf(m_addStreamProxyStruct.url, "rtp://%s:%d%s",szIP,nPort,szShareMediaURL);
+
 	memset((char*)&aacInfo, 0x00, sizeof(aacInfo));
 	WriteLog(Log_Debug, "CRtpTSStreamInput 构造 = %X  nClient = %llu ,m_szShareMediaURL = %s ", this, nClient,m_szShareMediaURL);
 }
@@ -166,15 +161,19 @@ int CRtpTSStreamInput::InputNetData(NETHANDLE nServerHandle, NETHANDLE nClientHa
 
 	nRecvDataTimerBySecond = 0;
 
-	int nSize = (nDataLength - 12) / 188;
-	int nPos = 0;
-	for(int i=0;i<nSize;i++)
+	if (pMediaSource == NULL)
 	{
-	   ts_demuxer_input(ts, pData + (12 + nPos), 188);
-	   nPos += 188;
+		pMediaSource = CreateMediaStreamSource(m_szShareMediaURL, nClient, MediaSourceType_LiveMedia, 0, m_h265ConvertH264Struct);
+		if (pMediaSource == NULL)
+		{
+			bRunFlag = false;
+			WriteLog(Log_Debug, "CRtpTSStreamInput 构造 = %X 创建媒体源失败  nClient = %llu ,m_szShareMediaURL = %s ", this, nClient, m_szShareMediaURL);
+			pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
+			return -1 ;
+		}
+		pMediaSource->netBaseNetType = NetBaseNetType_NetGB28181UDPTSStreamInput;//指定为TS流接入
 	}
-
-	if (pMediaSource)
+	else if (pMediaSource)
 	{
 		if (!pMediaSource->bUpdateVideoSpeed)
 		{
@@ -185,6 +184,14 @@ int CRtpTSStreamInput::InputNetData(NETHANDLE nServerHandle, NETHANDLE nClientHa
 				WriteLog(Log_Debug, "CRtpTSStreamInput = %X  nClient = %llu , m_szShareMediaURL = %s,更新视频帧速度 = %d", this, nClient, m_szShareMediaURL, nSpeed);
  			}
 		}
+	}
+
+	int nSize = (nDataLength - 12) / 188;
+	int nPos = 0;
+	for(int i=0;i<nSize;i++)
+	{
+	   ts_demuxer_input(ts, pData + (12 + nPos), 188);
+	   nPos += 188;
 	}
 
     return 0;

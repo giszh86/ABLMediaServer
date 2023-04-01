@@ -28,6 +28,8 @@ public:
    virtual int   SendFirstRequst() = 0;//发送第一个请求
    virtual bool  RequestM3u8File() = 0 ;
 
+   char                   szPlayParams[512];//播放url中的参数，即？符号后面的字符串
+   volatile  bool         bOn_playFlag;//播放通知是否发送过
    ABLRtspPlayerType      m_rtspPlayerType;//rtsp 播放类型 
    H265ConvertH264Struct  m_h265ConvertH264Struct;
    uint64_t               key;//媒体源关联的句柄号
@@ -60,25 +62,16 @@ public:
    char                   stream[512];
    char                   szJson[2048] ;  //生成的json
 
-   CAACEncode             aacEnc;
-   char                   g711ToPCMCache[1024 * 16];
-   int                    nG711ToPCMCacheLength;
-   int                    nAACEncodeLength;
-   int                    nRetunEncodeLength;
-   char                   g711toPCM[1024];
-   char                   g711toPCMResample[2048];
-
    _rtp_header             rtpHeader;
    _rtp_header*            rtpHeaderPtr;
+   _rtp_header*            rtpHeaderXHB;
+   unsigned short          rtpExDataLength;
 
 #ifdef USE_BOOST
    boost::shared_ptr<CMediaStreamSource>   CreateReplayClient(char* szReplayURL, uint64_t* nReturnReplayClient);
 #else
    std::shared_ptr<CMediaStreamSource>   CreateReplayClient(char* szReplayURL, uint64_t* nReturnReplayClient);
-#endif
-
-
-   bool                    QueryRecordFileIsExiting(char* szReplayRecordFileURL);
+#endif   bool                    QueryRecordFileIsExiting(char* szReplayRecordFileURL);
 
    char                    szRecordPath[1024];//录像保存的路径 D:\video\Media\Camera_000001
    char                    szPicturePath[1024];//图片保存的路径 D:\video\Media\Camera_000001

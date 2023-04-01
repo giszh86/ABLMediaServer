@@ -172,8 +172,8 @@ static int NetRtmpClientRecvCallBackFLV(void* param, int codec, const void* data
 			}
 		}
 
-		if (pClient->pMediaSource)
-		{
+		if (pClient->pMediaSource && pClient->m_addStreamProxyStruct.disableVideo[0] == 0x30 )
+		{//支持过滤掉视频帧
 			if (FLV_VIDEO_H264 == codec)
 				pClient->pMediaSource->PushVideo((unsigned char*)data, bytes, "H264");
 			else

@@ -124,7 +124,7 @@ CNetServerWS_FLV::~CNetServerWS_FLV()
 	m_videoFifo.FreeFifo();
 	m_audioFifo.FreeFifo();
 	
-	WriteLog(Log_Debug, "CNetServerHTTP_FLV 析构 =%X szFlvName = %s, nClient = %llu \r\n", this, szFlvName, nClient);
+	WriteLog(Log_Debug, "CNetServerWS_FLV 析构 =%X szFlvName = %s, nClient = %llu \r\n", this, szFlvName, nClient);
 	malloc_trim(0);
 }
 
@@ -407,6 +407,8 @@ bool  CNetServerWS_FLV::Create_WS_FLV_Handle()
 				nPos2 = strFlvName.find("?", 0);
 				if (nPos2 > 0)
 				{//有？，需要去掉？后面的字符串 
+					if (strlen(szPlayParams) == 0)//拷贝鉴权参数
+						memcpy(szPlayParams, szTempName + (nPos2 + 1), strlen(szTempName) - nPos2 - 1);
 					memset(szFlvName, 0x00, sizeof(szFlvName));
 					memcpy(szFlvName, szTempName, nPos2);
 				}

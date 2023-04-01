@@ -6,11 +6,15 @@
 #include <boost/unordered/unordered_map.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/algorithm/string.hpp>
-
 using namespace boost;
 #else
 
 #endif
+
+
+#include "mpeg-ps.h"
+#include "mpeg-ts.h"
+#include "mpeg-ts-proto.h"
 
 
 #define  MaxGB28181RtpSendVideoMediaBufferLength  1024*64 
@@ -38,6 +42,7 @@ public:
    void    SendGBRtpPacketUDP(unsigned char* pRtpData, int nLength);
    void    GB28181SentRtpVideoData(unsigned char* pRtpVideo, int nDataLength);
 
+   void                    CreateRtpHandle();
    unsigned  char          szSendRtpVideoMediaBuffer[MaxGB28181RtpSendVideoMediaBufferLength];
    int                     nSendRtpVideoMediaBufferLength; //已经积累的长度  视频
    uint32_t                nStartVideoTimestamp; //上一帧视频初始时间戳 ，
@@ -48,6 +53,14 @@ public:
    _ps_mux_init  init; 
    _ps_mux_input input;
    uint32_t      psMuxHandle;
+   
+   //北京老陈
+   char*   s_buffer;
+   int     nVideoStreamID , nAudioStreamID ;
+   ps_muxer_t* psBeiJingLaoChen ;
+   struct ps_muxer_func_t handler;
+   uint64_t videoPTS , audioPTS  ;
+   int      nflags;
 
    _rtp_packet_sessionopt  optionPS;
    _rtp_packet_input       inputPS;

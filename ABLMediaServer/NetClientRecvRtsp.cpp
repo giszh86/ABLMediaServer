@@ -88,8 +88,8 @@ static int rtp_decode_packet(void* param, const void *packet, int bytes, uint32_
 		return 0 ;
 	}
   
-	if (0 == strcmp("H264", pRtsp->szVideoName) || 0 == strcmp("H265", pRtsp->szVideoName))
-	{
+	if (pRtsp->m_addStreamProxyStruct.disableVideo[0] == 0x30 && (0 == strcmp("H264", pRtsp->szVideoName) || 0 == strcmp("H265", pRtsp->szVideoName)))
+	{//不过滤视频
 		if (MaxNetDataCacheBufferLength - pRtsp->cbVideoLength > (bytes + 4))
 		{
 			if (pRtsp->cbVideoTimestamp != 0 && pRtsp->cbVideoTimestamp != timestamp)
@@ -275,8 +275,6 @@ CNetClientRecvRtsp::CNetClientRecvRtsp(NETHANDLE hServer, NETHANDLE hClient, cha
 	nSendRtpFailCount = 0;//累计发送rtp包失败次数 
 	strcpy(m_szShareMediaURL, szShareMediaURL);
 
-	strcpy(szClientIP, szIP);
-	nClientPort = nPort;
 	nPrintCount = 0;
 	pMediaSource = NULL;
 	bRunFlag = true;
@@ -322,6 +320,9 @@ CNetClientRecvRtsp::CNetClientRecvRtsp(NETHANDLE hServer, NETHANDLE hClient, cha
 	if (ParseRtspRtmpHttpURL(szIP) == true)
 	  uint32_t ret = XHNetSDK_Connect((int8_t*)m_rtspStruct.szIP, atoi(m_rtspStruct.szPort), (int8_t*)(NULL), 0, (uint64_t*)&nClient, onread, onclose, onconnect, 0, MaxClientConnectTimerout, 1);
 
+	strcpy(szClientIP, m_rtspStruct.szIP);
+	nClientPort = atoi(m_rtspStruct.szPort);
+
 	nVideoSSRC = rand();
 	nCurrentTime = GetTickCount64();
 	//检测是否是大华摄像机
@@ -329,7 +330,6 @@ CNetClientRecvRtsp::CNetClientRecvRtsp(NETHANDLE hServer, NETHANDLE hClient, cha
 	{//大华摄像头实况url地址包含  realmonitor  
 		bSendRRReportFlag = true;
     }
-
 	nVideoSSRC = audioSSRC = 0;
 
 	psHandle = 0;
@@ -1126,6 +1126,22 @@ bool   CNetClientRecvRtsp::GetMediaInfoFromRtspSDP()
 					nChannels = 1;
 			}
 		}
+		else
+		{//ffmpeg g711a\g711u m=audio 0 RTP/AVP 0 
+			sipParseA.GetFieldValue("m=audio", szTemp);
+			if (strstr(szTemp, "RTP/AVP 0") != NULL)
+			{
+				nSampleRate = 8000;
+				nChannels = 1;
+				strcpy(szAudioName, "PCMU");
+			}
+			else if (strstr(szTemp, "RTP/AVP 8") != NULL)
+			{
+				nSampleRate = 8000;
+				nChannels = 1;
+				strcpy(szAudioName, "PCMA");
+			}
+		}
 
 		if (strcmp(szAudioName, "PCMA") == 0)
 		{
@@ -1432,11 +1448,13 @@ int CNetClientRecvRtsp::SendFirstRequst()
 		pMediaSource = CreateMediaStreamSource(m_szShareMediaURL, hParent, MediaSourceType_LiveMedia, 0, m_h265ConvertH264Struct);
 		if (pMediaSource)
 		{
+			pMediaSource->netBaseNetType = netBaseNetType;
 			pMediaSource->enable_mp4 = (strcmp(m_addStreamProxyStruct.enable_mp4, "1") == 0) ? true : false;
 			pMediaSource->enable_hls = (strcmp(m_addStreamProxyStruct.enable_hls, "1") == 0) ? true : false;
 		}
 		else 
 		{
+			bRunFlag = false;
 			DeleteNetRevcBaseClient(nClient);
 			return -1;
 		}

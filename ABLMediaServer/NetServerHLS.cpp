@@ -16,7 +16,6 @@ boost::shared_ptr<CMediaStreamSource>  GetMediaStreamSource(char* szURL);
 extern             bool                DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 std::shared_ptr<CMediaStreamSource>  GetMediaStreamSource(char* szURL);
 #endif
-
 extern CMediaSendThreadPool*           pMediaSendThreadPool;
 extern CMediaFifo                      pDisconnectBaseNetFifo; //清理断裂的链接 
 extern bool                            DeleteClientMediaStreamSource(uint64_t nClient);
@@ -24,6 +23,7 @@ extern char                            ABL_wwwMediaPath[256]; //www 子路径
 extern MediaServerPort                 ABL_MediaServerPort;
 extern uint64_t                        ABL_nBaseCookieNumber ; //Cookie 序号 
 extern uint64_t                        GetCurrentSecond();
+extern CMediaFifo                      pMessageNoticeFifo;          //消息通知FIFO
 
 CNetServerHLS::CNetServerHLS(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort,char* szShareMediaURL)
 {
@@ -259,7 +259,16 @@ int CNetServerHLS::ProcessNetData()
 	}  
 
  	string strRequestFileName = szRequestFileName;
-	int    nPos;
+	int    nPos = 0 ;
+
+    //拷贝鉴权参数
+	if (strlen(szPlayParams) == 0)
+	{
+		nPos = strRequestFileName.find("?", 0);
+		if(nPos > 0 )
+		  memcpy(szPlayParams, szRequestFileName + (nPos + 1), strlen(szRequestFileName) - nPos - 1);
+ 	}
+
 	memset(szPushName, 0x00, sizeof(szPushName));
 	nPos = strRequestFileName.rfind(".m3u8",strlen(szRequestFileName));
 	if (nPos > 0)
@@ -271,7 +280,17 @@ int CNetServerHLS::ProcessNetData()
 		if(nPos > 0)
 		   memcpy(szPushName, szRequestFileName, nPos);
 	}
- 
+
+	//发送播放事件通知，用于播放鉴权
+	if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nPlay > 0 && bOn_playFlag == false)
+	{
+		bOn_playFlag = true;
+		MessageNoticeStruct msgNotice;
+		msgNotice.nClient = ABL_MediaServerPort.nPlay;
+		sprintf(msgNotice.szMsg, "{\"app\":\"%s\",\"stream\":\"%s\",\"mediaServerId\":\"%s\",\"networkType\":%d,\"key\":%llu,\"ip\":\"%s\" ,\"port\":%d,\"params\":\"%s\"}", app, stream, ABL_MediaServerPort.mediaServerID, netBaseNetType, nClient, szClientIP, nClientPort, szPlayParams);
+		pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
+	}
+
   	//WriteLog(Log_Debug, "CNetServerHLS=%X, 获取到HLS的推流源名字 szPushName = %s , nClient = %llu ", this, szPushName, nClient);
 
 	//获取Connection 连接方式： Close ,Keep-Live  

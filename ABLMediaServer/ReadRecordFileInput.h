@@ -23,6 +23,7 @@ using namespace boost;
 
 
 #define     ReadRecordFileInput_MaxPacketCount     1024*1024*3 
+#define     OpenMp4FileToReadWaitMaxMilliSecond    150  //打开mp4文件，500毫秒后 才开始读取文件 
 
 //视频，音频
 enum ABLAVType
@@ -47,6 +48,8 @@ public:
    virtual int SendFirstRequst();//发送第一个请求
    virtual bool RequestM3u8File();//请求m3u8文件
 
+   uint64_t             mov_readerTime;//上一次读取时间
+   volatile  int        nWaitTime ;//需要等待的时间然后进行读取
    bool                 ReaplyFileSeek(uint64_t nTimestamp);
    bool                 GetMediaShareURLFromFileName(char* szRecordFileName, char* szMediaURL);
    bool                 UpdateReplaySpeed(double dScaleValue, ABLRtspPlayerType rtspPlayerType);
@@ -81,8 +84,7 @@ public:
    mov_reader_t*         mov;
    int                   nReadRet;
 
-   volatile  ABLAVType   nAVType;//上一帧媒体类型 
-   uint64_t              mov_readerTime;//读取媒体时刻的时间 
+   volatile  ABLAVType   nAVType, nOldAVType;//上一帧媒体类型 
    uint64_t              nOldPTS;
    volatile   int        nVidepSpeedTime;//视频帧速度 
    volatile   double     dBaseSpeed ;

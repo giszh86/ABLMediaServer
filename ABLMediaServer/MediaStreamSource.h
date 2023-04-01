@@ -71,6 +71,11 @@ public:
    FILE*                  fCudaWriteYUVFile;
 #endif
 
+   time_t                tLastConnetStopTime;
+   char                  szStartAt[128];
+   uint64_t              inBytes, outBytes;
+   static uint64_t       nPushSize , nPlaySize  ;//接入总数，播放总数
+
    H265ConvertH264Struct  m_h265ConvertH264Struct;
    bool                   ChangeVideoFilter(char *filterText, int fontSize, char *fontColor, float fontAlpha, int fontLeft, int fontTop);
    CFFVideoFilter*        pFFVideoFilter ;        
@@ -118,7 +123,7 @@ public:
    unsigned char          pOutAACData[2048];
    int                    nOutAACDataLength;
    char                   g711ToPCMCache[1024 * 16];
-   char                   g711CacheBuffer[2048];
+   unsigned char          g711CacheBuffer[2048];
    int                    nG711CacheLength;
    int                    nG711ToPCMCacheLength;
    int                    nAACEncodeLength;

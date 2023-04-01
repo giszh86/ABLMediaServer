@@ -40,7 +40,6 @@ extern CMediaFifo                            pMessageNoticeFifo; //消息通知FIFO
 #endif
 
 
-
 extern void LIBNET_CALLMETHOD	             onconnect(NETHANDLE clihandle,uint8_t result);
 extern void LIBNET_CALLMETHOD                onread(NETHANDLE srvhandle,NETHANDLE clihandle,uint8_t* data,uint32_t datasize,void* address);
 extern void LIBNET_CALLMETHOD	             onclose(NETHANDLE srvhandle,NETHANDLE clihandle);
@@ -54,6 +53,7 @@ CNetClientHttp::CNetClientHttp(NETHANDLE hServer, NETHANDLE hClient, char* szIP,
 	strcpy(szClientIP, szIP);
 	nClientPort = nPort;
 	nNetStart = nNetEnd = netDataCacheLength = 0;
+	bRunFlag = true;
 
 	if (ParseRtspRtmpHttpURL(szIP) == true)
 		uint32_t ret = XHNetSDK_Connect((int8_t*)m_rtspStruct.szIP, atoi(m_rtspStruct.szPort), (int8_t*)(NULL), 0, (uint64_t*)&nClient, onread, onclose, onconnect, 0, MaxClientConnectTimerout, 1);
@@ -73,6 +73,7 @@ CNetClientHttp::CNetClientHttp(NETHANDLE hServer, NETHANDLE hClient, char* szIP,
 
 CNetClientHttp::~CNetClientHttp()
 {
+	bRunFlag = false;
 	std::lock_guard<std::mutex> lock(NetClientHTTPLock);
 
 	switch (netBaseNetType)
@@ -110,6 +111,12 @@ CNetClientHttp::~CNetClientHttp()
 		case NetBaseNetType_HttpClient_DeleteRecordMp4:
 			ABL_MediaServerPort.nClientDeleteRecordMp4 = 0;
 			break;
+		case NetBaseNetType_HttpClient_on_play:
+			ABL_MediaServerPort.nPlay = 0;
+			break;
+		case NetBaseNetType_HttpClient_on_publish:
+			ABL_MediaServerPort.nPublish = 0;
+			break;
 	}
 
 	m_videoFifo.FreeFifo();
@@ -122,6 +129,8 @@ CNetClientHttp::~CNetClientHttp()
 
 int CNetClientHttp::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, char* szVideoCodec)
 {
+	if (!bRunFlag)
+		return -1;
 	std::lock_guard<std::mutex> lock(NetClientHTTPLock);
 
 	m_videoFifo.push(pVideoData, nDataLength);
@@ -151,6 +160,8 @@ int CNetClientHttp::SendAudio()
 
 int CNetClientHttp::InputNetData(NETHANDLE nServerHandle, NETHANDLE nClientHandle, uint8_t* pData, uint32_t nDataLength, void* address)
 {
+	if (!bRunFlag)
+		return -1;
 	nRecvDataTimerBySecond = 0;
 	std::lock_guard<std::mutex> lock(NetClientHTTPLock);
 
@@ -194,6 +205,8 @@ int CNetClientHttp::InputNetData(NETHANDLE nServerHandle, NETHANDLE nClientHandl
 
 int CNetClientHttp::ProcessNetData()
 {
+	if (!bRunFlag)
+		return -1;
 	std::lock_guard<std::mutex> lock(NetClientHTTPLock);
 
 	netDataCache[netDataCacheLength] = 0x00;
@@ -235,6 +248,8 @@ int CNetClientHttp::ProcessNetData()
 //发送第一个请求
 int CNetClientHttp::SendFirstRequst()
 {
+	if (!bRunFlag)
+		return -1;
 	switch (netBaseNetType)
 	{
 	case NetBaseNetType_HttpClient_None_reader:
@@ -270,7 +285,13 @@ int CNetClientHttp::SendFirstRequst()
 	case NetBaseNetType_HttpClient_DeleteRecordMp4:
 		ABL_MediaServerPort.nClientDeleteRecordMp4 = nClient;
 		break;
- 	}
+	case NetBaseNetType_HttpClient_on_play:
+		ABL_MediaServerPort.nPlay = nClient;
+		break;
+	case NetBaseNetType_HttpClient_on_publish:
+		ABL_MediaServerPort.nPublish = nClient;
+		break;
+	}
 	return 0;
 }
 
@@ -282,12 +303,13 @@ bool  CNetClientHttp::RequestM3u8File()
 
 void CNetClientHttp::HttpRequest(char* szUrl, char* szBody,int nLength)
 {
-	if (!bConnectSuccessFlag)
+	if (!bConnectSuccessFlag || strlen(szBody) == 0 || nLength <= 0 || !bRunFlag)
 		return;
 
  	memset(szResponseHttpHead, 0X00, sizeof(szResponseHttpHead));
  	sprintf(szResponseHttpHead, "POST %s HTTP/1.1\r\nAccept: */*\r\nAccept-Language: zh-CN,zh;q=0.8\r\nConnection: keep-alive\r\nContent-Length: %d\r\nContent-Type: application/json\r\nHost: 127.0.0.1\r\nTools: %s\r\nUser-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36\r\n\r\n",szUrl, nLength, MediaServerVerson);
 	memcpy(szResponseHttpHead+strlen(szResponseHttpHead), szBody,nLength);
+	szBody[nLength] = 0x00;
 
 	int nRet = XHNetSDK_Write(nClient, (unsigned char*)szResponseHttpHead, strlen(szResponseHttpHead), 1); 
 	if (nRet != 0)

@@ -21,7 +21,6 @@ CFFVideoEncode::CFFVideoEncode()
 {
 	m_bInitFlag = enableFilter = false;
 	videoFilter = NULL;
-
 	WriteLog(Log_Debug, "CFFVideoEncode 构造函数 = %X 创建编码器成功 line= %d ", this, __LINE__);
 }
 
@@ -68,7 +67,7 @@ bool CFFVideoEncode::StartEncode(char* szEncodeName, AVPixelFormat nAVPixel, int
 		 printf("Can not allocate video codec context! \n");
 		 return false ;
 	 }
-	
+
 	 pCodecCtx->codec_id = AV_CODEC_ID_H264;
 	 pCodecCtx->codec_type = AVMEDIA_TYPE_VIDEO;
 	 pCodecCtx->pix_fmt = nAVPixel;// AV_PIX_FMT_NV12  AV_PIX_FMT_YUV420P;
@@ -98,7 +97,7 @@ bool CFFVideoEncode::StartEncode(char* szEncodeName, AVPixelFormat nAVPixel, int
 		 av_dict_set(&param, "tune", "zerolatency", 0);
 	 }
 	 if (pCodecCtx->codec_id == AV_CODEC_ID_HEVC) {
-		 av_opt_set(&param, "preset", "ultrafast", 0);
+		 av_dict_set(&param, "preset", "ultrafast", 0);
 		 av_dict_set(&param, "tune", "zerolatency", 0);
 	 }
 
@@ -299,6 +298,7 @@ CFFVideoFilter::CFFVideoFilter()
 CFFVideoFilter::~CFFVideoFilter()
 {
 	StopFilter();
+	malloc_trim(0);
 }
 
 bool CFFVideoFilter::StartFilter(AVPixelFormat nAVPixel, int nWidth, int nHeight, int nFrameRate,int nFontSize,char* FontColor,float FontAlpha,int FontLeft,int FontTop)

@@ -104,11 +104,11 @@ int CNetServerRecvRtpTS_PS::InputNetData(NETHANDLE nServerHandle, NETHANDLE nCli
 
 		if(memcmp(pData + sizeof(_rtp_header), psHeadFlag, 4) == 0)
 		{//PS 
-		   rtpClientPtr = CreateNetRevcBaseClient(NetBaseNetType_NetGB28181UDPPSStreamInput, 0, rtpClient, szRtpSource, 10000, szTemp);
+		   rtpClientPtr = CreateNetRevcBaseClient(NetBaseNetType_NetGB28181UDPPSStreamInput, 0, rtpClient, inet_ntoa(((sockaddr_in*)address)->sin_addr), ntohs(((sockaddr_in*)address)->sin_port), szTemp);
 		}
 		else
 		{//TS
-			rtpClientPtr = CreateNetRevcBaseClient(NetBaseNetType_NetGB28181UDPTSStreamInput, 0, rtpClient, szRtpSource, 10000, szTemp);
+			rtpClientPtr = CreateNetRevcBaseClient(NetBaseNetType_NetGB28181UDPTSStreamInput, 0, rtpClient, inet_ntoa(((sockaddr_in*)address)->sin_addr), ntohs(((sockaddr_in*)address)->sin_port), szTemp);
 		}
 	}
 

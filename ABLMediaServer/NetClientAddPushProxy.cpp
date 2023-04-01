@@ -91,7 +91,7 @@ int CNetClientAddPushProxy::SendFirstRequst()
 	if (strlen(m_szShareMediaURL) > 0 && strlen(m_addPushProxyStruct.url) > 0)
 	{
 #ifdef USE_BOOST
-		boost::shared_ptr<CNetRevcBase> pClient = CreateNetRevcBaseClient(NetRevcBaseClient_addPushStreamProxy, 0, 0, m_addPushProxyStruct.url, 0, m_szShareMediaURL);
+		boost::shared_ptr<CNetRevcBase> pClient = CreateNetRevcBaseClient(NetRevcBaseClienst_addPushStreamProxy, 0, 0, m_addPushProxyStruct.url, 0, m_szShareMediaURL);
 
 #else
 		auto pClient = CreateNetRevcBaseClient(NetRevcBaseClient_addPushStreamProxy, 0, 0, m_addPushProxyStruct.url, 0, m_szShareMediaURL);

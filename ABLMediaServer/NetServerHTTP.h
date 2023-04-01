@@ -36,6 +36,7 @@ public:
    virtual int SendFirstRequst();//发送第一个请求
    virtual bool RequestM3u8File();//请求m3u8文件
 
+   bool                    index_api_statsPushers();
    bool                    WriteParamValue(char* szSection, char* szKey, char* szValue);
    bool                    index_api_restartServer();
    bool                    index_api_shutdownServer();

@@ -129,7 +129,7 @@ bool CABLSipParse::ParseSipString(char* szSipString)
 				   do
 				   {
 					sipKey2 = new SipFieldStruct;
-				   } while (sipKey == NULL);
+				   } while (sipKey2 == NULL);
 
 					strcpy(sipKey2->szKey, "Method");
 					strcpy(sipKey2->szValue, sipKey->szKey);
@@ -160,7 +160,7 @@ bool CABLSipParse::ParseSipString(char* szSipString)
 							   do
 							   {
 								sipKey2 = new SipFieldStruct;
-							   } while (sipKey == NULL);
+							   } while (sipKey2 == NULL);
 
 								memcpy(sipKey2->szKey, subKeyValue, nPos6);
 								memcpy(sipKey2->szValue, subKeyValue + nPos6 + 1, strlen(subKeyValue) - (nPos6 + 1));
@@ -202,7 +202,7 @@ bool CABLSipParse::ParseSipString(char* szSipString)
 									do
 									{
 									   sipKey2 = new SipFieldStruct;
-								    } while (sipKey == NULL);
+								    } while (sipKey2 == NULL);
 
 									memcpy(sipKey2->szKey, subKeyValue, nPos6);
 									memcpy(sipKey2->szValue, subKeyValue + nPos6 + 1, strlen(subKeyValue) - (nPos6 + 1));

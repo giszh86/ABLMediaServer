@@ -97,6 +97,8 @@ enum e_rtp_depacket_stream_type
 	e_rtpdepkt_st_dhp = 0xf2,			//DH private
 
 	e_rtpdepkt_st_gbps = 0xf3 ,         //国标 PS 
+
+	e_rtpdepkt_st_xhb = 0xf4,         //一家公司 xhb
 };
 
 struct _rtp_depacket_cb

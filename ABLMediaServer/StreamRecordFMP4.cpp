@@ -261,6 +261,25 @@ int CStreamRecordFMP4::SendAudio()
 				nAsyncAudioStamp = GetTickCount();
 			}
 		}
+		else if (ABL_MediaServerPort.nEnableAudio == 1 && strcmp(mediaCodecInfo.szAudioName, "G711_A") == 0 || strcmp(mediaCodecInfo.szAudioName, "G711_U") == 0)
+		{
+			if (track_aac == -1 && hlsFMP4 != NULL )
+			{
+				if(strcmp(mediaCodecInfo.szAudioName, "G711_A") == 0 )
+				  track_aac = hls_fmp4_add_audio(hlsFMP4, MOV_OBJECT_G711a, mediaCodecInfo.nChannels, 16, mediaCodecInfo.nSampleRate, NULL, 0);
+				else 
+				  track_aac = hls_fmp4_add_audio(hlsFMP4, MOV_OBJECT_G711u, mediaCodecInfo.nChannels, 16, mediaCodecInfo.nSampleRate, NULL, 0);
+			}
+
+			//必须hls_init_segment 初始化完成才能写音频段，在回调函数里面做标志 
+			if (track_aac >= 0 && hls_init_segmentFlag && hlsFMP4 != NULL )
+			{
+				hls_fmp4_input(hlsFMP4, track_aac, pData, nLength , audioDts, audioDts, 0);
+			}
+
+			audioDts += nLength / 8 ;
+		}
+
 		m_audioFifo.pop_front();
 	}
 	return 0;
@@ -350,6 +369,7 @@ static int fmp4_hls_init_segment(hls_fmp4_t* hls, void* param)
 	}
 	//必须hls_init_segment 初始化完成才能写视频、音频段，在回调函数里面做标志
 	pNetServerHttpMp4->hls_init_segmentFlag = true;
+	pNetServerHttpMp4->audioDts = 0;
 
 	return 0;
 }

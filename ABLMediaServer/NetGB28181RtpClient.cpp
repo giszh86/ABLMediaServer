@@ -52,6 +52,28 @@ void PS_MUX_CALL_METHOD GB28181_Send_mux_callback(_ps_mux_cb* cb)
 #endif
 }
 
+static void* ps_alloc(void* param, size_t bytes)
+{
+	CNetGB28181RtpClient* pThis = (CNetGB28181RtpClient*)param;
+	 
+	return pThis->s_buffer;
+}
+
+static void ps_free(void* param, void* /*packet*/)
+{
+	return;
+}
+
+static int ps_write(void* param, int stream, void* packet, size_t bytes)
+{
+	CNetGB28181RtpClient* pThis = (CNetGB28181RtpClient*)param;
+
+	if(pThis->bRunFlag)
+	  pThis->GB28181PsToRtPacket((unsigned char*)packet, bytes);
+
+	return true;
+}
+
 //rtp打包回调视频
 void GB28181_rtp_packet_callback_func_send(_rtp_packet_cb* cb)
 {
@@ -72,7 +94,7 @@ void GB28181_rtp_packet_callback_func_send(_rtp_packet_cb* cb)
 //PS 数据打包成rtp 
 void  CNetGB28181RtpClient::GB28181PsToRtPacket(unsigned char* pPsData, int nLength)
 {
-	if(hRtpPS > 0)
+	if(hRtpPS > 0 && bRunFlag)
 	{
 		inputPS.data = pPsData;
 		inputPS.datasize = nLength;
@@ -149,6 +171,18 @@ CNetGB28181RtpClient::CNetGB28181RtpClient(NETHANDLE hServer, NETHANDLE hClient,
 	nClient = hClient;
 	nServer = hServer;
 	psMuxHandle = 0;
+
+	nVideoStreamID = nAudioStreamID = -1;
+	handler.alloc = ps_alloc;
+	handler.write = ps_write;
+	handler.free = ps_free;
+    videoPTS = audioPTS = 0;
+	s_buffer = NULL;
+	if (ABL_MediaServerPort.gb28181LibraryUse == 2)
+	{
+		s_buffer = new  char[IDRFrameMaxBufferLength];
+		psBeiJingLaoChen = ps_muxer_create(&handler, this);
+	}
 	hRtpPS = 0;
 	bRunFlag = true;
 
@@ -203,7 +237,9 @@ CNetGB28181RtpClient::~CNetGB28181RtpClient()
 	m_audioFifo.FreeFifo();
 	ps_mux_stop(psDeMuxHandle);
 	rtp_packet_stop(hRtpPS);
-
+	if(psBeiJingLaoChen != NULL )
+	  ps_muxer_destroy(psBeiJingLaoChen);
+	SAFE_ARRAY_DELETE(s_buffer);
 #ifdef  WriteGB28181PSFileFlag
 	fclose(writePsFile);
 #endif
@@ -228,8 +264,12 @@ int CNetGB28181RtpClient::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, c
 
 int CNetGB28181RtpClient::PushAudio(uint8_t* pVideoData, uint32_t nDataLength, char* szAudioCodec, int nChannels, int SampleRate)
 {
-	if (!bRunFlag)
+	nRecvDataTimerBySecond = 0;
+
+	//当 m_startSendRtpStruct.RtpPayloadDataType[0] != 0x31 不为 PS 打包时,不支持音频数据加入打包 
+	if (!bRunFlag || m_startSendRtpStruct.RtpPayloadDataType[0] != 0x31)
 		return -1;
+
 	std::lock_guard<std::mutex> lock(businessProcMutex);
 
 	if (strlen(mediaCodecInfo.szAudioName) == 0)
@@ -246,41 +286,39 @@ int CNetGB28181RtpClient::PushAudio(uint8_t* pVideoData, uint32_t nDataLength, c
 	return 0;
 }
 
-int CNetGB28181RtpClient::SendVideo()
+void  CNetGB28181RtpClient::CreateRtpHandle()
 {
-	//代表交互成功，连接成功
-	if (!bUpdateVideoFrameSpeedFlag)
-		bUpdateVideoFrameSpeedFlag = true;
-
-	if (psMuxHandle == 0)
-	{
-		memset(&init, 0, sizeof(init));
-		init.cb = (void*)GB28181_Send_mux_callback;
-		init.userdata = this;
-		init.alignmode = e_psmux_am_4octet;
-		init.ttmode = 0;
-		init.ttincre = (90000 / mediaCodecInfo.nVideoFrameRate);
-		init.h = &psMuxHandle;
-		int32_t ret = ps_mux_start(&init);
-
-		input.handle = psMuxHandle;
-
-		WriteLog(Log_Debug, "CNetGB28181RtpClient = %X ，创建 ps 打包成功  ,nClient = %llu,  nRet = %d", this, nClient, ret);
-	}
-
 	if (hRtpPS == 0)
 	{
 		int nRet = rtp_packet_start(GB28181_rtp_packet_callback_func_send, (void*)this, &hRtpPS);
 		if (nRet != e_rtppkt_err_noerror)
 		{
 			WriteLog(Log_Debug, "CNetGB28181RtpClient = %X ，创建视频rtp打包失败,nClient = %llu,  nRet = %d", this, nClient, nRet);
-			return false;
+			return ;
 		}
 		optionPS.handle = hRtpPS;
 		optionPS.mediatype = e_rtppkt_mt_video;
-		optionPS.streamtype = e_rtppkt_st_gb28181;
+		if (m_startSendRtpStruct.RtpPayloadDataType[0] == 0x31)
+		{//国标PS打包
+			optionPS.payload = atoi(m_startSendRtpStruct.payload);
+			optionPS.streamtype = e_rtppkt_st_gb28181;
+		}
+		else if (m_startSendRtpStruct.RtpPayloadDataType[0] == 0x32 || m_startSendRtpStruct.RtpPayloadDataType[0] == 0x33)
+		{//ES \ XHB 打包
+			if (strcmp(mediaCodecInfo.szVideoName, "H264") == 0)
+			{
+			  strcpy(m_startSendRtpStruct.payload, "98");
+			  optionPS.payload = 98 ;
+			  optionPS.streamtype = e_rtppkt_st_h264;
+			}
+			else  if (strcmp(mediaCodecInfo.szVideoName, "H265") == 0)
+			{
+				strcpy(m_startSendRtpStruct.payload, "99");
+				optionPS.payload = 99 ;
+				optionPS.streamtype = e_rtppkt_st_h265;
+			}
+		}
 		optionPS.ssrc = atoi(m_startSendRtpStruct.ssrc);
-		optionPS.payload = atoi(m_startSendRtpStruct.payload);
 		optionPS.ttincre = (90000 / mediaCodecInfo.nVideoFrameRate);
 		rtp_packet_setsessionopt(&optionPS);
 
@@ -298,6 +336,48 @@ int CNetGB28181RtpClient::SendVideo()
 		strcpy(szClientIP, m_startSendRtpStruct.dst_url);
 		nClientPort = atoi(m_startSendRtpStruct.dst_port);
 	}
+}
+
+int CNetGB28181RtpClient::SendVideo()
+{
+	if (!bRunFlag)
+		return -1;
+
+	//代表交互成功，连接成功
+	if (!bUpdateVideoFrameSpeedFlag)
+		bUpdateVideoFrameSpeedFlag = true;
+
+	if (ABL_MediaServerPort.gb28181LibraryUse == 1)
+	{//自研
+		if (psMuxHandle == 0)
+		{
+			memset(&init, 0, sizeof(init));
+			init.cb = (void*)GB28181_Send_mux_callback;
+			init.userdata = this;
+			init.alignmode = e_psmux_am_4octet;
+			init.ttmode = 0;
+			init.ttincre = (90000 / mediaCodecInfo.nVideoFrameRate);
+			init.h = &psMuxHandle;
+			int32_t ret = ps_mux_start(&init);
+
+			input.handle = psMuxHandle;
+
+			WriteLog(Log_Debug, "CNetGB28181RtpClient = %X ，创建 ps 打包成功  ,nClient = %llu,  nRet = %d", this, nClient, ret);
+		}
+	}
+	else
+	{//北京老陈
+		if (nVideoStreamID == -1 && psBeiJingLaoChen != NULL )
+		{
+			if (strcmp(mediaCodecInfo.szVideoName,"H264") == 0 )
+			  nVideoStreamID = ps_muxer_add_stream((ps_muxer_t*)psBeiJingLaoChen, PSI_STREAM_H264, NULL, 0);
+			else if (strcmp(mediaCodecInfo.szVideoName, "H265") == 0)
+			  nVideoStreamID = ps_muxer_add_stream((ps_muxer_t*)psBeiJingLaoChen, PSI_STREAM_H265, NULL, 0);
+		}
+	}
+
+	//创建rtp句柄
+	CreateRtpHandle();
 
 	unsigned char* pData = NULL;
 	int            nLength = 0;
@@ -314,10 +394,39 @@ int CNetGB28181RtpClient::SendVideo()
 			return 0;
 		}
 
-		input.data = pData;
-		input.datasize = nLength;
-		ps_mux_input(&input);
+		if (m_startSendRtpStruct.RtpPayloadDataType[0] == 0x31)
+		{//PS 打包
+			//自研PS打包
+			if (ABL_MediaServerPort.gb28181LibraryUse == 1)
+			{
+	  		  input.data = pData;
+			  input.datasize = nLength;
+			  ps_mux_input(&input);
+			}
+			else
+			{//北京老陈PS打包
+				if (nVideoStreamID != -1 && psBeiJingLaoChen != NULL && strlen(mediaCodecInfo.szVideoName) > 0 )
+				{
+					if(strcmp(mediaCodecInfo.szVideoName,"H264") == 0)
+					  nflags = CheckVideoIsIFrame("H264", pData, nLength);
+					else if (strcmp(mediaCodecInfo.szVideoName, "H265") == 0)
+					  nflags = CheckVideoIsIFrame("H265", pData, nLength);
 
+					ps_muxer_input((ps_muxer_t*)psBeiJingLaoChen, nVideoStreamID, nflags, videoPTS, videoPTS, pData, nLength);
+					videoPTS += (90000 / mediaCodecInfo.nVideoFrameRate);
+				}
+			}
+		}
+		else if (m_startSendRtpStruct.RtpPayloadDataType[0] == 0x32 || m_startSendRtpStruct.RtpPayloadDataType[0] == 0x33)
+		{//ES 打包 \ XHB 打包
+			if (hRtpPS > 0 && bRunFlag)
+			{
+				inputPS.data = pData;
+				inputPS.datasize = nLength;
+				rtp_packet_input(&inputPS);
+			}
+		}
+ 
 		m_videoFifo.pop_front();
 	}
 	return 0;
@@ -325,7 +434,7 @@ int CNetGB28181RtpClient::SendVideo()
 
 int CNetGB28181RtpClient::SendAudio()
 {
-	if (psMuxHandle == 0 || ABL_MediaServerPort.nEnableAudio == 0)
+	if ( ABL_MediaServerPort.nEnableAudio == 0 || !bRunFlag || m_startSendRtpStruct.RtpPayloadDataType[0] != 0x31 )
 		return 0;
 
 	unsigned char* pData = NULL;
@@ -345,10 +454,46 @@ int CNetGB28181RtpClient::SendAudio()
 			return 0;
 		}
 
-		input.data = pData;
-		input.datasize = nLength;
-		ps_mux_input(&input);
+		//创建rtp句柄
+		CreateRtpHandle();
 
+		if (m_startSendRtpStruct.RtpPayloadDataType[0] == 0x31)
+		{//国标PS打包时,可以把音频和视频打包在一起,但是ES打包,音频\视频 不能打包在一起
+			//自研PS打包
+			if (ABL_MediaServerPort.gb28181LibraryUse == 1)
+			{
+			   input.data = pData;
+			   input.datasize = nLength;
+ 			   ps_mux_input(&input);
+			}
+			else
+			{//北京老陈PS打包
+				if (nAudioStreamID == -1 && psBeiJingLaoChen != NULL && strlen(mediaCodecInfo.szAudioName) > 0 )
+				{
+					if ( strcmp(mediaCodecInfo.szAudioName,"AAC") == 0 )
+						nAudioStreamID = ps_muxer_add_stream((ps_muxer_t*)psBeiJingLaoChen, PSI_STREAM_AAC, NULL, 0);
+					else if (strcmp(mediaCodecInfo.szAudioName, "G711_A") == 0)
+						nAudioStreamID = ps_muxer_add_stream((ps_muxer_t*)psBeiJingLaoChen, PSI_STREAM_AUDIO_G711A, NULL, 0);
+					else if (strcmp(mediaCodecInfo.szAudioName, "G711_U") == 0)
+						nAudioStreamID = ps_muxer_add_stream((ps_muxer_t*)psBeiJingLaoChen, PSI_STREAM_AUDIO_G711U, NULL, 0);
+				}
+
+				if (nAudioStreamID != -1 && psBeiJingLaoChen != NULL && strlen(mediaCodecInfo.szAudioName) > 0 )
+				{
+					ps_muxer_input((ps_muxer_t*)psBeiJingLaoChen, nAudioStreamID, 0, audioPTS, audioPTS, pData, nLength);
+
+					if (strcmp(mediaCodecInfo.szAudioName, "AAC") == 0)
+						audioPTS += mediaCodecInfo.nBaseAddAudioTimeStamp;
+					else if (strcmp(mediaCodecInfo.szAudioName, "G711_A") == 0 || strcmp(mediaCodecInfo.szAudioName, "G711_U") == 0)
+						audioPTS += nLength / 8;
+				}
+			}
+		}
+		else if (m_startSendRtpStruct.RtpPayloadDataType[0] == 0x32 || m_startSendRtpStruct.RtpPayloadDataType[0] == 0x33)
+		{//ES\XHB 打包
+
+		}
+ 
 		m_audioFifo.pop_front();
 	}
 	return 0;

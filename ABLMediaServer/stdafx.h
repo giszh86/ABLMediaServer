@@ -29,9 +29,6 @@
 #include <string.h>
 #include <malloc.h>
 
-//#include <d3d9.h>
-//#include <d3dx9tex.h>
-
 #include "cudaCodecDLL.h"
 
 #else 
@@ -200,6 +197,8 @@ struct MediaServerPort
 	char on_server_started[256];
 	char on_server_keepalive[256];
 	char on_delete_record_mp4[256];
+	char on_play[256];
+	char on_publish[256];
 
 	uint64_t    nClientNoneReader;
 	uint64_t    nClientNotFound;
@@ -212,6 +211,8 @@ struct MediaServerPort
 	uint64_t    nClientRecordTS;
 	uint64_t    nServerStarted;//服务器启动
 	uint64_t    nServerKeepalive;//服务器保活消息 
+	uint64_t    nPlay;//播放
+	uint64_t    nPublish;//接入
 	int         MaxDiconnectTimeoutSecond;//最大断线超时检测
 	int         ForceSendingIFrame;//强制发送I帧 
 	uint64_t    nServerKeepaliveTime;//服务器心跳时间
@@ -220,6 +221,7 @@ struct MediaServerPort
 	int        nSaveProxyRtspRtp;//是否保存代理拉流数据0 不保存，1 保存
 	int        nSaveGB28181Rtp;//是否保存GB28181数据，0 未保存，1 保存 
 
+	int        gb28181LibraryUse;//国标打包、解包库的选择, 1 使用自研库国标打包解包库，2 使用北京老陈国标打包解包库 
 	MediaServerPort()
 	{
 		memset(wwwPath, 0x00, sizeof(wwwPath));
@@ -278,6 +280,9 @@ struct MediaServerPort
 		memset(on_stream_not_arrive, 0x00, sizeof(on_stream_not_arrive));
  		memset(on_record_ts, 0x00, sizeof(on_record_ts));
 		memset(on_stream_disconnect, 0x00, sizeof(on_stream_disconnect));
+		memset(on_play, 0x00, sizeof(on_play));
+		memset(on_publish, 0x00, sizeof(on_publish));
+
 		nClientNoneReader = 0 ;
 		nClientNotFound = 0;
 		nClientRecordMp4 = 0;
@@ -289,6 +294,8 @@ struct MediaServerPort
 		nClientRecordTS = 0;
 		nServerStarted = 0;
 		nServerKeepalive = 0;
+		nPlay=0;//播放
+	    nPublish=0;//接入
 
 		maxSameTimeSnap = 16;
 		snapOutPictureWidth; 
@@ -314,6 +321,8 @@ struct MediaServerPort
 		nSaveProxyRtspRtp = 0; 
 		nSaveGB28181Rtp = 0 ; 
 		memset(debugPath, 0x00, sizeof(debugPath));
+
+		gb28181LibraryUse = 1;
  	}
 };
 
@@ -406,10 +415,12 @@ enum NetBaseNetType
 	NetBaseNetType_HttpClient_ServerStarted       = 120,//服务器启动
 	NetBaseNetType_HttpClient_ServerKeepalive     = 121,//服务器心跳
 	NetBaseNetType_HttpClient_DeleteRecordMp4     = 122,//覆盖录像文件
+	NetBaseNetType_HttpClient_on_play              = 123,//播放视频事件通知
+	NetBaseNetType_HttpClient_on_publish           = 124,//码流接入通知 
 
 };
 
-#define   MediaServerVerson                 "ABLMediaServer-6.3.5(2022-11-30)"
+#define   MediaServerVerson                 "ABLMediaServer-6.3.5(2023-03-30)"
 #define   RtspServerPublic                  "DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE, OPTIONS, ANNOUNCE, RECORD，GET_PARAMETER"
 #define   RecordFileReplaySplitter          "__ReplayFMP4RecordFile__"  //实况、录像区分的标志字符串，用于区分实况，放置在url中。
 
@@ -417,8 +428,8 @@ enum NetBaseNetType
 #define  MaxLiveingVideoFifoBufferLength    1024*1024*3   //最大的视频缓存 
 #define  MaxLiveingAudioFifoBufferLength    1024*512      //最大的音频缓存 
 #define  BaseRecvRtpSSRCNumber              0xFFFFFFFFFF  //用于接收TS接收时 加上 ssrc 的值作为关键字 Key
-#define  IDRFrameMaxBufferLength            1024*1024*2   //IDR帧最大缓存区域字节大小
-#define  MaxClientConnectTimerout           12*1000       //连接服务器最大超时时长 10 秒 
+#define  IDRFrameMaxBufferLength            1024*1024*3   //IDR帧最大缓存区域字节大小
+#define  MaxClientConnectTimerout           15*1000       //连接服务器最大超时时长 10 秒 
 
 //rtsp url 地址分解
 //rtsp://admin:szga2019@190.15.240.189:554
@@ -471,6 +482,8 @@ struct addStreamProxyStruct
 	char  convertOutWidth[64];//转码输出宽
 	char  convertOutHeight[64];//转码输出高 
 	char  H264DecodeEncode_enable[64];//H264是否解码再编码 
+	char  RtpPayloadDataType[64]; 
+	char  disableVideo[16];//过滤掉视频 1 过滤掉视频 ，0 不过滤视频 ，默认 0 
 
 	addStreamProxyStruct()
 	{
@@ -485,6 +498,8 @@ struct addStreamProxyStruct
 		memset(convertOutWidth, 0x00, sizeof(convertOutWidth));
 		memset(convertOutHeight, 0x00, sizeof(convertOutHeight));
 		memset(H264DecodeEncode_enable, 0x00, sizeof(H264DecodeEncode_enable));
+		memset(RtpPayloadDataType, 0x00, sizeof(RtpPayloadDataType));
+		memset(disableVideo, 0x00, sizeof(disableVideo));
 	}
 };
 
@@ -535,6 +550,8 @@ struct openRtpServerStruct
 	char  convertOutWidth[64];//转码输出宽
 	char  convertOutHeight[64];//转码输出高 
 	char  H264DecodeEncode_enable[64];//H264是否解码再编码 
+	char  RtpPayloadDataType[16];//国标接入rtp负载的数据类型 【 1 rtp + PS 】 , 【 2 rtp + ES 】 ,【3 ，rtp + XHB 一家公司的私有格式】
+	char  disableVideo[16];//过滤掉视频 1 过滤掉视频 ，0 不过滤视频 ，默认 0 
 
 	openRtpServerStruct()
 	{
@@ -550,6 +567,8 @@ struct openRtpServerStruct
 		memset(convertOutWidth, 0x00, sizeof(convertOutWidth));
 		memset(convertOutHeight, 0x00, sizeof(convertOutHeight));
 		memset(H264DecodeEncode_enable, 0x00, sizeof(H264DecodeEncode_enable));
+		memset(RtpPayloadDataType, 0x00, sizeof(RtpPayloadDataType));
+		memset(disableVideo, 0x00, sizeof(disableVideo));
 	}
 };
 
@@ -566,6 +585,7 @@ struct startSendRtpStruct
 	char   dst_port[64];//GB2818端口
 	char   is_udp[16]; //0 UDP，1 TCP 
 	char   payload[24]; //payload rtp 打包的payload 
+	char   RtpPayloadDataType[64];//打包格式 1　PS、２　ES、３　XHB
 
 	startSendRtpStruct()
 	{
@@ -578,6 +598,7 @@ struct startSendRtpStruct
 		memset(dst_port, 0x00, sizeof(dst_port));
 		memset(is_udp, 0x00, sizeof(is_udp));
 		memset(payload, 0x00, sizeof(payload));
+		memset(RtpPayloadDataType, 0x00, sizeof(RtpPayloadDataType));
 	}
 };
 
@@ -969,7 +990,6 @@ using namespace boost;
 #include <cctype>
 
 #endif
-
 
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"

@@ -210,6 +210,8 @@ int CNetClientSendRtsp::SendVideo()
 
 int CNetClientSendRtsp::SendAudio()
 {
+	nRecvDataTimerBySecond = 0;
+
 	unsigned char* pData = NULL;
 	int            nLength = 0;
 	if ((pData = m_audioFifo.pop(&nLength)) != NULL)
@@ -545,28 +547,42 @@ void CNetClientSendRtsp::ProcessRtpVideoData(unsigned char* pRtpVideo,int nDataL
 }
 void CNetClientSendRtsp::ProcessRtpAudioData(unsigned char* pRtpAudio, int nDataLength)
 {
-	if ((MaxRtpSendAudioMediaBufferLength - nSendRtpAudioMediaBufferLength < nDataLength + 4) && nSendRtpAudioMediaBufferLength > 0 )
-	{//剩余空间不够存储 ,防止出错 
-		SumSendRtpMediaBuffer(szSendRtpAudioMediaBuffer, nSendRtpAudioMediaBufferLength);
-
-		nSendRtpAudioMediaBufferLength = 0;
-		nCalcAudioFrameCount = 0;
-	}
-
-	szSendRtpAudioMediaBuffer[nSendRtpAudioMediaBufferLength + 0] = '$';
-	szSendRtpAudioMediaBuffer[nSendRtpAudioMediaBufferLength + 1] = 2;
-	nAudioRtpLen = htons(nDataLength);
-	memcpy(szSendRtpAudioMediaBuffer + (nSendRtpAudioMediaBufferLength + 2), (unsigned char*)&nAudioRtpLen, sizeof(nAudioRtpLen));
-	memcpy(szSendRtpAudioMediaBuffer + (nSendRtpAudioMediaBufferLength + 4), pRtpAudio, nDataLength);
-
- 	nSendRtpAudioMediaBufferLength += nDataLength + 4;
- 	nCalcAudioFrameCount ++;
-
-	if (nCalcAudioFrameCount >= 5 && nSendRtpAudioMediaBufferLength > 0 )
+	if (hRtpVideo != 0)
 	{
-		SumSendRtpMediaBuffer(szSendRtpAudioMediaBuffer, nSendRtpAudioMediaBufferLength);
- 		nSendRtpAudioMediaBufferLength = 0;
-		nCalcAudioFrameCount = 0;
+		if ((MaxRtpSendAudioMediaBufferLength - nSendRtpAudioMediaBufferLength < nDataLength + 4) && nSendRtpAudioMediaBufferLength > 0 )
+		{//剩余空间不够存储 ,防止出错 
+			SumSendRtpMediaBuffer(szSendRtpAudioMediaBuffer, nSendRtpAudioMediaBufferLength);
+
+			nSendRtpAudioMediaBufferLength = 0;
+			nCalcAudioFrameCount = 0;
+		}
+
+		szSendRtpAudioMediaBuffer[nSendRtpAudioMediaBufferLength + 0] = '$';
+		szSendRtpAudioMediaBuffer[nSendRtpAudioMediaBufferLength + 1] = 2;
+		nAudioRtpLen = htons(nDataLength);
+		memcpy(szSendRtpAudioMediaBuffer + (nSendRtpAudioMediaBufferLength + 2), (unsigned char*)&nAudioRtpLen, sizeof(nAudioRtpLen));
+		memcpy(szSendRtpAudioMediaBuffer + (nSendRtpAudioMediaBufferLength + 4), pRtpAudio, nDataLength);
+
+ 		nSendRtpAudioMediaBufferLength += nDataLength + 4;
+ 		nCalcAudioFrameCount ++;
+
+		if (nCalcAudioFrameCount >= 3 && nSendRtpAudioMediaBufferLength > 0 )
+		{
+			SumSendRtpMediaBuffer(szSendRtpAudioMediaBuffer, nSendRtpAudioMediaBufferLength);
+ 			nSendRtpAudioMediaBufferLength = 0;
+			nCalcAudioFrameCount = 0;
+		}
+	}
+	else
+	{//单独发送音频
+		nSendRtpAudioMediaBufferLength = 0;
+		szSendRtpAudioMediaBuffer[nSendRtpAudioMediaBufferLength + 0] = '$';
+		szSendRtpAudioMediaBuffer[nSendRtpAudioMediaBufferLength + 1] = 0;
+
+		nAudioRtpLen = htons(nDataLength);
+		memcpy(szSendRtpAudioMediaBuffer + (nSendRtpAudioMediaBufferLength + 2), (unsigned char*)&nAudioRtpLen, sizeof(nAudioRtpLen));
+		memcpy(szSendRtpAudioMediaBuffer + (nSendRtpAudioMediaBufferLength + 4), pRtpAudio, nDataLength);
+		XHNetSDK_Write(nClient, szSendRtpAudioMediaBuffer, nDataLength + 4, 1);
 	}
 }
 
@@ -622,31 +638,37 @@ bool CNetClientSendRtsp::GetRtspSDPFromMediaStreamSource(RtspSDPContentStruct sd
 		sprintf(szRtspSDPContent, "v=0\r\no=- 0 0 IN IP4 127.0.0.1\r\ns=No Name\r\nc=IN IP4 190.15.240.36\r\nt=0 0\r\na=tool:libavformat 55.19.104\r\nm=video 6000 RTP/AVP %d\r\nb=AS:3007\r\na=rtpmap:%d H265/90000\r\na=fmtp:%d packetization-mode=1\r\na=control:streamid=0\r\n", nVideoPayload, nVideoPayload, nVideoPayload);
 		nMediaCount++;
 	}
-	else
-		return false;
-
-	int nRet = rtp_packet_start(Video_rtp_packet_callback_func_send, (void*)this, &hRtpVideo);
-	if (nRet != e_rtppkt_err_noerror)
+	else if (strcmp(sdpContent.szVideoName, "") == 0)
 	{
-		WriteLog(Log_Debug, "CNetClientSendRtsp = %X ，创建视频rtp打包失败,nClient = %llu,  nRet = %d", this,nClient, nRet);
-		return false;
+		WriteLog(Log_Debug, "CNetClientSendRtsp = %X ，没有视频资源 ,nClient = %llu", this, nClient);
 	}
- 	optionVideo.handle = hRtpVideo;
-	optionVideo.ssrc = nVideoSSRC;
-	optionVideo.mediatype = e_rtppkt_mt_video;
- 	optionVideo.payload = nVideoPayload;
-	optionVideo.ttincre = 90000 / mediaCodecInfo.nVideoFrameRate; //视频时间戳增量
 
-	inputVideo.handle = hRtpVideo;
-	inputVideo.ssrc = optionVideo.ssrc;
-
-	nRet = rtp_packet_setsessionopt(&optionVideo);
-	if (nRet != e_rtppkt_err_noerror)
+	int nRet = 0;
+	if (strlen(sdpContent.szVideoName) > 0)
 	{
-		WriteLog(Log_Debug, "CRecvRtspClient = %X ，rtp_packet_setsessionopt 设置视频rtp打包失败 ,nClient = %llu nRet = %d", this, nClient, nRet);
-		return false;
+		nRet = rtp_packet_start(Video_rtp_packet_callback_func_send, (void*)this, &hRtpVideo);
+		if (nRet != e_rtppkt_err_noerror)
+		{
+			WriteLog(Log_Debug, "CNetClientSendRtsp = %X ，创建视频rtp打包失败,nClient = %llu,  nRet = %d", this,nClient, nRet);
+			return false;
+		}
+ 		optionVideo.handle = hRtpVideo;
+		optionVideo.ssrc = nVideoSSRC;
+		optionVideo.mediatype = e_rtppkt_mt_video;
+ 		optionVideo.payload = nVideoPayload;
+		optionVideo.ttincre = 90000 / mediaCodecInfo.nVideoFrameRate; //视频时间戳增量
+
+		inputVideo.handle = hRtpVideo;
+		inputVideo.ssrc = optionVideo.ssrc;
+
+		nRet = rtp_packet_setsessionopt(&optionVideo);
+		if (nRet != e_rtppkt_err_noerror)
+		{
+			WriteLog(Log_Debug, "CRecvRtspClient = %X ，rtp_packet_setsessionopt 设置视频rtp打包失败 ,nClient = %llu nRet = %d", this, nClient, nRet);
+			return false;
+		}
 	}
-	memset(szRtspAudioSDP, 0x00, sizeof(szRtspAudioSDP));
+ 	memset(szRtspAudioSDP, 0x00, sizeof(szRtspAudioSDP));
  
 	memset((char*)&optionAudio, 0x00, sizeof(optionAudio));
 	if (strcmp(sdpContent.szAudioName, "G711_A") == 0 && ABL_MediaServerPort.nEnableAudio == 1)
@@ -657,8 +679,10 @@ bool CNetClientSendRtsp::GetRtspSDPFromMediaStreamSource(RtspSDPContentStruct sd
 			nAudioPayload = sdpContent.nAudioPayload;
 		else
  		   nAudioPayload = 8;
-		sprintf(szRtspAudioSDP, "m=audio 0 RTP/AVP %d\r\nb=AS:50\r\na=recvonly\r\na=rtpmap:%d PCMA/%d\r\na=control:streamid=1\r\na=framerate:25\r\n",
-			nAudioPayload, nAudioPayload, 8000);
+		if(hRtpVideo != 0)
+		 sprintf(szRtspAudioSDP, "m=audio 0 RTP/AVP %d\r\nb=AS:50\r\na=recvonly\r\na=rtpmap:%d PCMA/%d\r\na=control:streamid=1\r\na=framerate:25\r\n",nAudioPayload, nAudioPayload, 8000);
+		else
+		 sprintf(szRtspAudioSDP, "m=audio 0 RTP/AVP %d\r\nb=AS:50\r\na=recvonly\r\na=rtpmap:%d PCMA/%d\r\na=control:streamid=0\r\na=framerate:25\r\n", nAudioPayload, nAudioPayload, 8000);
 
 		nMediaCount++;
 	}
@@ -670,8 +694,10 @@ bool CNetClientSendRtsp::GetRtspSDPFromMediaStreamSource(RtspSDPContentStruct sd
 			nAudioPayload = sdpContent.nAudioPayload;
 		else
 			nAudioPayload = 0;
-		sprintf(szRtspAudioSDP, "m=audio 0 RTP/AVP %d\r\nb=AS:50\r\na=recvonly\r\na=rtpmap:%d PCMU/%d\r\na=control:streamid=1\r\na=framerate:25\r\n",
-			nAudioPayload, nAudioPayload, 8000);
+		if (hRtpVideo != 0)
+		  sprintf(szRtspAudioSDP, "m=audio 0 RTP/AVP %d\r\nb=AS:50\r\na=recvonly\r\na=rtpmap:%d PCMU/%d\r\na=control:streamid=1\r\na=framerate:25\r\n",nAudioPayload, nAudioPayload, 8000);
+		else
+		 sprintf(szRtspAudioSDP, "m=audio 0 RTP/AVP %d\r\nb=AS:50\r\na=recvonly\r\na=rtpmap:%d PCMU/%d\r\na=control:streamid=0\r\na=framerate:25\r\n", nAudioPayload, nAudioPayload, 8000);
 
 		nMediaCount++;
 	}
@@ -683,14 +709,16 @@ bool CNetClientSendRtsp::GetRtspSDPFromMediaStreamSource(RtspSDPContentStruct sd
 			nAudioPayload = sdpContent.nAudioPayload;
 		else
 			nAudioPayload = 104;
-		sprintf(szRtspAudioSDP, "m=audio 0 RTP/AVP %d\r\na=rtpmap:%d MPEG4-GENERIC/%d/%d\r\na=fmtp:%d profile-level-id=15; streamtype=5; mode=AAC-hbr; config=1408;SizeLength=13; IndexLength=3; IndexDeltaLength=3; Profile=1;\r\na=control:streamid=1\r\n",
-			nAudioPayload, nAudioPayload, sdpContent.nSampleRate, sdpContent.nChannels, nAudioPayload);
+		if (hRtpVideo != 0)
+		  sprintf(szRtspAudioSDP, "m=audio 0 RTP/AVP %d\r\na=rtpmap:%d MPEG4-GENERIC/%d/%d\r\na=fmtp:%d profile-level-id=15; streamtype=5; mode=AAC-hbr; config=1408;SizeLength=13; IndexLength=3; IndexDeltaLength=3; Profile=1;\r\na=control:streamid=1\r\n",nAudioPayload, nAudioPayload, sdpContent.nSampleRate, sdpContent.nChannels, nAudioPayload);
+		else
+		  sprintf(szRtspAudioSDP, "m=audio 0 RTP/AVP %d\r\na=rtpmap:%d MPEG4-GENERIC/%d/%d\r\na=fmtp:%d profile-level-id=15; streamtype=5; mode=AAC-hbr; config=1408;SizeLength=13; IndexLength=3; IndexDeltaLength=3; Profile=1;\r\na=control:streamid=0\r\n", nAudioPayload, nAudioPayload, sdpContent.nSampleRate, sdpContent.nChannels, nAudioPayload);
 
 		nMediaCount++;
 	}
 
 	//追加音频SDP
-	if (strlen(szRtspAudioSDP) > 0 && strlen(szRtspSDPContent) > 0 && ABL_MediaServerPort.nEnableAudio == 1)
+	if (strlen(szRtspAudioSDP) > 0 && ABL_MediaServerPort.nEnableAudio == 1)
 	{
 		int32_t nRet = rtp_packet_start(Audio_rtp_packet_callback_func_send, (void*)this, &hRtpAudio);
 		if (nRet != e_rtppkt_err_noerror)
@@ -708,7 +736,10 @@ bool CNetClientSendRtsp::GetRtspSDPFromMediaStreamSource(RtspSDPContentStruct sd
 
 		rtp_packet_setsessionopt(&optionAudio);
 
-		strcat(szRtspSDPContent, szRtspAudioSDP);
+		if (hRtpVideo != 0)
+		   strcat(szRtspSDPContent, szRtspAudioSDP);
+		else
+		   strcpy(szRtspSDPContent, szRtspAudioSDP);
 	}
 
 	if (bGetFlag)
@@ -1184,7 +1215,6 @@ void  CNetClientSendRtsp::FindVideoAudioInSDP()
 		return;
 
 	strcpy(szTemp, szRtspContentSDP);
-
 #ifdef USE_BOOST
 	to_lower(szTemp);
 #else
