@@ -51,29 +51,32 @@ CCudaVideoEncode::CCudaVideoEncode(cudaEncodeVideo_enum videoCodec, cudaEncodeVi
 	else if (videoCodec == cudaEncodeVideo_HEVC)
 		enc->CreateDefaultEncoderParams(&initializeParams, NV_ENC_CODEC_HEVC_GUID, NV_ENC_PRESET_DEFAULT_GUID);
 
- //   encodeConfig.encodeCodecConfig.h264Config.idrPeriod = 25;
- //	encodeConfig.gopLength = 25 ;//gop 25 
-	//encodeConfig.frameIntervalP = 1; //编码输出帧类型 I、P、P、
- //   encodeConfig.rcParams.rateControlMode = NV_ENC_PARAMS_RC_CBR;
- //   //encodeConfig.rcParams.multiPass = NV_ENC_TWO_PASS_FULL_RESOLUTION;
- //   encodeConfig.rcParams.averageBitRate = static_cast<unsigned int>(5.0f * initializeParams.encodeWidth * initializeParams.encodeHeight);
- //   encodeConfig.rcParams.vbvBufferSize = (encodeConfig.rcParams.averageBitRate * initializeParams.frameRateDen / initializeParams.frameRateNum) * 5;
- //   encodeConfig.rcParams.maxBitRate = encodeConfig.rcParams.averageBitRate;
- //   encodeConfig.rcParams.vbvInitialDelay = encodeConfig.rcParams.vbvBufferSize;
-
+		//encodeConfig.encodeCodecConfig.h264Config.idrPeriod = 25;//IDR 帧的周期为 25 帧；
+		//encodeConfig.gopLength = 25;// GOP 长度为 25 帧；
+		//encodeConfig.frameIntervalP = 1;// 编码输出帧类型为 I、P、P、；
+		//encodeConfig.rcParams.rateControlMode = NV_ENC_PARAMS_RC_CBR;// 码率控制模式为恒定比特率（CBR）；
+		//encodeConfig.rcParams.averageBitRate = static_cast<unsigned int>(5.0f * initializeParams.encodeWidth * initializeParams.encodeHeight);// 平均比特率为图像宽度和高度的乘积的 5 倍；
+		//encodeConfig.rcParams.vbvBufferSize = (encodeConfig.rcParams.averageBitRate * initializeParams.frameRateDen / initializeParams.frameRateNum) * 5;// VBV 缓存大小为平均比特率乘以帧率的倒数再乘以 5；
+		//encodeConfig.rcParams.maxBitRate = encodeConfig.rcParams.averageBitRate;// 最大比特率等于平均比特率；
+		//encodeConfig.rcParams.vbvInitialDelay = encodeConfig.rcParams.vbvBufferSize;// VBV 初始延迟等于 VBV 缓存大小。
 
 
 	encodeConfig.gopLength = NVENC_INFINITE_GOPLENGTH;
 	encodeConfig.frameIntervalP = 1;
-	encodeConfig.encodeCodecConfig.h264Config.idrPeriod = NVENC_INFINITE_GOPLENGTH;
-	encodeConfig.rcParams.rateControlMode = NV_ENC_PARAMS_RC_CBR;
+	encodeConfig.encodeCodecConfig.h264Config.idrPeriod = NVENC_INFINITE_GOPLENGTH;	
+	encodeConfig.rcParams.rateControlMode = NV_ENC_PARAMS_RC_VBR;
 	//encodeConfig.rcParams.multiPass = NV_ENC_TWO_PASS_FULL_RESOLUTION;
 	encodeConfig.rcParams.averageBitRate = static_cast<unsigned int>(3.0f * initializeParams.encodeWidth * initializeParams.encodeHeight);
-	encodeConfig.rcParams.vbvBufferSize =(encodeConfig.rcParams.averageBitRate * initializeParams.frameRateDen /initializeParams.frameRateNum) *5;
+	encodeConfig.rcParams.vbvBufferSize =(encodeConfig.rcParams.averageBitRate * initializeParams.frameRateDen /initializeParams.frameRateNum) *3;
 	encodeConfig.rcParams.maxBitRate = encodeConfig.rcParams.averageBitRate;
 	encodeConfig.rcParams.vbvInitialDelay = encodeConfig.rcParams.vbvBufferSize;
 
-
+	//NV_ENC_PARAMS_RC_CONSTQP：常量量化参数模式，即使用固定的量化参数对视频进行编码。
+	//	NV_ENC_PARAMS_RC_VBR：可变比特率模式，即根据视频内容动态地调整比特率以控制视频质量和大小。
+	//	NV_ENC_PARAMS_RC_CBR：恒定比特率模式，即在保证一定质量下控制视频大小，可以更好地控制视频码率，适用于对码率有比较严格要求的场景。
+	//	NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ：低延迟 CBR 模式，高质量。
+	//	NV_ENC_PARAMS_RC_CBR_HQ：CBR 模式，高质量。
+	//	NV_ENC_PARAMS_RC_VBR_HQ：VBR 模式，高质量。
 
 	//encodeCLIOptions.SetInitParams(&initializeParams, nvBufferFormat);
 	enc->CreateEncoder(&initializeParams);
@@ -97,6 +100,7 @@ CCudaVideoEncode::CCudaVideoEncode(cudaEncodeVideo_enum videoCodec, cudaEncodeVi
 CCudaVideoEncode::~CCudaVideoEncode()
 {
 	std::lock_guard<std::mutex> lock(cudaVideoEncodeLock);
+
 
 	if (enc)
 	{
@@ -216,7 +220,7 @@ int  CCudaVideoEncode::cudaEncodeVideo(unsigned char* pYUVData, int nLength,char
 	}
 	else
 	{
-		printf("cudaEncodeVideo  == 0");
+		printf("CCudaVideoEncode::cudaEncodeVideo  nSize  == 0");
 		return 0 ;
 	}
 
