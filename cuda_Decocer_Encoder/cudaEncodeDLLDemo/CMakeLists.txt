@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.5)
 
 # 设置项目名称和版本号
 project(cudaEncodeDLLDemo VERSION 1.0)
+
 # 定义宏定义，根据操作系统平台添加 _WIN32 宏定义
 if(WIN32)
   target_compile_definitions(${PROJECT_NAME} PRIVATE _WIN32)
@@ -18,26 +19,28 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/../../bin)
 # 添加头文件路径
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/cudaEncodeDLL)
+include_directories(${PROJECT_SOURCE_DIR}/cudaCodecDLL)
 
 # 添加动态库路径
 link_directories(${PROJECT_SOURCE_DIR}/../../bin)
 
 # 先执行这个目录下的cmake
 # 添加子目录
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../cudaEncodeDLL ${CMAKE_CURRENT_SOURCE_DIR}../../bin)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../cudaEncodeDLL ${CMAKE_CURRENT_SOURCE_DIR}/../../bin/cudaEncodeDLL)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../cudaCodecDLL ${CMAKE_CURRENT_SOURCE_DIR}/../../bin/cudaCodecDLL)
 
 # 添加可执行文件编译目标
 add_executable(${PROJECT_NAME} cudaEncodeDLLDemo.cpp)
 
 # 添加头文件搜索路径
-target_include_directories(${PROJECT_NAME} PRIVATE
+target_include_directories(${PROJECT_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../cudaEncodeDLL
+	${CMAKE_CURRENT_SOURCE_DIR}/../cudaCodecDLL
 )
 
 # 添加依赖库搜索路径
 target_link_directories(${PROJECT_NAME} PRIVATE
-   ${CMAKE_CURRENT_BINARY_DIR}
    ${CMAKE_CURRENT_SOURCE_DIR}/../../bin
 )
 
@@ -45,4 +48,6 @@ target_link_directories(${PROJECT_NAME} PRIVATE
 target_link_libraries(${PROJECT_NAME} PRIVATE 
 pthread
 dl
-cudaEncodeDLL)
+cudaEncodeDLL
+cudaCodecDLL
+)
