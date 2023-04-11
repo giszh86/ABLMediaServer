@@ -5,11 +5,13 @@
 
 #include <Windows.h>
 
-#ifdef USE_BOOST
+#if (__cplusplus < 201103L)
 #include <boost/thread/mutex.hpp>
 #else
 #include <mutex>
 #endif
+
+
 namespace auto_lock
 {
 	class al_spin
@@ -48,7 +50,7 @@ namespace auto_lock
 		CRITICAL_SECTION m_spin;
 	};
 
-#ifdef USE_BOOST
+#if (__cplusplus < 201103L)
 	typedef boost::mutex al_mutex;
 #else
 	typedef std::mutex al_mutex;
