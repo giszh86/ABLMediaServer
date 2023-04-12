@@ -2,15 +2,15 @@
 #define _CIRCULAR_BUFFER_H_ 
 
 #include <stdint.h>
-#include <memory>
 #include "auto_lock.h"
 #ifdef USE_BOOST
 #include <boost/shared_array.hpp>
+#include <memory>
 #else
 #include <map>
 #include <vector>
+#include <memory>
 #endif
-
 class circular_buffer
 {
 public:
@@ -36,8 +36,10 @@ private:
 
 	boost::shared_array<uint8_t> m_buffer;
 #else
-	std::shared_ptr<std::vector<uint8_t>> m_buffer;
+	//std::shared_ptr<std::vector<uint8_t>> m_buffer;
 	//ABL::SharedArray<uint8_t> m_buffer;
+	std::unique_ptr<uint8_t[]> m_buffer;
+
 #endif
 
 #ifdef LIBNET_USE_CORE_SYNC_MUTEX
