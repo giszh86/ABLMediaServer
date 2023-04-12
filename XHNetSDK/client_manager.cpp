@@ -18,16 +18,44 @@ struct client_deletor
 	}
 };
 
+#ifdef USE_BOOST
+
+client_manager::client_manager(void)
+	: m_pool(CLIENT_POOL_OBJECT_COUNT, CLIENT_POOL_OBJECT_COUNT)
+{
+}
+#else
 client_manager::client_manager(void)
 {
-	//m_pool.init(CLIENT_POOL_OBJECT_COUNT, CLIENT_POOL_OBJECT_COUNT);
 }
+
+#endif
+
 
 client_manager::~client_manager(void)
 {
 	pop_all_clients();
 }
+#ifdef USE_BOOST
 
+client_ptr client_manager::malloc_client(boost::asio::io_context& ioc,
+	NETHANDLE srvid,
+	read_callback fnread,
+	close_callback fnclose,
+	bool autoread)
+{
+#ifdef LIBNET_USE_CORE_SYNC_MUTEX
+	auto_lock::al_lock<auto_lock::al_mutex> al(m_poolmtx);
+#else
+	auto_lock::al_lock<auto_lock::al_spin> al(m_poolmtx);
+#endif
+
+	client_ptr cli;
+	cli.reset(m_pool.construct(ioc, srvid, fnread, fnclose, autoread), client_deletor());
+
+	return cli;
+}
+#else
 client_ptr client_manager::malloc_client(asio::io_context& ioc,
 	NETHANDLE srvid,
 	read_callback fnread,
@@ -41,10 +69,14 @@ client_ptr client_manager::malloc_client(asio::io_context& ioc,
 #endif
 
 	client_ptr cli;
+	//cli.reset(m_pool.construct(ioc, srvid, fnread, fnclose, autoread), client_deletor());
 	cli.reset(m_pool.allocA(ioc), client_deletor());
 	cli->init(srvid, fnread, fnclose, autoread);
 	return cli;
 }
+
+#endif
+
 
 void client_manager::free_client(client* cli)
 {
@@ -54,7 +86,8 @@ void client_manager::free_client(client* cli)
 	auto_lock::al_lock<auto_lock::al_spin> al(m_poolmtx);
 #endif
 	
-	m_pool.free(cli);
+	m_pool.destroy(cli);
+
 }
 
 bool client_manager::push_client(client_ptr& cli)
@@ -62,7 +95,7 @@ bool client_manager::push_client(client_ptr& cli)
 #ifdef LIBNET_USE_CORE_SYNC_MUTEX
 	auto_lock::al_lock<auto_lock::al_mutex> al(m_climtx);
 #else
-	auto_lock::al_lock<auto_lock::al_spin> al(m_climtx);
+	std::lock_guard<std::mutex> lock(m_climtx) ;
 #endif
 
 	if (cli)
@@ -79,7 +112,7 @@ bool client_manager::pop_client(NETHANDLE id)
 #ifdef LIBNET_USE_CORE_SYNC_MUTEX
 	auto_lock::al_lock<auto_lock::al_mutex> al(m_climtx);
 #else
-	auto_lock::al_lock<auto_lock::al_spin> al(m_climtx);
+	std::lock_guard<std::mutex> lock(m_climtx);
 #endif
 
 	auto iter = m_clients.find(id);
@@ -103,10 +136,10 @@ void client_manager::pop_server_clients(NETHANDLE srvid)
 #ifdef LIBNET_USE_CORE_SYNC_MUTEX
 	auto_lock::al_lock<auto_lock::al_mutex> al(m_climtx);
 #else
-	auto_lock::al_lock<auto_lock::al_spin> al(m_climtx);
+	std::lock_guard<std::mutex> lock(m_climtx);
 #endif
 
-	for (auto iter = m_clients.begin(); m_clients.end() != iter;)
+	for (auto  iter = m_clients.begin(); m_clients.end() != iter;)
 	{
 		if (iter->second && (iter->second->get_server_id() == srvid))
 		{
@@ -125,14 +158,14 @@ void client_manager::pop_all_clients()
 #ifdef LIBNET_USE_CORE_SYNC_MUTEX
 	auto_lock::al_lock<auto_lock::al_mutex> al(m_climtx);
 #else
-	auto_lock::al_lock<auto_lock::al_spin> al(m_climtx);
+	std::lock_guard<std::mutex> lock(m_climtx);
 #endif
 
-	for (auto iter = m_clients.begin(); iter != m_clients.end(); ++iter)
+	for (auto iter: m_clients)
 	{
-		if (iter->second)
+		if (iter.second)
 		{
-			iter->second->close();
+			iter.second->close();
 		}
 	}
 
@@ -144,11 +177,11 @@ client_ptr client_manager::get_client(NETHANDLE id)
 #ifdef LIBNET_USE_CORE_SYNC_MUTEX
 	auto_lock::al_lock<auto_lock::al_mutex> al(m_climtx);
 #else
-	auto_lock::al_lock<auto_lock::al_spin> al(m_climtx);
+	std::lock_guard<std::mutex> lock(m_climtx);
 #endif
 
-	client_ptr cli;
-	auto iter = m_clients.find(id);
+	client_ptr cli = nullptr  ;
+	auto  iter = m_clients.find(id);
 	if (m_clients.end() != iter)
 	{
 		cli = iter->second;
