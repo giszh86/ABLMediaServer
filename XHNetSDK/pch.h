@@ -4,12 +4,8 @@
 // 但是，如果此处列出的文件中的任何一个在生成之间有更新，它们全部都将被重新编译。
 // 请勿在此处添加要频繁更新的文件，这将使得性能优势无效。
 
-#ifndef PCH_H
-#define PCH_H
-
-// 添加要在此处预编译的标头
-#include "framework.h"
-
+#pragma once
+#define _WIN32_WINNT 0x0A00 
 
 #pragma comment(lib, "../3rd/boost_1_73_0/boost_intall/lib/libboost_system-vc142-mt-x64-1_73.lib")
 #pragma comment(lib, "../3rd/boost_1_73_0/boost_intall/lib/libboost_thread-vc142-mt-s-x64-1_73.lib")
@@ -27,4 +23,3 @@
 
 
 
-#endif //PCH_H

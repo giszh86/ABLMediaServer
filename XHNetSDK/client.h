@@ -1,22 +1,14 @@
 #pragma  once
 #ifdef USE_BOOST
+
 #include <boost/atomic.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/shared_array.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/asio.hpp>
-#else
-#include <memory>
-#include <atomic>
-#include <asio.hpp>
-# include "asio/deadline_timer.hpp"
-#endif
-
 #include "data_define.h"
 #include "libnet.h"
 #include "circular_buffer.h"
-//#define  _WIN32_WINNT 0x0A00
-#ifdef USE_BOOST
 
 class client : public boost::enable_shared_from_this<client>
 {
@@ -26,12 +18,7 @@ public:
 		read_callback fnread,
 		close_callback fnclose,
 		bool autoread);
-	client(boost::asio::io_context& ioc);
 	~client();
-	void init(NETHANDLE srvhandle,
-		read_callback fnread,
-		close_callback fnclose,
-		bool autoread);
 
 	NETHANDLE get_id();
 	NETHANDLE get_server_id() const;
@@ -104,9 +91,6 @@ private:
 	circular_buffer m_circularbuff;
 	uint8_t* m_currwriteaddr;
 	uint32_t m_currwritesize;
-public:
-	client* prev_;
-	client* next_;
 };
 typedef boost::shared_ptr<client>  client_ptr;
 
@@ -125,7 +109,17 @@ inline NETHANDLE client::get_server_id() const
 	return m_srvid;
 }
 
+
 #else
+#define _WIN32_WINNT 0x0A00 
+#include <memory>
+#include <atomic>
+#include <asio.hpp>
+# include "asio/deadline_timer.hpp"
+#include "data_define.h"
+#include "libnet.h"
+#include "circular_buffer.h"
+
 class client : public std::enable_shared_from_this<client>
 {
 public:
@@ -134,13 +128,7 @@ public:
 		read_callback fnread,
 		close_callback fnclose,
 		bool autoread);
-	client(asio::io_context& ioc);
 	~client();
-	void init(NETHANDLE srvhandle,
-		read_callback fnread,
-		close_callback fnclose,
-		bool autoread);
-
 
 	NETHANDLE get_id();
 	NETHANDLE get_server_id() const;
@@ -167,7 +155,7 @@ private:
 	void handle_write(std::error_code ec, size_t transize);
 	void handle_read(std::error_code ec, size_t transize);
 	void handle_connect(std::error_code ec);
-	void handle_connect_timeout( std::error_code ec);
+	void handle_connect_timeout(std::error_code ec);
 	bool write_packet();
 
 private:
@@ -180,42 +168,25 @@ private:
 	std::atomic<bool> m_closeflag;
 
 	//connect
-	asio::steady_timer stop_timer_;
+	asio::steady_timer m_timer;
 
 	//read
-#ifdef LIBNET_MULTI_THREAD_RECV
-#ifdef LIBNET_USE_CORE_SYNC_MUTEX
-	auto_lock::al_mutex m_readmtx;
-#else
-	auto_lock::al_spin m_readmtx;
-#endif
-#endif
-	bool m_autoread;
+	std::mutex m_readmtx;                //»¥³âËø	
+
+	const bool m_autoread;
 	uint8_t* m_readbuff;
 	bool m_inreading;
 	uint8_t* m_usrreadbuffer;
 
 	//write
-#ifdef LIBNET_MULTI_THREAD_SEND
-#ifdef LIBNET_USE_CORE_SYNC_MUTEX
-	auto_lock::al_mutex m_writemtx;
-#else
-	auto_lock::al_spin m_writemtx;
-#endif
-#endif
+	std::mutex m_writemtx;                //»¥³âËø	
+	std::mutex m_autowrmtx;                //»¥³âËø	
 
-#ifdef LIBNET_USE_CORE_SYNC_MUTEX
-	auto_lock::al_mutex m_autowrmtx;
-#else
-	auto_lock::al_spin m_autowrmtx;
-#endif
 	bool m_onwriting;
 	circular_buffer m_circularbuff;
 	uint8_t* m_currwriteaddr;
 	uint32_t m_currwritesize;
-public:
-	client* prev_;
-	client* next_;
+
 };
 typedef std::shared_ptr<client>  client_ptr;
 
@@ -233,6 +204,7 @@ inline NETHANDLE client::get_server_id() const
 {
 	return m_srvid;
 }
+
 
 #endif
 

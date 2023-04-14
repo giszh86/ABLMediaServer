@@ -176,7 +176,6 @@ server_ptr server_manager::get_server(NETHANDLE id)
 	{
 		s = iter->second;
 	}
-
 	return s;
 }
 

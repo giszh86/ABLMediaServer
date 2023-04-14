@@ -1,10 +1,9 @@
 #ifdef USE_BOOST
-
-
 #include <boost/bind.hpp>
 #include "client_manager.h"
 #include "libnet_error.h"
 #include "identifier_generator.h"
+#include <malloc.h>
 
 client::client(boost::asio::io_context& ioc,
 	NETHANDLE srvid,
@@ -39,39 +38,9 @@ client::~client(void)
 		m_readbuff = NULL;
 	}
 	m_circularbuff.uninit();
+	malloc_trim(0);
 }
 
-
-
-client::client(boost::asio::io_context& ioc)
-	: m_socket(ioc)
-	, m_fnconnect(NULL)
-	, m_closeflag(false)
-	, m_timer(ioc)
-	, m_inreading(false)
-	, m_usrreadbuffer(NULL)
-	, m_onwriting(false)
-	, m_currwriteaddr(NULL)
-	, m_currwritesize(0)
-	, m_autoread(false)
-{
-	m_readbuff = new uint8_t[CLIENT_MAX_RECV_BUFF_SIZE];
-}
-
-
-
-
-void client::init(
-	NETHANDLE srvid,
-	read_callback fnread,
-	close_callback fnclose,
-	bool autoread)
-{
-	m_srvid = srvid;
-	m_fnread = fnread;
-	m_fnclose = fnclose;
-	
-}
 int32_t client::run()
 {
 	if (!m_autoread)
@@ -218,7 +187,7 @@ void client::handle_write(const boost::system::error_code& ec, size_t transize)
 {
 	if (ec)
 	{
-		if (client_manager_singleton->pop_client(get_id()))
+		if (client_manager_singleton::get_mutable_instance().pop_client(get_id()))
 		{
 			if (m_fnclose)
 			{
@@ -245,7 +214,7 @@ void client::handle_read(const boost::system::error_code& ec, size_t transize)
 {
 	if (ec)
 	{
-		if (client_manager_singleton->pop_client(get_id()))
+		if (client_manager_singleton::get_mutable_instance().pop_client(get_id()))
 		{
 			if (m_fnclose)
 			{
@@ -308,7 +277,7 @@ void client::handle_connect(const boost::system::error_code& ec)
 
 	if (ec)
 	{
-		if (client_manager_singleton->pop_client(get_id()))
+		if (client_manager_singleton::get_mutable_instance().pop_client(get_id()))
 		{
 			if (m_fnconnect)
 			{
@@ -365,7 +334,7 @@ int32_t client::read(uint8_t* buffer,
 			if (err || (0 == readsize))
 			{
 				*buffsize = 0;
-				client_manager_singleton->pop_client(get_id());
+				client_manager_singleton::get_mutable_instance().pop_client(get_id());
 				return e_libnet_err_clireaddata;
 			}
 			else
@@ -379,7 +348,7 @@ int32_t client::read(uint8_t* buffer,
 			if (err || (0 == readsize))
 			{
 				*buffsize = 0;
-				client_manager_singleton->pop_client(get_id());
+				client_manager_singleton::get_mutable_instance().pop_client(get_id());
 				return e_libnet_err_clireaddata;
 			}
 			else
@@ -471,7 +440,7 @@ int32_t client::write(uint8_t* data,
 		}
 		else
 		{
-			client_manager_singleton->pop_client(get_id());
+			client_manager_singleton::get_mutable_instance().pop_client(get_id());
 			return e_libnet_err_cliwritedata;
 		}
 	}
@@ -552,6 +521,7 @@ void client::handle_connect_timeout(const boost::system::error_code& ec)
 #include "client_manager.h"
 #include "libnet_error.h"
 #include "identifier_generator.h"
+#include <malloc.h>
 
 client::client(asio::io_context& ioc,
 	NETHANDLE srvid,
@@ -565,51 +535,36 @@ client::client(asio::io_context& ioc,
 	, m_fnclose(fnclose)
 	, m_fnconnect(NULL)
 	, m_closeflag(false)
-	, stop_timer_(ioc)
+	, m_timer(ioc)
 	, m_autoread(autoread)
 	, m_inreading(false)
 	, m_usrreadbuffer(NULL)
 	, m_onwriting(false)
 	, m_currwriteaddr(NULL)
 	, m_currwritesize(0)
-
 {
 	m_readbuff = new uint8_t[CLIENT_MAX_RECV_BUFF_SIZE];
 }
 
-
-client::client(asio::io_context& ioc)
-	: m_socket(ioc)
-	, m_fnconnect(NULL)
-	, m_closeflag(false)
-	, stop_timer_(ioc)
-	, m_inreading(false)
-	, m_usrreadbuffer(NULL)
-	, m_onwriting(false)
-	, m_currwriteaddr(NULL)
-	, m_currwritesize(0)
-{
-
-	m_readbuff = new uint8_t[CLIENT_MAX_RECV_BUFF_SIZE];
-}
 
 
 client::~client(void)
 {
 	recycle_identifier(m_id);
+	if (m_readbuff != NULL)
+	{
+		delete[] m_readbuff;
+		m_readbuff = NULL;
+	}
+	m_circularbuff.uninit();
+#ifndef _WIN32
+	malloc_trim(0);
+#endif // _WIN32
+
+	
 }
 
-void client::init(
-	NETHANDLE srvid,
-	read_callback fnread,
-	close_callback fnclose,
-	bool autoread)
-{
-	m_srvid = srvid;
-	m_fnread = fnread;
-	m_fnclose = fnclose;
-	m_autoread = autoread;
-}
+
 
 
 int32_t client::run()
@@ -735,19 +690,15 @@ int32_t client::connect(int8_t* remoteip,
 	//connect timeout
 	if (timeout > 0)
 	{
-		//stop_timer_.expires_from_now(boost::posix_time::milliseconds(timeout));
-		//stop_timer_.async_wait(boost::bind(&client::handle_connect_timeout, shared_from_this(), boost::asio::placeholders::error));
-	
-		stop_timer_.expires_after(asio::chrono::seconds(timeout));
-		stop_timer_.async_wait(std::bind(&client::handle_connect_timeout, shared_from_this(), std::placeholders::_1));
-
+		m_timer.expires_after(asio::chrono::seconds(timeout));
+		m_timer.async_wait(std::bind(&client::handle_connect_timeout, shared_from_this(), std::placeholders::_1));
 	}
 
 	//connect
 	if (blocked)
 	{
 		m_socket.connect(srvep, err);
-		stop_timer_.cancel();
+		m_timer.cancel();
 		if (!err)
 		{
 			run();
@@ -785,11 +736,7 @@ void client::handle_write( std::error_code ec, size_t transize)
 	m_currwriteaddr = NULL;
 	m_currwritesize = 0;
 
-#ifdef LIBNET_USE_CORE_SYNC_MUTEX
-	auto_lock::al_lock<auto_lock::al_mutex> al(m_autowrmtx);
-#else
-	auto_lock::al_lock<auto_lock::al_spin> al(m_autowrmtx);
-#endif
+	std::unique_lock<std::mutex> _lock(m_autowrmtx);
 	m_onwriting = write_packet();
 }
 
@@ -871,7 +818,7 @@ void client::handle_read(std::error_code ec, size_t transize)
 
 void client::handle_connect(std::error_code ec)
 {
-	stop_timer_.cancel();
+	m_timer.cancel();
 
 	if (ec)
 	{
@@ -899,13 +846,7 @@ int32_t client::read(uint8_t* buffer,
 	bool blocked,
 	bool certain)
 {
-#ifdef LIBNET_MULTI_THREAD_RECV
-#ifdef LIBNET_USE_CORE_SYNC_MUTEX
-	auto_lock::al_lock<auto_lock::al_mutex> al(m_readmtx);
-#else
-	auto_lock::al_lock<auto_lock::al_spin> al(m_readmtx);
-#endif
-#endif
+	std::unique_lock<std::mutex> _lock(m_readmtx);
 
 	if (!buffer || !buffsize || (0 == *buffsize))
 	{
@@ -993,13 +934,7 @@ int32_t client::write(uint8_t* data,
 	uint32_t datasize,
 	bool blocked)
 {
-#ifdef LIBNET_MULTI_THREAD_SEND
-#ifdef LIBNET_USE_CORE_SYNC_MUTEX
-	auto_lock::al_lock<auto_lock::al_mutex> al(m_writemtx);
-#else
-	auto_lock::al_lock<auto_lock::al_spin> al(m_writemtx);
-#endif
-#endif
+	std::unique_lock<std::mutex> _lock(m_writemtx);
 
 	int32_t ret = e_libnet_err_noerror;
 	int32_t datasize2 = datasize;
@@ -1056,12 +991,8 @@ int32_t client::write(uint8_t* data,
 		{
 			ret = e_libnet_err_cliwritebufffull;
 		}
+		std::unique_lock<std::mutex> _lock(m_autowrmtx);
 
-#ifdef LIBNET_USE_CORE_SYNC_MUTEX
-		auto_lock::al_lock<auto_lock::al_mutex> al(m_autowrmtx);
-#else
-		auto_lock::al_lock<auto_lock::al_spin> al(m_autowrmtx);
-#endif
 		if (!m_onwriting)
 		{
 			m_onwriting = write_packet();

@@ -1,36 +1,20 @@
-#ifndef _CLIENT_MANAGER_H_
-#define _CLIENT_MANAGER_H_ 
+#pragma once
+
 
 #ifdef USE_BOOST
+
+
 #include <boost/unordered_map.hpp>
 #include <boost/serialization/singleton.hpp>
 #include <boost/smart_ptr/shared_ptr.hpp>
-
 #include "client.h"
 #include "unordered_object_pool.h"
-#include "HSingleton.h"
-#else
-#include "unordered_object_pool.h"
-#include <map>
-#include "HSingleton.h"
-#include <memory>
-#include "client.h"
-#endif
-
 
 #define CLIENT_POOL_OBJECT_COUNT 1000
 #define CLIENT_POOL_MAX_KEEP_COUNT 100 
 
-#ifdef USE_BOOST
-
 typedef simple_pool::unordered_object_pool<client> client_pool;
 typedef boost::shared_ptr<client_pool> client_pool_ptr;
-#else
-typedef simple_pool::unordered_object_pool<client> client_pool;
-typedef std::shared_ptr<client_pool> client_pool_ptr;
-
-#endif
-
 
 class client_manager
 {
@@ -38,21 +22,11 @@ public:
 	client_manager(void);
 	~client_manager(void);
 
-#ifdef USE_BOOST
-
 	client_ptr malloc_client(boost::asio::io_context& ioc,
 		NETHANDLE srvid,
 		read_callback fnread,
 		close_callback fnclose,
 		bool autoread);
-#else
-	client_ptr malloc_client(asio::io_context& ioc,
-		NETHANDLE srvid,
-		read_callback fnread,
-		close_callback fnclose,
-		bool autoread);
-#endif
-
 	void free_client(client* cli);
 	bool push_client(client_ptr& cli);
 	bool pop_client(NETHANDLE id);
@@ -61,17 +35,8 @@ public:
 	client_ptr get_client(NETHANDLE id);
 
 private:
-#ifdef USE_BOOST
-
 	typedef boost::unordered_map<NETHANDLE, client_ptr>::iterator climapiter;
 	typedef boost::unordered_map<NETHANDLE, client_ptr>::const_iterator const_climapiter;
-
-#else
-
-	//typedef std::map<NETHANDLE, client_ptr>::iterator climapiter;
-	//typedef std::map<NETHANDLE, client_ptr>::const_iterator const_climapiter;
-
-#endif
 
 private:
 	client_pool m_pool;
@@ -81,26 +46,67 @@ private:
 	auto_lock::al_spin m_poolmtx;
 #endif
 
-#ifdef USE_BOOST
 	boost::unordered_map<NETHANDLE, client_ptr> m_clients;
-#else
-
-	std::map<NETHANDLE, client_ptr> m_clients;
-#endif
-
 #ifdef LIBNET_USE_CORE_SYNC_MUTEX
 	auto_lock::al_mutex m_climtx;
 #else
-	std::mutex          m_climtx;
+	auto_lock::al_spin m_climtx;
 #endif
 };
 
-#ifdef USE_BOOST11
 typedef boost::serialization::singleton<client_manager> client_manager_singleton;
+
 #else
+#include <memory>
+#include <map>
+#include "HSingleton.h"
+#include "client.h"
+#include "unordered_object_pool.h"
+
+
+#define CLIENT_POOL_OBJECT_COUNT 1000
+#define CLIENT_POOL_MAX_KEEP_COUNT 100 
+
+
+typedef simple_pool::unordered_object_pool<client> client_pool;
+typedef std::shared_ptr<client_pool> client_pool_ptr;
+
+
+
+class client_manager
+{
+public:
+	client_manager(void);
+	~client_manager(void);
+
+
+	client_ptr malloc_client(asio::io_context& ioc,
+		NETHANDLE srvid,
+		read_callback fnread,
+		close_callback fnclose,
+		bool autoread);
+
+
+	void free_client(client* cli);
+	bool push_client(client_ptr& cli);
+	bool pop_client(NETHANDLE id);
+	void pop_server_clients(NETHANDLE srvid);
+	void pop_all_clients();
+	client_ptr get_client(NETHANDLE id);
+
+private:
+
+private:
+	client_pool m_pool;
+	std::mutex          m_poolmtx;
+	std::mutex          m_climtx;
+	std::map<NETHANDLE, client_ptr> m_clients;
+
+
+};
+
 #define client_manager_singleton HSingletonTemplatePtr<client_manager>::Instance()
+
+
 #endif
 
-
-
-#endif
