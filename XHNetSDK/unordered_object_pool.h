@@ -367,45 +367,80 @@ namespace simple_pool {
 		unordered_object_pool(const size_type arg_next_size = 32, const size_type arg_max_size = 0)
 			: m_next_size(arg_next_size), m_max_size(arg_max_size), m_used_list()
 		{
+			// 为内存池分配 m_max_size 个 T 对象的内存
+			m_pool = static_cast<element_type*>(m_user_allocator.allocate(m_max_size));
 		}
 
 		~unordered_object_pool()
 		{
-			for (void* p : m_used_list)
+			// 销毁已分配的 T 对象并释放内存
+			for (auto p : m_used_list)
 			{
-				static_cast<T*>(p)->~T();
-				m_user_allocator.deallocate(static_cast<T*>(p), 1);
+				p->~T();
+				m_user_allocator.deallocate(p, 1);
 			}
+
+			// 释放内存池的内存
+			m_user_allocator.deallocate(m_pool, m_max_size);
 		}
 
 		element_type* malloc()
 		{
-			element_type* const chunk = m_user_allocator.allocate(1);
-			if (chunk != nullptr)
+			if (m_used_list.size() >= m_max_size)
 			{
-				m_used_list.insert(chunk);
+				return nullptr;
 			}
+
+			if (m_free_list.empty())
+			{
+				// 如果空闲链表为空，就从内存池中分配一些内存并添加到空闲链表中
+				size_t new_size = (std::min)(m_next_size, m_max_size - m_used_list.size());
+				element_type* p_new = static_cast<element_type*>(m_user_allocator.allocate(new_size * sizeof(T)));
+
+				for (size_t i = 0; i < new_size; ++i)
+				{
+					m_free_list.push_back(p_new + i);
+				}
+			}
+
+			// 从空闲链表中取出一个 T 对象
+			element_type* const chunk = m_free_list.back();
+			m_free_list.pop_back();
+
+			// 将该对象添加到已用集合中
+			m_used_list.insert(chunk);
 			return chunk;
+
 		}
 
 		void free(element_type* const chunk)
 		{
 			if (chunk != nullptr)
 			{
+				// 从已用集合中删除该对象
 				m_used_list.erase(chunk);
-				m_user_allocator.deallocate(chunk, 1);
+				// 将该对象添加到空闲链表中
+				m_free_list.push_back(chunk);
 			}
 		}
 
 		bool is_from(element_type* const chunk) const
 		{
-			const void* const p = static_cast<const void*>(chunk);
-			return m_used_list.find(p) != m_used_list.end();
-		//	return (chunk >= m_pool) && (chunk < m_pool + m_max_size);
+			// 判断一个对象是否来自于该内存池
+
+			return (reinterpret_cast<char*>(chunk) >= m_pool) &&
+				(reinterpret_cast<char*>(chunk) < m_pool + m_max_size);
+
+			//   // 检查指针是否在内存池中
+	/*		const void* const p = static_cast<const void*>(chunk);
+			return m_used_list.find(p) != m_used_list.end();*/
 		}
+
+		
 
 		element_type* construct()
 		{
+			// 分配一个 T 对象并调用其默认构造函数
 			element_type* const ret = malloc();
 			if (ret != nullptr)
 			{
@@ -414,6 +449,23 @@ namespace simple_pool {
 			}
 			return ret;
 		}
+		template <typename... Args>
+		element_type* construct(Args&&... args)
+		{
+			element_type* const chunk = malloc();
+			if (chunk == nullptr) {
+				return nullptr;
+			}
+			try {
+				new (chunk) element_type(std::forward<Args>(args)...);
+			}
+			catch (...) {
+				free(chunk);
+				throw;
+			}
+			return chunk;
+		}
+
 
 		template<typename T0, typename T1>
 		element_type* construct(const T0& a0, const T1& a1) const
@@ -665,6 +717,8 @@ namespace simple_pool {
 		size_type m_next_size;
 		user_allocator m_user_allocator;
 		std::set<element_type*> m_used_list;
+		std::vector<element_type*> m_free_list;
+		element_type* m_pool;
 	};
 }
 

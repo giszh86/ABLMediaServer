@@ -1,27 +1,22 @@
 #pragma  once 
-
-#include <vector>
-#include "auto_lock.h"
-#include "thread_pool/thread_pool.h"
 #ifdef USE_BOOST
 
+
+#include <vector>
 #include <boost/asio.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/thread.hpp>
+#include "auto_lock.h"
+
 class io_context_pool : public boost::noncopyable
 {
-
 public:
 	io_context_pool();
 
 	~io_context_pool();
 
-	uint32_t get_thread_count() const 
-	{ 
-		return static_cast<uint32_t>(GSThreadPool->getThreadNum());
-	
-	}
+	uint32_t get_thread_count() const { return static_cast<uint32_t>(m_threads.size()); }
 
 	bool is_init();
 
@@ -55,10 +50,14 @@ inline bool io_context_pool::is_init()
 {
 	return m_isinit;
 }
+
 #else
+
+#include <vector>
 #include <asio.hpp>
 #include <memory>
 #include <thread>
+#include "auto_lock.h"
 #include "thread_pool/thread_pool.h"
 
 class io_context_pool : public asio::detail::noncopyable
@@ -103,5 +102,7 @@ inline bool io_context_pool::is_init()
 {
 	return m_isinit;
 }
+
+
 #endif
 

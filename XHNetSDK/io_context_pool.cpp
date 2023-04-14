@@ -6,7 +6,7 @@
 #include "io_context_pool.h"
 #include "libnet_error.h"
 #include "data_define.h"
-#include "thread_pool/thread_pool.h"
+
 io_context_pool::io_context_pool()
 	: m_nextioc(0)
 	, m_isinit(false)
@@ -92,19 +92,15 @@ int32_t io_context_pool::run()
 		{
 			try
 			{
-				/*		f.clear();
+				f.clear();
 
-			do
+				do
 				{
 					f = boost::bind(&boost::asio::io_context::run, m_iocontexts[i]);
 				} while (!f);
 
-				m_threads.create_thread(f);*/
-				GSThreadPool->append([&, i]() {
+				m_threads.create_thread(f);
 
-					m_iocontexts[i]->run();
-
-					});
 				ret = e_libnet_err_noerror;
 
 				++c;
@@ -141,8 +137,8 @@ void io_context_pool::close()
 	}
 
 	m_iocontexts.clear();
-	GSThreadPool->Destory();
-//	m_threads.join_all();
+
+	m_threads.join_all();
 
 	m_isinit = false;
 }
@@ -169,24 +165,17 @@ boost::asio::io_context& io_context_pool::get_io_context()
 
 
 #else
-
+#include <memory>
+#include <functional>
 #include "io_context_pool.h"
 #include "libnet_error.h"
 #include "data_define.h"
-
-
-
-#include <memory>
-#include <functional>
-
-
 
 
 io_context_pool::io_context_pool()
 	: m_nextioc(0)
 	, m_isinit(false)
 	, m_periocthread(IOC_POOL_PREDEFINE_PER_IOC_THREAS)
-
 {
 }
 
@@ -277,7 +266,7 @@ int32_t io_context_pool::run()
 					m_iocontexts[i]->run();
 
 					});
-				//m_threads.create_thread(f);
+	
 
 				ret = e_libnet_err_noerror;
 
