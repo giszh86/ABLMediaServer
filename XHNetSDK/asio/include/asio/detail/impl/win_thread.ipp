@@ -103,8 +103,8 @@ void win_thread::start_thread(func_base* arg, unsigned int stack_size)
 
   if (entry_event)
   {
-    ::WaitForSingleObject(entry_event, INFINITE);
-    ::CloseHandle(entry_event);
+	  ::WaitForSingleObject(entry_event, INFINITE);
+	  ::CloseHandle(entry_event);
   }
 }
 

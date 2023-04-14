@@ -21,7 +21,7 @@ struct client_deletor
 #ifdef USE_BOOST
 
 client_manager::client_manager(void)
-	: m_pool(CLIENT_POOL_OBJECT_COUNT, CLIENT_POOL_OBJECT_COUNT)
+	: m_pool()
 {
 }
 #else
@@ -52,7 +52,8 @@ client_ptr client_manager::malloc_client(boost::asio::io_context& ioc,
 
 	client_ptr cli;
 	cli.reset(m_pool.construct(ioc, srvid, fnread, fnclose, autoread), client_deletor());
-
+	//cli.reset(m_pool.allocA(ioc), client_deletor());
+	//cli->init(srvid, fnread, fnclose, autoread);
 	return cli;
 }
 #else
@@ -69,9 +70,9 @@ client_ptr client_manager::malloc_client(asio::io_context& ioc,
 #endif
 
 	client_ptr cli;
-	//cli.reset(m_pool.construct(ioc, srvid, fnread, fnclose, autoread), client_deletor());
-	cli.reset(m_pool.allocA(ioc), client_deletor());
-	cli->init(srvid, fnread, fnclose, autoread);
+	cli.reset(m_pool.construct(ioc, srvid, fnread, fnclose, autoread), client_deletor());
+	//cli.reset(m_pool.allocA(ioc), client_deletor());
+	//cli->init(srvid, fnread, fnclose, autoread);
 	return cli;
 }
 

@@ -189,7 +189,7 @@ void server::handle_accept(client_ptr c, const boost::system::error_code& ec)
 	}
 	else
 	{
-		if (server_manager_singleton::get_mutable_instance().pop_server(get_id()))
+		if (server_manager_singleton->pop_server(get_id()))
 		{
 			if (m_fnclose)
 			{
@@ -392,7 +392,7 @@ void server::handle_accept(client_ptr c, std::error_code ec)
 	}
 	else
 	{
-		if (server_manager_singleton::get_mutable_instance().pop_server(get_id()))
+		if (server_manager_singleton->pop_server(get_id()))
 		{
 			if (m_fnclose)
 			{

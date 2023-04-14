@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="头文件\thread_pool">
+      <UniqueIdentifier>{3963c27c-cc3f-48de-b58c-7fbfde32abf1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -69,11 +72,8 @@
     <ClInclude Include="HSingleton.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="class_obj_pool.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="zzc_object_pool.h">
-      <Filter>头文件</Filter>
+    <ClInclude Include="thread_pool\thread_pool.h">
+      <Filter>头文件\thread_pool</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -109,6 +109,9 @@
     </ClCompile>
     <ClCompile Include="udp_session_manager.cpp">
       <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="thread_pool\thread_pool.cpp">
+      <Filter>头文件\thread_pool</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

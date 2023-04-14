@@ -167,7 +167,10 @@ namespace zzc {
 				object_pool_access::prev(o) = 0;
 				free_list_ = o;
 			}
-
+			void destroy(Object* o)
+			{
+				free(o);
+			}
 		private:
 			// Helper function to destroy all elements in a list.
 			void destroy_list(Object* list)

@@ -26,7 +26,12 @@ public:
 		read_callback fnread,
 		close_callback fnclose,
 		bool autoread);
+	client(boost::asio::io_context& ioc);
 	~client();
+	void init(NETHANDLE srvhandle,
+		read_callback fnread,
+		close_callback fnclose,
+		bool autoread);
 
 	NETHANDLE get_id();
 	NETHANDLE get_server_id() const;
@@ -99,6 +104,9 @@ private:
 	circular_buffer m_circularbuff;
 	uint8_t* m_currwriteaddr;
 	uint32_t m_currwritesize;
+public:
+	client* prev_;
+	client* next_;
 };
 typedef boost::shared_ptr<client>  client_ptr;
 
@@ -126,7 +134,13 @@ public:
 		read_callback fnread,
 		close_callback fnclose,
 		bool autoread);
+	client(asio::io_context& ioc);
 	~client();
+	void init(NETHANDLE srvhandle,
+		read_callback fnread,
+		close_callback fnclose,
+		bool autoread);
+
 
 	NETHANDLE get_id();
 	NETHANDLE get_server_id() const;
@@ -176,7 +190,7 @@ private:
 	auto_lock::al_spin m_readmtx;
 #endif
 #endif
-	const bool m_autoread;
+	bool m_autoread;
 	uint8_t* m_readbuff;
 	bool m_inreading;
 	uint8_t* m_usrreadbuffer;
@@ -199,6 +213,9 @@ private:
 	circular_buffer m_circularbuff;
 	uint8_t* m_currwriteaddr;
 	uint32_t m_currwritesize;
+public:
+	client* prev_;
+	client* next_;
 };
 typedef std::shared_ptr<client>  client_ptr;
 

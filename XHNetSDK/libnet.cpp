@@ -7,9 +7,12 @@
 #include "udp_session_manager.h"
 #include "identifier_generator.h"
 
+
 #ifdef USE_BOOST
 #include <boost/make_shared.hpp>
 #include <boost/ref.hpp>
+#else
+#include <memory>
 #endif
 
 
@@ -22,7 +25,7 @@ auto_lock::al_mutex g_initmtx;
 auto_lock::al_spin g_initmtx;
 #endif
 
-int32_t XHNetSDK_Init(uint32_t ioccount,
+LIBNET_API int32_t XHNetSDK_Init(uint32_t ioccount,
 							   uint32_t periocthread)
 {
 #ifdef LIBNET_USE_CORE_SYNC_MUTEX
@@ -49,7 +52,7 @@ int32_t XHNetSDK_Init(uint32_t ioccount,
 	return g_initret;
 }
 
-int32_t XHNetSDK_Deinit()
+LIBNET_API int32_t XHNetSDK_Deinit()
 {
 #ifdef LIBNET_USE_CORE_SYNC_MUTEX
 	auto_lock::al_lock<auto_lock::al_mutex> al(g_initmtx);
@@ -79,13 +82,16 @@ int32_t XHNetSDK_Deinit()
 	return ret;
 }
 
-int32_t XHNetSDK_Listen(int8_t* localip,
-								 uint16_t localport,
-								 NETHANDLE* srvhandle,
-								 accept_callback fnaccept,
-								 read_callback fnread,
-								 close_callback fnclose,
-								 uint8_t autoread)
+
+#ifdef USE_BOOST
+
+LIBNET_API int32_t XHNetSDK_Listen(int8_t* localip,
+	uint16_t localport,
+	NETHANDLE* srvhandle,
+	accept_callback fnaccept,
+	read_callback fnread,
+	close_callback fnclose,
+	uint8_t autoread)
 {
 	int32_t ret = e_libnet_err_noerror;
 
@@ -101,7 +107,93 @@ int32_t XHNetSDK_Listen(int8_t* localip,
 	{
 		*srvhandle = INVALID_NETHANDLE;
 
-		asio::error_code ec;
+
+		boost::system::error_code ec;
+		boost::asio::ip::address addr = boost::asio::ip::address::from_string(reinterpret_cast<char*>(localip), ec);
+		if (ec)
+		{
+			ret = e_libnet_err_srvinvalidip;
+		}
+		else
+		{
+			boost::asio::ip::tcp::endpoint endpoint(addr, localport);
+
+			try
+			{
+
+#ifdef USE_BOOST
+
+				server_ptr s = boost::make_shared<server>(boost::ref(g_iocpool.get_io_context()), boost::ref(endpoint),
+					fnaccept, fnread, fnclose, (0 != autoread) ? true : false);
+
+#else
+				server_ptr s = std::make_shared<server>(std::ref(g_iocpool.get_io_context()), boost::ref(endpoint),
+					fnaccept, fnread, fnclose, (0 != autoread) ? true : false);
+
+
+#endif
+
+
+				if (server_manager_singleton->push_server(s))
+				{
+					ret = s->run();
+					if (e_libnet_err_noerror == ret)
+					{
+						*srvhandle = s->get_id();
+					}
+					else
+					{
+						server_manager_singleton->pop_server(s->get_id());
+					}
+				}
+				else
+				{
+					s->close();
+					ret = e_libnet_err_srvmanage;
+				}
+			}
+			catch (const std::bad_alloc& /*e*/)
+			{
+				ret = e_libnet_err_srvcreate;
+			}
+			catch (...)
+			{
+				ret = e_libnet_err_srvcreate;
+			}
+
+		}
+	}
+
+	return ret;
+}
+
+
+#else
+
+LIBNET_API int32_t XHNetSDK_Listen(int8_t* localip,
+	uint16_t localport,
+	NETHANDLE* srvhandle,
+	accept_callback fnaccept,
+	read_callback fnread,
+	close_callback fnclose,
+	uint8_t autoread)
+{
+	int32_t ret = e_libnet_err_noerror;
+
+	if (e_libnet_err_noerror != g_initret)
+	{
+		ret = e_libnet_err_noninit;
+	}
+	else if (!localip || (0 == localport) || !srvhandle)
+	{
+		ret = e_libnet_err_invalidparam;
+	}
+	else
+	{
+		*srvhandle = INVALID_NETHANDLE;
+
+
+		std::error_code ec;
 		asio::ip::address addr = asio::ip::address::from_string(reinterpret_cast<char*>(localip), ec);
 		if (ec)
 		{
@@ -113,7 +205,9 @@ int32_t XHNetSDK_Listen(int8_t* localip,
 
 			try
 			{
-				server_ptr s = std::make_shared<server>((g_iocpool.get_io_context()), (endpoint), 
+
+
+				auto s = std::make_shared<server>(std::ref(g_iocpool.get_io_context()), std::ref(endpoint),
 					fnaccept, fnread, fnclose, (0 != autoread) ? true : false);
 
 				if (server_manager_singleton->push_server(s))
@@ -142,14 +236,17 @@ int32_t XHNetSDK_Listen(int8_t* localip,
 			{
 				ret = e_libnet_err_srvcreate;
 			}
-	
+
 		}
 	}
 
 	return ret;
 }
 
- int32_t XHNetSDK_Unlisten(NETHANDLE srvhandle)
+
+#endif
+
+LIBNET_API int32_t XHNetSDK_Unlisten(NETHANDLE srvhandle)
 {
 	int32_t ret = e_libnet_err_noerror;
 
@@ -172,7 +269,7 @@ int32_t XHNetSDK_Listen(int8_t* localip,
 	return ret;
 }
 
- int32_t XHNetSDK_Connect(int8_t* remoteip,
+LIBNET_API int32_t XHNetSDK_Connect(int8_t* remoteip,
 	uint16_t remoteport,
 	int8_t* localip,
 	uint16_t locaport,
@@ -227,7 +324,7 @@ int32_t XHNetSDK_Listen(int8_t* localip,
 	return ret;
 }
 
- int32_t XHNetSDK_Disconnect(NETHANDLE clihandle)
+LIBNET_API int32_t XHNetSDK_Disconnect(NETHANDLE clihandle)
 {
 	int32_t ret = e_libnet_err_noerror;
 
@@ -250,7 +347,7 @@ int32_t XHNetSDK_Listen(int8_t* localip,
 	return ret;
 }
 
- int32_t XHNetSDK_Write(NETHANDLE clihandle,
+LIBNET_API int32_t XHNetSDK_Write(NETHANDLE clihandle,
 	uint8_t* data,
 	uint32_t datasize,
 	uint8_t blocked)
@@ -281,7 +378,7 @@ int32_t XHNetSDK_Listen(int8_t* localip,
 	return ret;
 }
 
- int32_t XHNetSDK_Read(NETHANDLE clihandle,
+LIBNET_API int32_t XHNetSDK_Read(NETHANDLE clihandle,
 	uint8_t* buffer,
 	uint32_t* buffsize,
 	uint8_t blocked,
@@ -313,7 +410,7 @@ int32_t XHNetSDK_Listen(int8_t* localip,
 	return ret;
 }
 
- int32_t XHNetSDK_BuildUdp(int8_t* localip,
+LIBNET_API int32_t XHNetSDK_BuildUdp(int8_t* localip,
 	uint16_t localport,
 	void* bindaddr,
 	NETHANDLE* udphandle,
@@ -336,8 +433,17 @@ int32_t XHNetSDK_Listen(int8_t* localip,
 
 		try
 		{
-			udp_session_ptr s = std::make_shared<udp_session>(g_iocpool.get_io_context());
 
+#ifdef USE_BOOST
+
+			udp_session_ptr s = boost::make_shared<udp_session>(boost::ref(g_iocpool.get_io_context()));
+
+#else
+			udp_session_ptr s = std::make_shared<udp_session>(std::ref(g_iocpool.get_io_context()));
+
+#endif
+
+		
 			if (udp_session_manager_singleton->push_udp_session(s))
 			{
 				ret = s->init(localip, localport, bindaddr, fnread, (0 != autoread) ? true : false);
@@ -370,7 +476,7 @@ int32_t XHNetSDK_Listen(int8_t* localip,
 	return ret;
 }
 
- int32_t XHNetSDK_DestoryUdp(NETHANDLE udphandle)
+LIBNET_API int32_t XHNetSDK_DestoryUdp(NETHANDLE udphandle)
 {
 	int32_t ret = e_libnet_err_noerror;
 
@@ -393,7 +499,7 @@ int32_t XHNetSDK_Listen(int8_t* localip,
 	return ret;
 }
 
- int32_t XHNetSDK_Sendto(NETHANDLE udphandle,
+LIBNET_API int32_t XHNetSDK_Sendto(NETHANDLE udphandle,
 	uint8_t* data,
 	uint32_t datasize,
 	void* remoteaddress)
@@ -424,7 +530,7 @@ int32_t XHNetSDK_Listen(int8_t* localip,
 	return ret;
 }
 
- int32_t XHNetSDK_Recvfrom(NETHANDLE udphandle,
+LIBNET_API int32_t XHNetSDK_Recvfrom(NETHANDLE udphandle,
 	uint8_t* buffer,
 	uint32_t* buffsize,
 	void* remoteaddress,
@@ -456,7 +562,7 @@ int32_t XHNetSDK_Listen(int8_t* localip,
 	return ret;
 }
 
- int32_t XHNetSDK_Multicast(NETHANDLE udphandle,
+LIBNET_API int32_t XHNetSDK_Multicast(NETHANDLE udphandle,
 	uint8_t option,
 	int8_t* multicastip,
 	uint8_t value)
@@ -487,7 +593,7 @@ int32_t XHNetSDK_Listen(int8_t* localip,
 	return ret;
 }
 
-NETHANDLE XHNetSDK_GenerateIdentifier()
+LIBNET_API NETHANDLE XHNetSDK_GenerateIdentifier()
 {
 	return generate_identifier(); 
 }

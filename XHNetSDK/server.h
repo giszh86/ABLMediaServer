@@ -50,7 +50,7 @@ inline NETHANDLE server::get_id()
 
 inline void server::disconnect_clients()
 {
-	client_manager_singleton::get_mutable_instance().pop_server_clients(get_id());
+	client_manager_singleton->pop_server_clients(get_id());
 }
 
 
@@ -86,7 +86,17 @@ private:
 	const bool m_autoread;
 	NETHANDLE m_id;
 };
+
+#ifdef USE_BOOST
+
 typedef boost::shared_ptr<server>  server_ptr;
+
+#else
+
+typedef std::shared_ptr<server>  server_ptr;
+
+#endif
+
 
 inline NETHANDLE server::get_id()
 {

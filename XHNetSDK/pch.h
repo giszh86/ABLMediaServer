@@ -10,4 +10,21 @@
 // 添加要在此处预编译的标头
 #include "framework.h"
 
+
+#pragma comment(lib, "../3rd/boost_1_73_0/boost_intall/lib/libboost_system-vc142-mt-x64-1_73.lib")
+#pragma comment(lib, "../3rd/boost_1_73_0/boost_intall/lib/libboost_thread-vc142-mt-s-x64-1_73.lib")
+#pragma comment(lib, "../3rd/boost_1_73_0/boost_intall/lib/libboost_log-vc142-mt-x64-1_73.lib")
+
+#pragma comment(lib, "../3rd/boost_1_73_0/boost_intall/lib/libboost_regex-vc142-mt-x64-1_73.lib")
+#pragma comment(lib, "../3rd/boost_1_73_0/boost_intall/lib/libboost_filesystem-vc142-mt-x64-1_73.lib")
+
+#pragma comment(lib, "../3rd/boost_1_73_0/boost_intall/lib/libboost_date_time-vc142-mt-x64-1_73.lib")
+
+
+#pragma comment(lib, "../3rd/boost_1_73_0/boost_intall/lib/libboost_chrono-vc142-mt-s-x64-1_73.lib")
+
+#pragma comment(lib, "../3rd/boost_1_73_0/boost_intall/lib/libboost_atomic-vc142-mt-s-x64-1_73.lib")
+
+
+
 #endif //PCH_H

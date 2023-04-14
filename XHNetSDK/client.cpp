@@ -41,6 +41,37 @@ client::~client(void)
 	m_circularbuff.uninit();
 }
 
+
+
+client::client(boost::asio::io_context& ioc)
+	: m_socket(ioc)
+	, m_fnconnect(NULL)
+	, m_closeflag(false)
+	, m_timer(ioc)
+	, m_inreading(false)
+	, m_usrreadbuffer(NULL)
+	, m_onwriting(false)
+	, m_currwriteaddr(NULL)
+	, m_currwritesize(0)
+	, m_autoread(false)
+{
+	m_readbuff = new uint8_t[CLIENT_MAX_RECV_BUFF_SIZE];
+}
+
+
+
+
+void client::init(
+	NETHANDLE srvid,
+	read_callback fnread,
+	close_callback fnclose,
+	bool autoread)
+{
+	m_srvid = srvid;
+	m_fnread = fnread;
+	m_fnclose = fnclose;
+	
+}
 int32_t client::run()
 {
 	if (!m_autoread)
@@ -187,7 +218,7 @@ void client::handle_write(const boost::system::error_code& ec, size_t transize)
 {
 	if (ec)
 	{
-		if (client_manager_singleton::get_mutable_instance().pop_client(get_id()))
+		if (client_manager_singleton->pop_client(get_id()))
 		{
 			if (m_fnclose)
 			{
@@ -214,7 +245,7 @@ void client::handle_read(const boost::system::error_code& ec, size_t transize)
 {
 	if (ec)
 	{
-		if (client_manager_singleton::get_mutable_instance().pop_client(get_id()))
+		if (client_manager_singleton->pop_client(get_id()))
 		{
 			if (m_fnclose)
 			{
@@ -277,7 +308,7 @@ void client::handle_connect(const boost::system::error_code& ec)
 
 	if (ec)
 	{
-		if (client_manager_singleton::get_mutable_instance().pop_client(get_id()))
+		if (client_manager_singleton->pop_client(get_id()))
 		{
 			if (m_fnconnect)
 			{
@@ -334,7 +365,7 @@ int32_t client::read(uint8_t* buffer,
 			if (err || (0 == readsize))
 			{
 				*buffsize = 0;
-				client_manager_singleton::get_mutable_instance().pop_client(get_id());
+				client_manager_singleton->pop_client(get_id());
 				return e_libnet_err_clireaddata;
 			}
 			else
@@ -348,7 +379,7 @@ int32_t client::read(uint8_t* buffer,
 			if (err || (0 == readsize))
 			{
 				*buffsize = 0;
-				client_manager_singleton::get_mutable_instance().pop_client(get_id());
+				client_manager_singleton->pop_client(get_id());
 				return e_libnet_err_clireaddata;
 			}
 			else
@@ -440,7 +471,7 @@ int32_t client::write(uint8_t* data,
 		}
 		else
 		{
-			client_manager_singleton::get_mutable_instance().pop_client(get_id());
+			client_manager_singleton->pop_client(get_id());
 			return e_libnet_err_cliwritedata;
 		}
 	}
@@ -518,7 +549,6 @@ void client::handle_connect_timeout(const boost::system::error_code& ec)
 }
 #else
 
-#include <boost/bind.hpp>
 #include "client_manager.h"
 #include "libnet_error.h"
 #include "identifier_generator.h"
@@ -547,16 +577,40 @@ client::client(asio::io_context& ioc,
 	m_readbuff = new uint8_t[CLIENT_MAX_RECV_BUFF_SIZE];
 }
 
+
+client::client(asio::io_context& ioc)
+	: m_socket(ioc)
+	, m_fnconnect(NULL)
+	, m_closeflag(false)
+	, stop_timer_(ioc)
+	, m_inreading(false)
+	, m_usrreadbuffer(NULL)
+	, m_onwriting(false)
+	, m_currwriteaddr(NULL)
+	, m_currwritesize(0)
+{
+
+	m_readbuff = new uint8_t[CLIENT_MAX_RECV_BUFF_SIZE];
+}
+
+
 client::~client(void)
 {
 	recycle_identifier(m_id);
-	if (m_readbuff != NULL)
-	{
-		delete[] m_readbuff;
-		m_readbuff = NULL;
-	}
-	m_circularbuff.uninit();
 }
+
+void client::init(
+	NETHANDLE srvid,
+	read_callback fnread,
+	close_callback fnclose,
+	bool autoread)
+{
+	m_srvid = srvid;
+	m_fnread = fnread;
+	m_fnclose = fnclose;
+	m_autoread = autoread;
+}
+
 
 int32_t client::run()
 {
@@ -716,7 +770,7 @@ void client::handle_write( std::error_code ec, size_t transize)
 {
 	if (ec)
 	{
-		if (client_manager_singleton::get_mutable_instance().pop_client(get_id()))
+		if (client_manager_singleton->pop_client(get_id()))
 		{
 			if (m_fnclose)
 			{
@@ -743,7 +797,7 @@ void client::handle_read(std::error_code ec, size_t transize)
 {
 	if (ec)
 	{
-		if (client_manager_singleton::get_mutable_instance().pop_client(get_id()))
+		if (client_manager_singleton->pop_client(get_id()))
 		{
 			if (m_fnclose)
 			{
@@ -821,7 +875,7 @@ void client::handle_connect(std::error_code ec)
 
 	if (ec)
 	{
-		if (client_manager_singleton::get_mutable_instance().pop_client(get_id()))
+		if (client_manager_singleton->pop_client(get_id()))
 		{
 			if (m_fnconnect)
 			{
@@ -878,7 +932,7 @@ int32_t client::read(uint8_t* buffer,
 			if (err || (0 == readsize))
 			{
 				*buffsize = 0;
-				client_manager_singleton::get_mutable_instance().pop_client(get_id());
+				client_manager_singleton->pop_client(get_id());
 				return e_libnet_err_clireaddata;
 			}
 			else
@@ -892,7 +946,7 @@ int32_t client::read(uint8_t* buffer,
 			if (err || (0 == readsize))
 			{
 				*buffsize = 0;
-				client_manager_singleton::get_mutable_instance().pop_client(get_id());
+				client_manager_singleton->pop_client(get_id());
 				return e_libnet_err_clireaddata;
 			}
 			else
@@ -986,7 +1040,7 @@ int32_t client::write(uint8_t* data,
 		}
 		else
 		{
-			client_manager_singleton::get_mutable_instance().pop_client(get_id());
+			client_manager_singleton->pop_client(get_id());
 			return e_libnet_err_cliwritedata;
 		}
 	}

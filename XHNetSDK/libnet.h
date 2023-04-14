@@ -57,12 +57,12 @@ extern "C"
 		NETHANDLE clihandle);
 
 
-	LIBNET_API int32_t XHNetSDK_Init(uint32_t ioccount,
+	LIBNET_API int32_t libnet_init(uint32_t ioccount,
 		uint32_t periocthread);
 
-	LIBNET_API int32_t XHNetSDK_Deinit();
+	LIBNET_API int32_t libnet_deinit();
 
-	LIBNET_API int32_t XHNetSDK_Listen(int8_t* localip,
+	LIBNET_API int32_t libnet_listen(int8_t* localip,
 		uint16_t localport,
 		NETHANDLE* srvhandle,
 		accept_callback fnaccept,
@@ -70,9 +70,9 @@ extern "C"
 		close_callback fnclose,
 		uint8_t autoread);
 
-	LIBNET_API int32_t XHNetSDK_Unlisten(NETHANDLE srvhandle);
+	LIBNET_API int32_t libnet_unlisten(NETHANDLE srvhandle);
 
-	LIBNET_API int32_t XHNetSDK_Connect(int8_t* remoteip,
+	LIBNET_API int32_t libnet_connect(int8_t* remoteip,
 		uint16_t remoteport,
 		int8_t* localip,
 		uint16_t locaport,
@@ -84,45 +84,43 @@ extern "C"
 		uint32_t timeout,
 		uint8_t autoread);
 
-	LIBNET_API int32_t XHNetSDK_Disconnect(NETHANDLE clihandle);
+	LIBNET_API int32_t libnet_disconnect(NETHANDLE clihandle);
 
-	LIBNET_API int32_t XHNetSDK_Write(NETHANDLE clihandle,
+	LIBNET_API int32_t libnet_write(NETHANDLE clihandle,
 		uint8_t* data,
 		uint32_t datasize,
 		uint8_t blocked);
 
-	LIBNET_API int32_t XHNetSDK_Read(NETHANDLE clihandle,
+	LIBNET_API int32_t libnet_read(NETHANDLE clihandle,
 		uint8_t* buffer,
 		uint32_t* buffsize,
 		uint8_t blocked,
 		uint8_t certain);
 
-	LIBNET_API int32_t XHNetSDK_BuildUdp(int8_t* localip,
+	LIBNET_API int32_t libnet_buildudp(int8_t* localip,
 		uint16_t localport,
 		void* bindaddr,
 		NETHANDLE* udphandle,
 		read_callback fnread,
 		uint8_t autoread);
 
-	LIBNET_API int32_t XHNetSDK_DestoryUdp(NETHANDLE udphandle);
+	LIBNET_API int32_t libnet_destoryudp(NETHANDLE udphandle);
 
-	LIBNET_API int32_t XHNetSDK_Sendto(NETHANDLE udphandle,
+	LIBNET_API int32_t libnet_sendto(NETHANDLE udphandle,
 		uint8_t* data,
 		uint32_t datasize,
 		void* remoteaddress);
 
-	LIBNET_API int32_t XHNetSDK_Recvfrom(NETHANDLE udphandle,
+	LIBNET_API int32_t libnet_recvfrom(NETHANDLE udphandle,
 		uint8_t* buffer,
 		uint32_t* buffsize,
 		void* remoteaddress,
 		uint8_t blocked);
 
-	LIBNET_API int32_t XHNetSDK_Multicast(NETHANDLE udphandle,
+	LIBNET_API int32_t libnet_multicast(NETHANDLE udphandle,
 		uint8_t option,
 		int8_t* multicastip,
 		uint8_t value);
-
-	LIBNET_API NETHANDLE XHNetSDK_GenerateIdentifier();
 
 #ifdef __cplusplus
 }

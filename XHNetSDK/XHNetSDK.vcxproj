@@ -114,8 +114,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>./asio/include/asio;./asio/include;./;..\3rd\boost_1_73_0\boost_intall\include;$(IncludePath)</IncludePath>
-    <LibraryPath>../3rd\boost_1_73_0\boost_intall\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>./asio/include/asio;./asio/include;./;$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='boost_release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -196,7 +196,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_WIN32_WINDOWS;WIN32_LEAN_AND_MEAN;NDEBUG;_LIB;ASIO_STANDALONE;_WINSOCK_DEPRECATED_NO_WARNINGS;LIBNET_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;LIBNET_EXPORTS;_WINSOCK_DEPRECATED_NO_WARNINGS;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -219,7 +219,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_WIN32_WINDOWS;WIN32_LEAN_AND_MEAN;NDEBUG;_LIB;ASIO_STANDALONE;_WINSOCK_DEPRECATED_NO_WARNINGS;LIBNET_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;LIBNET_EXPORTS;_WINSOCK_DEPRECATED_NO_WARNINGS;WIN32_LEAN_AND_MEAN;USE_BOOST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -239,7 +239,6 @@
   <ItemGroup>
     <ClInclude Include="auto_lock.h" />
     <ClInclude Include="circular_buffer.h" />
-    <ClInclude Include="class_obj_pool.h" />
     <ClInclude Include="client.h" />
     <ClInclude Include="client_manager.h" />
     <ClInclude Include="data_define.h" />
@@ -252,11 +251,11 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="server.h" />
     <ClInclude Include="server_manager.h" />
+    <ClInclude Include="thread_pool\thread_pool.h" />
     <ClInclude Include="udp_session.h" />
     <ClInclude Include="udp_session_manager.h" />
     <ClInclude Include="unordered_object_pool.h" />
     <ClInclude Include="XHNetSDK.h" />
-    <ClInclude Include="zzc_object_pool.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="circular_buffer.cpp" />
@@ -275,6 +274,7 @@
     </ClCompile>
     <ClCompile Include="server.cpp" />
     <ClCompile Include="server_manager.cpp" />
+    <ClCompile Include="thread_pool\thread_pool.cpp" />
     <ClCompile Include="udp_session.cpp" />
     <ClCompile Include="udp_session_manager.cpp" />
   </ItemGroup>

@@ -8,11 +8,12 @@
 
 #include "client.h"
 #include "unordered_object_pool.h"
+#include "HSingleton.h"
 #else
+#include "unordered_object_pool.h"
 #include <map>
 #include "HSingleton.h"
 #include <memory>
-#include "zzc_object_pool.h"
 #include "client.h"
 #endif
 
@@ -25,8 +26,8 @@
 typedef simple_pool::unordered_object_pool<client> client_pool;
 typedef boost::shared_ptr<client_pool> client_pool_ptr;
 #else
-typedef zzc::detail::object_pool<client> client_pool;
-typedef std::shared_ptr<client> client_pool_ptr;
+typedef simple_pool::unordered_object_pool<client> client_pool;
+typedef std::shared_ptr<client_pool> client_pool_ptr;
 
 #endif
 
@@ -94,7 +95,7 @@ private:
 #endif
 };
 
-#ifdef USE_BOOST
+#ifdef USE_BOOST11
 typedef boost::serialization::singleton<client_manager> client_manager_singleton;
 #else
 #define client_manager_singleton HSingletonTemplatePtr<client_manager>::Instance()
