@@ -26,11 +26,10 @@ private:
 #ifdef LIBNET_USE_CORE_SYNC_MUTEX
 	auto_lock::al_mutex m_mutex;
 #else
-	std::mutex          m_climtx;
+	auto_lock::al_spin m_mutex;
 #endif
 };
 typedef boost::serialization::singleton<server_manager> server_manager_singleton;
-
 
 
 #else
@@ -51,7 +50,6 @@ public:
 	bool pop_server(NETHANDLE id);
 	void close_all_servers();
 	server_ptr get_server(NETHANDLE id);
-
 
 private:
 	std::map<NETHANDLE, server_ptr> m_servers;

@@ -48,9 +48,6 @@
     <ClInclude Include="object_pool.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="server.h">
       <Filter>头文件</Filter>
     </ClInclude>

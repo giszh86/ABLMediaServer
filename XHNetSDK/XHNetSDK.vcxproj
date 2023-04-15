@@ -248,7 +248,6 @@
     <ClInclude Include="libnet_error.h" />
     <ClInclude Include="object_pool.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="resource.h" />
     <ClInclude Include="server.h" />
     <ClInclude Include="server_manager.h" />
     <ClInclude Include="thread_pool\thread_pool.h" />
