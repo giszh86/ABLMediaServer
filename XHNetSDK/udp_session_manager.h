@@ -1,6 +1,7 @@
 #pragma once 
 
 #ifdef USE_BOOST
+
 #include <boost/serialization/singleton.hpp>
 #include <boost/unordered_map.hpp>
 #include "udp_session.h"
@@ -22,12 +23,11 @@ private:
 #ifdef LIBNET_USE_CORE_SYNC_MUTEX
 	auto_lock::al_mutex m_mutex;
 #else
-	std::mutex          m_climtx;
+	auto_lock::al_spin m_mutex;
 #endif
 };
 
 typedef boost::serialization::singleton<udp_session_manager> udp_session_manager_singleton;
-
 
 
 #else
