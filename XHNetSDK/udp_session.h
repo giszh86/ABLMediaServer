@@ -204,6 +204,7 @@ inline NETHANDLE udp_session::get_id()
 {
 	return m_id;
 }
+
 #endif
 
 

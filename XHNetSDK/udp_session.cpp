@@ -1,13 +1,10 @@
 
 #ifdef USE_BOOST
-
-
-
-
 #include <boost/bind.hpp>
 #include "udp_session.h"
 #include "udp_session_manager.h"
 #include "identifier_generator.h"
+#include <malloc.h>
 
 #if (defined _WIN32 || defined _WIN64)
 #include <WS2tcpip.h>
@@ -39,6 +36,7 @@ udp_session::~udp_session(void)
 		delete[] m_readbuff;
 		m_readbuff = NULL;
 	}
+	malloc_trim(0);
 }
 
 int32_t udp_session::init(const int8_t* localip,
@@ -223,6 +221,7 @@ int32_t udp_session::send_to(uint8_t* data,
 	if (m_hasconnected)
 	{
 		m_socket.send(boost::asio::buffer(data, datasize), 0, ec);
+		usleep(10);
 	}
 	else
 	{
@@ -231,6 +230,7 @@ int32_t udp_session::send_to(uint8_t* data,
 		m_writeep.address(boost::asio::ip::address::from_string(inet_ntoa(addr->sin_addr)));
 		m_writeep.port(ntohs(addr->sin_port));
 		m_socket.send_to(boost::asio::buffer(data, datasize), m_writeep, 0, ec);
+		usleep(10);
 	}
 
 	if (ec)
@@ -345,6 +345,9 @@ int32_t udp_session::bind_address(const int8_t* localip,
 		}
 	}
 
+	memset((char*)&tAddrV4, 0x00, sizeof(tAddrV4));
+	memset((char*)&tAddrV6, 0x00, sizeof(tAddrV6));
+
 	return e_libnet_err_noerror;
 }
 
@@ -377,32 +380,28 @@ void udp_session::handle_read(const boost::system::error_code& ec,
 			{
 				if (m_remoteep.address().is_v4())
 				{
-					in_addr addr_n;
-					inet_pton(AF_INET, m_remoteep.address().to_string().c_str(), &addr_n);
+					inet_pton(AF_INET, m_remoteep.address().to_string().c_str(), &addr_nV4);
 
-					sockaddr_in tAddr = { 0 };
-					tAddr.sin_family = AF_INET;
-					tAddr.sin_addr = addr_n;
-					tAddr.sin_port = htons(m_remoteep.port());
+					tAddrV4.sin_family = AF_INET;
+					tAddrV4.sin_addr = addr_nV4;
+					tAddrV4.sin_port = htons(m_remoteep.port());
 
 					if (m_fnread)
 					{
-						m_fnread(INVALID_NETHANDLE, get_id(), m_autoread ? m_readbuff : m_userreadbuffer, static_cast<uint32_t>(transize), &tAddr);
+						m_fnread(INVALID_NETHANDLE, get_id(), m_autoread ? m_readbuff : m_userreadbuffer, static_cast<uint32_t>(transize), &tAddrV4);
 					}
 				}
 				else
 				{
-					in6_addr addr_n;
-					inet_pton(AF_INET6, m_remoteep.address().to_string().c_str(), &addr_n);
+					inet_pton(AF_INET6, m_remoteep.address().to_string().c_str(), &addr_nV6);
 
-					sockaddr_in6 tAddr = { 0 };
-					tAddr.sin6_family = AF_INET6;
-					tAddr.sin6_addr = addr_n;
-					tAddr.sin6_port = htons(m_remoteep.port());
+					tAddrV6.sin6_family = AF_INET6;
+					tAddrV6.sin6_addr = addr_nV6;
+					tAddrV6.sin6_port = htons(m_remoteep.port());
 
 					if (m_fnread)
 					{
-						m_fnread(INVALID_NETHANDLE, get_id(), m_autoread ? m_readbuff : m_userreadbuffer, static_cast<uint32_t>(transize), &tAddr);
+						m_fnread(INVALID_NETHANDLE, get_id(), m_autoread ? m_readbuff : m_userreadbuffer, static_cast<uint32_t>(transize), &tAddrV6);
 					}
 				}
 			}
@@ -544,6 +543,7 @@ int32_t udp_session::multicast(uint8_t option,
 #include "udp_session_manager.h"
 #include "identifier_generator.h"
 
+
 #if (defined _WIN32 || defined _WIN64)
 #include <WS2tcpip.h>
 #pragma comment(lib, "WS2_32.lib")
@@ -574,6 +574,10 @@ udp_session::~udp_session(void)
 		delete[] m_readbuff;
 		m_readbuff = NULL;
 	}
+#ifndef _WIN32
+	malloc_trim(0);
+#endif
+
 }
 
 int32_t udp_session::init(const int8_t* localip,
@@ -604,7 +608,7 @@ int32_t udp_session::init(const int8_t* localip,
 		m_start = true;
 	}
 
-	std::error_code ec;
+	asio::error_code ec;
 	asio::socket_base::receive_buffer_size recv_buffer_size_option(4 * 1024 * 1024);
 	m_socket.set_option(recv_buffer_size_option, ec);//设置接收缓冲区
 
@@ -621,7 +625,7 @@ int32_t udp_session::connect(const int8_t* remoteip,
 	{
 		return e_libnet_err_invalidparam;
 	}
-	std::error_code ec;
+	asio::error_code ec;
 	asio::ip::address addr = asio::ip::address::from_string(reinterpret_cast<const char*>(remoteip), ec);
 	if (ec)
 	{
@@ -673,7 +677,7 @@ int32_t udp_session::recv_from(uint8_t* buffer,
 		return e_libnet_err_clisocknotopen;
 	}
 
-	std::error_code ec;
+	asio::error_code ec;
 	if (blocked)
 	{
 		size_t readsize = m_socket.receive_from(asio::buffer(buffsize, *buffsize), m_remoteep, 0, ec);
@@ -754,10 +758,12 @@ int32_t udp_session::send_to(uint8_t* data,
 		return e_libnet_err_clisocknotopen;
 	}
 
-	std::error_code ec;
+	asio::error_code ec;
 	if (m_hasconnected)
 	{
 		m_socket.send(asio::buffer(data, datasize), 0, ec);
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
 	}
 	else
 	{
@@ -766,6 +772,7 @@ int32_t udp_session::send_to(uint8_t* data,
 		m_writeep.address(asio::ip::address::from_string(inet_ntoa(addr->sin_addr)));
 		m_writeep.port(ntohs(addr->sin_port));
 		m_socket.send_to(asio::buffer(data, datasize), m_writeep, 0, ec);
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
 
 	if (ec)
@@ -785,7 +792,7 @@ int32_t	udp_session::close()
 	m_fnread = NULL;
 	if (m_socket.is_open())
 	{
-		std::error_code ec;
+		asio::error_code ec;
 		m_socket.close(ec);
 	}
 
@@ -796,7 +803,7 @@ int32_t udp_session::bind_address(const int8_t* localip,
 	uint16_t localport,
 	void* bindaddr)
 {
-	std::error_code ec;
+	asio::error_code ec;
 
 	asio::ip::address addr;
 	if (localip && (0 != strcmp(reinterpret_cast<const char*>(localip), "")))
@@ -880,6 +887,9 @@ int32_t udp_session::bind_address(const int8_t* localip,
 		}
 	}
 
+	memset((char*)&tAddrV4, 0x00, sizeof(tAddrV4));
+	memset((char*)&tAddrV6, 0x00, sizeof(tAddrV6));
+
 	return e_libnet_err_noerror;
 }
 
@@ -898,7 +908,7 @@ void udp_session::start_read()
 	}
 }
 
-void udp_session::handle_read(const std::error_code& ec,
+void udp_session::handle_read(const asio::error_code& ec,
 	size_t transize)
 {
 	if (!m_socket.is_open())
@@ -914,32 +924,28 @@ void udp_session::handle_read(const std::error_code& ec,
 			{
 				if (m_remoteep.address().is_v4())
 				{
-					in_addr addr_n;
-					inet_pton(AF_INET, m_remoteep.address().to_string().c_str(), &addr_n);
+					inet_pton(AF_INET, m_remoteep.address().to_string().c_str(), &addr_nV4);
 
-					sockaddr_in tAddr = { 0 };
-					tAddr.sin_family = AF_INET;
-					tAddr.sin_addr = addr_n;
-					tAddr.sin_port = htons(m_remoteep.port());
+					tAddrV4.sin_family = AF_INET;
+					tAddrV4.sin_addr = addr_nV4;
+					tAddrV4.sin_port = htons(m_remoteep.port());
 
 					if (m_fnread)
 					{
-						m_fnread(INVALID_NETHANDLE, get_id(), m_autoread ? m_readbuff : m_userreadbuffer, static_cast<uint32_t>(transize), &tAddr);
+						m_fnread(INVALID_NETHANDLE, get_id(), m_autoread ? m_readbuff : m_userreadbuffer, static_cast<uint32_t>(transize), &tAddrV4);
 					}
 				}
 				else
 				{
-					in6_addr addr_n;
-					inet_pton(AF_INET6, m_remoteep.address().to_string().c_str(), &addr_n);
+					inet_pton(AF_INET6, m_remoteep.address().to_string().c_str(), &addr_nV6);
 
-					sockaddr_in6 tAddr = { 0 };
-					tAddr.sin6_family = AF_INET6;
-					tAddr.sin6_addr = addr_n;
-					tAddr.sin6_port = htons(m_remoteep.port());
+					tAddrV6.sin6_family = AF_INET6;
+					tAddrV6.sin6_addr = addr_nV6;
+					tAddrV6.sin6_port = htons(m_remoteep.port());
 
 					if (m_fnread)
 					{
-						m_fnread(INVALID_NETHANDLE, get_id(), m_autoread ? m_readbuff : m_userreadbuffer, static_cast<uint32_t>(transize), &tAddr);
+						m_fnread(INVALID_NETHANDLE, get_id(), m_autoread ? m_readbuff : m_userreadbuffer, static_cast<uint32_t>(transize), &tAddrV6);
 					}
 				}
 			}
@@ -978,7 +984,7 @@ int32_t udp_session::multicast(uint8_t option,
 		return e_libnet_err_clisocknotopen;
 	}
 
-	std::error_code ec;
+	asio::error_code ec;
 
 	switch (option)
 	{
