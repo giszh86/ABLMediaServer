@@ -201,7 +201,6 @@ void server::handle_accept(client_ptr c, const boost::system::error_code& ec)
 
 #else
 
-
 #include <functional>
 #include <memory>
 #include "io_context_pool.h"
@@ -240,6 +239,10 @@ server::server(asio::io_context& ioc,
 server::~server(void)
 {
 	recycle_identifier(m_id);
+#ifndef _WIN32
+	malloc_trim(0);
+#endif
+	
 }
 
 int32_t server::run()
@@ -254,7 +257,7 @@ int32_t server::run()
 			return e_libnet_err_srvlistensocknotopen;
 		}
 
-		//set option
+		/* 屏蔽掉地址重用设置，否则绑定相同端口时不会提示端口重复绑定提示 //set option*/
 		asio::ip::tcp::acceptor::reuse_address reuse_address_option(true);
 		m_acceptor.set_option(reuse_address_option, ec);
 		if (ec)
@@ -311,7 +314,7 @@ void server::close()
 
 	if (m_acceptor.is_open())
 	{
-		std::error_code ec;
+		asio::error_code ec;
 		m_acceptor.close(ec);
 	}
 }
@@ -401,5 +404,7 @@ void server::handle_accept(client_ptr c, std::error_code ec)
 		}
 	}
 }
+
+
 #endif
 

@@ -1,17 +1,11 @@
 #pragma  once 
 
+#ifdef USE_BOOST
 
+#include <boost/function.hpp>
 #include "client_manager.h"
 #include "auto_lock.h"
 
-#ifdef USE_BOOST
-#include <boost/function.hpp>
-
-#else
-#include <functional>
-#include <memory>
-#endif
-#ifdef USE_BOOST
 class server : public boost::enable_shared_from_this<server>
 {
 public:
@@ -50,12 +44,15 @@ inline NETHANDLE server::get_id()
 
 inline void server::disconnect_clients()
 {
-	client_manager_singleton->pop_server_clients(get_id());
+	client_manager_singleton::get_mutable_instance().pop_server_clients(get_id());
 }
 
 
-
 #else
+#include <functional>
+#include <memory>
+#include "client_manager.h"
+#include "auto_lock.h"
 
 class server : public std::enable_shared_from_this<server>
 {
@@ -87,16 +84,7 @@ private:
 	NETHANDLE m_id;
 };
 
-#ifdef USE_BOOST
-
-typedef boost::shared_ptr<server>  server_ptr;
-
-#else
-
 typedef std::shared_ptr<server>  server_ptr;
-
-#endif
-
 
 inline NETHANDLE server::get_id()
 {

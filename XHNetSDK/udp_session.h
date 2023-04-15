@@ -3,15 +3,16 @@
 
 #ifdef USE_BOOST
 
-#include "libnet.h"
-#include "libnet_error.h"
-#include "data_define.h"
-#include "circular_buffer.h"
 #include <boost/atomic.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/shared_array.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/asio.hpp>
+#include "libnet.h"
+#include "libnet_error.h"
+#include "data_define.h"
+#include "circular_buffer.h"
+
 class udp_session : public boost::enable_shared_from_this<udp_session>
 {
 public:
@@ -19,6 +20,10 @@ public:
 	~udp_session(void);
 
 	NETHANDLE get_id();
+	in_addr      addr_nV4;
+	in6_addr     addr_nV6;
+	sockaddr_in  tAddrV4;
+	sockaddr_in6 tAddrV6;
 
 	int32_t init(const int8_t* localip,
 		uint16_t localport,
@@ -91,17 +96,24 @@ private:
 	bool m_inreading;
 	uint8_t* m_userreadbuffer;
 };
+
 typedef boost::shared_ptr<udp_session> udp_session_ptr;
+
+inline NETHANDLE udp_session::get_id()
+{
+	return m_id;
+}
 
 #else
 
 #include <memory>
 #include <atomic>
+#include <asio.hpp>
 #include "libnet.h"
 #include "libnet_error.h"
 #include "data_define.h"
 #include "circular_buffer.h"
-#include <asio.hpp>
+
 class udp_session : public std::enable_shared_from_this<udp_session>
 {
 public:
@@ -109,6 +121,10 @@ public:
 	~udp_session(void);
 
 	NETHANDLE get_id();
+	in_addr      addr_nV4;
+	in6_addr     addr_nV6;
+	sockaddr_in  tAddrV4;
+	sockaddr_in6 tAddrV6;
 
 	int32_t init(const int8_t* localip,
 		uint16_t localport,
@@ -134,7 +150,7 @@ private:
 		uint16_t localport,
 		void* bindaddr);
 	void start_read();
-	void handle_read(const std::error_code& ec,
+	void handle_read(const asio::error_code& ec,
 		size_t transize);
 
 private:
@@ -181,15 +197,15 @@ private:
 	bool m_inreading;
 	uint8_t* m_userreadbuffer;
 };
+
 typedef std::shared_ptr<udp_session> udp_session_ptr;
-#endif
-
-
-
-
 
 inline NETHANDLE udp_session::get_id()
 {
 	return m_id;
 }
+#endif
+
+
+
 
