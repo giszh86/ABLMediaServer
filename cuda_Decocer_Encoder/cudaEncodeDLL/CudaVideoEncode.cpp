@@ -60,13 +60,12 @@ CCudaVideoEncode::CCudaVideoEncode(cudaEncodeVideo_enum videoCodec, cudaEncodeVi
 		//encodeConfig.rcParams.maxBitRate = encodeConfig.rcParams.averageBitRate;// 最大比特率等于平均比特率；
 		//encodeConfig.rcParams.vbvInitialDelay = encodeConfig.rcParams.vbvBufferSize;// VBV 初始延迟等于 VBV 缓存大小。
 
-
 	encodeConfig.gopLength = NVENC_INFINITE_GOPLENGTH;
 	encodeConfig.frameIntervalP = 1;
-	encodeConfig.encodeCodecConfig.h264Config.idrPeriod = NVENC_INFINITE_GOPLENGTH;	
-	encodeConfig.rcParams.rateControlMode = NV_ENC_PARAMS_RC_VBR;
+	encodeConfig.encodeCodecConfig.h264Config.idrPeriod = 25;//IDR 帧的周期为 25 帧；
+	encodeConfig.rcParams.rateControlMode = NV_ENC_PARAMS_RC_CBR;
 	//encodeConfig.rcParams.multiPass = NV_ENC_TWO_PASS_FULL_RESOLUTION;
-	encodeConfig.rcParams.averageBitRate = static_cast<unsigned int>(3.0f * initializeParams.encodeWidth * initializeParams.encodeHeight);
+	encodeConfig.rcParams.averageBitRate = static_cast<unsigned int>(5.0f * initializeParams.encodeWidth * initializeParams.encodeHeight);
 	encodeConfig.rcParams.vbvBufferSize =(encodeConfig.rcParams.averageBitRate * initializeParams.frameRateDen /initializeParams.frameRateNum) *3;
 	encodeConfig.rcParams.maxBitRate = encodeConfig.rcParams.averageBitRate;
 	encodeConfig.rcParams.vbvInitialDelay = encodeConfig.rcParams.vbvBufferSize;
