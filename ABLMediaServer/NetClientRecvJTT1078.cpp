@@ -10,6 +10,7 @@ E-Mail  79941308@qq.com
 
 #include "stdafx.h"
 #include "NetClientRecvJTT1078.h"
+#ifdef USE_BOOST
 
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 extern boost::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration);
@@ -17,11 +18,29 @@ extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 
-extern CMediaSendThreadPool*                 pMediaSendThreadPool;
+extern CMediaSendThreadPool* pMediaSendThreadPool;
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
 extern CMediaFifo                            pRemoveBaseNetFromThreadFifo;       //从媒体拷贝线程、媒体发送线程移除掉Client  
-extern int                                   SampleRateArray[] ;
+extern int                                   SampleRateArray[];
 extern char                                  ABL_MediaSeverRunPath[256]; //当前路径
+
+#else
+
+extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
+extern std::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration);
+extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
+extern bool                                  DeleteMediaStreamSource(char* szURL);
+extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
+
+extern CMediaSendThreadPool* pMediaSendThreadPool;
+extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
+extern CMediaFifo                            pRemoveBaseNetFromThreadFifo;       //从媒体拷贝线程、媒体发送线程移除掉Client  
+extern int                                   SampleRateArray[];
+extern char                                  ABL_MediaSeverRunPath[256]; //当前路径
+
+
+#endif
+
 
 extern void LIBNET_CALLMETHOD	onconnect(NETHANDLE clihandle,
 	uint8_t result);

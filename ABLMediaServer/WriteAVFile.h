@@ -1,10 +1,8 @@
 // WriteAVFile.h: interface for the CWriteAVFile class.
 //
 //////////////////////////////////////////////////////////////////////
-
-#if !defined(AFX_WRITEAVFILE_H__311924BE_8255_463B_84F1_956EDC7A48D3__INCLUDED_)
-#define AFX_WRITEAVFILE_H__311924BE_8255_463B_84F1_956EDC7A48D3__INCLUDED_
-
+#ifdef OS_System_Windows
+#pragma once
 #if _MSC_VER > 1000
 #pragma once
 #endif // _MSC_VER > 1000
@@ -33,4 +31,4 @@ public:
 	bool    bFileExist;
 };
 
-#endif // !defined(AFX_WRITEAVFILE_H__311924BE_8255_463B_84F1_956EDC7A48D3__INCLUDED_)
+#endif

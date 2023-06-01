@@ -63,7 +63,7 @@ CCudaVideoEncode::CCudaVideoEncode(cudaEncodeVideo_enum videoCodec, cudaEncodeVi
 	encodeConfig.gopLength = NVENC_INFINITE_GOPLENGTH;
 	encodeConfig.frameIntervalP = 1;
 	encodeConfig.encodeCodecConfig.h264Config.idrPeriod = 25;//IDR 帧的周期为 25 帧；
-	encodeConfig.rcParams.rateControlMode = NV_ENC_PARAMS_RC_CBR;
+	encodeConfig.rcParams.rateControlMode = NV_ENC_PARAMS_RC_VBR;
 	//encodeConfig.rcParams.multiPass = NV_ENC_TWO_PASS_FULL_RESOLUTION;
 	encodeConfig.rcParams.averageBitRate = static_cast<unsigned int>(5.0f * initializeParams.encodeWidth * initializeParams.encodeHeight);
 	encodeConfig.rcParams.vbvBufferSize =(encodeConfig.rcParams.averageBitRate * initializeParams.frameRateDen /initializeParams.frameRateNum) *3;

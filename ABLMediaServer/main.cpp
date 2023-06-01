@@ -2413,7 +2413,9 @@ void* ABLMedisServerProcessThread(void* lpVoid)
 		nReConnectStreamProxyTimer++;
 		nCreateHttpClientTimer++;
 
-		Sleep(100);
+
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(000));
 	}
 
 	FillNetRevcBaseClientFifo();//把所有对象装入链表，准备删除
@@ -2433,7 +2435,9 @@ void* ABLMedisServerProcessThread(void* lpVoid)
 		}
 
 		pDisconnectBaseNetFifo.pop_front();
-		Sleep(5);
+
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(5));
 	}
 
 	ABL_bExitMediaServerRunFlag = true;
@@ -2464,7 +2468,8 @@ void* ABLMedisServerFastDeleteThread(void* lpVoid)
 			pDisconnectBaseNetFifo.pop_front();
 		}
 
-		Sleep(20);
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(20));
 	}
 	return 0;
 }
@@ -2893,7 +2898,8 @@ ABL_Restart:
 	if (ABL_ConfigFile.FindFile(szConfigFileName) == false)
 	{
 		WriteLog(Log_Error, "没有找到配置文件 ：%s ", szConfigFileName);
-		Sleep(3000);
+	
+		std::this_thread::sleep_for(std::chrono::milliseconds(3000));
 		return -1;
 	}
 
@@ -3607,12 +3613,14 @@ ABL_Restart:
 				pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
 			}
 		}
-		Sleep(1000);
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	}
 
 	ABL_bMediaServerRunFlag = false;
 	while (!ABL_bExitMediaServerRunFlag)
-		Sleep(100);
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
 
 	XHNetSDK_Unlisten(srvhandle_8080);
 	XHNetSDK_Unlisten(srvhandle_554);

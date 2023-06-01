@@ -1,7 +1,7 @@
 // WriteAVFile.cpp: implementation of the CWriteAVFile class.
 //
 //////////////////////////////////////////////////////////////////////
-
+#ifdef OS_System_Windows
 #include "stdafx.h"
 #include "WriteAVFile.h"
 #include "MyWriteLogFile.h"
@@ -127,3 +127,4 @@ void  CWriteAVFile::CloseAVFile()
 
 	}
 }
+#endif

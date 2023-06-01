@@ -8,9 +8,9 @@ E-mail 79941308@qq.com
 	   20019-08-15 1.0.2 版本
  
 */
+#pragma  once 
+#ifdef OS_System_Windows 
 
-#ifndef  _ABLogSDK_H
-#define  _ABLogSDK_H
 
 //Log 信息级别
 enum  LogLevel
@@ -54,5 +54,7 @@ bool  WriteLog(LogLevel nLogLevel, char* szSQL, ...);
   无参数
 */
 bool  StopLogFile();
+
+
 
 #endif

@@ -1,5 +1,6 @@
-#ifndef _MyWriteLogFile_H
-#define _MyWriteLogFile_H
+
+#ifdef OS_System_Windows
+#pragma once
 
 #define OneLineLogStringMaxLength  1024*1024*2 
 

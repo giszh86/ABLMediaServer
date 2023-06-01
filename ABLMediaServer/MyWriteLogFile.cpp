@@ -1,3 +1,4 @@
+#ifdef OS_System_Windows
 #include <mutex>
 #include "Stdafx.h"
 #include "WriteAVFile.h"
@@ -150,3 +151,4 @@ unsigned long  GetLogFileByPathName(char* szPath, char* szLogFileName, char* szO
 	return nFileSize;
 }
 
+#endif

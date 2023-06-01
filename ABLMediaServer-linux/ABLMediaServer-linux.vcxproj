@@ -109,6 +109,7 @@
     <ClCompile Include="..\ABLMediaServer\NetClientHttp.cpp" />
     <ClCompile Include="..\ABLMediaServer\NetClientRecvFLV.cpp" />
     <ClCompile Include="..\ABLMediaServer\NetClientRecvHttpHLS.cpp" />
+    <ClCompile Include="..\ABLMediaServer\NetClientRecvJTT1078.cpp" />
     <ClCompile Include="..\ABLMediaServer\NetClientRecvRtmp.cpp" />
     <ClCompile Include="..\ABLMediaServer\NetClientRecvRtsp.cpp" />
     <ClCompile Include="..\ABLMediaServer\NetClientSendRtmp.cpp" />

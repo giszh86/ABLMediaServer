@@ -1,8 +1,8 @@
 // ConfigFile.h: interface for the CConfigFile class.  
 //
+#ifdef OS_System_Windows
+#pragma  once 
 
-#if !defined(AFX_CONFIGFILE_H__22EA1D61_ABBB_11D5_9286_00022A00D63A__INCLUDED_)
-#define AFX_CONFIGFILE_H__22EA1D61_ABBB_11D5_9286_00022A00D63A__INCLUDED_
 
 #if _MSC_VER > 1000
 #pragma once
@@ -25,4 +25,4 @@ protected:
 	static char m_ConfigFileName[256];
 };
 
-#endif // !defined(AFX_CONFIGFILE_H__22EA1D61_ABBB_11D5_9286_00022A00D63A__INCLUDED_)
+#endif

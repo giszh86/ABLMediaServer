@@ -8,7 +8,7 @@
 	  szMsgInputPwd     =  Please input password !
 	  szMsgPwdInvalid   =  password is invalid !
 */
-
+#ifdef OS_System_Windows
 #include "stdafx.h"
 #include "ConfigFile.h"
 
@@ -76,3 +76,4 @@ bool CConfigFile::WriteConfigString(LPCTSTR lpSection, LPCTSTR lpKey, LPCTSTR lp
 {
    return  ::WritePrivateProfileString(lpSection,lpKey,lpWriteBuff,m_ConfigFileName) ;
 }
+#endif

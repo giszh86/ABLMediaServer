@@ -1,5 +1,6 @@
 // ABLogSDK.cpp : Defines the exported functions for the DLL application.
 //
+#ifdef OS_System_Windows 
 
 #include "stdafx.h"
 #include "ABLogSDK.h"
@@ -79,3 +80,5 @@ bool  StopLogFile()
 	bInitLogFileFlag = false;
 	return true;
 }
+
+#endif

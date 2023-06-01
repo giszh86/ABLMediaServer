@@ -163,6 +163,9 @@
     <ClCompile Include="..\ABLMediaServer\Base64.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\NetClientRecvJTT1078.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">

@@ -431,7 +431,7 @@ std::this_thread::sleep_for(std::chrono::milliseconds(2));
 	{//打开mp4文件后需要等待一段事件，否则读取文件会失败
 		if (GetTickCount64() - mov_readerTime < nWaitTime)
 		{
-			Sleep(2);
+			std::this_thread::sleep_for(std::chrono::milliseconds(2));
 			RecordReplayThreadPool->InsertIntoTask(nClient);
 			return 0;
 		}
