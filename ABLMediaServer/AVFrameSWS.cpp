@@ -79,7 +79,7 @@ bool CAVFrameSWS::CreateAVFrameSws(bool bCreeateSrcFrame,AVPixelFormat nSrcImage
 
 	pFrameDest->width = nDstWidth;
 	pFrameDest->height = nDestHeight;
-	pFrameDest->format = nDstImage;
+	pFrameDest->format = nDstImage ;//指定为输出格式
 
 	bInitFlag = true;
 	return true;

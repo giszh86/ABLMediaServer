@@ -97,7 +97,7 @@ static int rtmp_server_onpublish(void* param, const char* app, const char* strea
 
 		//去掉？后面参数字符串
 		string strMP4Name = stream;
-		char   szStream[256] = { 0 };
+		char   szStream[string_length_512] = { 0 };
 		strcpy(szStream, stream);
 		int    nPos = strMP4Name.find("?", 0);
 		if (nPos > 0 && strlen(stream) > 0)
@@ -114,7 +114,6 @@ static int rtmp_server_onpublish(void* param, const char* app, const char* strea
 		std::shared_ptr<CMediaStreamSource> pTempSource = NULL;
 
 #endif
-
 		pTempSource = GetMediaStreamSource(pClient->szURL);
 		if (pTempSource != NULL)
 		{//推流地址已经存在 
@@ -160,7 +159,7 @@ static int rtmp_server_onplay(void* param, const char* app, const char* stream, 
 
 	//去掉？后面参数字符串
 	string strMP4Name = stream;
-	char   szStream[256] = { 0 };
+	char   szStream[string_length_512] = { 0 };
 	strcpy(szStream, stream);
 	int    nPos = strMP4Name.find("?", 0);
 	if (nPos > 0 && strlen(stream) > 0)
@@ -536,7 +535,6 @@ CNetRtmpServerRecv::~CNetRtmpServerRecv()
 	
 	WriteLog(Log_Debug, "CNetRtmpServerRecv =%X  Step 1 nClient = %llu ",this, nClient);
 
-	XHNetSDK_Disconnect(nClient);
 	WriteLog(Log_Debug, "CNetRtmpServerRecv =%X  Step 3 nClient = %llu ",this, nClient);
 
 	//从媒体拷贝线程池移除
@@ -614,8 +612,7 @@ int CNetRtmpServerRecv::SendVideo()
 		return -1;
 	}
 
-	if(nVideoStampAdd == 0 )
-	  nVideoStampAdd = 1000 / mediaCodecInfo.nVideoFrameRate;
+	nVideoStampAdd = 1000 / mediaCodecInfo.nVideoFrameRate;
 
 	unsigned char* pData = NULL;
 	int            nLength = 0;
@@ -653,7 +650,7 @@ int CNetRtmpServerRecv::SendVideo()
 int CNetRtmpServerRecv::SendAudio()
 {
 	std::lock_guard<std::mutex> lock(NetRtmpServerLock);
-	
+ 
 	if (nWriteErrorCount >= 30)
 	{
 		DeleteNetRevcBaseClient(nClient);
