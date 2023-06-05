@@ -91,8 +91,7 @@ int CNetClientAddPushProxy::SendFirstRequst()
 	if (strlen(m_szShareMediaURL) > 0 && strlen(m_addPushProxyStruct.url) > 0)
 	{
 #ifdef USE_BOOST
-		boost::shared_ptr<CNetRevcBase> pClient = CreateNetRevcBaseClient(NetRevcBaseClienst_addPushStreamProxy, 0, 0, m_addPushProxyStruct.url, 0, m_szShareMediaURL);
-
+	  boost::shared_ptr<CNetRevcBase> pClient = CreateNetRevcBaseClient(NetRevcBaseClient_addPushStreamProxy, 0, 0, m_addPushProxyStruct.url, 0, m_szShareMediaURL);
 #else
 		auto pClient = CreateNetRevcBaseClient(NetRevcBaseClient_addPushStreamProxy, 0, 0, m_addPushProxyStruct.url, 0, m_szShareMediaURL);
 
@@ -100,6 +99,7 @@ int CNetClientAddPushProxy::SendFirstRequst()
 	  if (pClient)
 	  {
 		 nMediaClient = pClient->nClient;
+		 memcpy((char*)&pClient->m_addPushProxyStruct, (char*)&m_addPushProxyStruct, sizeof(m_addPushProxyStruct));
 
 		 pClient->nClient_http = nClient_http;//把http 连接号 赋给 rtsp 对象中的 nClient_http ;
 		 pClient->hParent = nClient;     //把代理连接号 赋值给rtsp对象中的 父连接号 

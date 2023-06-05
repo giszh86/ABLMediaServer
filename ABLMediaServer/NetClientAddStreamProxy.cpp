@@ -92,11 +92,10 @@ int CNetClientAddStreamProxy::SendFirstRequst()
 	if (strlen(m_szShareMediaURL) > 0)
 	{
 #ifdef USE_BOOST
-
-		boost::shared_ptr<CNetRevcBase> pClient = CreateNetRevcBaseClient(NetRevcBaseClient_addStreamProxy, 0, 0, m_addStreamProxyStruct.url, 0, m_szShareMediaURL);
+	  boost::shared_ptr<CNetRevcBase> pClient = CreateNetRevcBaseClient(NetRevcBaseClient_addStreamProxy, 0, 0, m_addStreamProxyStruct.url, 0, m_szShareMediaURL);
 
 #else
-		std::shared_ptr<CNetRevcBase> pClient = CreateNetRevcBaseClient(NetRevcBaseClient_addStreamProxy, 0, 0, m_addStreamProxyStruct.url, 0, m_szShareMediaURL);
+		auto pClient = CreateNetRevcBaseClient(NetRevcBaseClient_addStreamProxy, 0, 0, m_addStreamProxyStruct.url, 0, m_szShareMediaURL);
 
 #endif
 	 if (pClient)
@@ -107,6 +106,7 @@ int CNetClientAddStreamProxy::SendFirstRequst()
 		 nMediaClient = pClient->nClient;
 		 memcpy((char*)&pClient->m_addStreamProxyStruct, (char*)&m_addStreamProxyStruct, sizeof(m_addStreamProxyStruct));
 		 memcpy((char*)&pClient->m_h265ConvertH264Struct, (char*)&m_h265ConvertH264Struct, sizeof(m_h265ConvertH264Struct));
+		 m_nXHRtspURLType = atoi(m_addStreamProxyStruct.isRtspRecordURL);
 
 		 pClient->nClient_http = nClient_http ;//把http 连接号 赋给 rtsp 对象中的 nClient_http ;
 		 pClient->hParent      = nClient ;     //把代理连接号 赋值给rtsp对象中的 父连接号 

@@ -34,7 +34,7 @@ private:
 	ClientProcessThreadMap  clientThreadMap;
     uint64_t              nTrueNetThreadPoolCount; 
 #ifdef USE_BOOST
-	boost::lockfree::queue<uint64_t, boost::lockfree::capacity<2048>> m_NetHandleQueue[MaxNetHandleQueueCount];
+    boost::lockfree::queue<uint64_t, boost::lockfree::capacity<2048>> m_NetHandleQueue[MaxNetHandleQueueCount];
 #else
 	std::queue<uint64_t> m_NetHandleQueue[MaxNetHandleQueueCount];
 #endif

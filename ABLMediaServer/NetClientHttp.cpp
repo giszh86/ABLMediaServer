@@ -22,7 +22,8 @@ extern CMediaFifo                            pDisconnectBaseNetFifo; //ÇåÀí¶ÏÁÑµ
 extern char                                  ABL_MediaSeverRunPath[256]; //µ±Ç°Â·¾¶
 extern boost::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
 extern MediaServerPort                       ABL_MediaServerPort;
-extern CNetBaseThreadPool* MessageSendThreadPool;//ÏûÏ¢·¢ËÍÏß³Ì³Ø
+extern CNetBaseThreadPool*                   MessageSendThreadPool;//ÏûÏ¢·¢ËÍÏß³Ì³Ø
+extern CMediaFifo                            pMessageNoticeFifo; //ÏûÏ¢Í¨ÖªFIFO
 extern CMediaFifo                            pMessageNoticeFifo; //ÏûÏ¢Í¨ÖªFIFO
 #else
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
@@ -40,7 +41,8 @@ extern CMediaFifo                            pMessageNoticeFifo; //ÏûÏ¢Í¨ÖªFIFO
 #endif
 
 
-extern void LIBNET_CALLMETHOD	             onconnect(NETHANDLE clihandle,uint8_t result);
+
+extern void LIBNET_CALLMETHOD	             onconnect(NETHANDLE clihandle,uint8_t result, uint16_t nLocalPort);
 extern void LIBNET_CALLMETHOD                onread(NETHANDLE srvhandle,NETHANDLE clihandle,uint8_t* data,uint32_t datasize,void* address);
 extern void LIBNET_CALLMETHOD	             onclose(NETHANDLE srvhandle,NETHANDLE clihandle);
 
@@ -120,8 +122,6 @@ CNetClientHttp::~CNetClientHttp()
 	}
 
 	m_videoFifo.FreeFifo();
-
-	XHNetSDK_Disconnect(nClient);
 
 	WriteLog(Log_Debug, "CNetClientHttp Îö¹¹ = %X nClient = %llu ,nMediaClient = %llu", this, nClient, nMediaClient);
 	malloc_trim(0);
