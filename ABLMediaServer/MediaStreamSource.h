@@ -22,20 +22,20 @@
 #include "MediaFifo.h"
 #include "mpeg4-hevc.h"
 #include "mpeg4-aac.h"
-#include "H265_SPS_Nal.h"
-#include "Unit_ReadSPS.h"
 #include "g711_table.h"
 #include "AACEncode.h"
 #include "FFVideoDecode.h"
 #include "FFVideoEncode.h"
 
 //#define  WriteCudaDecodeYUVFlag    1
-#define   CudaDecodeH264EncodeH264FIFOBufferLength  1680*1024*1
+//#define    WriteInputVdideoFlag      1
+
+#define   CudaDecodeH264EncodeH264FIFOBufferLength  2048*1024*1
 
 //用于记录rtsp推流时的SDP信息
 struct RtspSDPContentStruct
 {
-	char szSDPContent[768];
+	char szSDPContent[string_length_1024];
 	char szVideoName[64];
 	int  nVidePayload;
 
@@ -56,7 +56,7 @@ struct RtspSDPContentStruct
 	}
 };
 
-typedef  map<NETHANDLE, NETHANDLE> MediaSendMap;//媒体发送列表
+typedef  boost::unordered_map<NETHANDLE, NETHANDLE> MediaSendMap;//媒体发送列表
 
 #define  OneFrame_MP4_Stream_BufferLength    1024*1024*2 
 
@@ -66,15 +66,21 @@ public:
    CMediaStreamSource(char* szURL,uint64_t nClientTemp, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct h265ConvertH264Struct);
    ~CMediaStreamSource();
  
+   volatile bool   m_bPauseFlag;//媒体源是否暂停发流
+
+   bool  SetPause(bool bFlag);
+   bool  FFMPEGGetWidthHeight(unsigned char * videooutdata, int videooutdatasize, char* videoName, int * outwidth, int * outheight);
+
+#ifdef  WriteInputVdideoFlag
+   FILE*   fWriteInputVideo;
+#endif
 #ifdef WriteCudaDecodeYUVFlag
    int                    nWriteYUVCount;
    FILE*                  fCudaWriteYUVFile;
 #endif
-
-   time_t                tLastConnetStopTime;
-   char                  szStartAt[128];
-   uint64_t              inBytes, outBytes;
-   static uint64_t       nPushSize , nPlaySize  ;//接入总数，播放总数
+   unsigned char          szSPSPPSBuffer[4096];
+   int                    nSPSPPSBufferLength;
+   int                    nSrcWidth, nSrcHeight;//输入原始视频宽、高 
 
    H265ConvertH264Struct  m_h265ConvertH264Struct;
    bool                   ChangeVideoFilter(char *filterText, int fontSize, char *fontColor, float fontAlpha, int fontLeft, int fontTop);
@@ -116,7 +122,7 @@ public:
 
    uint64_t               tCopyVideoTime; //拷贝视频时间戳 
    int                    netBaseNetType; //所有链接的网络类型
-   char                   szJson[2048] ;  //生成的json
+   char                   szJson[string_length_4096] ;  //生成的json
 
    bool                   ConvertG711ToAAC(int nCodec, unsigned char* pG711, int nBytes,unsigned char* szOutAAC, int& nAACLength);
    CAACEncode             aacEnc;
@@ -134,14 +140,11 @@ public:
    MediaSourceType        nMediaSourceType;//媒体源类型，实况播放，录像点播
    uint32_t               nMediaDuration;//媒体源时长，单位秒，当录像点播时有效
 
-   char                   szRecordPath[1024];
+   char                   szRecordPath[string_length_2048];
    volatile   bool        enable_mp4;//是否录制mp4文件
    uint64_t               recordMP4;
 
    bool                   GetVideoWidthHeight(char* szVideoCodeName,unsigned char* pVideoData, int nDataLength);
-   bool                   GetWidthHeightFromSPS(unsigned char* szSPS, int nSPSLength, int& nWidth, int& nHeight);
-   CSPSReader              _spsreader;
-   bs_t                    s;
 
    void                   UpdateVideoFrameSpeed(int nVideoSpeed,int netType);
 	   
@@ -153,8 +156,6 @@ public:
    int                    nFmp4SPSPPSLength;
 
    struct mpeg4_hevc_t    hevc; 
-   vc_params_t            H265Params;
-   bool                   ParseSequenceParameterSet(unsigned char* data, int size, vc_params_t& params);
    bool                   H265FrameToFMP4File(unsigned char* szVideoData, int nLength); 
    unsigned  int          FindSpsPosition(char* szVideoCodeName, unsigned char* szVideoBuffer, int nBufferLength, bool &bFind);
 
@@ -172,9 +173,9 @@ public:
    void*                 tsPacketHandle ;
    FILE*                 fTSFileWrite;
    int                   fTSFileWriteByteCount;
-   char                  szOutputName[1024];
-   char                  szHookTSFileName[1024];
-   char                  szH264TempBuffer[1024];
+   char                  szOutputName[string_length_2048];
+   char                  szHookTSFileName[string_length_2048];
+   char                  szH264TempBuffer[string_length_2048];
    char                  szM3u8Buffer[1024];
    int                   avtype;
    int                   flags;
@@ -188,7 +189,7 @@ public:
 
    bool                  GetRtspSDPContent(RtspSDPContentStruct* sdpContent);
    RtspSDPContentStruct  rtspSDPContent;
-   unsigned char         pSPSPPSBuffer[1024];
+   unsigned char         pSPSPPSBuffer[string_length_2048];
    int                   nSPSPPSLength; 
 
    //检测是否是I帧
@@ -202,14 +203,14 @@ public:
    int                  GetTsFileSizeByOrder(int64_t nTsFileNameOrder);
 
    std::mutex           mediaTsFileLock;//媒体切片锁
-   char                 szTempBuffer[1024];
+   char                 szTempBuffer[string_length_2048];
    void                 CopyM3u8Buffer(char* szM3u8Buffer);
    bool                 ReturnM3u8Buffer(char* szOutM3u8);
 
    void                 ABLDeletePath(char* szDeletePath);
    void                 CreateSubPathByURL(char* szMediaURL);
-   char                 szTSFileSubPath[1024];//TS文件二级路径，用于补充TS文件的路径
-   char                 szHLSPath[1024]; //HLS路径，包括子路径，比如 D:\ABLMediaServer\www\Media\Camera_00001\
+   char                 szTSFileSubPath[string_length_2048];//TS文件二级路径，用于补充TS文件的路径
+   char                 szHLSPath[string_length_2048]; //HLS路径，包括子路径，比如 D:\ABLMediaServer\www\Media\Camera_00001\
 
    unsigned char*       pH265Buffer;
    int                  nMp4BufferLength;

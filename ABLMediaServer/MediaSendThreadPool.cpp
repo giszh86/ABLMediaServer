@@ -236,7 +236,7 @@ void CMediaSendThreadPool::ProcessFunc()
 				if (threadContainClient[nCurrentThreadID].nClients[i] > 0)
 				{
 #ifdef USE_BOOST
-					boost::shared_ptr<CNetRevcBase> pClient = GetNetRevcBaseClient(threadContainClient[nCurrentThreadID].nClients[i]);
+		           boost::shared_ptr<CNetRevcBase> pClient= GetNetRevcBaseClient(threadContainClient[nCurrentThreadID].nClients[i]);
 #else
 					auto pClient = GetNetRevcBaseClient(threadContainClient[nCurrentThreadID].nClients[i]);
 #endif		           
@@ -278,10 +278,8 @@ void CMediaSendThreadPool::ProcessFunc()
 				   }
 				   else
 				   {//找不到客户端 
-					   CMediaStreamSource::nPlaySize --;
-					   if (CMediaStreamSource::nPlaySize < 0)
-						   CMediaStreamSource::nPlaySize = 0;
-					   WriteLog(Log_Debug, "找不到客户端 ,把该客户端 nClient = %llu 从媒体发送线程池移除, nPlaySize = %llu ", threadContainClient[nCurrentThreadID].nClients[i], CMediaStreamSource::nPlaySize);
+
+					   WriteLog(Log_Debug, "把该客户端 nClient = %llu 从媒体发送线程池移除", threadContainClient[nCurrentThreadID].nClients[i]);
 
 					   threadContainClient[nCurrentThreadID].nClients[i] = 0; //把该通道设置为 0 ，
 					   threadContainClient[nCurrentThreadID].nTrueClientsCount -= 1;//链接数减少1 
