@@ -193,10 +193,18 @@ bool  CFFVideoEncode::EncodecAVFrame(AVFrame* inAVFrame, unsigned char* pEncodec
 	std::lock_guard<std::mutex> lock(enable_Lock);
 	if (m_bInitFlag)
 	{
+		//Ö´ÐÐË®Ó¡²Ù×÷
+		AVFrame *srcFrame = inAVFrame;
+		if (enableFilter)
+		{
+			if (videoFilter->FilteringFrame(inAVFrame))
+				srcFrame = videoFilter->filterFrame;
+		}
+
 		got_picture = 0;
-		inAVFrame->pts = nFrameNumber * (pCodecCtx->time_base.den) / ((pCodecCtx->time_base.num) * 25);
+		srcFrame->pts = nFrameNumber * (pCodecCtx->time_base.den) / ((pCodecCtx->time_base.num) * 25);
  
-		ret = avcodec_send_frame(pCodecCtx, inAVFrame);
+		ret = avcodec_send_frame(pCodecCtx, srcFrame);
 		if (ret < 0) {
 			av_packet_unref(&pkt);
 			return false;
@@ -213,6 +221,7 @@ bool  CFFVideoEncode::EncodecAVFrame(AVFrame* inAVFrame, unsigned char* pEncodec
 			memcpy(pEncodecData, pkt.data, pkt.size);
 			*nOutLength = pkt.size;
 			av_packet_unref(&pkt);
+			return true;
 		}
 
 		nFrameNumber ++;
