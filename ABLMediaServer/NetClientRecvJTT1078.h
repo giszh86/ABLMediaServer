@@ -78,12 +78,8 @@ public:
    volatile bool                bCheckRtspVersionFlag;
    char                         szURL[512];
    char                         szRequestFLVFile[512];
-#ifdef USE_BOOST
-   boost::shared_ptr<CMediaStreamSource> pMediaSource;
-#else
-   std::shared_ptr<CMediaStreamSource> pMediaSource;
-#endif
 
+   boost::shared_ptr<CMediaStreamSource> pMediaSource;
    volatile bool                         bDeleteRtmpPushH265Flag; //因为推rtmp265被删除标志 
 
 #ifdef  SaveNetDataToJTT1078File

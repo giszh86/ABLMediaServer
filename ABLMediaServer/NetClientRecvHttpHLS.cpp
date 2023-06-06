@@ -28,9 +28,8 @@ extern bool                                   DeleteMediaStreamSource(char* szUR
 extern CMediaSendThreadPool* pMediaSendThreadPool;
 
 #endif
-
 extern void LIBNET_CALLMETHOD	onconnect(NETHANDLE clihandle,
-	uint8_t result);
+	uint8_t result, uint16_t nLocalPort);
 
 extern void LIBNET_CALLMETHOD onread(NETHANDLE srvhandle,
 	NETHANDLE clihandle,
@@ -228,8 +227,6 @@ CNetClientRecvHttpHLS::~CNetClientRecvHttpHLS()
 	bRunFlag = false;
 	WriteLog(Log_Debug, "CNetClientRecvHttpHLS= %X, ¿ªÊ¼Ïú»ÙHLS nClient = %llu ", this, nClient);
 	requestFileFifo.FreeFifo();
-
-	XHNetSDK_Disconnect(nClient);
  
 	if (ts != NULL)
 	{

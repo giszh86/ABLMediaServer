@@ -12,7 +12,7 @@ E-Mail  79941308@qq.com
 #include "NetClientRecvRtmp.h"
 #ifdef USE_BOOST
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
-extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClientNoLock(NETHANDLE CltHandle);
+extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
 extern boost::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
 extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
 extern bool                                  DeleteMediaStreamSource(char* szURL);
@@ -21,7 +21,7 @@ extern MediaServerPort                       ABL_MediaServerPort;
 
 #else
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
-extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClientNoLock(NETHANDLE CltHandle);
+extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
 extern std::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
 extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
 extern bool                                  DeleteMediaStreamSource(char* szURL);
@@ -30,14 +30,13 @@ extern MediaServerPort                       ABL_MediaServerPort;
 
 #endif
 
-
 extern CMediaSendThreadPool*                 pMediaSendThreadPool;
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
 extern int                                   SampleRateArray[] ;
 extern CMediaFifo                            pMessageNoticeFifo;          //消息通知FIFO
 
 extern void LIBNET_CALLMETHOD	onconnect(NETHANDLE clihandle,
-	uint8_t result);
+	uint8_t result, uint16_t nLocalPort);
 
 extern void LIBNET_CALLMETHOD onread(NETHANDLE srvhandle,
 	NETHANDLE clihandle,
@@ -119,7 +118,7 @@ static int NetRtmpClientRecvCallBackFLV(void* param, int codec, const void* data
 	if (pClient == NULL || pClient->pMediaSource == NULL || !pClient->bRunFlag)
 		return 0;
 
-	if (FLV_AUDIO_AAC == codec)
+	if (FLV_AUDIO_AAC == codec && pClient->m_addStreamProxyStruct.disableAudio[0] == 0x30)
 	{
 		a_pts = pts;
 		a_dts = dts;
@@ -169,6 +168,10 @@ static int NetRtmpClientRecvCallBackFLV(void* param, int codec, const void* data
 
 				sprintf(pClient->szResponseBody, "{\"code\":0,\"memo\":\"success\",\"key\":%llu}", pClient->hParent);
 				pClient->ResponseHttp(pClient->nClient_http, pClient->szResponseBody, false);
+
+				auto  pParentPtr =  GetNetRevcBaseClient(pClient->hParent);
+				if (pParentPtr && pParentPtr->bProxySuccessFlag == false)
+					pClient->bProxySuccessFlag = pParentPtr->bProxySuccessFlag = true;
 			}
 		}
 
@@ -276,7 +279,6 @@ CNetClientRecvRtmp::~CNetClientRecvRtmp()
  	}
      WriteLog(Log_Debug, "CNetClientRecvRtmp 析构 = %X  nClient = %llu step 3 ",this, nClient);
 
-	XHNetSDK_Disconnect(nClient);
     WriteLog(Log_Debug, "CNetClientRecvRtmp 析构 = %X  nClient = %llu step 4 ",this, nClient);
 
 	int rtmpState = 0;
@@ -315,8 +317,6 @@ CNetClientRecvRtmp::~CNetClientRecvRtmp()
 	}
     WriteLog(Log_Debug, "CNetClientRecvRtmp 析构 = %X  nClient = %llu step 7 ",this, nClient);
 
-	//直接把代理拉流删除
-	pDisconnectBaseNetFifo.push((unsigned char*)&hParent, sizeof(hParent));
 	malloc_trim(0);
 	
     WriteLog(Log_Debug, "CNetClientRecvRtmp 析构 = %X  nClient = %llu step 8 ",this, nClient);
@@ -401,7 +401,7 @@ bool   CNetClientRecvRtmp::GetAppStreamByURL(char* app, char* stream)
 //发送第一个请求
 int CNetClientRecvRtmp::SendFirstRequst()
 {
-	char szApp[128] = { 0 }, szStream[256] = { 0 };
+	char szApp[string_length_256] = { 0 }, szStream[string_length_512] = { 0 };
 	if (!GetAppStreamByURL(szApp, szStream))
 	{
 		WriteLog(Log_Debug, "CNetClientRecvRtmp = %X 获取rtmp中的app、stream 有误 ,url = %s, nClient = %llu \r\n", this,szClientIP, nClient);

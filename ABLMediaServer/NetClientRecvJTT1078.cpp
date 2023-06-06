@@ -41,7 +41,6 @@ extern char                                  ABL_MediaSeverRunPath[256]; //µ±Ç°Â
 
 #endif
 
-
 extern void LIBNET_CALLMETHOD	onconnect(NETHANDLE clihandle,
 	uint8_t result);
 

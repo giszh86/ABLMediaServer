@@ -36,7 +36,6 @@ enum XHRtspURLType
 //#define    WriteHIKPsPacketData       1 //是否写海康PS流
 
 #define    RtspServerRecvDataLength             1024*32      //用于切割缓存区的大小 
-#define    MaxRtpSendVideoMediaBufferLength     1024*64      //用于拼接RTP包，准备发送 
 #define    MaxRtpSendAudioMediaBufferLength     1024*8       //用于拼接RTP包，准备发送 
 #define    VideoStartTimestampFlag              0xEFEFEFEF   //视频开始时间戳 
 
@@ -66,7 +65,6 @@ public:
    WWW_AuthenticateType       m_wwwType;
    unsigned char              szCallBackAudio[2048];
    unsigned char*             szCallBackVideo;
-   int                        m_nXHRtspURLType;
 
    _rtp_header                rtpHead;
 
@@ -137,7 +135,7 @@ public:
    unsigned char            szAudioRtpDataOverTCP[1500];
 
    uint32_t                hRtpVideo, hRtpAudio;
-   int                     nVideoSSRC;
+   uint32_t                nVideoSSRC;
 
    char                    szRtspSDPContent[512];
    char                    szRtspAudioSDP[512];
@@ -181,7 +179,7 @@ public:
    char            szCSeq[128];
    char            szTransport[256];
 
-   char            szResponseBuffer[2048];
+   char            szResponseBuffer[string_length_4096];
    int             nSendRet;
   static   uint64_t Session ;
   uint64_t         currentSession;
@@ -192,7 +190,7 @@ public:
    void            InputRtspData(unsigned char* pRecvData, int nDataLength);
 
    void           AddADTSHeadToAAC(unsigned char* szData, int nAACLength);
-   unsigned char  aacData[2048];
+   unsigned char  aacData[4096];
    int            timeValue;
    struct rtp_payload_t   hRtpHandle[MaxRtpHandleCount];
    void*                  rtpDecoder[MaxRtpHandleCount];
@@ -209,12 +207,11 @@ public:
    char           szAudioSDP[512];
    CABLSipParse   sipParseV, sipParseA;   //sdp 信息分析
 #ifdef USE_BOOST
-  boost::shared_ptr<CMediaStreamSource> pMediaSource;
+
+   boost::shared_ptr<CMediaStreamSource> pMediaSource;
 #else
    std::shared_ptr<CMediaStreamSource> pMediaSource;
 #endif
- 
-
 
    volatile bool  bIsInvalidConnectFlag; //是否为非法连接 
    volatile bool  bExitProcessFlagArray[3];
