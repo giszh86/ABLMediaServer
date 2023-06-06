@@ -42,7 +42,6 @@ extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHan
 int CNetClientSnap::nPictureNumber = 1;
 #endif
 
-
 CNetClientSnap::CNetClientSnap(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort,char* szShareMediaURL)
 {
 	bWaitIFrameFlag = false;
@@ -146,12 +145,8 @@ int CNetClientSnap::SendVideo()
 				nPictureNumber ++;
 				if (nPictureNumber > 99)
 					nPictureNumber = 1;
-#ifdef USE_BOOST
-				boost::shared_ptr<CPictureFileSource> pPicture = GetPictureFileSource(m_szShareMediaURL, true);
-#else
-				std::shared_ptr<CPictureFileSource> pPicture = GetPictureFileSource(m_szShareMediaURL, true);
-#endif
- 			
+
+ 				auto pPicture = GetPictureFileSource(m_szShareMediaURL,true);
 				if (pPicture)
 				{
 					sprintf(szPictureFileName, "%s%s", szPicturePath, szFileName);
@@ -169,13 +164,7 @@ int CNetClientSnap::SendVideo()
 					   }
 					   else
 					   {//直接返回图片
-#ifdef USE_BOOST
-
-						   boost::shared_ptr<CNetRevcBase>  pHttpClient = GetNetRevcBaseClient(nClient_http);
-#else
-
-						   auto  pHttpClient = GetNetRevcBaseClient(nClient_http);
-#endif
+						   auto  pHttpClient =  GetNetRevcBaseClient(nClient_http);
 						   if (pHttpClient != NULL)
 						   {
 							   CNetServerHTTP* httResponse = (CNetServerHTTP*) pHttpClient.get();
@@ -192,12 +181,7 @@ int CNetClientSnap::SendVideo()
 					   else
 					   {//从拷贝线程、发送线程移除
 						   bWaitIFrameFlag = true;//需要等等I帧
-#ifdef USE_BOOST
-						   boost::shared_ptr<CMediaStreamSource> pMediaSouce = GetMediaStreamSource(m_szShareMediaURL);
-#else
-						   std::shared_ptr<CMediaStreamSource> pMediaSouce = GetMediaStreamSource(m_szShareMediaURL);
-#endif
-			
+						   auto pMediaSouce = GetMediaStreamSource(m_szShareMediaURL);
 						   if (pMediaSouce)
 						   {//从拷贝线程，发送线程移除
 							   pMediaSouce->DeleteClientFromMap(nClient);
@@ -238,24 +222,13 @@ int CNetClientSnap::ProcessNetData()
 //发送第一个请求
 int CNetClientSnap::SendFirstRequst()
 {
-#ifdef USE_BOOST
-	boost::shared_ptr<CMediaStreamSource> pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
-	if (pMediaSource == NULL)
-	{
-		WriteLog(Log_Debug, "CNetClientSnap = %X nClient = %llu ,不存在媒体源 %s", this, nClient, m_szShareMediaURL);
-		pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
-		return -1;
-	}
-#else
 	auto pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
 	if (pMediaSource == NULL)
 	{
 		WriteLog(Log_Debug, "CNetClientSnap = %X nClient = %llu ,不存在媒体源 %s", this, nClient, m_szShareMediaURL);
 		pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
-		return -1;
+		return -1 ;
 	}
-#endif
-
 	bSnapSuccessFlag = false; //复位为尚未抓拍成功
 	nPrintTime = nCreateDateTime = GetTickCount64();//刷新时间
 	pMediaSendThreadPool->AddClientToThreadPool(nClient);

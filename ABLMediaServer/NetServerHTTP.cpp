@@ -408,8 +408,14 @@ bool CNetServerHTTP::SplitterTextParam(char* szTextParam)
 
 		if (strlen(szBlockString) > 0)
 		{//找出字段
+	
+#ifdef USE_BOOST
 			replace_all(strBlockString, "%20", "");//去掉空格
 			replace_all(strBlockString, "%26", "&");
+#else
+			ABL::replace_all(strBlockString, "%20", "");//去掉空格
+			ABL::replace_all(strBlockString, "%26", "&");			
+#endif
 			memset(szBlockString, 0x00, sizeof(szBlockString));
 			strcpy(szBlockString, strBlockString.c_str());
 
@@ -448,7 +454,15 @@ bool CNetServerHTTP::SplitterJsonParam(char* szJsonParam)
 	DeleteAllHttpKeyValue();
 
 	string strJson = szJsonParam;
+	
+#ifdef USE_BOOST
 	boost::trim(strJson);
+
+
+#else
+	ABL::trim(strJson);
+#endif
+
 	strcpy(szJsonParam, strJson.c_str());
 
 	if (szJsonParam[0] != '{' || szJsonParam[strlen(szJsonParam) - 1] != '}')
@@ -1244,7 +1258,7 @@ bool  CNetServerHTTP::index_api_openRtpServer()
 	if (strlen(m_openRtpServerStruct.send_app) > 0 && strlen(m_openRtpServerStruct.send_stream_id) > 0)
 	{
 		sprintf(szShareMediaURL, "/%s/%s", m_openRtpServerStruct.send_app, m_openRtpServerStruct.send_stream_id);
-		boost::shared_ptr<CMediaStreamSource> tmpMediaSource = GetMediaStreamSource(szShareMediaURL);
+		auto tmpMediaSource = GetMediaStreamSource(szShareMediaURL);
 		if (tmpMediaSource == NULL)
 		{
 			sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"MediaSource: %s Not Found \",\"key\":%d}", IndexApiCode_ParamError, szShareMediaURL, 0);
@@ -1341,7 +1355,7 @@ int   CNetServerHTTP::bindRtpServerPort()
 
 		if (nRet == 0 && nRet2 == 0)
 		{//rtp ,rtcp 都绑定成功
-			boost::shared_ptr<CNetRevcBase> pClient = CreateNetRevcBaseClient(NetBaseNetType_NetGB28181RtpServerUDP, 0, nMediaClient, "", ABL_nGB28181Port, szTemp);
+			auto pClient = CreateNetRevcBaseClient(NetBaseNetType_NetGB28181RtpServerUDP, 0, nMediaClient, "", ABL_nGB28181Port, szTemp);
  			if (pClient != NULL)
 			{
 				pClient->hParent = nMediaClient;//udp方式没有父类对象 ，所以把本身ID作为父类对象，在码流到达、码流断开时使用
@@ -1550,7 +1564,7 @@ bool  CNetServerHTTP::index_api_startSendRtp()
 	if (strlen(m_startSendRtpStruct.recv_app) > 0 && strlen(m_startSendRtpStruct.recv_stream) >  0  )
 	{
  		sprintf(szShareMediaURL, "/%s/%s", m_startSendRtpStruct.recv_app, m_startSendRtpStruct.recv_stream);
-		boost::shared_ptr<CMediaStreamSource> tmpMediaSource = GetMediaStreamSource(szShareMediaURL);
+		auto tmpMediaSource = GetMediaStreamSource(szShareMediaURL);
 		if (tmpMediaSource != NULL)
 		{
 			sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"MediaSource: %s Already exists \",\"key\":%d}", IndexApiCode_ParamError, szShareMediaURL, 0);
@@ -2045,13 +2059,22 @@ bool  CNetServerHTTP::index_api_getSnap()
 		ResponseSuccess(szResponseBody);
 		return false;
 	}
-
-	if (boost::all(m_getSnapStruct.timeout_sec, boost::is_digit()) == false )
+#ifdef USE_BOOST
+	if (boost::all(m_getSnapStruct.timeout_sec, boost::is_digit()) == false)
 	{//检测超时必须是数字
 		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"[timeout_sec ] error , must is number \"}", IndexApiCode_secretError);
 		ResponseSuccess(szResponseBody);
 		return false;
 	}
+#else
+	if (ABL::is_digits(m_getSnapStruct.timeout_sec) == false)
+	{//检测超时必须是数字
+		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"[timeout_sec ] error , must is number \"}", IndexApiCode_secretError);
+		ResponseSuccess(szResponseBody);
+		return false;
+	}
+#endif
+
 
 	//app ,stream 这两个字符串里面不能有 / 
 	if (strstr(m_getSnapStruct.app, "/") != NULL)
@@ -2087,10 +2110,8 @@ bool  CNetServerHTTP::index_api_getSnap()
 			sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"MediaSource: %s Not Found \"}", IndexApiCode_ParamError, szShareMediaURL);
 			ResponseSuccess(szResponseBody);
 			return false;
-		}
-
-		boost::shared_ptr<CNetRevcBase>  pClient = NULL;
-		pClient = GetNetRevcBaseClientByNetTypeShareMediaURL(NetBaseNetType_SnapPicture_JPEG, szShareMediaURL,true );
+		}		
+		auto pClient = GetNetRevcBaseClientByNetTypeShareMediaURL(NetBaseNetType_SnapPicture_JPEG, szShareMediaURL,true );
 		if (pClient)
 		{//复用以前对象
 			bResponseHttpFlag = false;
@@ -2348,7 +2369,7 @@ bool CNetServerHTTP::index_api_setTransFilter()
 	//检测 app stream 是否存在
 	char szShareMediaURL[string_length_512] = { 0 };
 	sprintf(szShareMediaURL, "/%s/%s", app, stream);
-	boost::shared_ptr<CMediaStreamSource> tmpMediaSource = GetMediaStreamSource(szShareMediaURL);
+	auto tmpMediaSource = GetMediaStreamSource(szShareMediaURL);
 	if (tmpMediaSource == NULL)
 	{
 		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"MediaSource: %s Not Found \"}", IndexApiCode_ParamError, szShareMediaURL);

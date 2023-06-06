@@ -72,6 +72,14 @@
 
 #endif
 
+//常用字符串长度 
+#define  string_length_256    256  
+#define  string_length_512    512 
+#define  string_length_1024   1024  
+#define  string_length_2048   2048  
+#define  string_length_4096   4096 
+#define  string_length_8192   8192 
+
 uint64_t GetCurrentSecond();
 uint64_t GetCurrentSecondByTime(char* szDateTime);
 bool     QureyRecordFileFromRecordSource(char* szShareURL, char* szFileName);
@@ -107,7 +115,7 @@ struct MediaCodecInfo
 		memset(szAudioName, 0x00, sizeof(szAudioName));
 		nChannels = 0;
 		nSampleRate = 0;
-		nBaseAddAudioTimeStamp = 64;
+		nBaseAddAudioTimeStamp = 0 ;
 		nWidth = 0;
 		nHeight = 0;
 		nVideoBitrate = 0;
@@ -118,7 +126,7 @@ struct MediaCodecInfo
 //媒体服务器运行端口结构
 struct MediaServerPort
 {
-	char secret[256];  //api操作密码
+	char secret[string_length_256];  //api操作密码
 	uint64_t nServerStartTime;//服务器启动时间
 	bool     bNoticeStartEvent;//是否已经通知上线 
 	int  nHttpServerPort; //http服务端口
@@ -420,7 +428,7 @@ enum NetBaseNetType
 
 };
 
-#define   MediaServerVerson                 "ABLMediaServer-6.3.5(2023-03-30)"
+#define   MediaServerVerson                 "ABLMediaServer-6.3.5(2023-05-31)"
 #define   RtspServerPublic                  "DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE, OPTIONS, ANNOUNCE, RECORD，GET_PARAMETER"
 #define   RecordFileReplaySplitter          "__ReplayFMP4RecordFile__"  //实况、录像区分的标志字符串，用于区分实况，放置在url中。
 
@@ -436,20 +444,20 @@ enum NetBaseNetType
 //rtsp ://190.16.37.52:554/03067970000000000102?DstCode=01&ServiceType=1&ClientType=1&StreamID=1&SrcTP=2&DstTP=2&SrcPP=1&DstPP=1&MediaTransMode=0&BroadcastType=0&Token=jCqM1pVyGb6stUfpLZDvgBG92nGzNBbP&DomainCode=49b5dca295cf42b283ca1d5dd2a0f398&UserId=8&
 struct RtspURLParseStruct
 {
-	char szSrcRtspPullUrl[512]; //原始URL
-	char szDstRtspUrl[512];//打算分发的RTSP url 
-	char szRequestFile[512];//请求的文件 比如 http://admin:szga2019@190.15.240.189:9088/Media/Camera_00001/hls.m3u8 中的 /Media/Camera_00001/hls.m3u8
+	char szSrcRtspPullUrl[string_length_1024]; //原始URL
+	char szDstRtspUrl[string_length_1024];//打算分发的RTSP url 
+	char szRequestFile[string_length_1024];//请求的文件 比如 http://admin:szga2019@190.15.240.189:9088/Media/Camera_00001/hls.m3u8 中的 /Media/Camera_00001/hls.m3u8
 	                                  // 比如 http://admin:szga2019@190.15.240.189:8088/Media/Camera_00001.flv 中的 /Media/Camera_00001.flv
-	char szRtspURLTrim[512];//去掉？后面的字符串得到的rtsp url 
+	char szRtspURLTrim[string_length_1024];//去掉？后面的字符串得到的rtsp url 
 
 	bool bHavePassword; //是否有密码
-	char szUser[32]; //用户名
-	char szPwd[32];//密码
-	char szIP[32]; //IP
-	char szPort[16];//端口
+	char szUser[128]; //用户名
+	char szPwd[128];//密码
+	char szIP[128]; //IP
+	char szPort[128];//端口
 
-	char szRealm[64];//用于认证方面
-	char szNonce[64];//用于认证方面
+	char szRealm[128];//用于认证方面
+	char szNonce[128];//用于认证方面
 
 	RtspURLParseStruct()
 	{
@@ -471,12 +479,12 @@ struct RtspURLParseStruct
 //代理拉流转发参数结构
 struct addStreamProxyStruct
 {
-	char  secret[256];//api操作密码 
-	char  vhost[64];//添加流的虚拟主机
-	char  app[128];//添加流的应用名
-	char  stream[128];//添加流的id 
-	char  url[512];//拉流地址 ，支持 rtsp\rtmp\http-flv \ hls 
-	char  isRtspRecordURL[128];//是否rtsp录像回放 
+	char  secret[string_length_256];//api操作密码 
+	char  vhost[string_length_256];//添加流的虚拟主机
+	char  app[string_length_256];//添加流的应用名
+	char  stream[string_length_512];//添加流的id 
+	char  url[string_length_1024];//拉流地址 ，支持 rtsp\rtmp\http-flv \ hls 
+	char  isRtspRecordURL[64];//是否rtsp录像回放 
 	char  enable_mp4[64];//是否录像
 	char  enable_hls[64];//是否开启hls
 	char  convertOutWidth[64];//转码输出宽
@@ -484,6 +492,7 @@ struct addStreamProxyStruct
 	char  H264DecodeEncode_enable[64];//H264是否解码再编码 
 	char  RtpPayloadDataType[64]; 
 	char  disableVideo[16];//过滤掉视频 1 过滤掉视频 ，0 不过滤视频 ，默认 0 
+	char  disableAudio[16];//过滤掉音频 1 过滤掉音频 ，0 不过滤音频 ，默认 0 
 
 	addStreamProxyStruct()
 	{
@@ -500,13 +509,14 @@ struct addStreamProxyStruct
 		memset(H264DecodeEncode_enable, 0x00, sizeof(H264DecodeEncode_enable));
 		memset(RtpPayloadDataType, 0x00, sizeof(RtpPayloadDataType));
 		memset(disableVideo, 0x00, sizeof(disableVideo));
+		memset(disableAudio, 0x00, sizeof(disableAudio));
 	}
 };
 
 //所以删除请求结构
 struct delRequestStruct
 {
-	char  secret[256];//api操作密码 
+	char  secret[string_length_256];//api操作密码 
 	char  key[128];//key
  
 	delRequestStruct()
@@ -519,11 +529,13 @@ struct delRequestStruct
 //代理推流转发参数结构
 struct addPushProxyStruct
 {
-	char  secret[256];//api操作密码 
-	char  vhost[64];//添加流的虚拟主机
-	char  app[128];//添加流的应用名
-	char  stream[128];//添加流的id 
-	char  url[384];//拉流地址 ，支持 rtsp\rtmp\http-flv \ hls 
+	char  secret[string_length_256];//api操作密码 
+	char  vhost[string_length_256];//添加流的虚拟主机
+	char  app[string_length_256];//添加流的应用名
+	char  stream[string_length_512];//添加流的id 
+	char  url[string_length_1024];//拉流地址 ，支持 rtsp\rtmp\http-flv \ hls 
+	char  disableVideo[16];//过滤掉视频 1 过滤掉视频 ，0 不过滤视频 ，默认 0 
+	char  disableAudio[16];//过滤掉音频 1 过滤掉音频 ，0 不过滤音频 ，默认 0 
 
 	addPushProxyStruct()
 	{
@@ -532,26 +544,33 @@ struct addPushProxyStruct
 		memset(app, 0x00, sizeof(app));
 		memset(stream, 0x00, sizeof(stream));
 		memset(url, 0x00, sizeof(url));
+		memset(disableVideo, 0x00, sizeof(disableVideo));
+		memset(disableAudio, 0x00, sizeof(disableAudio));
 	}
 };
 
 //创建GB28181接收码流
 struct openRtpServerStruct
 {
-	char   secret[256];//api操作密码 
-	char   vhost[64];//添加流的虚拟主机
-	char   app[128];//添加流的应用名
-	char   stream_id[128];//添加流的id 
+	char   secret[string_length_256];//api操作密码 
+	char   vhost[string_length_256];//添加流的虚拟主机
+	char   app[string_length_256];//添加流的应用名
+	char   stream_id[string_length_512];//添加流的id 
 	char   port[64] ;//GB2818端口
 	char   enable_tcp[16]; //0 UDP，1 TCP 
 	char   payload[64]; //payload rtp 打包的payload 
 	char   enable_mp4[64];//是否录像
 	char   enable_hls[64];//是否开启hls
-	char  convertOutWidth[64];//转码输出宽
-	char  convertOutHeight[64];//转码输出高 
-	char  H264DecodeEncode_enable[64];//H264是否解码再编码 
-	char  RtpPayloadDataType[16];//国标接入rtp负载的数据类型 【 1 rtp + PS 】 , 【 2 rtp + ES 】 ,【3 ，rtp + XHB 一家公司的私有格式】
-	char  disableVideo[16];//过滤掉视频 1 过滤掉视频 ，0 不过滤视频 ，默认 0 
+	char   convertOutWidth[64];//转码输出宽
+	char   convertOutHeight[64];//转码输出高 
+	char   H264DecodeEncode_enable[64];//H264是否解码再编码 
+	char   RtpPayloadDataType[16];//国标接入rtp负载的数据类型 【 1 rtp + PS 】 , 【 2 rtp + ES 】 ,【3 ，rtp + XHB 一家公司的私有格式】
+	char   disableVideo[16];//过滤掉视频 1 过滤掉视频 ，0 不过滤视频 ，默认 0 
+	char   disableAudio[16];//过滤掉音频 1 过滤掉音频 ，0 不过滤音频 ，默认 0 
+	char   send_app[string_length_256];//发送出去
+	char   send_stream_id[string_length_512];//发送出去
+	char   send_disableVideo[16];//过滤掉视频 1 过滤掉视频 ，0 不过滤视频 ，默认 0 
+	char   send_disableAudio[16];//过滤掉音频 1 过滤掉音频 ，0 不过滤音频 ，默认 0 
 
 	openRtpServerStruct()
 	{
@@ -569,16 +588,21 @@ struct openRtpServerStruct
 		memset(H264DecodeEncode_enable, 0x00, sizeof(H264DecodeEncode_enable));
 		memset(RtpPayloadDataType, 0x00, sizeof(RtpPayloadDataType));
 		memset(disableVideo, 0x00, sizeof(disableVideo));
+		memset(disableAudio, 0x00, sizeof(disableAudio));
+		memset(send_app, 0x00, sizeof(send_app));
+		memset(send_stream_id, 0x00, sizeof(send_stream_id));
+		memset(send_disableVideo, 0x00, sizeof(send_disableVideo));
+		memset(send_disableAudio, 0x00, sizeof(send_disableAudio));
 	}
 };
 
 //创建GB28181码流发送
 struct startSendRtpStruct
 {
-	char   secret[256];//api操作密码 
-	char   vhost[64];//添加流的虚拟主机
-	char   app[128];//添加流的应用名
-	char   stream[128];//添加流的id 
+	char   secret[string_length_256];//api操作密码 
+	char   vhost[string_length_256];//添加流的虚拟主机
+	char   app[string_length_256];//添加流的应用名
+	char   stream[string_length_512];//添加流的id 
 	char   ssrc[128];//ssrc
 	char   src_port[64];//发送源绑定的端口号，0 自动产生一个端口，大于0 则绑定用户指定的端口
 	char   dst_url[512];//
@@ -586,6 +610,12 @@ struct startSendRtpStruct
 	char   is_udp[16]; //0 UDP，1 TCP 
 	char   payload[24]; //payload rtp 打包的payload 
 	char   RtpPayloadDataType[64];//打包格式 1　PS、２　ES、３　XHB
+	char   disableVideo[16];//过滤掉视频 1 过滤掉视频 ，0 不过滤视频 ，默认 0 
+	char   disableAudio[16];//过滤掉音频 1 过滤掉音频 ，0 不过滤音频 ，默认 0 
+	char   recv_app[string_length_256];//用于接收
+	char   recv_stream[string_length_512];//用于接收
+	char   recv_disableVideo[16];//过滤掉视频 1 过滤掉视频 ，0 不过滤视频 ，默认 0 
+	char   recv_disableAudio[16];//过滤掉音频 1 过滤掉音频 ，0 不过滤音频 ，默认 0 
 
 	startSendRtpStruct()
 	{
@@ -599,16 +629,22 @@ struct startSendRtpStruct
 		memset(is_udp, 0x00, sizeof(is_udp));
 		memset(payload, 0x00, sizeof(payload));
 		memset(RtpPayloadDataType, 0x00, sizeof(RtpPayloadDataType));
+		memset(disableVideo, 0x00, sizeof(disableVideo));
+		memset(disableAudio, 0x00, sizeof(disableAudio));
+		memset(recv_app, 0x00, sizeof(recv_app));
+		memset(recv_stream, 0x00, sizeof(recv_stream));
+		memset(recv_disableVideo, 0x00, sizeof(recv_disableVideo));
+		memset(recv_disableAudio, 0x00, sizeof(recv_disableAudio));
 	}
 };
 
 //获取列表结构
 struct getMediaListStruct 
 {
-	char   secret[256];//api操作密码 
-	char   vhost[256];//添加流的虚拟主机
-	char   app[256];//添加流的应用名
-	char   stream[256];//添加流的id 
+	char   secret[string_length_256];//api操作密码 
+	char   vhost[string_length_256];//添加流的虚拟主机
+	char   app[string_length_256];//添加流的应用名
+	char   stream[string_length_512];//添加流的id 
 
 	getMediaListStruct()
 	{
@@ -622,7 +658,7 @@ struct getMediaListStruct
 //获取往外发送媒体列表结构
 struct getOutListStruct
 {
-	char   secret[256];//api操作密码 
+	char   secret[string_length_256];//api操作密码 
 	char   outType[128];//媒体源类型 rtsp ,rtmp ,flv ,hls ,gb28181 ,webrtc  
 	getOutListStruct()
 	{
@@ -634,7 +670,7 @@ struct getOutListStruct
 //获取系统配置
 struct getServerConfigStruct
 {
-	char   secret[256];//api操作密码 
+	char   secret[string_length_256];//api操作密码 
 	getServerConfigStruct()
 	{
 		memset(secret, 0x00, sizeof(secret));
@@ -644,11 +680,11 @@ struct getServerConfigStruct
 //关闭源流结构
 struct closeStreamsStruct
 {
-	char    secret[256];//api操作密码
-	char    schema[256];
-	char   	vhost[256];
-	char   	app[256];
-	char   	stream[256];
+	char    secret[string_length_256];//api操作密码
+	char    schema[string_length_256];
+	char   	vhost[string_length_256];
+	char   	app[string_length_256];
+	char   	stream[string_length_512];
 	int	    force ; //1 强制关闭，不管是否有人观看 ，0 有人能观看时，不关闭
 	closeStreamsStruct()
 	{
@@ -664,10 +700,10 @@ struct closeStreamsStruct
 //开始、停止录像
 struct startStopRecordStruct
 {
-	char  secret[256];//api操作密码 
-	char  vhost[64];//添加流的虚拟主机
-	char  app[128];//添加流的应用名
-	char  stream[128];//添加流的id 
+	char  secret[string_length_256];//api操作密码 
+	char  vhost[string_length_256];//添加流的虚拟主机
+	char  app[string_length_256];//添加流的应用名
+	char  stream[string_length_512];//添加流的id 
 
 	startStopRecordStruct()
 	{
@@ -681,10 +717,10 @@ struct startStopRecordStruct
 //查询录像文件列表
 struct queryRecordListStruct
 {
-	char  secret[256];//api操作密码 
-	char  vhost[64];//添加流的虚拟主机
-	char  app[128];//添加流的应用名
-	char  stream[128];//添加流的id 
+	char  secret[string_length_256];//api操作密码 
+	char  vhost[string_length_256];//添加流的虚拟主机
+	char  app[string_length_256];//添加流的应用名
+	char  stream[string_length_512];//添加流的id 
 	char  starttime[128];//开始时间
 	char  endtime[128];//开始时间
 
@@ -702,10 +738,10 @@ struct queryRecordListStruct
 //请求抓拍
 struct getSnapStruct
 {
-	char  secret[256];//api操作密码 
-	char  vhost[64];//添加流的虚拟主机
-	char  app[128];//添加流的应用名
-	char  stream[128];//添加流的id 
+	char  secret[string_length_256];//api操作密码 
+	char  vhost[string_length_256];//添加流的虚拟主机
+	char  app[string_length_256];//添加流的应用名
+	char  stream[string_length_512];//添加流的id 
 	char  timeout_sec[128];//抓拍图片超时 ，单位 秒
 
 	getSnapStruct()
@@ -721,10 +757,10 @@ struct getSnapStruct
 //查询图片文件列表
 struct queryPictureListStruct
 {
-	char  secret[256];//api操作密码 
-	char  vhost[64];//添加流的虚拟主机
-	char  app[128];//添加流的应用名
-	char  stream[128];//添加流的id 
+	char  secret[string_length_256];//api操作密码 
+	char  vhost[string_length_256];//添加流的虚拟主机
+	char  app[string_length_256];//添加流的应用名
+	char  stream[string_length_512];//添加流的id 
 	char  starttime[128];//开始时间 
 	char  endtime[128];//开始时间  
 
@@ -742,10 +778,10 @@ struct queryPictureListStruct
 //查询图片文件列表
 struct controlStreamProxy
 {
-	char  secret[256];//api操作密码 
+	char  secret[string_length_256];//api操作密码 
 	char  key[64];//key
- 	char  command[128];//命令 
-	char  value[128];//值
+ 	char  command[string_length_256];//命令 
+	char  value[string_length_256];//值
 
 	controlStreamProxy()
 	{
@@ -759,15 +795,32 @@ struct controlStreamProxy
 //设置配置参数值
 struct SetConfigParamValue
 {
-	char  secret[256];//api操作密码 
-	char  key[128];//key
-	char  value[128];//值
+	char  secret[string_length_256];//api操作密码 
+	char  key[string_length_256];//key
+	char  value[string_length_256];//值
 
 	SetConfigParamValue()
 	{
 		memset(secret, 0x00, sizeof(secret));
 		memset(key, 0x00, sizeof(key));
  		memset(value, 0x00, sizeof(value));
+	}
+};
+
+//获取服务器占用端口结构
+struct ListServerPortStruct
+{
+	char   secret[string_length_256];//api操作密码 
+	char   vhost[string_length_256];//添加流的虚拟主机
+	char   app[string_length_256];//添加流的应用名
+	char   stream[string_length_512];//添加流的id 
+
+	ListServerPortStruct()
+	{
+		memset(secret, 0x00, sizeof(secret));
+		memset(vhost, 0x00, sizeof(vhost));
+		memset(app, 0x00, sizeof(app));
+		memset(stream, 0x00, sizeof(stream));
 	}
 };
 
@@ -932,7 +985,7 @@ bool          ABLDeleteFile(char* szFileName);
 struct MessageNoticeStruct
 {
 	uint64_t nClient;
-	char     szMsg[2048];
+	char     szMsg[string_length_4096];
 	int      nSendCount;
 	MessageNoticeStruct()
 	{
@@ -945,13 +998,11 @@ struct MessageNoticeStruct
 #ifndef OS_System_Windows
 unsigned long GetTickCount();
 unsigned long GetTickCount64();
-
 #ifdef USE_BOOST
 void          Sleep(int mMicroSecond);
 #endif
 
 #endif
-
 #include "XHNetSDK.h"
 #include "ABLSipParse.h"
 
@@ -990,7 +1041,6 @@ using namespace boost;
 #include <cctype>
 
 #endif
-
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
@@ -1009,7 +1059,9 @@ extern "C"
 #include <libswresample/swresample.h>
 }
 using namespace std;
+
 using namespace rapidjson;
+
 typedef list<int> LogFileVector;
 
 #define SAFE_ARRAY_DELETE(x) if( x != NULL ) { delete[] x; x = NULL; }

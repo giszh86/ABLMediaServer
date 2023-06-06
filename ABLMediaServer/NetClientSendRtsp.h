@@ -26,7 +26,7 @@
 //#define  WriteRtpDepacketFileFlag   1 //是否写rtp解包文件
 
 #define    RtspServerRecvDataLength             1024*64      //用于切割缓存区的大小 
-#define    MaxRtpSendVideoMediaBufferLength     1024*64      //用于拼接RTP包，准备发送 
+#define    MaxRtpSendVideoMediaBufferLength     1024*64       //用于拼接RTP包，准备发送 
 #define    MaxRtpSendAudioMediaBufferLength     1024*8       //用于拼接RTP包，准备发送 
 #define    VideoStartTimestampFlag              0xEFEFEFEF   //视频开始时间戳 
 
@@ -115,7 +115,7 @@ public:
    _rtp_packet_sessionopt  optionAudio;
    _rtp_packet_input       inputAudio;
    uint32_t                hRtpVideo, hRtpAudio;
-   int                     nVideoSSRC;
+   uint32_t                nVideoSSRC;
 
    bool                    GetRtspSDPFromMediaStreamSource(RtspSDPContentStruct sdpContent,bool bGetFlag);
    char                    szRtspSDPContent[512];
@@ -160,7 +160,7 @@ public:
    char            szCSeq[128];
    char            szTransport[256];
 
-   char            szResponseBuffer[2048];
+   char            szResponseBuffer[string_length_4096];
    int             nSendRet;
   static   uint64_t Session ;
   uint64_t         currentSession;

@@ -15,13 +15,13 @@ LIBS = -L../bin \
 ABLMediaServer:ABLMediaServer.o ABLogFile.o ABLSipParse.o CNetRtmpServerRecv.o Ini.o DigestAuthentication.o LCbase64.o MediaFifo.o MediaSendThreadPool.o \
                MediaStreamSource.o netBase64.o NetBaseThreadPool.o NetClientAddPushProxy.o NetClientAddStreamProxy.o NetClientRecvFLV.o NetClientRecvHttpHLS.o NetClientRecvRtmp.o \
                NetClientRecvRtsp.o NetClientSendRtmp.o NetClientSendRtsp.o NetGB28181RtpClient.o NetGB28181RtpServer.o NetRecvBase.o NetRtspServer.o \
-			   NetServerHLS.o NetServerHTTP.o NetServerHTTP_FLV.o ourMD5.o RtcpPacket.o strDup.o SHA1.o NetServerWS_FLV.o Unit_ReadSPS.o NetServerHTTP_MP4.o \
+			   NetServerHLS.o NetServerHTTP.o NetServerHTTP_FLV.o ourMD5.o RtcpPacket.o strDup.o SHA1.o NetServerWS_FLV.o NetServerHTTP_MP4.o \
 			   StreamRecordFMP4.o RecordFileSource.o ReadRecordFileInput.o g711.o g711_table.o AACEncode.o NetClientHttp.o VideoDecode.o PictureFileSource.o \
 			   NetClientSnap.o AVFrameSWS.o FFVideoEncode.o FFVideoDecode.o NetServerRecvRtpTS_PS.o RtpPSStreamInput.o RtpTSStreamInput.o NetGB28181Listen.o StreamRecordMP4.o
 	g++ -std=c++11 -o ABLMediaServer ABLMediaServer.o ABLogFile.o ABLSipParse.o CNetRtmpServerRecv.o Ini.o DigestAuthentication.o LCbase64.o MediaFifo.o MediaSendThreadPool.o \
 		   MediaStreamSource.o netBase64.o NetBaseThreadPool.o NetClientAddPushProxy.o NetClientAddStreamProxy.o NetClientRecvFLV.o NetClientRecvHttpHLS.o NetClientRecvRtmp.o \
 		   NetClientRecvRtsp.o NetClientSendRtmp.o NetClientSendRtsp.o NetGB28181RtpClient.o NetGB28181RtpServer.o NetRecvBase.o NetRtspServer.o NetGB28181Listen.o \
-		   NetServerHLS.o NetServerHTTP.o NetServerHTTP_FLV.o ourMD5.o RtcpPacket.o strDup.o SHA1.o NetServerWS_FLV.o Unit_ReadSPS.o NetServerHTTP_MP4.o StreamRecordFMP4.o \
+		   NetServerHLS.o NetServerHTTP.o NetServerHTTP_FLV.o ourMD5.o RtcpPacket.o strDup.o SHA1.o NetServerWS_FLV.o NetServerHTTP_MP4.o StreamRecordFMP4.o \
 		   RecordFileSource.o ReadRecordFileInput.o g711.o g711_table.o AACEncode.o NetClientHttp.o  VideoDecode.o PictureFileSource.o NetClientSnap.o AVFrameSWS.o \
 		   FFVideoEncode.o FFVideoDecode.o NetServerRecvRtpTS_PS.o RtpPSStreamInput.o RtpTSStreamInput.o StreamRecordMP4.o $(LIBS) -lpthread -lXHNetSDK -lPsDemux -lPsMux -lRtpDepacket -lRtpPacket -ldl
 ABLMediaServer.o:ABLMediaServer.cpp
@@ -87,9 +87,7 @@ strDup.o:strDup.cpp
 SHA1.o:SHA1.cpp
 	g++ -std=c++11 $(INCLUDES) -c SHA1.cpp		
 NetServerWS_FLV.o:NetServerWS_FLV.cpp
-	g++ -std=c++11 $(INCLUDES) -c NetServerWS_FLV.cpp		
-Unit_ReadSPS.o:Unit_ReadSPS.cpp
-	g++ -std=c++11 $(INCLUDES) -c Unit_ReadSPS.cpp	
+	g++ -std=c++11 $(INCLUDES) -c NetServerWS_FLV.cpp
 NetServerHTTP_MP4.o:NetServerHTTP_MP4.cpp
 	g++ -std=c++11 $(INCLUDES) -c NetServerHTTP_MP4.cpp	
 StreamRecordFMP4.o:StreamRecordFMP4.cpp

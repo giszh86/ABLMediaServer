@@ -26,7 +26,7 @@
 #include "AACEncode.h"
 #include "FFVideoDecode.h"
 #include "FFVideoEncode.h"
-
+#include <map>
 //#define  WriteCudaDecodeYUVFlag    1
 //#define    WriteInputVdideoFlag      1
 
@@ -55,8 +55,15 @@ struct RtspSDPContentStruct
 		nSampleRate = 0 ;
 	}
 };
+#ifdef USE_BOOST
 
 typedef  boost::unordered_map<NETHANDLE, NETHANDLE> MediaSendMap;//媒体发送列表
+
+#else
+typedef  std::map<NETHANDLE, NETHANDLE> MediaSendMap;//媒体发送列表
+#endif
+
+
 
 #define  OneFrame_MP4_Stream_BufferLength    1024*1024*2 
 

@@ -17,11 +17,12 @@ extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 
-extern CMediaSendThreadPool* pMediaSendThreadPool;
+extern CMediaSendThreadPool*                 pMediaSendThreadPool;
 extern CMediaFifo                            pDisconnectBaseNetFifo; //ÇåÀí¶ÏÁÑµÄÁ´½Ó 
 extern char                                  ABL_MediaSeverRunPath[256]; //µ±Ç°Â·¾¶
-extern MediaServerPort                       ABL_MediaServerPort;
+extern MediaServerPort                       ABL_MediaServerPort; 
 extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
+extern CMediaFifo                            pMessageNoticeFifo;          //ÏûÏ¢Í¨ÖªFIFO
 #else
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 extern std::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
@@ -34,8 +35,8 @@ extern CMediaFifo                            pDisconnectBaseNetFifo; //ÇåÀí¶ÏÁÑµ
 extern char                                  ABL_MediaSeverRunPath[256]; //µ±Ç°Â·¾¶
 extern MediaServerPort                       ABL_MediaServerPort;
 extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
+extern CMediaFifo                            pMessageNoticeFifo;          //ÏûÏ¢Í¨ÖªFIFO
 #endif
-
 
 CNetGB28181Listen::CNetGB28181Listen(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort,char* szShareMediaURL)
 {
@@ -53,6 +54,16 @@ CNetGB28181Listen::~CNetGB28181Listen()
  
 	if(nMediaClient > 0)
 		pDisconnectBaseNetFifo.push((unsigned char*)&nMediaClient, sizeof(nMediaClient));
+	else
+	{//ÂëÁ÷Ã»ÓÐ´ïµ½Í¨Öª
+ 		if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nClientNotArrive > 0 && bUpdateVideoFrameSpeedFlag == false)
+		{
+			MessageNoticeStruct msgNotice;
+			msgNotice.nClient = ABL_MediaServerPort.nClientNotArrive;
+			sprintf(msgNotice.szMsg, "{\"mediaServerId\":\"%s\",\"app\":\"%s\",\"stream\":\"%s\",\"networkType\":%d,\"key\":%llu}", ABL_MediaServerPort.mediaServerID, m_addStreamProxyStruct.app, m_addStreamProxyStruct.stream, netBaseNetType, nClient);
+			pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
+		}
+	}
 
 	WriteLog(Log_Debug, "CNetGB28181Listen Îö¹¹ = %X  nClient = %llu ,nMediaClient = %llu\r\n", this, nClient, nMediaClient);
 	malloc_trim(0);

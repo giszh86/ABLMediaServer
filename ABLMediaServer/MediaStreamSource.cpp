@@ -1630,7 +1630,7 @@ bool CMediaStreamSource::PushAudio(unsigned char* szAudio, int nLength, char* sz
 	//码流达到通知,只有音频码流也需要通知 【当 strlen(m_mediaCodecInfo.szVideoName) == 0  只有音频，没有视频 】,需要等待音频格式拷贝好 （strlen(m_mediaCodecInfo.szAudioName) > 0）
 	if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nClientArrive > 0 && strlen(m_mediaCodecInfo.szVideoName) == 0  &&  strlen(m_mediaCodecInfo.szAudioName) > 0 && bNoticeClientArriveFlag == false)
 	{
-		boost::shared_ptr<CNetRevcBase> pClient = GetNetRevcBaseClient(nClient);
+		auto pClient = GetNetRevcBaseClient(nClient);
 		if (nClient != NULL)
 		{
 			MessageNoticeStruct msgNotice;
@@ -1787,7 +1787,7 @@ bool CMediaStreamSource::PushAudio(unsigned char* szAudio, int nLength, char* sz
 	uint64_t   nClient;
 	for (it = mediaSendMap.begin(); it != mediaSendMap.end();)
 	{
-		boost::shared_ptr<CNetRevcBase> pClient = GetNetRevcBaseClient((*it).second);
+		auto pClient = GetNetRevcBaseClient((*it).second);
 		if (pClient != NULL)
 		{
 			//把音频编码信息拷贝给分发对象
@@ -2354,7 +2354,7 @@ bool  CMediaStreamSource::GetVideoWidthHeight(char* szVideoCodeName, unsigned ch
 	//码流达到通知
 	if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nClientArrive > 0 && m_mediaCodecInfo.nWidth > 0 && m_mediaCodecInfo.nHeight > 0 && bNoticeClientArriveFlag == false)
 	{  
-		boost::shared_ptr<CNetRevcBase> pClient = GetNetRevcBaseClient(nClient);
+		auto pClient = GetNetRevcBaseClient(nClient);
 		if (nClient != NULL)
 		{
 			MessageNoticeStruct msgNotice;

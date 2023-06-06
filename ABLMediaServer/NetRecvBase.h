@@ -2,12 +2,10 @@
 #define _NetRecvBase_H
 
 #include "MediaFifo.h"
-#include "H265_SPS_Nal.h"
-#include "Unit_ReadSPS.h"
 #include "MediaStreamSource.h"
 #include "AACEncode.h"
-#include <memory>
-#define CalcMaxVideoFrameSpeed         20  //计算视频帧速度次数
+
+#define CalcMaxVideoFrameSpeed         25  //计算视频帧速度次数
 #define Send_ImageFile_MaxPacketCount  1024*32
 
 class CNetRevcBase
@@ -28,7 +26,11 @@ public:
    virtual int   SendFirstRequst() = 0;//发送第一个请求
    virtual bool  RequestM3u8File() = 0 ;
 
-   char                   szPlayParams[512];//播放url中的参数，即？符号后面的字符串
+   int                    m_nXHRtspURLType;
+   char*                  getAACConfig(int nChanels, int nSampleRate);
+   char                   szConfigStr[64];
+
+   char                   szPlayParams[string_length_1024];//播放url中的参数，即？符号后面的字符串
    volatile  bool         bOn_playFlag;//播放通知是否发送过
    ABLRtspPlayerType      m_rtspPlayerType;//rtsp 播放类型 
    H265ConvertH264Struct  m_h265ConvertH264Struct;
@@ -43,6 +45,7 @@ public:
 
    int                    nRtspProcessStep;
    volatile bool          m_bSendMediaWaitForIFrame;//发送媒体流是否等待到I帧 
+   volatile uint32_t      m_bWaitIFrameCount;//等待I帧总帧数
    volatile bool          m_bIsRtspRecordURL;//代理拉流时是录像回放的url 
 
    volatile bool          m_bPauseFlag;//在录像回放时，是否暂停状态
@@ -58,33 +61,27 @@ public:
    volatile  bool         bSnapSuccessFlag ;//是否抓拍成功过
 
    bool                   bConnectSuccessFlag;
-   char                   app[512];
-   char                   stream[512];
-   char                   szJson[2048] ;  //生成的json
+   char                   app[string_length_256];
+   char                   stream[string_length_512];
+   char                   szJson[string_length_4096] ;  //生成的json
 
    _rtp_header             rtpHeader;
    _rtp_header*            rtpHeaderPtr;
    _rtp_header*            rtpHeaderXHB;
    unsigned short          rtpExDataLength;
-
 #ifdef USE_BOOST
    boost::shared_ptr<CMediaStreamSource>   CreateReplayClient(char* szReplayURL, uint64_t* nReturnReplayClient);
 #else
    std::shared_ptr<CMediaStreamSource>   CreateReplayClient(char* szReplayURL, uint64_t* nReturnReplayClient);
-#endif  
+#endif
+  
    bool                    QueryRecordFileIsExiting(char* szReplayRecordFileURL);
 
-   char                    szRecordPath[1024];//录像保存的路径 D:\video\Media\Camera_000001
-   char                    szPicturePath[1024];//图片保存的路径 D:\video\Media\Camera_000001
+   char                    szRecordPath[string_length_2048];//录像保存的路径 D:\video\Media\Camera_000001
+   char                    szPicturePath[string_length_2048];//图片保存的路径 D:\video\Media\Camera_000001
 
    volatile  uint64_t      nReConnectingCount;//重连次数 
    volatile  bool          bProxySuccessFlag;//各种代理是否成功
-
-   unsigned  int           FindSpsPosition(unsigned char* szVideoBuffer, int nBufferLength, bool &bFind);
-   bool                    ParseSequenceParameterSet(BYTE* data, int size, vc_params_t& params);
-   bool                    GetWidthHeightFromSPS(unsigned char* szSPS, int nSPSLength, int& nWidth, int& nHeight);
-   CSPSReader              _spsreader;
-   bs_t                    s;
 
    int                     CalcVideoFrameSpeed(unsigned char* pRtpData,int nLength);//计算视频帧速度
    int                     CalcFlvVideoFrameSpeed(int nVideoPTS,int nMaxValue);
@@ -100,7 +97,7 @@ public:
    int                     nUseNewAddAudioTimeStamp;//使用新的音频时间戳次数
    bool                    bUserNewAudioTimeStamp;
 
-   char                    m_szShareMediaURL[1024];//分享出去的地址，比如 /Media/Camera_00001  /live/test_00001 等等 
+   char                    m_szShareMediaURL[string_length_2048];//分享出去的地址，比如 /Media/Camera_00001  /live/test_00001 等等 
    int                     nVideoStampAdd;//视频时间戳增量
    int                     nAsyncAudioStamp;//同步的时间点
 
@@ -127,6 +124,7 @@ public:
    startStopRecordStruct  m_startStopRecordStruct;
    controlStreamProxy     m_controlStreamProxy;
    SetConfigParamValue    m_setConfigParamValue;
+   ListServerPortStruct   m_listServerPortStruct;
 
    //媒体格式 
    MediaCodecInfo       mediaCodecInfo;
@@ -171,7 +169,7 @@ public:
 
    uint64_t               hParent;//国标代理的句柄号
    volatile bool          bRunFlag;
-   char                   szMediaSourceURL[512];//媒体流地址，比如 /Media/Camera_00001 
+   char                   szMediaSourceURL[string_length_1024];//媒体流地址，比如 /Media/Camera_00001 
 
    bool                   SplitterAppStream(char* szMediaSoureFile);
    
@@ -182,7 +180,7 @@ public:
    std::mutex             httpResponseLock;
    char                   szResponseBody[1024 * 512];
    char                   szResponseHttpHead[1024 * 128];
-   char                   szRtspURLTemp[1024];
+   char                   szRtspURLTemp[string_length_2048];
    uint64_t               nClient_http ; //http 请求连接 
    bool                   bResponseHttpFlag;
 
@@ -193,11 +191,11 @@ public:
    _rtsp_header           rtspHead;
 
    int                    nGB28181ConnectCount;//国标TCP接收码流时，被连接次数
-   char                   szRequestReplayRecordFile[512];//请求播放文件
-   char                   szSplliterShareURL[512];//录像点播时切割的url 
-   char                   szReplayRecordFile[256];//录像点播切割的录像文件名字 
-   char                   szSplliterApp[256];
-   char                   szSplliterStream[256];
+   char                   szRequestReplayRecordFile[string_length_1024];//请求播放文件
+   char                   szSplliterShareURL[string_length_1024];//录像点播时切割的url 
+   char                   szReplayRecordFile[string_length_1024];//录像点播切割的录像文件名字 
+   char                   szSplliterApp[string_length_256];
+   char                   szSplliterStream[string_length_512];
    uint64_t               nReplayClient; //录像回放ID
 
    int                    nVideoFrameSpeedArray[CalcMaxVideoFrameSpeed];//视频帧速度数组
@@ -210,7 +208,7 @@ public:
    uint64_t              duration;//录像回放时读取到录像文件长度
 
    int                   nRtspRtpPayloadType;//rtp负载方式 0 未知 ，1 ES，2 PS ,用在rtsp代理拉流时使用，
-   char                  szReponseTemp[512];
+   char                  szReponseTemp[string_length_1024];
 
 };
 

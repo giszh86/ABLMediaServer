@@ -22,6 +22,7 @@
 #define   MaxRtpHandleCount         2
 
 //#define  WriteRtpDepacketFileFlag   1 //是否写rtp解包文件
+//#define    WriteVideoDataFlag         1 //写入视频标志  
 
 #define    RtspServerRecvDataLength             1024*32      //用于切割缓存区的大小 
 #define    MaxRtpSendVideoMediaBufferLength     1024*64      //用于拼接RTP包，准备发送 
@@ -53,6 +54,14 @@ struct RtspProtect
 	int   nRtspSDPLength;
 };
 
+//rtsp 中 rtp 网络传输类型
+enum RtspNetworkType
+{
+	RtspNetworkType_Unknow = -1, //未知
+	RtspNetworkType_TCP    = 1,//TCP
+	RtspNetworkType_UDP    = 2,//UDP 
+};
+
 class CNetRtspServer : public CNetRevcBase
 {
 public:
@@ -69,6 +78,23 @@ public:
    virtual int SendAudio() ;//发送音频数据
    virtual int SendFirstRequst();//发送第一个请求
    virtual bool RequestM3u8File();//请求m3u8文件
+
+#ifdef WriteVideoDataFlag 
+   FILE*   fWriteVideoFile;
+#endif 
+
+   static  unsigned short nRtpPort;
+   bool                   GetAVClientPortByTranspot(char* szTransport);
+   sockaddr_in            addrClientVideo[MaxRtpHandleCount];
+   sockaddr_in            addrClientAudio[MaxRtpHandleCount];
+   NETHANDLE              nServerVideoUDP[MaxRtpHandleCount];
+   NETHANDLE              nServerAudioUDP[MaxRtpHandleCount];
+   unsigned short         nVideoServerPort[MaxRtpHandleCount];
+   unsigned short         nAudiServerPort[MaxRtpHandleCount];
+   unsigned short         nVideoClientPort[MaxRtpHandleCount];
+   unsigned short         nAudioClientPort[MaxRtpHandleCount];
+   unsigned short         nSetupOrder;
+   RtspNetworkType        m_RtspNetworkType;
 
    int                     nRtspPlayCount;//play的次数
    bool                    FindRtpPacketFlag();
@@ -122,7 +148,7 @@ public:
    _rtp_packet_sessionopt  optionAudio;
    _rtp_packet_input       inputAudio;
    uint32_t                hRtpVideo, hRtpAudio;
-   int                     nVideoSSRC;
+   uint32_t                nVideoSSRC;
 
    bool                    GetRtspSDPFromMediaStreamSource(RtspSDPContentStruct sdpContent,bool bGetFlag);
    char                    szRtspSDPContent[512];
@@ -170,7 +196,7 @@ public:
    char            szCSeq[128];
    char            szTransport[256];
 
-   char            szResponseBuffer[2048];
+   char            szResponseBuffer[string_length_4096];
    int             nSendRet;
   static   uint64_t Session ;
   uint64_t         currentSession;

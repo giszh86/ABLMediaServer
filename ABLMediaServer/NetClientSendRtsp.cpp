@@ -17,15 +17,16 @@ E-Mail  79941308@qq.com
 #ifdef USE_BOOST
 uint64_t                                     CNetClientSendRtsp::Session = 1000;
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
+extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
 extern boost::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szURL, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
 extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
 #else
 uint64_t                                     CNetClientSendRtsp::Session = 1000;
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
+extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
 extern std::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szURL, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
 extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
 #endif
-
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
@@ -38,7 +39,7 @@ extern MediaServerPort                       ABL_MediaServerPort;
 extern int avpriv_mpeg4audio_sample_rates[];
 
 extern void LIBNET_CALLMETHOD	onconnect(NETHANDLE clihandle,
-	uint8_t result);
+	uint8_t result, uint16_t nLocalPort);
 
 extern void LIBNET_CALLMETHOD onread(NETHANDLE srvhandle,
 	NETHANDLE clihandle,
@@ -130,8 +131,6 @@ CNetClientSendRtsp::~CNetClientSendRtsp()
 			//Sleep(5);
 	}
 	WriteLog(Log_Debug, "CNetClientSendRtsp 任务退出完毕 nTime = %llu, nClient = %llu ", GetTickCount64(), nClient);
-
-	XHNetSDK_Disconnect(nClient);
  
 #ifdef WriteRtpDepacketFileFlag
 	if(fWriteRtpVideo)
@@ -158,7 +157,8 @@ CNetClientSendRtsp::~CNetClientSendRtsp()
 }
 int CNetClientSendRtsp::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, char* szVideoCodec)
 {
-	if (!bRunFlag)
+	nRecvDataTimerBySecond = 0;
+	if (!bRunFlag || m_addPushProxyStruct.disableVideo[0] != 0x30 )
 		return -1;
 	std::lock_guard<std::mutex> lock(businessProcMutex);
 
@@ -172,7 +172,8 @@ int CNetClientSendRtsp::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, cha
 
 int CNetClientSendRtsp::PushAudio(uint8_t* pVideoData, uint32_t nDataLength, char* szAudioCodec, int nChannels, int SampleRate)
 {
-	if (!bRunFlag)
+	nRecvDataTimerBySecond = 0;
+	if (!bRunFlag || m_addPushProxyStruct.disableAudio[0] != 0x30)
 		return -1;
 	std::lock_guard<std::mutex> lock(businessProcMutex);
 
@@ -193,8 +194,6 @@ int CNetClientSendRtsp::PushAudio(uint8_t* pVideoData, uint32_t nDataLength, cha
 
 int CNetClientSendRtsp::SendVideo()
 {
-	nRecvDataTimerBySecond = 0 ;
-
 	unsigned char* pData = NULL;
 	int            nLength = 0;
 	if ((pData = m_videoFifo.pop(&nLength)) != NULL)
@@ -210,8 +209,6 @@ int CNetClientSendRtsp::SendVideo()
 
 int CNetClientSendRtsp::SendAudio()
 {
-	nRecvDataTimerBySecond = 0;
-
 	unsigned char* pData = NULL;
 	int            nLength = 0;
 	if ((pData = m_audioFifo.pop(&nLength)) != NULL)
@@ -419,7 +416,8 @@ int  CNetClientSendRtsp::FillHttpHeadToStruct()
 	if (nHttpHeadEndLength <= 0)
 		return true;
 	int  nKeyCount = 0;
-	char szTemp[1024] = { 0 };
+	char szTemp[string_length_2048] = { 0 };
+	char szKey[string_length_2048] = { 0 };
 
 	for (int i = 0; i < nHttpHeadEndLength - 2; i++)
 	{
@@ -436,7 +434,14 @@ int  CNetClientSendRtsp::FillHttpHeadToStruct()
  				memcpy(RtspProtectArray[RtspProtectArrayOrder].rtspField[nKeyCount].szKey, szTemp, nFlagLength);
 				memcpy(RtspProtectArray[RtspProtectArrayOrder].rtspField[nKeyCount].szValue, szTemp + nFlagLength + 2, strlen(szTemp) - nFlagLength - 2);
 
-				if (memcmp(RtspProtectArray[RtspProtectArrayOrder].rtspField[nKeyCount].szKey, "Content-Length", 14) == 0)
+				strcpy(szKey, RtspProtectArray[RtspProtectArrayOrder].rtspField[nKeyCount].szKey);
+				
+#ifdef USE_BOOST
+				to_lower(szKey);
+#else
+				ABL::StrToLwr(szKey);
+#endif
+				if (strcmp(szKey, "content-length") == 0)
 				{//内容长度
 					nContentLength = atoi(RtspProtectArray[RtspProtectArrayOrder].rtspField[nKeyCount].szValue);
 					RtspProtectArray[RtspProtectArrayOrder].nRtspSDPLength = nContentLength;
@@ -769,11 +774,8 @@ void  CNetClientSendRtsp::InputRtspData(unsigned char* pRecvData, int nDataLengt
 	else if (memcmp(data_, "RTSP/1.0 200", 12) == 0 && nRtspProcessStep == RtspProcessStep_OPTIONS && strstr((char*)pRecvData, "\r\n\r\n") != NULL)
 	{
 		RtspSDPContentStruct sdpContent;
-#ifdef USE_BOOST
-		boost::shared_ptr<CMediaStreamSource> pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
-#else
+
 		auto pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
-#endif	
 		if (pMediaSource == NULL)
 		{
 			WriteLog(Log_Debug, "CNetClientSendRtsp = %X ,媒体源 %s 不存在 , nClient = %llu ", this, m_szShareMediaURL,nClient);
@@ -852,11 +854,7 @@ void  CNetClientSendRtsp::InputRtspData(unsigned char* pRecvData, int nDataLengt
 	else if (memcmp(data_, "RTSP/1.0 200", 12) == 0 && nRtspProcessStep == RtspProcessStep_RECORD && strstr((char*)pRecvData, "\r\n\r\n") != NULL)
 	{
 		WriteLog(Log_Debug, "收到 RECORD 回复命令，rtsp交互完毕 nClient = %llu ", nClient);
-#ifdef USE_BOOST
-		boost::shared_ptr<CMediaStreamSource> pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
-#else
-		auto pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
-#endif	
+		auto  pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
 		if (pMediaSource == NULL )
 		{
 			WriteLog(Log_Debug, "CNetClientSendRtsp = %X nClient = %llu ,不存在媒体源 %s", this, nClient, m_szShareMediaURL);
@@ -873,6 +871,12 @@ void  CNetClientSendRtsp::InputRtspData(unsigned char* pRecvData, int nDataLengt
 		//回复http请求
 		sprintf(szResponseBody, "{\"code\":0,\"memo\":\"success\",\"key\":%llu}", hParent);
 		ResponseHttp(nClient_http, szResponseBody, false);
+
+		//在父类标记成功
+		auto   pParentPtr = GetNetRevcBaseClient(hParent);
+		if (pParentPtr && pParentPtr->bProxySuccessFlag == false)
+			bProxySuccessFlag = pParentPtr->bProxySuccessFlag = true;
+
  	}
 	else if (memcmp(pRecvData, "TEARDOWN", 8) == 0 && strstr((char*)pRecvData, "\r\n\r\n") != NULL)
 	{

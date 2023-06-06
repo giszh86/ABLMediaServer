@@ -25,7 +25,7 @@ extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
 uint64_t                                     CNetClientRecvRtsp::Session = 1000;
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClientNoLock(NETHANDLE CltHandle);
-extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
+extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
 extern std::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szURL, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
 extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
 #endif
@@ -672,7 +672,12 @@ int  CNetClientRecvRtsp::FillHttpHeadToStruct()
 				memcpy(RtspProtectArray[RtspProtectArrayOrder].rtspField[nKeyCount].szValue, szTemp + nFlagLength + 2, strlen(szTemp) - nFlagLength - 2);
 
 				strcpy(szKey, RtspProtectArray[RtspProtectArrayOrder].rtspField[nKeyCount].szKey);
+				
+#ifdef USE_BOOST
 				to_lower(szKey);
+#else
+				ABL::StrToLwr(szKey);
+#endif
 				if (strcmp(szKey, "content-length") == 0)
 				{//ÄÚÈÝ³¤¶È
 					nContentLength = atoi(RtspProtectArray[RtspProtectArrayOrder].rtspField[nKeyCount].szValue);

@@ -156,9 +156,6 @@
     <ClInclude Include="NetServerHTTP_MP4.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Unit_ReadSPS.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="StreamRecordFMP4.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -335,9 +332,6 @@
     <ClCompile Include="NetServerHTTP_MP4.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Unit_ReadSPS.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="StreamRecordFMP4.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -395,7 +389,7 @@
     <ClCompile Include="ABLString.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="main.cpp">
+    <ClCompile Include="ABLMediaServer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

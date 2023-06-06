@@ -7,11 +7,17 @@
 #include <boost/make_shared.hpp>
 #include <boost/algorithm/string.hpp>
 
+//#define   WriteRecvAACDataFlag   1
+//#define  WriteRtpFileFlag    1 
+//#define    WriteSendPsFileFlag   1 //保存回复的PS数据
+
+
 using namespace boost;
 #else
 
-#endif
 
+#endif
+#define  MaxGB28181RtpSendVideoMediaBufferLength  1024*64 
 
 class CNetGB28181RtpServer : public CNetRevcBase
 {
@@ -23,7 +29,7 @@ public:
    virtual int ProcessNetData();
 
    virtual int PushVideo(uint8_t* pVideoData, uint32_t nDataLength, char* szVideoCodec) ;//塞入视频数据
-   virtual int PushAudio(uint8_t* pVideoData, uint32_t nDataLength, char* szAudioCodec, int nChannels, int SampleRate) ;//塞入音频数据
+   virtual int PushAudio(uint8_t* pAudioData, uint32_t nDataLength, char* szAudioCodec, int nChannels, int SampleRate) ;//塞入音频数据
    virtual int SendVideo();//发送视频数据
    virtual int SendAudio();//发送音频数据
    virtual int SendFirstRequst();//发送第一个请求
@@ -31,6 +37,43 @@ public:
 
    void         ProcessRtcpData(unsigned char* szRtcpData, int nDataLength, int nChan);
    void         GetAACAudioInfo(unsigned char* nAudioData, int nLength);
+
+   void            AddADTSHeadToAAC(unsigned char* szData, int nAACLength);
+   unsigned char   aacData[4096];
+   int             aacDataLength;
+   uint8_t         sampling_frequency_index;
+
+#ifdef WriteRecvAACDataFlag
+   FILE*    fWriteRecvAACFile;
+#endif
+   //--回复
+#ifdef WriteSendPsFileFlag
+   FILE*   fWriteSendPsFile;
+#endif 
+   void          SendGBRtpPacketUDP(unsigned char* pRtpData, int nLength);
+   void          GB28181PsToRtPacket(unsigned char* pPsData, int nLength);
+   void          GB28181SentRtpVideoData(unsigned char* pRtpVideo, int nDataLength);
+
+   int                     nMaxRtpSendVideoMediaBufferLength;//实际上累计视频，音频总量 ，如果国标发送视频时，可以为64K，如果只发送音频就设置640即可 
+   unsigned  char          szSendRtpVideoMediaBuffer[MaxGB28181RtpSendVideoMediaBufferLength];
+   int                     nSendRtpVideoMediaBufferLength; //已经积累的长度  视频
+   uint32_t                nStartVideoTimestamp; //上一帧视频初始时间戳 ，
+   uint32_t                nCurrentVideoTimestamp;// 当前帧时间戳
+   unsigned short          nVideoRtpLen;
+   uint32_t                nSendRet;
+
+   volatile bool addThreadPoolFlag;
+   void          CreateSendRtpByPS();
+   char*         s_buffer;
+   int           nVideoStreamID, nAudioStreamID;
+   ps_muxer_t* psBeiJingLaoChenMuxer;
+   struct ps_muxer_func_t handler;
+   uint64_t videoPTS, audioPTS;
+   int      nflags;
+
+   _rtp_packet_sessionopt  optionPS;
+   _rtp_packet_input       inputPS;
+   uint32_t                hRtpPS;
 
 #ifdef  WriteRtpFileFlag
    FILE*                  fWriteRtpFile;
@@ -40,7 +83,7 @@ public:
 
    int                     nRtpRtcpPacketType;//是否是RTP包，0 未知，2 rtp 包
    unsigned char           szRtcpDataOverTCP[1024];
-   sockaddr_in*            pRtpAddress;
+   sockaddr_in*            pRtpAddress,*pSrcAddress;
    int64_t                 nSendRtcpTime;
    CRtcpPacketRR           rtcpRR;//接收者报告
    unsigned char           szRtcpSRBuffer[512];

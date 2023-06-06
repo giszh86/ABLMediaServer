@@ -1,7 +1,7 @@
 /*
 ¹¦ÄÜ£º
-    ¸ºÔð·¢ËÍ GB28181 Rtp ÂëÁ÷£¬°üÀ¨UDP¡¢TCPÄ£Ê½ 
- 	 
+    ¸ºÔð·¢ËÍ GB28181 Rtp ÂëÁ÷£¬°üÀ¨UDP¡¢TCPÄ£Ê½  
+ 	Ôö¼Ó ¹ú±ê½ÓÊÕ  £¨¼´¹ú±ê·¢ËÍµÄÍ¬Ê±Ò²Ö§³Ö¹ú±ê½ÓÊÕ£©    2023-05-19
 ÈÕÆÚ    2021-08-15
 ×÷Õß    ÂÞ¼ÒÐÖµÜ
 QQ      79941308
@@ -17,11 +17,13 @@ extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 
-extern CMediaSendThreadPool* pMediaSendThreadPool;
+extern CMediaSendThreadPool*                 pMediaSendThreadPool;
 extern CMediaFifo                            pDisconnectBaseNetFifo; //ÇåÀí¶ÏÁÑµÄÁ´½Ó 
 extern char                                  ABL_MediaSeverRunPath[256]; //µ±Ç°Â·¾¶
 extern boost::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
 extern MediaServerPort                       ABL_MediaServerPort;
+extern int                                   SampleRateArray[];
+
 
 #else
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
@@ -35,9 +37,8 @@ extern CMediaFifo                            pDisconnectBaseNetFifo; //ÇåÀí¶ÏÁÑµ
 extern char                                  ABL_MediaSeverRunPath[256]; //µ±Ç°Â·¾¶
 extern std::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
 extern MediaServerPort                       ABL_MediaServerPort;
-
+extern int                                   SampleRateArray[];
 #endif
-
 void PS_MUX_CALL_METHOD GB28181_Send_mux_callback(_ps_mux_cb* cb)
 {
 	CNetGB28181RtpClient* pThis = (CNetGB28181RtpClient*)cb->userdata;
@@ -108,7 +109,7 @@ void  CNetGB28181RtpClient::GB28181SentRtpVideoData(unsigned char* pRtpVideo, in
 	if (bRunFlag == false)
 		return;
 	
-	if ((MaxRtpSendVideoMediaBufferLength - nSendRtpVideoMediaBufferLength < nDataLength + 4) && nSendRtpVideoMediaBufferLength > 0)
+	if ((nMaxRtpSendVideoMediaBufferLength - nSendRtpVideoMediaBufferLength < nDataLength + 4) && nSendRtpVideoMediaBufferLength > 0)
 	{//Ê£Óà¿Õ¼ä²»¹»´æ´¢ ,·ÀÖ¹³ö´í 
  		nSendRet = XHNetSDK_Write(nClient, szSendRtpVideoMediaBuffer, nSendRtpVideoMediaBufferLength, 1);
 		if (nSendRet != 0)
@@ -167,6 +168,16 @@ void  CNetGB28181RtpClient::GB28181SentRtpVideoData(unsigned char* pRtpVideo, in
 
 CNetGB28181RtpClient::CNetGB28181RtpClient(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort,char* szShareMediaURL)
 {
+	memset(m_recvMediaSource, 0x00, sizeof(m_recvMediaSource));
+	pRecvMediaSource = NULL;
+	psBeiJingLaoChenDemuxer = NULL;
+	netDataCache = NULL; //ÍøÂçÊý¾Ý»º´æ
+	netDataCacheLength = 0;//ÍøÂçÊý¾Ý»º´æ´óÐ¡
+	nNetStart = nNetEnd = 0; //ÍøÂçÊý¾ÝÆðÊ¼Î»ÖÃ\½áÊøÎ»ÖÃ
+	MaxNetDataCacheCount = 1024*1024*2;
+	nRtpRtcpPacketType = 0;
+
+	nMaxRtpSendVideoMediaBufferLength = 640;//Ä¬ÈÏÀÛ¼Æ640
 	strcpy(m_szShareMediaURL,szShareMediaURL);
 	nClient = hClient;
 	nServer = hServer;
@@ -178,6 +189,7 @@ CNetGB28181RtpClient::CNetGB28181RtpClient(NETHANDLE hServer, NETHANDLE hClient,
 	handler.free = ps_free;
     videoPTS = audioPTS = 0;
 	s_buffer = NULL;
+	psBeiJingLaoChen = NULL;
 	if (ABL_MediaServerPort.gb28181LibraryUse == 2)
 	{
 		s_buffer = new  char[IDRFrameMaxBufferLength];
@@ -195,12 +207,8 @@ CNetGB28181RtpClient::CNetGB28181RtpClient(NETHANDLE hServer, NETHANDLE hClient,
 
 	if (nPort == 0) 
 	{//×÷Îªudp Ê¹ÓÃ£¬µ±ÎªtcpÊ±£¬ ÔÚSendFirstRequst() Õâº¯Êýµ÷ÓÃ 
-#ifdef USE_BOOST
-		boost::shared_ptr<CMediaStreamSource> pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
-#else
-		auto pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
-#endif
-	
+		
+		auto  pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
 		if (pMediaSource != NULL)
 		{
 			memcpy((char*)&mediaCodecInfo,(char*)&pMediaSource->m_mediaCodecInfo, sizeof(MediaCodecInfo));
@@ -215,6 +223,9 @@ CNetGB28181RtpClient::CNetGB28181RtpClient(NETHANDLE hServer, NETHANDLE hClient,
 	char    szFileName[256] = { 0 };
 	sprintf(szFileName, "%s%X.ps", ABL_MediaSeverRunPath,this);
 	writePsFile = fopen(szFileName,"wb");
+#endif
+#ifdef WriteRecvPSDataFlag
+	fWritePSDataFile = fopen("E:\\recv_app_recv.ps","wb");
 #endif
 
  	WriteLog(Log_Debug, "CNetGB28181RtpClient ¹¹Ôì = %X  nClient = %llu ", this, nClient);
@@ -231,7 +242,6 @@ CNetGB28181RtpClient::~CNetGB28181RtpClient()
 	}
 	else if (netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Connect)
 	{
-		XHNetSDK_Disconnect(nClient);
 	}
 	m_videoFifo.FreeFifo();
 	m_audioFifo.FreeFifo();
@@ -239,21 +249,32 @@ CNetGB28181RtpClient::~CNetGB28181RtpClient()
 	rtp_packet_stop(hRtpPS);
 	if(psBeiJingLaoChen != NULL )
 	  ps_muxer_destroy(psBeiJingLaoChen);
+	if (psBeiJingLaoChenDemuxer != NULL)
+		ps_demuxer_destroy(psBeiJingLaoChenDemuxer);
 	SAFE_ARRAY_DELETE(s_buffer);
+	SAFE_ARRAY_DELETE(netDataCache);
+	//×îºó²ÅÉ¾³ýÃ½ÌåÔ´
+	if (strlen(m_recvMediaSource) > 0 && pRecvMediaSource != NULL)
+		DeleteMediaStreamSource(m_recvMediaSource);
+
 #ifdef  WriteGB28181PSFileFlag
 	fclose(writePsFile);
 #endif
+#ifdef WriteRecvPSDataFlag
+	if(fWritePSDataFile != NULL)
+	  fclose(fWritePSDataFile);
+#endif
+
 	WriteLog(Log_Debug, "CNetGB28181RtpClient Îö¹¹ = %X  nClient = %llu ,nMediaClient = %llu\r\n", this, nClient, nMediaClient);
 	malloc_trim(0);
 }
 
 int CNetGB28181RtpClient::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, char* szVideoCodec)
 {
-	if (!bRunFlag)
+	nRecvDataTimerBySecond = 0 ;
+	if (!bRunFlag || m_startSendRtpStruct.disableVideo[0] == 0x31)
 		return -1;
 	std::lock_guard<std::mutex> lock(businessProcMutex);
- 	
-	nRecvDataTimerBySecond = 0 ;
 
 	if (strlen(mediaCodecInfo.szVideoName) == 0)
 		strcpy(mediaCodecInfo.szVideoName, szVideoCodec);
@@ -266,8 +287,8 @@ int CNetGB28181RtpClient::PushAudio(uint8_t* pVideoData, uint32_t nDataLength, c
 {
 	nRecvDataTimerBySecond = 0;
 
-	//µ± m_startSendRtpStruct.RtpPayloadDataType[0] != 0x31 ²»Îª PS ´ò°üÊ±,²»Ö§³ÖÒôÆµÊý¾Ý¼ÓÈë´ò°ü 
-	if (!bRunFlag || m_startSendRtpStruct.RtpPayloadDataType[0] != 0x31)
+	//µ±ÆÁ±ÎÒôÆµÊ±£¬²»½øÐÐÒôÆµ´ò°ü
+	if (!bRunFlag || m_startSendRtpStruct.disableAudio[0] == 0x31)
 		return -1;
 
 	std::lock_guard<std::mutex> lock(businessProcMutex);
@@ -290,6 +311,11 @@ void  CNetGB28181RtpClient::CreateRtpHandle()
 {
 	if (hRtpPS == 0)
 	{
+		if (strcmp(m_startSendRtpStruct.disableVideo, "1") == 0)
+			nMaxRtpSendVideoMediaBufferLength = 640;
+		else
+			nMaxRtpSendVideoMediaBufferLength = MaxRtpSendVideoMediaBufferLength ;
+
 		int nRet = rtp_packet_start(GB28181_rtp_packet_callback_func_send, (void*)this, &hRtpPS);
 		if (nRet != e_rtppkt_err_noerror)
 		{
@@ -297,30 +323,59 @@ void  CNetGB28181RtpClient::CreateRtpHandle()
 			return ;
 		}
 		optionPS.handle = hRtpPS;
-		optionPS.mediatype = e_rtppkt_mt_video;
 		if (m_startSendRtpStruct.RtpPayloadDataType[0] == 0x31)
 		{//¹ú±êPS´ò°ü
+			optionPS.mediatype = e_rtppkt_mt_video;
 			optionPS.payload = atoi(m_startSendRtpStruct.payload);
 			optionPS.streamtype = e_rtppkt_st_gb28181;
+			optionPS.ssrc = atoi(m_startSendRtpStruct.ssrc);
+			optionPS.ttincre = (90000 / mediaCodecInfo.nVideoFrameRate);
+			rtp_packet_setsessionopt(&optionPS);
 		}
 		else if (m_startSendRtpStruct.RtpPayloadDataType[0] == 0x32 || m_startSendRtpStruct.RtpPayloadDataType[0] == 0x33)
 		{//ES \ XHB ´ò°ü
-			if (strcmp(mediaCodecInfo.szVideoName, "H264") == 0)
-			{
-			  strcpy(m_startSendRtpStruct.payload, "98");
-			  optionPS.payload = 98 ;
-			  optionPS.streamtype = e_rtppkt_st_h264;
-			}
-			else  if (strcmp(mediaCodecInfo.szVideoName, "H265") == 0)
-			{
-				strcpy(m_startSendRtpStruct.payload, "99");
-				optionPS.payload = 99 ;
-				optionPS.streamtype = e_rtppkt_st_h265;
-			}
+			if (atoi(m_startSendRtpStruct.disableAudio) == 1)
+			{//Ö»ÓÐÊÓÆµ
+				optionPS.mediatype = e_rtppkt_mt_video;
+				if (strcmp(mediaCodecInfo.szVideoName, "H264") == 0)
+				{
+					strcpy(m_startSendRtpStruct.payload, "98");
+					optionPS.payload = 98;
+					optionPS.streamtype = e_rtppkt_st_h264;
+				}
+				else  if (strcmp(mediaCodecInfo.szVideoName, "H265") == 0)
+				{
+					strcpy(m_startSendRtpStruct.payload, "99");
+					optionPS.payload = 99;
+					optionPS.streamtype = e_rtppkt_st_h265;
+				}
+				optionPS.ssrc = atoi(m_startSendRtpStruct.ssrc);
+				optionPS.ttincre = (90000 / mediaCodecInfo.nVideoFrameRate);
+ 			}
+			else if (atoi(m_startSendRtpStruct.disableVideo) == 1)
+			{//Ö»ÓÐÒôÆµ 
+				optionPS.mediatype = e_rtppkt_mt_audio;
+				optionPS.ssrc = atoi(m_startSendRtpStruct.ssrc);
+				if (strcmp(mediaCodecInfo.szAudioName, "G711_A") == 0)
+				{
+					optionPS.ttincre = 320; 
+					optionPS.streamtype = e_rtppkt_st_g711a;
+					optionPS.payload = 8;
+				}else if (strcmp(mediaCodecInfo.szAudioName, "G711_U") == 0)
+				{
+					optionPS.ttincre = 320;  
+					optionPS.streamtype = e_rtppkt_st_g711u;
+					optionPS.payload = 0;
+				}
+				else if (strcmp(mediaCodecInfo.szAudioName, "AAC") == 0) 
+				{
+					optionPS.ttincre = 1024;  
+					optionPS.streamtype = e_rtppkt_st_aac;
+					optionPS.payload = 97;
+				}
+ 			}
+			rtp_packet_setsessionopt(&optionPS);
 		}
-		optionPS.ssrc = atoi(m_startSendRtpStruct.ssrc);
-		optionPS.ttincre = (90000 / mediaCodecInfo.nVideoFrameRate);
-		rtp_packet_setsessionopt(&optionPS);
 
 		inputPS.handle = hRtpPS;
 		inputPS.ssrc = optionPS.ssrc;
@@ -332,15 +387,14 @@ void  CNetGB28181RtpClient::CreateRtpHandle()
 
 		//¼ÇÏÂÃ½ÌåÔ´
 		SplitterAppStream(m_szShareMediaURL);
-		sprintf(m_addStreamProxyStruct.url, "rtp://localhost/%s/%s", m_addStreamProxyStruct.app, m_addStreamProxyStruct.stream);
+		sprintf(m_addStreamProxyStruct.url, "rtp://%s:%s/%s/%s", m_startSendRtpStruct.dst_url, m_startSendRtpStruct.dst_port,m_addStreamProxyStruct.app, m_addStreamProxyStruct.stream);
 		strcpy(szClientIP, m_startSendRtpStruct.dst_url);
-		nClientPort = atoi(m_startSendRtpStruct.dst_port);
 	}
 }
 
 int CNetGB28181RtpClient::SendVideo()
 {
-	if (!bRunFlag)
+	if (!bRunFlag )
 		return -1;
 
 	//´ú±í½»»¥³É¹¦£¬Á¬½Ó³É¹¦
@@ -434,7 +488,7 @@ int CNetGB28181RtpClient::SendVideo()
 
 int CNetGB28181RtpClient::SendAudio()
 {
-	if ( ABL_MediaServerPort.nEnableAudio == 0 || !bRunFlag || m_startSendRtpStruct.RtpPayloadDataType[0] != 0x31 )
+	if ( ABL_MediaServerPort.nEnableAudio == 0 || !bRunFlag || m_startSendRtpStruct.disableAudio[0] == 0x31 )
 		return 0;
 
 	unsigned char* pData = NULL;
@@ -491,8 +545,10 @@ int CNetGB28181RtpClient::SendAudio()
 		}
 		else if (m_startSendRtpStruct.RtpPayloadDataType[0] == 0x32 || m_startSendRtpStruct.RtpPayloadDataType[0] == 0x33)
 		{//ES\XHB ´ò°ü
-
-		}
+ 			inputPS.data = pData;
+			inputPS.datasize = nLength;
+ 		    rtp_packet_input(&inputPS);
+ 		}
  
 		m_audioFifo.pop_front();
 	}
@@ -507,11 +563,127 @@ void  CNetGB28181RtpClient::SendGBRtpPacketUDP(unsigned char* pRtpData, int nLen
 
 int CNetGB28181RtpClient::InputNetData(NETHANDLE nServerHandle, NETHANDLE nClientHandle, uint8_t* pData, uint32_t nDataLength, void* address)
 {
+ 	std::lock_guard<std::mutex> lock(businessProcMutex);
+	if (!bRunFlag)
+		return -1;
+	if (!(strlen(m_startSendRtpStruct.recv_app) > 0 && strlen(m_startSendRtpStruct.recv_stream) > 0))
+		return -1;
+
+	if (netBaseNetType == NetBaseNetType_NetGB28181SendRtpUDP)
+	{//UDP
+	   //»ñÈ¡rtp°üµÄ°üÍ·
+		rtpHeadPtr = (_rtp_header*)(pData);
+
+		//³¤¶ÈºÏ·¨ ²¢ÇÒÊÇrtp°ü £¨rtpHeadPtr->v == 2) ,·ÀÖ¹rtcpÊý¾ÝÖ´ÐÐrtp½â°ü
+		if (nDataLength > 0 && nDataLength < 1500  && rtpHeadPtr->v == 2)
+ 		  RtpDepacket(pData, nDataLength);
+	}
+	else if (netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Connect)
+	{//TCP 
+		if (netDataCache == NULL)
+			netDataCache = new unsigned char[MaxNetDataCacheCount];
+
+		if (MaxNetDataCacheCount - nNetEnd >= nDataLength)
+		{//Ê£Óà¿Õ¼ä×ã¹»
+			memcpy(netDataCache + nNetEnd, pData, nDataLength);
+			netDataCacheLength += nDataLength;
+			nNetEnd += nDataLength;
+		}
+		else
+		{//Ê£Óà¿Õ¼ä²»¹»£¬ÐèÒª°ÑÊ£ÓàµÄbufferÍùÇ°ÒÆ¶¯
+			if (netDataCacheLength > 0)
+			{//Èç¹ûÓÐÉÙÁ¿Ê£Óà
+				memmove(netDataCache, netDataCache + nNetStart, netDataCacheLength);
+				nNetStart = 0;
+				nNetEnd = netDataCacheLength;
+
+				if (MaxNetDataCacheCount - nNetEnd < nDataLength)
+				{
+					nNetStart = nNetEnd = netDataCacheLength = 0;
+					WriteLog(Log_Debug, "CNetGB28181RtpClient = %X nClient = %llu Êý¾ÝÒì³£ , Ö´ÐÐÉ¾³ý", this, nClient);
+					pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
+					return 0;
+				}
+			}
+			else
+			{//Ã»ÓÐÊ£Óà£¬ÄÇÃ´ Ê×£¬Î²Ö¸Õë¶¼Òª¸´Î» 
+				nNetStart = nNetEnd = netDataCacheLength = 0;
+			}
+			memcpy(netDataCache + nNetEnd, pData, nDataLength);
+			netDataCacheLength += nDataLength;
+			nNetEnd += nDataLength;
+		}
+	}
+
     return 0;
 }
 
 int CNetGB28181RtpClient::ProcessNetData()
 {
+ 	std::lock_guard<std::mutex> lock(businessProcMutex);
+	if (!bRunFlag)
+		return -1;
+	if (!(strlen(m_startSendRtpStruct.recv_app) > 0 && strlen(m_startSendRtpStruct.recv_stream) > 0))
+		return -1;
+
+	unsigned char* pData = NULL;
+	int            nLength;
+
+	if (netBaseNetType == NetBaseNetType_NetGB28181SendRtpUDP)
+	{//UDP
+ 
+	}
+	else if (netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Connect)
+	{//TCP ·½Ê½µÄrtp°ü¶ÁÈ¡ 
+		while (netDataCacheLength > 2048)
+		{//²»ÄÜ»º´æÌ«¶àbuffer,·ñÔòÔì³É½ÓÊÕ¹ú±êÁ÷ÖÐÖ»ÓÐÒôÆµÁ÷Ê±£¬»áÔì³ÉÑÓÊ±ºÜ´ó 2048 ±È½ÏºÏÊÊ 
+			memcpy(rtpHeadOfTCP, netDataCache + nNetStart, 2);
+			if ((rtpHeadOfTCP[0] == 0x24 && rtpHeadOfTCP[1] == 0x00) || (rtpHeadOfTCP[0] == 0x24 && rtpHeadOfTCP[1] == 0x01) || (rtpHeadOfTCP[0] == 0x24))
+			{
+				nNetStart += 2;
+				memcpy((char*)&nRtpLength, netDataCache + nNetStart, 2);
+				nNetStart += 2;
+				netDataCacheLength -= 4;
+
+				if (nRtpRtcpPacketType == 0)
+					nRtpRtcpPacketType = 2;//4¸ö×Ö½Ú·½Ê½
+			}
+			else
+			{
+				memcpy((char*)&nRtpLength, netDataCache + nNetStart, 2);
+				nNetStart += 2;
+				netDataCacheLength -= 2;
+
+				if (nRtpRtcpPacketType == 0)
+					nRtpRtcpPacketType = 1;//2¸ö×Ö½Ú·½Ê½µÄ
+			}
+
+			//»ñÈ¡rtp°üµÄ°üÍ·
+			rtpHeadPtr = (_rtp_header*)(netDataCache + nNetStart);
+
+			nRtpLength = ntohs(nRtpLength);
+			if (nRtpLength > 65535)
+			{
+				WriteLog(Log_Debug, "CNetGB28181RtpServer = %X rtp°üÍ·³¤¶ÈÓÐÎó  nClient = %llu ,nRtpLength = %llu", this, nClient, nRtpLength);
+				DeleteNetRevcBaseClient(nClient);
+				return -1;
+			}
+
+			//³¤¶ÈºÏ·¨ ²¢ÇÒÊÇrtp°ü £¨rtpHeadPtr->v == 2) ,·ÀÖ¹rtcpÊý¾ÝÖ´ÐÐrtp½â°ü
+			if (nRtpLength > 0 && rtpHeadPtr->v == 2)
+			{
+				//²ÉÓÃrtpÍ·ÀïÃæµÄpayload½øÐÐ½â°ü,ÓÐÐ§·ÀÖ¹ÓÃ»§ÌîÐ´´í
+				if (hRtpHandle == 0)
+					m_gbPayload = rtpHeadPtr->payload;
+
+				RtpDepacket(netDataCache + nNetStart, nRtpLength);
+			}
+
+			nNetStart += nRtpLength;
+			netDataCacheLength -= nRtpLength;
+		}
+	}
+
  	return 0;
 }
 
@@ -524,12 +696,8 @@ int CNetGB28181RtpClient::SendFirstRequst()
 		sprintf(szResponseBody, "{\"code\":0,\"port\":%d,\"memo\":\"success\",\"key\":%llu}", nReturnPort, nClient);
 		ResponseHttp(nClient_http, szResponseBody, false);
 	}
-#ifdef USE_BOOST
-	boost::shared_ptr<CMediaStreamSource> pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
-#else
-	auto pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
-#endif
 
+	auto pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
 	if (pMediaSource != NULL)
 	{
 		memcpy((char*)&mediaCodecInfo, (char*)&pMediaSource->m_mediaCodecInfo, sizeof(MediaCodecInfo));
@@ -539,6 +707,145 @@ int CNetGB28181RtpClient::SendFirstRequst()
 	//°ÑnClient ¼ÓÈëVideo ,audio ·¢ËÍÏß³Ì
 	pMediaSendThreadPool->AddClientToThreadPool(nClient);
 	return 0;
+}
+
+//rtp½â°ü»Øµ÷
+void RTP_DEPACKET_CALL_METHOD NetGB28181RtpClient_rtppacket_callback_recv(_rtp_depacket_cb* cb)
+{
+	CNetGB28181RtpClient* pThis = (CNetGB28181RtpClient*)cb->userdata;
+	if (!pThis->bRunFlag)
+		return;
+
+	//¹ú±êPS½â°ü
+	if (pThis->psBeiJingLaoChenDemuxer)
+		ps_demuxer_input(pThis->psBeiJingLaoChenDemuxer, cb->data, cb->datasize);
+}
+
+static void mpeg_ps_dec_NetGB28181RtpClient(void* param, int stream, int codecid, const void* extra, int bytes, int finish)
+{
+	printf("stream %d, codecid: %d, finish: %s\n", stream, codecid, finish ? "true" : "false");
+}
+//rtp ½â°ü
+struct ps_demuxer_notify_t notify_CNetGB28181RtpClient = { mpeg_ps_dec_NetGB28181RtpClient, };
+
+//¹ú±êPS½â°ü»Øµ÷
+static int NetGB28181RtpClient_on_gb28181_unpacket(void* param, int stream, int avtype, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
+{
+	CNetGB28181RtpClient* pThis = (CNetGB28181RtpClient*)param;
+	if (!pThis->bRunFlag)
+		return -1;
+
+	if (pThis->pRecvMediaSource == NULL)
+	{//ÓÅÏÈ´´½¨Ã½ÌåÔ´ 
+		pThis->pRecvMediaSource = CreateMediaStreamSource(pThis->m_recvMediaSource, pThis->nClient, MediaSourceType_LiveMedia, 0, pThis->m_h265ConvertH264Struct);
+		if (pThis->pRecvMediaSource != NULL)
+		{
+ 			pThis->pRecvMediaSource->netBaseNetType = pThis->netBaseNetType;
+			WriteLog(Log_Debug, "NetGB28181RtpClient_on_gb28181_unpacket ´´½¨Ã½ÌåÔ´ %s ³É¹¦  ", pThis->m_recvMediaSource);
+		}
+	}
+
+	if (pThis->pRecvMediaSource == NULL)
+		return -1;
+
+	if (!pThis->pRecvMediaSource->bUpdateVideoSpeed)
+	{//ÐèÒª¸üÐÂÃ½ÌåÔ´µÄÖ¡ËÙ¶È
+		pThis->pRecvMediaSource->UpdateVideoFrameSpeed(25, pThis->netBaseNetType);
+		pThis->pRecvMediaSource->bUpdateVideoSpeed = true;
+	}
+
+	if (pThis->m_startSendRtpStruct.recv_disableAudio[0] == 0x30  && (PSI_STREAM_AAC == avtype || PSI_STREAM_AUDIO_G711A == avtype || PSI_STREAM_AUDIO_G711U == avtype))
+	{
+		if (PSI_STREAM_AAC == avtype)
+		{//aac
+			pThis->GetAACAudioInfo((unsigned char*)data, bytes);//»ñÈ¡AACÃ½ÌåÐÅÏ¢
+			pThis->pRecvMediaSource->PushAudio((unsigned char*)data, bytes, pThis->mediaCodecInfo.szAudioName, pThis->mediaCodecInfo.nChannels, pThis->mediaCodecInfo.nSampleRate);
+		}
+		else if (PSI_STREAM_AUDIO_G711A == avtype)
+		{// G711A  
+			pThis->pRecvMediaSource->PushAudio((unsigned char*)data, bytes, "G711_A", 1, 8000);
+		}
+		else if (PSI_STREAM_AUDIO_G711U == avtype)
+		{// G711U  
+			pThis->pRecvMediaSource->PushAudio((unsigned char*)data, bytes, "G711_U", 1, 8000);
+		}
+	}
+	else if (pThis->m_startSendRtpStruct.recv_disableVideo[0] == 0x30 && (PSI_STREAM_H264 == avtype || PSI_STREAM_H265 == avtype || PSI_STREAM_VIDEO_SVAC == avtype))
+	{
+#ifdef WriteRecvPSDataFlag
+		if (pThis->fWritePSDataFile != NULL )
+		{
+			fwrite(data, 1, bytes, pThis->fWritePSDataFile);
+			fflush(pThis->fWritePSDataFile);
+		}
+#endif	
+ 		if (PSI_STREAM_H264 == avtype)
+			pThis->pRecvMediaSource->PushVideo((unsigned char*)data, bytes, "H264");
+		else if (PSI_STREAM_H265 == avtype)
+			pThis->pRecvMediaSource->PushVideo((unsigned char*)data, bytes, "H265");
+ 	}
+}
+
+//rtp½â°ü 
+bool  CNetGB28181RtpClient::RtpDepacket(unsigned char* pData, int nDataLength)
+{
+	if (pData == NULL || nDataLength > 65536 || !bRunFlag || nDataLength < 12)
+		return false;
+
+	//´´½¨rtp½â°ü
+	if (hRtpHandle == 0)
+	{
+		rtp_depacket_start(NetGB28181RtpClient_rtppacket_callback_recv, (void*)this, (uint32_t*)&hRtpHandle);
+ 
+		rtp_depacket_setpayload(hRtpHandle, 96, e_rtpdepkt_st_gbps);
+		strcpy(m_addStreamProxyStruct.app, m_startSendRtpStruct.recv_app);
+		strcpy(m_addStreamProxyStruct.stream, m_startSendRtpStruct.recv_stream);
+		sprintf(m_recvMediaSource, "/%s/%s", m_startSendRtpStruct.recv_app, m_startSendRtpStruct.recv_stream);
+		WriteLog(Log_Debug, "CNetGB28181RtpClient = %X ,´´½¨rtp½â°ü³É¹¦ nClient = %llu ,hRtpHandle = %d", this, nClient, hRtpHandle);
+	}
+
+	if (psBeiJingLaoChenDemuxer == NULL)
+	{
+		psBeiJingLaoChenDemuxer = ps_demuxer_create(NetGB28181RtpClient_on_gb28181_unpacket, this);
+		if (psBeiJingLaoChenDemuxer != NULL)
+		{
+			ps_demuxer_set_notify(psBeiJingLaoChenDemuxer, &notify_CNetGB28181RtpClient, this);
+			WriteLog(Log_Debug, "CNetGB28181RtpClient = %X ,´´½¨¹ú±êPS½â°ü³É¹¦ nClent = %llu ,psBeiJingLaoChenDemuxer = %X", this, nClient, psBeiJingLaoChenDemuxer);
+		}
+	}
+
+	if (hRtpHandle > 0)
+	{//rtp½â°ü
+		rtp_depacket_input(hRtpHandle, pData, nDataLength);
+	}
+
+	return true;
+}
+
+//¸ù¾ÝAACÒôÆµÊý¾Ý»ñÈ¡AACÃ½ÌåÐÅÏ¢
+void CNetGB28181RtpClient::GetAACAudioInfo(unsigned char* nAudioData, int nLength)
+{
+	if (mediaCodecInfo.nChannels == 0 && mediaCodecInfo.nSampleRate == 0)
+	{
+		unsigned char nSampleIndex = 1;
+		unsigned char  nChannels = 1;
+
+		nSampleIndex = ((nAudioData[2] & 0x3c) >> 2) & 0x0F;  //´Ó szAudio[2] ÖÐ»ñÈ¡²ÉÑùÆµÂÊµÄÐòºÅ
+		if (nSampleIndex >= 15)
+			nSampleIndex = 8;
+		mediaCodecInfo.nSampleRate = SampleRateArray[nSampleIndex];
+
+		//Í¨µÀÊýÁ¿¼ÆËã pAVData[2]  ÖÐÓÐ2¸öÎ»£¬ÔÚ×îºó2Î»£¬¸ù 0x03 ÓëÔËËã£¬µÃµ½Á½Î»£¬×óÒÆ¶¯2Î» £¬ÔÙ »ò ÉÏ pAVData[3] µÄ×ó±ß×î¸ß2Î»
+		//pAVData[3] ×ó±ß×î¸ß2Î»»ñÈ¡·½·¨ ÏÈ ºÍ 0xc0 ÓëÔËËã£¬ÔÙÓÒÒÆ6Î»£¬ÎªÊ²Ã´ÒªÓÒÒÆ6Î»£¿ÒòÎªÕâ2Î»ÊÇÔÚ×î¸ßÎ»£¬ËùÒÔÒªÍùÓÒ±ßÒÆ¶¯6Î»
+		nChannels = ((nAudioData[2] & 0x03) << 2) | ((nAudioData[3] & 0xc0) >> 6);
+		if (nChannels > 2)
+			nChannels = 1;
+		mediaCodecInfo.nChannels = nChannels;
+
+		strcpy(mediaCodecInfo.szAudioName, "AAC");
+
+		WriteLog(Log_Debug, "CNetGB28181RtpClient = %X ,»ñÈ¡µ½¹ú±ê½ÓÈë AACÐÅÏ¢ szAudioName = %s,nChannels = %d ,nSampleRate = %d ", this, mediaCodecInfo.szAudioName, mediaCodecInfo.nChannels, mediaCodecInfo.nSampleRate);
+	}
 }
 
 //ÇëÇóm3u8ÎÄ¼þ

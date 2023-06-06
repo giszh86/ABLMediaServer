@@ -16,14 +16,15 @@ extern boost::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szUR,
 extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
+extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
 #else
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 extern std::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
 extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
+extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
 #endif
-
 
 extern CMediaSendThreadPool*                 pMediaSendThreadPool;
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
@@ -32,7 +33,7 @@ extern int64_t                               nTestRtmpPushID;
 extern MediaServerPort                       ABL_MediaServerPort;
 
 extern void LIBNET_CALLMETHOD	onconnect(NETHANDLE clihandle,
-	uint8_t result);
+	uint8_t result, uint16_t nLocalPort);
 
 extern void LIBNET_CALLMETHOD onread(NETHANDLE srvhandle,
 	NETHANDLE clihandle,
@@ -105,17 +106,15 @@ static int rtmp_client_pushCB(void* param, const void* header, size_t len, const
 			WriteLog(Log_Debug, "rtmp_client_pushCB  nRtmpState = %d ", pClient->nRtmpState);
 			if (pClient->nRtmpState3Count >= 2)
 			{
+				//在父类标记成功
+				auto   pParentPtr = GetNetRevcBaseClient(pClient->hParent);
+				if (pParentPtr && pParentPtr->bProxySuccessFlag == false)
+					pClient->bProxySuccessFlag = pParentPtr->bProxySuccessFlag = true;
+
 				pClient->bUpdateVideoFrameSpeedFlag = true; //用于成功交互
 				pClient->bAddMediaSourceFlag = true;
-#ifdef USE_BOOST
-
-				boost::shared_ptr<CMediaStreamSource> pMediaSource = GetMediaStreamSource(pClient->m_szShareMediaURL);
-
-#else
-				auto pMediaSource = GetMediaStreamSource(pClient->m_szShareMediaURL);
-
-#endif
-			if (pMediaSource != NULL)
+				auto  pMediaSource = GetMediaStreamSource(pClient->m_szShareMediaURL);
+				if (pMediaSource != NULL)
 				{
  					//记下媒体源
 					pClient->SplitterAppStream(pClient->m_szShareMediaURL);
@@ -209,8 +208,6 @@ CNetClientSendRtmp::~CNetClientSendRtmp()
 	bRunFlag = false;
  	std::lock_guard<std::mutex> lock(businessProcMutex);
 
-	XHNetSDK_Disconnect(nClient);
-
 	if(flvMuxer)
 	  flv_muxer_destroy(flvMuxer);
 
@@ -240,13 +237,12 @@ CNetClientSendRtmp::~CNetClientSendRtmp()
 int CNetClientSendRtmp::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, char* szVideoCodec)
 {
 	nRecvDataTimerBySecond = 0;
-	if (!bRunFlag)
+	if (!bRunFlag || m_addPushProxyStruct.disableVideo[0] != 0x30 )
 		return -1;
 	std::lock_guard<std::mutex> lock(businessProcMutex);
 
 	//没有音频时，才启用计算视频帧速度生成时间戳 ，否则用音频同步后的时间戳
-	if (nVideoStampAdd == 0)
- 	  nVideoStampAdd = 1000 / mediaCodecInfo.nVideoFrameRate;
+    nVideoStampAdd = 1000 / mediaCodecInfo.nVideoFrameRate;
 
 	if (rtmp == NULL || flvMuxer == NULL)
 		return -2;
@@ -280,7 +276,8 @@ int CNetClientSendRtmp::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, cha
 
 int CNetClientSendRtmp::PushAudio(uint8_t* pAudioData, uint32_t nDataLength, char* szAudioCodec, int nChannels, int SampleRate)
 {
-	if (!bRunFlag)
+	nRecvDataTimerBySecond = 0;
+	if (!bRunFlag || m_addPushProxyStruct.disableAudio[0] != 0x30 )
 		return -1;
 	std::lock_guard<std::mutex> lock(businessProcMutex);
 
@@ -355,8 +352,8 @@ int CNetClientSendRtmp::SendFirstRequst()
 {
 	int nPos1, nPos2;
 	string strURL = szClientIP;
-	char   szApp[128] = { 0 };
-	char   szStream[128] = { 0 };
+	char   szApp[string_length_256] = { 0 };
+	char   szStream[string_length_512] = { 0 };
 	nPos1 = strURL.find("/", 10);
 	if (nPos1 > 10)
 		nPos2 = strURL.find("/", nPos1 + 1);

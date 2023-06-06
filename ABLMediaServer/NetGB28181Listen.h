@@ -12,7 +12,6 @@ using namespace boost;
 #else
 
 #endif
-
 class CNetGB28181Listen : public CNetRevcBase
 {
 public:

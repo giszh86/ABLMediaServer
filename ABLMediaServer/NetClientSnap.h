@@ -15,7 +15,6 @@ using namespace boost;
 #include "VideoDecode.h"
 
 
-
 class CNetClientSnap : public CNetRevcBase
 {
 public:
