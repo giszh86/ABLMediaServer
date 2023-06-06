@@ -103,8 +103,6 @@ CNetServerWS_FLV::~CNetServerWS_FLV()
 
 	WriteLog(Log_Debug, "CNetServerWS_FLV =%X Step 1 nClient = %llu ",this, nClient);
 
-	XHNetSDK_Disconnect(nClient);
-
 	WriteLog(Log_Debug, "CNetServerWS_FLV =%X Step 2 nClient = %llu ",this, nClient);
 	
 	if (flvMuxer)
@@ -141,6 +139,7 @@ int CNetServerWS_FLV::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, char*
 
 int CNetServerWS_FLV::PushAudio(uint8_t* pAudioData, uint32_t nDataLength, char* szAudioCodec, int nChannels, int SampleRate)
 {
+	nRecvDataTimerBySecond = 0;
 	if (strlen(mediaCodecInfo.szAudioName) == 0)
 	{
 		strcpy(mediaCodecInfo.szAudioName, szAudioCodec);
@@ -158,8 +157,7 @@ int CNetServerWS_FLV::PushAudio(uint8_t* pAudioData, uint32_t nDataLength, char*
 void  CNetServerWS_FLV::MuxerVideoFlV(char* codeName, unsigned char* pVideo, int nLength)
 {
 	//没有音频时，才启用计算视频帧速度生成时间戳 ，否则用音频同步后的时间戳
-	if (nVideoStampAdd == 0)
-		nVideoStampAdd = 1000 / mediaCodecInfo.nVideoFrameRate;
+	nVideoStampAdd = 1000 / mediaCodecInfo.nVideoFrameRate;
 
 	if (strcmp(codeName, "H264") == 0)
 	{
@@ -545,6 +543,11 @@ bool  CNetServerWS_FLV::Create_WS_FLV_Handle()
 		{//H264、H265 只创建视频
 			flvWrite = flv_writer_create2(0, 1, NetServerWS_FLV_OnWrite_CB, (void*)this);
 			WriteLog(Log_Debug, "创建ws-flv 输出格式为： 视频 %s、音频：无音频  nClient = %llu ", pushClient->m_mediaCodecInfo.szVideoName, nClient);
+		}
+		else if (strlen(pushClient->m_mediaCodecInfo.szVideoName) == 0 && strcmp(pushClient->m_mediaCodecInfo.szAudioName, "AAC") == 0)
+		{//只创建音频
+			flvWrite = flv_writer_create2(1, 0, NetServerWS_FLV_OnWrite_CB, (void*)this);
+			WriteLog(Log_Debug, "创建ws-flv 输出格式为： 无视频 、只有音频 %s  nClient = %llu ", pushClient->m_mediaCodecInfo.szAudioName, nClient);
 		}
 		else
 		{

@@ -17,6 +17,7 @@
 #include "MediaFifo.h"
 #include "mpeg4-hevc.h"
 #include "mpeg4-aac.h"
+
 #ifdef USE_BOOST
 #include <boost/unordered/unordered_map.hpp>
 #include <boost/smart_ptr/shared_ptr.hpp>
@@ -29,8 +30,7 @@ using namespace boost;
 
 #endif
 
-
-#define     Send_MP4File_MaxPacketCount          1024*64
+#define     Send_MP4File_MaxPacketCount          1024*16
 #define     Send_DownloadFile_MaxPacketCount     1024*256
 
 //把mp4切片写入文件
@@ -67,12 +67,12 @@ public:
    volatile    bool        bWaitIFrameSuccessFlag;
    volatile    bool        bAddSendThreadToolFlag;
    char                    httpResponseData[1024];
-   unsigned char           netDataCache[1024*32]; //网络数据缓存
+   unsigned char           netDataCache[1024*64]; //网络数据缓存
    int                     netDataCacheLength;//网络数据缓存大小
    int                     nNetStart, nNetEnd; //网络数据起始位置\结束位置
    int                     MaxNetDataCacheCount;
    int                     data_Length;
-   char                    szMP4Name[512];
+   char                    szMP4Name[1024];
    volatile bool           bFindMP4NameFlag;
    volatile  bool          bCheckHttpMP4Flag; //检测是否为http-MP4协议 
    int                     nWriteRet;
@@ -83,7 +83,7 @@ public:
    std::mutex            mediaMP4MapLock;
    int                   avtype;
 
-   unsigned char        pH265Buffer[MediaStreamSource_VideoFifoLength];
+   unsigned char*       pMP4Buffer;
    int                  nMp4BufferLength;
    int                  vcl;
    int                  update;
@@ -109,7 +109,6 @@ public:
 
    struct mpeg4_hevc_t    hevc;
    struct mpeg4_avc_t     avc;
-   vc_params_t            H265Params;
    bool                   VideoFrameToFMP4File(unsigned char* szVideoData, int nLength);
    int                    nHttpDownloadSpeed;//下载速度
    HttpMP4Type            httpMp4Type;

@@ -12,7 +12,6 @@ using namespace boost;
 #include <memory>
 #endif
 
-
 #define Send_ResponseHttp_MaxPacketCount   1024*48  //回复http包最大发送一次字节
 
 #define  MaxNetServerHttpBuffer      1024*1024*2 
@@ -36,7 +35,8 @@ public:
    virtual int SendFirstRequst();//发送第一个请求
    virtual bool RequestM3u8File();//请求m3u8文件
 
-   bool                    index_api_statsPushers();
+   bool                    index_api_listServerPort();
+   bool                    index_api_getTranscodingCount();
    bool                    WriteParamValue(char* szSection, char* szKey, char* szValue);
    bool                    index_api_restartServer();
    bool                    index_api_shutdownServer();

@@ -84,6 +84,7 @@ static int fmp4_hls_segment(void* param, const void* data, size_t bytes, int64_t
 
 CNetServerHTTP_MP4::CNetServerHTTP_MP4(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort,char* szShareMediaURL)
 {
+	pMP4Buffer = NULL;
 	bOn_playFlag = false;
 	memset((char*)&avc, 0x00, sizeof(avc));
 	memset((char*)&hevc, 0x00, sizeof(hevc));
@@ -100,8 +101,8 @@ CNetServerHTTP_MP4::CNetServerHTTP_MP4(NETHANDLE hServer, NETHANDLE hClient, cha
 	videoDts = 0;
 	track_aac = -1;
 	track_video = -1;
-	hlsFMP4 = NULL;
- 	strcpy(szClientIP, szIP);
+	hlsFMP4 = hls_fmp4_create(512, fmp4_hls_segment, this);
+	strcpy(szClientIP, szIP);
 	nClientPort = nPort;
 
 	memset(netDataCache ,0x00,sizeof(netDataCache));
@@ -126,8 +127,6 @@ CNetServerHTTP_MP4::~CNetServerHTTP_MP4()
 {
     bCheckHttpMP4Flag = bRunFlag = false ;
 	std::lock_guard<std::mutex> lock(mediaMP4MapLock);
-
-    XHNetSDK_Disconnect(nClient);
 	
 	//删除fmp4切片句柄
 	if (hlsFMP4 != NULL)
@@ -149,6 +148,7 @@ CNetServerHTTP_MP4::~CNetServerHTTP_MP4()
 		fclose(fFileMp4);
 		fFileMp4 = NULL;
 	}
+	SAFE_ARRAY_DELETE(pMP4Buffer);
 
 	WriteLog(Log_Debug, "CNetServerHTTP_MP4 析构 = %X nClient = %llu ,nMediaClient = %llu\r\n", this, nClient, nMediaClient);
 	malloc_trim(0);
@@ -167,6 +167,7 @@ int CNetServerHTTP_MP4::PushAudio(uint8_t* pAudioData, uint32_t nDataLength, cha
 {
 	if (ABL_MediaServerPort.nEnableAudio == 0 || !bRunFlag)
 		return -1;
+	 nRecvDataTimerBySecond = 0;
 
 	if (strcmp(mediaCodecInfo.szAudioName, "AAC") != 0)
 		return 0;
@@ -188,11 +189,7 @@ int CNetServerHTTP_MP4::SendVideo()
 	if (!bCheckHttpMP4Flag)
 		return -1;
 
-	if (nVideoStampAdd == 0)
-		nVideoStampAdd = 1000 / mediaCodecInfo.nVideoFrameRate;
-
-	if (hlsFMP4 == NULL)
-		hlsFMP4 = hls_fmp4_create((1) * 1000, fmp4_hls_segment, this);
+	nVideoStampAdd = 1000 / mediaCodecInfo.nVideoFrameRate;
  
 	videoDts += nVideoStampAdd;
 
@@ -230,7 +227,7 @@ int CNetServerHTTP_MP4::SendAudio()
 
 			avtype = PSI_STREAM_AAC;
 
-			if (hlsFMP4 != NULL && track_video >= 0)
+			if (hlsFMP4 != NULL )
 			{
 				if (track_aac == -1)
 				{
@@ -249,6 +246,7 @@ int CNetServerHTTP_MP4::SendAudio()
 					else
 						mpeg4_aac_adts_load(pData+4, nLength-4, &aacHandle);
 					nExtenAudioDataLength = mpeg4_aac_audio_specific_config_save(&aacHandle, szExtenAudioData, sizeof(szExtenAudioData));
+
 					if (nExtenAudioDataLength > 0)
 					{
 						track_aac = hls_fmp4_add_audio(hlsFMP4, MOV_OBJECT_AAC, mediaCodecInfo.nChannels, 16, mediaCodecInfo.nSampleRate, szExtenAudioData, nExtenAudioDataLength);
@@ -373,12 +371,14 @@ int CNetServerHTTP_MP4::ProcessNetData()
 			DeleteNetRevcBaseClient(nClient);
 			return -1;
 		}
+		WriteLog(Log_Debug, "CNetServerHTTP_MP4 = %X, setup -1  nClient = %llu ", this, nClient);
 
-		char szOrigin[256] = { 0 };
+		char szOrigin[string_length_4096] = { 0 };
 		mp4Parse.ParseSipString((char*)netDataCache);
 		mp4Parse.GetFieldValue("Origin", szOrigin);
 		if (strlen(szOrigin) == 0)
 			strcpy(szOrigin, "*");
+		WriteLog(Log_Debug, "CNetServerHTTP_MP4 = %X, setup -2  nClient = %llu ", this, nClient);
 
 		//去掉？后面参数字符串
 		string strMP4Name = szMP4Name;
@@ -388,6 +388,7 @@ int CNetServerHTTP_MP4::ProcessNetData()
 			if (strlen(szPlayParams) == 0)//拷贝鉴权参数
 				memcpy(szPlayParams, szMP4Name + (nPos + 1), strlen(szMP4Name) - nPos - 1);
  		}
+		WriteLog(Log_Debug, "CNetServerHTTP_MP4 = %X, setup -3  nClient = %llu ", this, nClient);
 
 		//根据mp4文件，进行查找推流对象 
 		if (memcmp(szMP4Name + strlen(szMP4Name) - 4, ".mp4", 4) == 0 || memcmp(szMP4Name + strlen(szMP4Name) - 4, ".MP4", 4) == 0)
@@ -410,7 +411,7 @@ int CNetServerHTTP_MP4::ProcessNetData()
 			}
 
 			//去掉 ?后面 
-			char szDownLoadSpeed[256] = { 0 };
+			char szDownLoadSpeed[2048] = { 0 };
 			memcpy(szDownLoadSpeed ,szMP4Name  + nPos + strlen("?download_speed="),strlen(szMP4Name) - nPos - strlen("?download_speed="));
 			szMP4Name[nPos] = 0x00;
 			nHttpDownloadSpeed = atoi(szDownLoadSpeed);
@@ -424,13 +425,16 @@ int CNetServerHTTP_MP4::ProcessNetData()
 			DeleteNetRevcBaseClient(nClient);
 			return -1;
 		}
+		WriteLog(Log_Debug, "CNetServerHTTP_MP4 = %X, setup -4  nClient = %llu ", this, nClient);
 
 		if (strstr(szMP4Name, ".mp4") != NULL || strstr(szMP4Name, ".MP4") != NULL)
 			szMP4Name[strlen(szMP4Name) - 4] = 0x00;
+
+
 #ifdef USE_BOOST
-		boost::shared_ptr<CMediaStreamSource> pushClient;
+			boost::shared_ptr<CMediaStreamSource> pushClient = NULL ;
 #else
-		std::shared_ptr<CMediaStreamSource> pushClient;
+		std::shared_ptr<CMediaStreamSource> pushClient=NULL;
 #endif
 		
 		strcpy(szMediaSourceURL, szMP4Name);
@@ -499,7 +503,8 @@ int CNetServerHTTP_MP4::ProcessNetData()
  				return ResponseError("创建录像点播失败");
 			}
 		}
- 
+		WriteLog(Log_Debug, "CNetServerHTTP_MP4 = %X, setup -5  nClient = %llu ", this, nClient);
+
 		//记下媒体源
 		SplitterAppStream(szMP4Name);
 		sprintf(m_addStreamProxyStruct.url, "http://localhost:%d/%s/%s.mp4", ABL_MediaServerPort.nHttpFlvPort, m_addStreamProxyStruct.app, m_addStreamProxyStruct.stream);
@@ -511,11 +516,13 @@ int CNetServerHTTP_MP4::ProcessNetData()
 			DeleteNetRevcBaseClient(nClient);
 			return -1;
 		}
-		
+
+		pMP4Buffer = new unsigned char[MediaStreamSource_VideoFifoLength];
+
 		m_videoFifo.InitFifo(MaxLiveingVideoFifoBufferLength);
 		m_audioFifo.InitFifo(MaxLiveingAudioFifoBufferLength);
-
- 		//把客户端 加入源流媒体拷贝队列 
+ 
+		//把客户端 加入源流媒体拷贝队列 
 		pushClient->AddClientToMap(nClient);
 
 		//把客户端 加入到发送线程池中
@@ -629,32 +636,17 @@ bool  CNetServerHTTP_MP4::VideoFrameToFMP4File(unsigned char* szVideoData, int n
 {
 	if (track_video < 0 && hlsFMP4 != NULL )
 	{
-		bool bFind = false;
-		int  nPos = -1;
-		int  nWidth = 0 , nHeight = 0;
-		nPos = FindSpsPosition(szVideoData, nLength, bFind);
-		if (!bFind)
-			return false;
-
 		int n;
 		//vcl 、 update 都要赋值为 0 ，否则容易崩溃 
 		vcl = 0;
 		update = 0;        
 		if (memcmp(mediaCodecInfo.szVideoName, "H264", 4) == 0)
 		{
-			if (bFind && nPos >= 0)
-				GetWidthHeightFromSPS(szVideoData + nPos, nLength - nPos, nWidth, nHeight);
-			if (nWidth <= 0 || nHeight <= 0)
-				return false;
-			n = h264_annexbtomp4(&avc, szVideoData, nLength, pH265Buffer, MediaStreamSource_VideoFifoLength, &vcl, &update);
+			n = h264_annexbtomp4(&avc, szVideoData, nLength, pMP4Buffer, MediaStreamSource_VideoFifoLength, &vcl, &update);
 		}
 		else if (memcmp(mediaCodecInfo.szVideoName, "H265", 4) == 0)
 		{
-			if (bFind && nPos >= 0)
-				ParseSequenceParameterSet(szVideoData + nPos, nLength - nPos, H265Params);
-			if (H265Params.width <= 0 || H265Params.height <= 0)
-				return false;
-			n = h265_annexbtomp4(&hevc, szVideoData, nLength, pH265Buffer, MediaStreamSource_VideoFifoLength, &vcl, &update);
+			n = h265_annexbtomp4(&hevc, szVideoData, nLength, pMP4Buffer, MediaStreamSource_VideoFifoLength, &vcl, &update);
 		}
 		else
 			return false;
@@ -689,9 +681,9 @@ bool  CNetServerHTTP_MP4::VideoFrameToFMP4File(unsigned char* szVideoData, int n
 			if (extra_data_size > 0)
 			{
 				if (strcmp(mediaCodecInfo.szVideoName, "H264") == 0)
-				  track_video = hls_fmp4_add_video(hlsFMP4, MOV_OBJECT_H264, nWidth, nHeight, szExtenVideoData, extra_data_size);
+				  track_video = hls_fmp4_add_video(hlsFMP4, MOV_OBJECT_H264, mediaCodecInfo.nWidth, mediaCodecInfo.nHeight, szExtenVideoData, extra_data_size);
 				else if (strcmp(mediaCodecInfo.szVideoName, "H265") == 0)
-				  track_video = hls_fmp4_add_video(hlsFMP4, MOV_OBJECT_HEVC, H265Params.width, H265Params.height, szExtenVideoData, extra_data_size);
+				  track_video = hls_fmp4_add_video(hlsFMP4, MOV_OBJECT_HEVC, mediaCodecInfo.nWidth, mediaCodecInfo.nHeight, szExtenVideoData, extra_data_size);
 			}
 		}
 	}
@@ -714,23 +706,23 @@ bool  CNetServerHTTP_MP4::VideoFrameToFMP4File(unsigned char* szVideoData, int n
 		update = 0;        
 
 		if (strcmp(mediaCodecInfo.szVideoName, "H264") == 0)
-			nMp4BufferLength = h264_annexbtomp4(&avc, szVideoData, nLength, pH265Buffer, MediaStreamSource_VideoFifoLength, &vcl, &update);
+			nMp4BufferLength = h264_annexbtomp4(&avc, szVideoData, nLength, pMP4Buffer, MediaStreamSource_VideoFifoLength, &vcl, &update);
 		else if (strcmp(mediaCodecInfo.szVideoName, "H265") == 0)
-			nMp4BufferLength = h265_annexbtomp4(&hevc, szVideoData, nLength, pH265Buffer, MediaStreamSource_VideoFifoLength, &vcl, &update);
+			nMp4BufferLength = h265_annexbtomp4(&hevc, szVideoData, nLength, pMP4Buffer, MediaStreamSource_VideoFifoLength, &vcl, &update);
 		else
 			return false;
 
 		//有音频轨道 ，或者 等待视频超过30帧时，还没产生音频轨道证明该码流没有音频 
-		if (nMp4BufferLength > 0 && (track_aac >= 0 || (videoDts / 40 > 30)))
+		if (nMp4BufferLength > 0 && (strcmp(mediaCodecInfo.szAudioName,"AAC") != 0 || (strcmp(mediaCodecInfo.szAudioName, "AAC") == 0  && track_aac >= 0 )))
 		{
-			if (hls_init_segmentFlag == false)
+ 			if (hls_init_segmentFlag == false)
 			{
 				fmp4_hls_init_segment(hlsFMP4, this);
 			}
 
 			//必须hls_init_segment 初始化完成才能写视频段，在回调函数里面做标志 
 			if (hls_init_segmentFlag == true)
-				hls_fmp4_input(hlsFMP4, track_video, pH265Buffer, nMp4BufferLength, videoDts, videoDts, (flags == 1) ? MOV_AV_FLAG_KEYFREAME : 0);
+				hls_fmp4_input(hlsFMP4, track_video, pMP4Buffer, nMp4BufferLength, videoDts, videoDts, (flags == 1) ? MOV_AV_FLAG_KEYFREAME : 0);
 		}
 	}
 

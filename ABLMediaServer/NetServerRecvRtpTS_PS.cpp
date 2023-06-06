@@ -46,6 +46,7 @@ CNetServerRecvRtpTS_PS::CNetServerRecvRtpTS_PS(NETHANDLE hServer, NETHANDLE hCli
 {
 	netBaseNetType = NetBaseNetType_NetGB28181RecvRtpPS_TS;
  	int nRet = XHNetSDK_BuildUdp(NULL,ABL_MediaServerPort.ps_tsRecvPort, NULL, &nClient, onread, 1);
+	nClientPort = ABL_MediaServerPort.ps_tsRecvPort ;
 	WriteLog(Log_Debug, (nRet == 0) ? "绑定端口 %d 成功(success) " : "绑定端口 %d 失败(fail) ", ABL_MediaServerPort.ps_tsRecvPort);
 	WriteLog(Log_Debug, "CNetServerRecvRtpTS_PS 构造 = %X  nClient = %llu ,nRet = %d ", this, nClient,nRet);
 }
@@ -88,12 +89,7 @@ int CNetServerRecvRtpTS_PS::InputNetData(NETHANDLE nServerHandle, NETHANDLE nCli
 	if (rtpHeadPtr->v != 2)
 		return -1;//不是rtp包
 
-#ifdef USE_BOOST
-	boost::shared_ptr<CNetRevcBase>  rtpClientPtr = GetNetRevcBaseClient(rtpClient);
-#else
-	auto  rtpClientPtr = GetNetRevcBaseClient(rtpClient);
-#endif
- 
+ 	auto  rtpClientPtr = GetNetRevcBaseClient(rtpClient);
 	if (rtpClientPtr == NULL && address != NULL )
 	{
 		char szTemp[256] = { 0 };

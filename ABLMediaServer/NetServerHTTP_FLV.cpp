@@ -101,8 +101,6 @@ CNetServerHTTP_FLV::~CNetServerHTTP_FLV()
 
 	WriteLog(Log_Debug, "CNetServerHTTP_FLV =%X Step 1 nClient = %llu ",this, nClient);
 
-	XHNetSDK_Disconnect(nClient);
-
 	WriteLog(Log_Debug, "CNetServerHTTP_FLV =%X Step 2 nClient = %llu ",this, nClient);
 	
 	if (flvMuxer)
@@ -136,6 +134,8 @@ int CNetServerHTTP_FLV::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, cha
 
 int CNetServerHTTP_FLV::PushAudio(uint8_t* pAudioData, uint32_t nDataLength, char* szAudioCodec, int nChannels, int SampleRate)
 {
+	nRecvDataTimerBySecond = 0;
+
 	if (ABL_MediaServerPort.nEnableAudio == 0)
 		return -1;
 
@@ -149,12 +149,7 @@ int CNetServerHTTP_FLV::PushAudio(uint8_t* pAudioData, uint32_t nDataLength, cha
 
 void  CNetServerHTTP_FLV::MuxerVideoFlV(char* codeName, unsigned char* pVideo, int nLength)
 {
-	//if (dwVideoFirstTime == 0)
-	//	dwVideoFirstTime = GetTickCount();
-	//flvPS = GetTickCount() - dwVideoFirstTime;
-
-	if (nVideoStampAdd == 0)
-		nVideoStampAdd = 1000 / mediaCodecInfo.nVideoFrameRate;
+	nVideoStampAdd = 1000 / mediaCodecInfo.nVideoFrameRate;
 
 	if (strcmp(codeName, "H264") == 0)
 	{
@@ -468,6 +463,11 @@ int CNetServerHTTP_FLV::ProcessNetData()
 		{//H264、H265 只创建视频
 			flvWrite = flv_writer_create2(0, 1, NetServerHTTP_FLV_OnWrite_CB, (void*)this);
 			WriteLog(Log_Debug, "创建http-flv 输出格式为： 视频 %s、音频：无音频  nClient = %llu ", pushClient->m_mediaCodecInfo.szVideoName, nClient);
+		}
+		else if (strlen(pushClient->m_mediaCodecInfo.szVideoName) == 0 && strcmp(pushClient->m_mediaCodecInfo.szAudioName, "AAC") == 0)
+		{//只创建音频
+			flvWrite = flv_writer_create2(1,0, NetServerHTTP_FLV_OnWrite_CB, (void*)this);
+			WriteLog(Log_Debug, "创建http-flv 输出格式为： 无视频 、只有音频 %s  nClient = %llu ", pushClient->m_mediaCodecInfo.szAudioName, nClient);
 		}
 		else
 		{
