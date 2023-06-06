@@ -12,11 +12,11 @@ public:
    std::mutex    RecordFileLock;
    char          szDeleteFile[512];
 
-   char          m_app[256];
-   char          m_stream[256];
-   char          m_szShareURL[256];
-   char          szBuffer[256];
-   char          szJson[1024];
+   char          m_app[string_length_256];
+   char          m_stream[string_length_512];
+   char          m_szShareURL[string_length_512];
+   char          szBuffer[string_length_4096];
+   char          szJson[string_length_4096];
 
    bool   AddRecordFile(char* szFileName);
    bool   UpdateExpireRecordFile(char* szNewFileName);

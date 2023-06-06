@@ -20,10 +20,8 @@ using namespace boost;
 #else
 
 #endif
-
-
 #define     ReadRecordFileInput_MaxPacketCount     1024*1024*3 
-#define     OpenMp4FileToReadWaitMaxMilliSecond    150  //打开mp4文件，500毫秒后 才开始读取文件 
+#define     OpenMp4FileToReadWaitMaxMilliSecond    300  //打开mp4文件，500毫秒后 才开始读取文件 
 
 //视频，音频
 enum ABLAVType
@@ -89,7 +87,6 @@ public:
    volatile   int        nVidepSpeedTime;//视频帧速度 
    volatile   double     dBaseSpeed ;
    volatile   double     m_dScaleValue;//当前速度
-   volatile   bool       m_bPauseFlag;
    volatile   uint64_t   m_nStartTimestamp;//开始的时间戳
    uint64_t              nVideoFirstPTS;
    uint64_t              nAudioFirstPTS;

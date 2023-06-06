@@ -9,10 +9,9 @@ E-Mail  79941308@qq.com
 #include "stdafx.h"
 #include "ReadRecordFileInput.h"
 #ifdef USE_BOOST
-extern CNetBaseThreadPool* RecordReplayThreadPool;//录像回放线程池
+extern CNetBaseThreadPool*                   RecordReplayThreadPool;//录像回放线程池
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
-
 extern boost::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szURL, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern MediaServerPort                       ABL_MediaServerPort;
@@ -310,7 +309,7 @@ CReadRecordFileInput::CReadRecordFileInput(NETHANDLE hServer, NETHANDLE hClient,
 		return;
 	}
 
-	WriteLog(Log_Debug, "CReadRecordFileInput 构造函数 = %X ,nClient = %llu ,读取录像文件 %s", this, hClient, szIP);
+	WriteLog(Log_Debug, "nClient = %llu ,读取录像文件 %s",  hClient, szIP);
 
 	m_rtspPlayerType = RtspPlayerType_RecordReplay;
 	pMediaSource = NULL ;
@@ -406,6 +405,9 @@ CReadRecordFileInput::~CReadRecordFileInput()
 	if (strlen(m_szShareMediaURL) > 0)
 	   DeleteMediaStreamSource(m_szShareMediaURL);
 
+	if(hParent > 0 )
+		XHNetSDK_Disconnect(hParent);
+ 
    malloc_trim(0);
 }
 
