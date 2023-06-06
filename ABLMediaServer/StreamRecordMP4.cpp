@@ -43,7 +43,6 @@ extern CMediaFifo                            pMessageNoticeFifo;    //消息通知FI
 extern std::shared_ptr<CRecordFileSource>  GetRecordFileSource(char* szShareURL);
 #endif
 
-
 static int mp4_mov_file_read(void* fp, void* data, uint64_t bytes)
 {
 	if (bytes == fread(data, 1, bytes, (FILE*)fp))
@@ -79,6 +78,7 @@ const struct mov_buffer_t* mp4_mov_file_buffer(void)
 
 CStreamRecordMP4::CStreamRecordMP4(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort,char* szShareMediaURL)
 {
+	ascLength = 0;
 	memset((char*)&ctx.avc, 0x00, sizeof(ctx.avc));
 	memset((char*)&ctx.hevc, 0x00, sizeof(ctx.hevc));
 
@@ -130,7 +130,7 @@ CStreamRecordMP4::~CStreamRecordMP4()
 
 int CStreamRecordMP4::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, char* szVideoCodec)
 {
-	if (!bRunFlag || mediaCodecInfo.nWidth == 0 || mediaCodecInfo.nHeight == 0 )
+	if (!bRunFlag)
 		return -1;
 
 	if(!m_bOpenFlag)
@@ -264,15 +264,7 @@ bool CStreamRecordMP4::OpenMp4File(int nWidth, int nHeight)
 			sprintf(szFileName, "%s%04d%02d%02d%02d%02d%02d.mp4", szRecordPath, local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);
 			sprintf(szFileNameOrder, "%04d%02d%02d%02d%02d%02d.mp4", local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);;
 #endif
-#ifdef USE_BOOST
-
-			boost::shared_ptr<CRecordFileSource> pRecord = GetRecordFileSource(m_szShareMediaURL);
-#else
-
-			std::shared_ptr<CRecordFileSource> pRecord = GetRecordFileSource(m_szShareMediaURL);
-#endif
-
-		
+			auto pRecord = GetRecordFileSource(m_szShareMediaURL);
 			if (pRecord)
 			{
 				bUpdateFlag = pRecord->UpdateExpireRecordFile(szFileName);
@@ -345,7 +337,7 @@ bool CStreamRecordMP4::AddVideo(char* szVideoName, unsigned char* pVideoData, in
 {
 	std::lock_guard<std::mutex> lock(writeMp4Lock);
 
-	if (!m_bOpenFlag)
+	if (!m_bOpenFlag || !bRunFlag )
 		return false;
 
 	nVideoFrameCount++;
@@ -387,8 +379,7 @@ bool CStreamRecordMP4::AddVideo(char* szVideoName, unsigned char* pVideoData, in
 			return false;
 		}
 
-		// TODO: waiting for key frame ???
-		if (strcmp(szVideoName, "H264") == 0)
+ 		if (strcmp(szVideoName, "H264") == 0)
 			ctx.track = mov_writer_add_video(ctx.mov, MOV_OBJECT_H264, ctx.width, ctx.height, s_extra_data, extra_data_size);
 		else if (strcmp(szVideoName, "H265") == 0)
 			ctx.track = mov_writer_add_video(ctx.mov, MOV_OBJECT_HEVC, ctx.width, ctx.height, s_extra_data, extra_data_size);
@@ -397,8 +388,16 @@ bool CStreamRecordMP4::AddVideo(char* szVideoName, unsigned char* pVideoData, in
 			return false;
 	}
 
-	//等待 25 帧视频，或者 产生音频
-	if (nVideoFrameCount >= 5 || ctx.trackAudio >= 0)
+	//增加音频轨道
+	if (-1 == ctx.trackAudio && ascLength > 0 && strcmp(mediaCodecInfo.szAudioName, "AAC") == 0)
+		ctx.trackAudio = mov_writer_add_audio(ctx.mov, MOV_OBJECT_AAC, ctx.aac.channels, 16, ctx.aac.sampling_frequency, asc, ascLength);
+	else if (-1 == ctx.trackAudio && strcmp(mediaCodecInfo.szAudioName, "G711_A") == 0)
+		ctx.trackAudio = mov_writer_add_audio(ctx.mov, MOV_OBJECT_G711a, 1, 16, 8000, NULL, 0);
+	else if (-1 == ctx.trackAudio && strcmp(mediaCodecInfo.szAudioName, "G711_U") == 0)
+		ctx.trackAudio = mov_writer_add_audio(ctx.mov, MOV_OBJECT_G711u, 1, 16, 8000, NULL, 0);
+
+	//如果没有音频，直接开始写视频，如果有音频则需要等待音频句柄有效
+	if (nSize > 0 && (strcmp(mediaCodecInfo.szAudioName, "AAC") != 0 || (strcmp(mediaCodecInfo.szAudioName, "AAC") == 0 && ctx.trackAudio >= 0)))
 	{
 		mov_writer_write(ctx.mov, ctx.track, s_buffer, nSize, ctx.pts, ctx.pts, 1 == vcl ? MOV_AV_FLAG_KEYFREAME : 0);
 
@@ -406,6 +405,7 @@ bool CStreamRecordMP4::AddVideo(char* szVideoName, unsigned char* pVideoData, in
   		ctx.pts += (1000 / mediaCodecInfo.nVideoFrameRate);
 		ctx.dts += (1000 / mediaCodecInfo.nVideoFrameRate);
  	}
+
 	return true;
 }
 
@@ -415,7 +415,7 @@ bool CStreamRecordMP4::AddAudio(char* szAudioName, unsigned char* pAudioData, in
 	std::lock_guard<std::mutex> lock(writeMp4Lock);
 
 	//保证视频到达后，再加入音频 【】
-	if (!m_bOpenFlag || ctx.track == -1)
+	if (!m_bOpenFlag || !bRunFlag || strcmp(mediaCodecInfo.szAudioName, "AAC") != 0)
 		return false;
 
 	if (strcmp(szAudioName, "AAC") == 0)
@@ -426,33 +426,19 @@ bool CStreamRecordMP4::AddAudio(char* szAudioName, unsigned char* pAudioData, in
 
 		if (-1 == ctx.trackAudio)
 		{
-			uint8_t asc[16];
 			mpeg4_aac_adts_load(pAudioData, nAudioDataLength, &ctx.aac);
-			int len = mpeg4_aac_audio_specific_config_save(&ctx.aac, asc, sizeof(asc));
-
-			ctx.trackAudio = mov_writer_add_audio(ctx.mov, MOV_OBJECT_AAC, ctx.aac.channels, 16, ctx.aac.sampling_frequency, asc, len);
+			ascLength = mpeg4_aac_audio_specific_config_save(&ctx.aac, asc, sizeof(asc));
 		}
 
-		if (ctx.track >= 0) //比如有视频才开始写入音频
-		{
+		if (ctx.trackAudio >= 0 && ctx.track >= 0 && mediaCodecInfo.nSampleRate > 0 )
+		{//必须有视频轨道才能开始写入音频
 			mov_writer_write(ctx.mov, ctx.trackAudio, pAudioData + 7, nAudioDataLength - 7, ctx.ptsAudio, ctx.ptsAudio, 0);
-			ctx.ptsAudio += 1024 * 1000 / ctx.aac.sampling_frequency;
+			ctx.ptsAudio += 1024 * 1000 / mediaCodecInfo.nSampleRate ;
 		}
 	}
 	else if (strcmp(szAudioName, "G711_A") == 0 || strcmp(szAudioName, "G711_U") == 0)
 	{
-		if (-1 == ctx.trackAudio)
-		{
-			if (strcmp(szAudioName, "G711_A") == 0)
-				ctx.trackAudio = mov_writer_add_audio(ctx.mov, MOV_OBJECT_G711a, 1, 16, 8000, NULL, 0);
-			else if (strcmp(szAudioName, "G711_U") == 0)
-				ctx.trackAudio = mov_writer_add_audio(ctx.mov, MOV_OBJECT_G711u, 1, 16, 8000, NULL, 0);
-
-			if (-1 == ctx.trackAudio)
-				return false;
-		}
-
-		if (ctx.track >= 0) //比如有视频才开始写入音频
+		if (ctx.trackAudio >= 0)  
 		{
 			//为了兼容华为VCN填写g711的采样频率为16000，从而G711每帧长度为640，造成MP4文件时间总长度多1倍 
 			if (nAudioDataLength > 320)

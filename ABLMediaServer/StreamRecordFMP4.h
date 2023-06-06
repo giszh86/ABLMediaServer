@@ -52,7 +52,7 @@ public:
 
    volatile    bool        bWaitIFrameSuccessFlag;
    volatile    bool        bAddSendThreadToolFlag;
-   char                    httpResponseData[1024];
+   char                    httpResponseData[string_length_4096];
    unsigned char           netDataCache[1024*32]; //网络数据缓存
    int                     netDataCacheLength;//网络数据缓存大小
    int                     nNetStart, nNetEnd; //网络数据起始位置\结束位置
@@ -92,7 +92,6 @@ public:
 
    struct mpeg4_hevc_t    hevc;
    struct mpeg4_avc_t     avc;
-   vc_params_t            H265Params;
    bool                   VideoFrameToFMP4File(unsigned char* szVideoData, int nLength);
 };
 
