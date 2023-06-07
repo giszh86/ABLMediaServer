@@ -76,17 +76,17 @@ namespace ABL {
 
 	}
 
-	std::string to_lower(std::string strBuf)
-	{
-		if (strBuf.empty())
-		{
-			return "";
-		}
-		return strlwr((char*)strBuf.c_str());
-	//	_strlwr_s((char*)strBuf.c_str(), strBuf.length() + 1);
-	//	return strBuf;
+	//std::string to_lower(std::string strBuf)
+	//{
+	//	if (strBuf.empty())
+	//	{
+	//		return "";
+	//	}
+	//	return strlwr((char*)strBuf.c_str());
+	////	_strlwr_s((char*)strBuf.c_str(), strBuf.length() + 1);
+	////	return strBuf;
 
-	}
+	//}
 
 	int	replace_all(std::string& strBuf, std::string  strSrc, std::string  strDes)
 	{
@@ -138,6 +138,33 @@ namespace ABL {
  *	Input:			strBuf		×Ö·û´®
  *	Return:			Ð¡Ð´×Ö·û´®
  */
+
+	void to_lower(char* str)
+	{
+		std::size_t length = std::strlen(str);
+		for (std::size_t i = 0; i < length; ++i) {
+			str[i] = std::tolower(static_cast<unsigned char>(str[i]));
+		}
+	}
+	void to_lower(std::string& str)
+	{
+		for (char& c : str) {
+			c = std::tolower(static_cast<unsigned char>(c));
+		}
+	}
+	void to_upper(char* str)
+	{
+		std::size_t length = std::strlen(str);
+		for (std::size_t i = 0; i < length; ++i) {
+			str[i] = std::toupper(static_cast<unsigned char>(str[i]));
+		}
+	}
+	void to_upper(std::string& str)
+	{
+		for (char& c : str) {
+			c = std::toupper(static_cast<unsigned char>(c));
+		}
+	}
 	std::string  StrToLwr(std::string  strBuf)
 	{
 		if (strBuf.empty())

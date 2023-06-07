@@ -9,7 +9,7 @@ namespace ABL {
 	// É¾³ý×Ö·û´®ÖÐÖ¸¶¨µÄ×Ö·û´®
 	int	erase_all(std::string& strBuf, std::string  strDel);
 
-	std::string to_lower(std::string strBuf);
+	//std::string to_lower(std::string strBuf);
 
 	int	replace_all(std::string& strBuf, std::string  strSrc, std::string  strDes);
 	
@@ -18,8 +18,16 @@ namespace ABL {
 	// ×Ö·û´®×ªÐ¡Ð´
 	std::string 	StrToLwr(std::string  strBuf);
 
+	void to_lower(char* str);
+
+	void to_lower(std::string& str);
+
 
 	// ×Ö·û´®×ª´óÐ´
 	std::string 	StrToUpr(std::string  strBuf);
+
+	void to_upper(char* str);
+
+	void to_upper(std::string& str);
 
 }

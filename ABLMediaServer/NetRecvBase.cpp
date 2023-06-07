@@ -163,7 +163,7 @@ bool  CNetRevcBase::ParseRtspRtmpHttpURL(char* szURL)
 #ifdef USE_BOOST
 	to_lower(szSrcRtspPullUrl);
 #else
-	ABL::StrToLwr(szSrcRtspPullUrl);
+	ABL::to_lower(szSrcRtspPullUrl);
 #endif
 
 	if ( !(memcmp(szSrcRtspPullUrl, "rtsp://", 7) == 0 || memcmp(szSrcRtspPullUrl, "rtmp://", 7) == 0 || memcmp(szSrcRtspPullUrl, "http://", 7) == 0))

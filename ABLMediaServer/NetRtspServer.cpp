@@ -25,13 +25,14 @@ extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
-extern CMediaSendThreadPool* pMediaSendThreadPool;
-extern size_t base64_decode(void* target, const char* source, size_t bytes);
+extern CMediaSendThreadPool*                 pMediaSendThreadPool;
+extern size_t base64_decode(void* target, const char *source, size_t bytes);
 extern MediaServerPort                       ABL_MediaServerPort;
 extern boost::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
 extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
-unsigned short                               CNetRtspServer::nRtpPort = 55000;
+unsigned short                               CNetRtspServer::nRtpPort = 55000 ;
 extern void LIBNET_CALLMETHOD                onread(NETHANDLE srvhandle, NETHANDLE clihandle, uint8_t* data, uint32_t datasize, void* address);
+
 
 
 #else
@@ -42,12 +43,12 @@ extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
-extern CMediaSendThreadPool* pMediaSendThreadPool;
-extern size_t base64_decode(void* target, const char* source, size_t bytes);
+extern CMediaSendThreadPool*                 pMediaSendThreadPool;
+extern size_t base64_decode(void* target, const char *source, size_t bytes);
 extern MediaServerPort                       ABL_MediaServerPort;
 extern std::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
 extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
-unsigned short                               CNetRtspServer::nRtpPort = 55000;
+unsigned short                               CNetRtspServer::nRtpPort = 55000 ;
 extern void LIBNET_CALLMETHOD                onread(NETHANDLE srvhandle, NETHANDLE clihandle, uint8_t* data, uint32_t datasize, void* address);
 
 #endif
@@ -661,7 +662,7 @@ int  CNetRtspServer::FillHttpHeadToStruct()
 #ifdef USE_BOOST
 				to_lower(szKey);
 #else
-				ABL::StrToLwr(szKey);
+				ABL::to_lower(szKey);
 #endif
 				if (strcmp(szKey, "content-length") == 0)
 				{//内容长度
@@ -1575,7 +1576,7 @@ bool   CNetRtspServer::GetMediaInfoFromRtspSDP()
 #ifdef USE_BOOST
 				to_upper(strVideoName);
 #else
-				ABL::StrToUpr(strVideoName);
+				ABL::to_upper(strVideoName);
 #endif
 
 
@@ -1612,7 +1613,7 @@ bool   CNetRtspServer::GetMediaInfoFromRtspSDP()
 #ifdef USE_BOOST
 				to_upper(strName);
 #else
-				ABL::StrToUpr(strName);
+				ABL::to_upper(strName);
 #endif
 				strcpy(szAudioName, strName.c_str());
 

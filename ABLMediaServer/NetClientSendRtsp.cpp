@@ -439,7 +439,7 @@ int  CNetClientSendRtsp::FillHttpHeadToStruct()
 #ifdef USE_BOOST
 				to_lower(szKey);
 #else
-				ABL::StrToLwr(szKey);
+				ABL::to_lower(szKey);
 #endif
 				if (strcmp(szKey, "content-length") == 0)
 				{//ÄÚÈÝ³¤¶È
@@ -1222,7 +1222,7 @@ void  CNetClientSendRtsp::FindVideoAudioInSDP()
 #ifdef USE_BOOST
 	to_lower(szTemp);
 #else
-	ABL::StrToLwr(szTemp);
+	ABL::to_lower(szTemp);
 #endif
 	string strSDP = szTemp;
 	string strTraceID;

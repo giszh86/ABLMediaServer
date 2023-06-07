@@ -676,7 +676,7 @@ int  CNetClientRecvRtsp::FillHttpHeadToStruct()
 #ifdef USE_BOOST
 				to_lower(szKey);
 #else
-				ABL::StrToLwr(szKey);
+				ABL::to_lower(szKey);
 #endif
 				if (strcmp(szKey, "content-length") == 0)
 				{//ÄÚÈÝ³¤¶È
@@ -1081,7 +1081,7 @@ bool   CNetClientRecvRtsp::GetMediaInfoFromRtspSDP()
 #ifdef USE_BOOST
 				to_upper(strVideoName);
 #else
-				ABL::StrToUpr(strVideoName);
+				ABL::to_upper(strVideoName);
 #endif
 				strcpy(szVideoName, strVideoName.c_str());
 			}
@@ -1115,7 +1115,7 @@ bool   CNetClientRecvRtsp::GetMediaInfoFromRtspSDP()
 #ifdef USE_BOOST
 				to_upper(strName);
 #else
-				ABL::StrToUpr(strName);
+				ABL::to_upper(strName);
 #endif
 				strcpy(szAudioName, strName.c_str());
 
@@ -1572,7 +1572,7 @@ void  CNetClientRecvRtsp::FindVideoAudioInSDP()
 #ifdef USE_BOOST
 	to_lower(szTemp);
 #else
-	ABL::StrToLwr(szTemp);
+	ABL::to_lower(szTemp);
 #endif
 	string strSDP = szTemp;
 	string strTraceID;

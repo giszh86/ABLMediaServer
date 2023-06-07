@@ -228,7 +228,6 @@ public:
    std::shared_ptr<CMediaStreamSource> pMediaSource;
 #endif
 
-
    volatile bool  bIsInvalidConnectFlag; //是否为非法连接 
    volatile bool  bExitProcessFlagArray[3];
 

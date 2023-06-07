@@ -1,6 +1,22 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="boost_release|ARM">
+      <Configuration>boost_release</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="boost_release|ARM64">
+      <Configuration>boost_release</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="boost_release|x64">
+      <Configuration>boost_release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="boost_release|x86">
+      <Configuration>boost_release</Configuration>
+      <Platform>x86</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|ARM">
       <Configuration>Debug</Configuration>
       <Platform>ARM</Platform>
@@ -51,10 +67,16 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'" Label="Configuration">
     <UseDebugLibraries>false</UseDebugLibraries>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='boost_release|ARM'" Label="Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'" Label="Configuration">
     <UseDebugLibraries>true</UseDebugLibraries>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'" Label="Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='boost_release|x86'" Label="Configuration">
     <UseDebugLibraries>false</UseDebugLibraries>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -64,7 +86,14 @@
     <UseDebugLibraries>false</UseDebugLibraries>
     <UseOfStl>libstdc++_static</UseOfStl>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='boost_release|x64'" Label="Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <UseOfStl>libstdc++_static</UseOfStl>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'" Label="Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='boost_release|ARM64'" Label="Configuration">
     <UseDebugLibraries>false</UseDebugLibraries>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'" Label="Configuration">
@@ -79,7 +108,15 @@
     <IncludePath>./;..\rapidjson-master\include;$HOME/Linux/boost/include;$HOME/Linux/ffmpeg-4.3.4/include;$HOME/rapidjson-master/include \;$HOME/media-server-master/libflv/include;$HOME/media-server-master/librtmp/include;$HOME/media-server-master/libmpeg/include;$HOME/media-server-master/libhls/include;$HOME/media-server-master/librtp/include;$HOME/media-server-master/libmov/include</IncludePath>
     <LibraryPath>/home/server/bin;/home/server/Linux/ffmpeg-4.3.4/lib;/home/server/Linux/faac-1.29.9.2/lib/lib;/home/server/Linux/boost/lib</LibraryPath>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='boost_release|x64'">
+    <IncludePath>./;..\rapidjson-master\include;$HOME/Linux/boost/include;$HOME/Linux/ffmpeg-4.3.4/include;$HOME/rapidjson-master/include \;$HOME/media-server-master/libflv/include;$HOME/media-server-master/librtmp/include;$HOME/media-server-master/libmpeg/include;$HOME/media-server-master/libhls/include;$HOME/media-server-master/librtp/include;$HOME/media-server-master/libmov/include</IncludePath>
+    <LibraryPath>/home/server/bin;/home/server/Linux/ffmpeg-4.3.4/lib;/home/server/Linux/faac-1.29.9.2/lib/lib;/home/server/Linux/boost/lib</LibraryPath>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
+    <IncludePath>/home/server/ffmpeg-4.2.3/include</IncludePath>
+    <LibraryPath>/home/server/ffmpeg-4.2.3/lib;/home/server/bin</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='boost_release|ARM64'">
     <IncludePath>/home/server/ffmpeg-4.2.3/include</IncludePath>
     <LibraryPath>/home/server/ffmpeg-4.2.3/lib;/home/server/bin</LibraryPath>
   </PropertyGroup>
@@ -255,6 +292,16 @@
     <Library Include="..\media-server-master\bin\librtp.a" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Link>
+      <LibraryDependencies>m;dl;z;pthread;rt;boost_system;boost_thread;boost_log;boost_regex;boost_filesystem;boost_date_time;boost_chrono;boost_atomic;mpeg;faac;x264;avcodec;avutil;avformat;swscale;avfilter;postproc;swresample;XHNetSDK;PsDemux;PsMux;RtpDepacket;RtpPacket;%(LibraryDependencies)</LibraryDependencies>
+      <AdditionalLibraryDirectories>/home/server/bin;/home/server/Linux/ffmpeg-4.3.4/lib;/home/server/Linux/faac-1.29.9.2/lib/lib;/home/server/Linux/boost/lib;%(Link.AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <SharedLibrarySearchPath>/home/server/bin;/home/server/Linux/ffmpeg-4.3.4/lib;/home/server/Linux/faac-1.29.9.2/lib/lib;/home/server/Linux/boost/lib;%(Link.AdditionalLibraryDirectories)</SharedLibrarySearchPath>
+    </Link>
+    <ClCompile>
+      <CppLanguageStandard>c++14</CppLanguageStandard>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='boost_release|x64'">
     <Link>
       <LibraryDependencies>m;dl;z;pthread;rt;boost_system;boost_thread;boost_log;boost_regex;boost_filesystem;boost_date_time;boost_chrono;boost_atomic;mpeg;faac;x264;avcodec;avutil;avformat;swscale;avfilter;postproc;swresample;XHNetSDK;PsDemux;PsMux;RtpDepacket;RtpPacket;%(LibraryDependencies)</LibraryDependencies>
       <AdditionalLibraryDirectories>/home/server/bin;/home/server/Linux/ffmpeg-4.3.4/lib;/home/server/Linux/faac-1.29.9.2/lib/lib;/home/server/Linux/boost/lib;%(Link.AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
