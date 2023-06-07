@@ -10,7 +10,7 @@
 #define FLV_HEADER_SIZE		9	// DataOffset included
 #define FLV_TAG_HEADER_SIZE	11	// StreamID included
 
-#define FLV_VIDEO_CODEC_NAME(codecid) (FLV_VIDEO_H264==(codecid) ? FLV_VIDEO_AVCC : (FLV_VIDEO_H265==(codecid) ? FLV_VIDEO_HVCC : FLV_VIDEO_AV1C))
+#define FLV_VIDEO_CODEC_NAME(codecid) (FLV_VIDEO_H264==(codecid) ? FLV_VIDEO_AVCC : (FLV_VIDEO_H265==(codecid) ? FLV_VIDEO_HVCC : (FLV_VIDEO_H266==(codecid) ? FLV_VIDEO_VVCC : FLV_VIDEO_AV1C)))
 
 static int flv_parser_audio(struct flv_audio_tag_header_t* audio, const uint8_t* data, size_t bytes, uint32_t timestamp, flv_parser_handler handler, void* param)
 {
@@ -22,7 +22,7 @@ static int flv_parser_audio(struct flv_audio_tag_header_t* audio, const uint8_t*
 
 static int flv_parser_video(struct flv_video_tag_header_t* video, const uint8_t* data, size_t bytes, uint32_t timestamp, flv_parser_handler handler, void* param)
 {
-	if (FLV_VIDEO_H264 == video->codecid || FLV_VIDEO_H265 == video->codecid || FLV_VIDEO_AV1 == video->codecid)
+	if (FLV_VIDEO_H264 == video->codecid || FLV_VIDEO_H265 == video->codecid || FLV_VIDEO_H266 == video->codecid || FLV_VIDEO_AV1 == video->codecid)
 	{
 		if (FLV_SEQUENCE_HEADER == video->avpacket)
 		{
@@ -93,7 +93,14 @@ int flv_parser_tag(int type, const void* data, size_t bytes, uint32_t timestamp,
 static size_t flv_parser_append(struct flv_parser_t* parser, const uint8_t* data, size_t bytes, size_t expect)
 {
 	size_t n;
-	assert(parser->bytes <= expect && expect <= sizeof(parser->ptr));
+	if (parser->bytes > expect || expect > sizeof(parser->ptr))
+	{
+		// invalid status, consume all
+		assert(0);
+		parser->bytes = expect;
+		return bytes;
+	}
+
 	n = parser->bytes + bytes >= expect ? expect - parser->bytes : bytes;
 	if (n > 0)
 	{
@@ -154,6 +161,7 @@ int flv_parser_input(struct flv_parser_t* parser, const uint8_t* data, size_t by
 			{
 				flv_tag_header_read(&parser->tag, parser->ptr, parser->bytes);
 				parser->bytes = 0;
+				parser->expect = 0;
 				parser->state = FLV_AVHEADER_CODEC;
 			}
 			break;
@@ -173,13 +181,18 @@ int flv_parser_input(struct flv_parser_t* parser, const uint8_t* data, size_t by
 				parser->expect = 1;
 				n = flv_parser_append(parser, data, bytes, 1);
 				codec = (parser->ptr[0] & 0x0F);
-				if (FLV_VIDEO_H264 == codec || FLV_VIDEO_H265 == codec || FLV_VIDEO_AV1 == codec)
+				if (FLV_VIDEO_H264 == codec || FLV_VIDEO_H265 == codec || FLV_VIDEO_H266 == codec || FLV_VIDEO_AV1 == codec)
 					parser->expect = 5;
 				break;
 
 			case FLV_TYPE_SCRIPT:
 				parser->expect = 0;
 				n = 0; // noops
+				break;
+
+			default:
+				assert(0);
+				return -1; // invalid flv file
 			}
 			parser->state = FLV_AVHEADER_EXTRA;
 			break;
