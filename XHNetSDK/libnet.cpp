@@ -2,7 +2,7 @@
 #ifdef USE_BOOST
 #include <boost/make_shared.hpp>
 #include <boost/ref.hpp>
-#include "XHNetSDK.h"
+#include "libnet.h"
 #include "libnet_error.h"
 #include "io_context_pool.h"
 #include "server_manager.h"
@@ -21,7 +21,7 @@ auto_lock::al_spin g_initmtx;
 #endif
 
 LIBNET_API int32_t XHNetSDK_Init(uint32_t ioccount,
-	uint32_t periocthread)
+							   uint32_t periocthread)
 {
 #ifdef LIBNET_USE_CORE_SYNC_MUTEX
 	auto_lock::al_lock<auto_lock::al_mutex> al(g_initmtx);
@@ -42,7 +42,7 @@ LIBNET_API int32_t XHNetSDK_Init(uint32_t ioccount,
 		{
 			g_initret = g_iocpool.run();
 		}
-	}
+	}	
 
 	return g_initret;
 }
@@ -78,12 +78,12 @@ LIBNET_API int32_t XHNetSDK_Deinit()
 }
 
 LIBNET_API int32_t XHNetSDK_Listen(int8_t* localip,
-	uint16_t localport,
-	NETHANDLE* srvhandle,
-	accept_callback fnaccept,
-	read_callback fnread,
-	close_callback fnclose,
-	uint8_t autoread)
+								 uint16_t localport,
+								 NETHANDLE* srvhandle,
+								 accept_callback fnaccept,
+								 read_callback fnread,
+								 close_callback fnclose,
+								 uint8_t autoread)
 {
 	int32_t ret = e_libnet_err_noerror;
 
@@ -111,7 +111,7 @@ LIBNET_API int32_t XHNetSDK_Listen(int8_t* localip,
 
 			try
 			{
-				server_ptr s = boost::make_shared<server>(boost::ref(g_iocpool.get_io_context()), boost::ref(endpoint),
+				server_ptr s = boost::make_shared<server>(boost::ref(g_iocpool.get_io_context()), boost::ref(endpoint), 
 					fnaccept, fnread, fnclose, (0 != autoread) ? true : false);
 
 				if (server_manager_singleton::get_mutable_instance().push_server(s))
@@ -140,7 +140,7 @@ LIBNET_API int32_t XHNetSDK_Listen(int8_t* localip,
 			{
 				ret = e_libnet_err_srvcreate;
 			}
-
+	
 		}
 	}
 
@@ -362,7 +362,7 @@ LIBNET_API int32_t XHNetSDK_BuildUdp(int8_t* localip,
 		{
 			ret = e_libnet_err_srvcreate;
 		}
-
+		
 	}
 
 	return ret;
@@ -443,7 +443,7 @@ LIBNET_API int32_t XHNetSDK_Recvfrom(NETHANDLE udphandle,
 		udp_session_ptr s = udp_session_manager_singleton::get_mutable_instance().get_udp_session(udphandle);
 		if (s)
 		{
-			ret = s->recv_from(buffer, buffsize, remoteaddress, (0 != blocked) ? true : false);
+			ret = s->recv_from(buffer, buffsize, remoteaddress, ( 0 != blocked) ? true : false);
 		}
 		else
 		{
@@ -487,14 +487,13 @@ LIBNET_API int32_t XHNetSDK_Multicast(NETHANDLE udphandle,
 
 LIBNET_API NETHANDLE XHNetSDK_GenerateIdentifier()
 {
-	return generate_identifier();
+	return generate_identifier(); 
 }
-
 
 #else
 
 #include <memory>
-#include "XHNetSDK.h"
+#include "libnet.h"
 #include "libnet_error.h"
 #include "io_context_pool.h"
 #include "server_manager.h"
@@ -574,12 +573,12 @@ LIBNET_API int32_t XHNetSDK_Deinit()
 
 
 LIBNET_API int32_t XHNetSDK_Listen(int8_t* localip,
-	uint16_t localport,
-	NETHANDLE* srvhandle,
-	accept_callback fnaccept,
-	read_callback fnread,
-	close_callback fnclose,
-	uint8_t autoread)
+								uint16_t localport,
+								NETHANDLE* srvhandle,
+								accept_callback fnaccept,
+								read_callback fnread,
+								close_callback fnclose,
+								uint8_t autoread)
 {
 	int32_t ret = e_libnet_err_noerror;
 

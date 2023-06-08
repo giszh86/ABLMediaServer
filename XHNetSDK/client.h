@@ -19,7 +19,8 @@ public:
 		close_callback fnclose,
 		bool autoread);
 	~client();
-
+	
+	auto_lock::al_spin m_climtx;
 	NETHANDLE get_id();
 	NETHANDLE get_server_id() const;
 	boost::asio::ip::tcp::socket& socket();
@@ -129,7 +130,7 @@ public:
 		close_callback fnclose,
 		bool autoread);
 	~client();
-
+	auto_lock::al_spin m_climtx;
 	NETHANDLE get_id();
 	NETHANDLE get_server_id() const;
 	asio::ip::tcp::socket& socket();

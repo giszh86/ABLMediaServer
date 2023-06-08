@@ -7,6 +7,7 @@
 #include "server_manager.h"
 #include "libnet_error.h"
 #include "identifier_generator.h"
+#include <malloc.h>
 
 #if (defined _WIN32)
 #include <WS2tcpip.h>
@@ -19,7 +20,7 @@
 
 extern io_context_pool g_iocpool;
 
-server::server(boost::asio::io_context& ioc,
+server::server(boost::asio::io_context &ioc,
 	boost::asio::ip::tcp::endpoint& ep,
 	accept_callback fnaccept,
 	read_callback fnread,
@@ -38,6 +39,7 @@ server::server(boost::asio::io_context& ioc,
 server::~server(void)
 {
 	recycle_identifier(m_id);
+	malloc_trim(0);
 }
 
 int32_t server::run()
@@ -52,7 +54,7 @@ int32_t server::run()
 			return e_libnet_err_srvlistensocknotopen;
 		}
 
-		//set option
+		/* 屏蔽掉地址重用设置，否则绑定相同端口时不会提示端口重复绑定提示 //set option*/
 		boost::asio::ip::tcp::acceptor::reuse_address reuse_address_option(true);
 		m_acceptor.set_option(reuse_address_option, ec);
 		if (ec)
@@ -119,7 +121,7 @@ void server::start_accept()
 	client_ptr c;
 	while (m_acceptor.is_open())
 	{
-		c = client_manager_singleton->malloc_client(g_iocpool.get_io_context(), get_id(), m_fnread, m_fnclose, m_autoread);
+		c = client_manager_singleton::get_mutable_instance().malloc_client(g_iocpool.get_io_context(), get_id(), m_fnread, m_fnclose, m_autoread);
 		if (c)
 		{
 			break;
@@ -146,7 +148,7 @@ void server::handle_accept(client_ptr c, const boost::system::error_code& ec)
 		{
 			boost::system::error_code ec;
 			boost::asio::ip::tcp::endpoint endpoint = c->socket().remote_endpoint(ec);
-			if (ec || !client_manager_singleton->push_client(c))
+			if (ec || !client_manager_singleton::get_mutable_instance().push_client(c))
 			{
 				c->close();
 				start_accept();
@@ -179,7 +181,7 @@ void server::handle_accept(client_ptr c, const boost::system::error_code& ec)
 			}
 		}
 
-		c = client_manager_singleton->get_client(cliid);
+		c = client_manager_singleton::get_mutable_instance().get_client(cliid);
 		if (c)
 		{
 			c->run();
@@ -189,7 +191,7 @@ void server::handle_accept(client_ptr c, const boost::system::error_code& ec)
 	}
 	else
 	{
-		if (server_manager_singleton->pop_server(get_id()))
+		if (server_manager_singleton::get_mutable_instance().pop_server(get_id()))
 		{
 			if (m_fnclose)
 			{
@@ -208,7 +210,7 @@ void server::handle_accept(client_ptr c, const boost::system::error_code& ec)
 #include "server_manager.h"
 #include "libnet_error.h"
 #include "identifier_generator.h"
-
+#include <malloc.h>
 #if (defined _WIN32)
 #include <WS2tcpip.h>
 #pragma comment(lib, "WS2_32.lib")

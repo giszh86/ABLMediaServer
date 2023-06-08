@@ -116,6 +116,7 @@
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>./asio/include/asio;./asio/include;./;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)bin\$(Platform)</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='boost_release|x64'">
     <LinkIncremental>false</LinkIncremental>

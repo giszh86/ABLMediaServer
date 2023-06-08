@@ -35,23 +35,23 @@ extern "C"
 {
 #endif
 
-	typedef void (LIBNET_CALLMETHOD* accept_callback)(NETHANDLE srvhandle,
+	typedef void (LIBNET_CALLMETHOD	*accept_callback)(NETHANDLE srvhandle,
 		NETHANDLE clihandle,
 		void* address);
 
 
-	typedef void(LIBNET_CALLMETHOD* connect_callback)(NETHANDLE clihandle,
-		uint8_t result);
+	typedef void(LIBNET_CALLMETHOD	*connect_callback)(NETHANDLE clihandle,
+		uint8_t result, uint16_t nLocalPort);
 
 
-	typedef void (LIBNET_CALLMETHOD* read_callback)(NETHANDLE srvhandle,
+	typedef void (LIBNET_CALLMETHOD *read_callback)(NETHANDLE srvhandle,
 		NETHANDLE clihandle,
 		uint8_t* data,
 		uint32_t datasize,
 		void* address);
 
 
-	typedef void (LIBNET_CALLMETHOD* close_callback)(NETHANDLE srvhandle,
+	typedef void (LIBNET_CALLMETHOD	*close_callback)(NETHANDLE srvhandle,
 		NETHANDLE clihandle);
 
 
