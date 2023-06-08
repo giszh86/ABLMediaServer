@@ -118,11 +118,14 @@
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>..\rapidjson-master\include;..\media-server-master\libflv\include;..\media-server-master\librtmp\include;..\media-server-master\libmpeg\include;..\media-server-master\libhls\include;..\media-server-master\libmov\include;..\media-server-master\librtp\include;../3rd/ffmpeg-4.2.3\include;$(IncludePath)</IncludePath>
     <LibraryPath>..\media-server-master\x64\Release;..\3rd\ffmpeg-4.2.3\lib;$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)bin\$(Platform)</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='boost_release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>..\rapidjson-master\include;..\media-server-master\libflv\include;..\media-server-master\librtmp\include;..\media-server-master\libmpeg\include;..\media-server-master\libhls\include;..\media-server-master\libmov\include;..\media-server-master\librtp\include;../3rd/ffmpeg-4.2.3\include;../3rd/boost_1_73_0/boost_intall/include;$(IncludePath)</IncludePath>
     <LibraryPath>..\media-server-master\x64\Release;..\3rd\ffmpeg-4.2.3\lib;$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)bin\$(Platform)</OutDir>
+    <TargetName>$(ProjectName)_boost</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

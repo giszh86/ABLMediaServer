@@ -19,7 +19,8 @@ public:
 		close_callback fnclose,
 		bool autoread);
 	~client();
-
+	
+	auto_lock::al_spin m_climtx;
 	NETHANDLE get_id();
 	NETHANDLE get_server_id() const;
 	boost::asio::ip::tcp::socket& socket();
@@ -69,7 +70,7 @@ private:
 #endif
 #endif
 	const bool m_autoread;
-	uint8_t m_readbuff[CLIENT_MAX_RECV_BUFF_SIZE];
+	uint8_t* m_readbuff;
 	bool m_inreading;
 	uint8_t* m_usrreadbuffer;
 

@@ -89,7 +89,7 @@ private:
 #endif
 
 
-	uint8_t m_readbuff[UDP_SESSION_MAX_BUFF_SIZE];
+	uint8_t* m_readbuff;
 
 	bool m_inreading;
 	uint8_t* m_userreadbuffer;

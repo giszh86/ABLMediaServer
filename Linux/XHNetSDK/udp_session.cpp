@@ -23,11 +23,17 @@ udp_session::udp_session(boost::asio::io_context& ioc)
 	, m_inreading(false)
 	, m_id(generate_identifier())
 {
+	m_readbuff = new uint8_t[UDP_SESSION_MAX_BUFF_SIZE];
 }
 
 udp_session::~udp_session(void)
 {
 	recycle_identifier(m_id);
+	if(m_readbuff != NULL)
+	{
+	   delete [] m_readbuff ;
+	   m_readbuff = NULL ;
+	}
 	malloc_trim(0);
 }
 
@@ -213,7 +219,7 @@ int32_t udp_session::send_to(uint8_t* data,
 	if (m_hasconnected)
 	{
 		m_socket.send(boost::asio::buffer(data, datasize), 0, ec);
-		usleep(20);
+		usleep(10);
 	}
 	else
 	{
@@ -222,7 +228,7 @@ int32_t udp_session::send_to(uint8_t* data,
 		m_writeep.address(boost::asio::ip::address::from_string(inet_ntoa(addr->sin_addr)));
 		m_writeep.port(ntohs(addr->sin_port));
 		m_socket.send_to(boost::asio::buffer(data, datasize), m_writeep, 0, ec);
-		usleep(20);
+		usleep(10);
  	}
 
 	if (ec)

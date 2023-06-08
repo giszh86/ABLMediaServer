@@ -43,7 +43,7 @@ extern "C"
 
 
 	typedef void(LIBNET_CALLMETHOD	*connect_callback)(NETHANDLE clihandle,
-		uint8_t result);
+		uint8_t result, uint16_t nLocalPort);
 
 
 	typedef void (LIBNET_CALLMETHOD *read_callback)(NETHANDLE srvhandle,

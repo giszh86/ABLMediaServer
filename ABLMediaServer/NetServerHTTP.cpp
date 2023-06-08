@@ -838,6 +838,14 @@ bool  CNetServerHTTP::index_api_addStreamProxy()
 	if (strstr(m_addStreamProxyStruct.url, RecordFileReplaySplitter) != NULL)
 		strcpy(m_addStreamProxyStruct.isRtspRecordURL, "1");
 
+	//检测一些必填参数
+	if (strlen(m_addStreamProxyStruct.secret) == 0 || strlen(m_addStreamProxyStruct.app) == 0 || strlen(m_addStreamProxyStruct.stream) == 0 || strlen(m_addStreamProxyStruct.url) == 0)
+	{
+		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"secret,app,stream,url required \"}", IndexApiCode_secretError);
+		ResponseSuccess(szResponseBody);
+		return false;
+	}
+	
 	if (strcmp(m_addStreamProxyStruct.secret, ABL_MediaServerPort.secret) != 0)
 	{//密码检测
 		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"secret error\",\"key\":%d}", IndexApiCode_secretError, 0);
@@ -1024,6 +1032,14 @@ bool CNetServerHTTP::index_api_addPushProxy()
 	GetKeyValue("url", m_addPushProxyStruct.url);
 	GetKeyValue("disableVideo", m_addPushProxyStruct.disableVideo);
 	GetKeyValue("disableAudio", m_addPushProxyStruct.disableAudio);
+	
+	//检测一些必填参数
+	if (strlen(m_addPushProxyStruct.secret) == 0 || strlen(m_addPushProxyStruct.app) == 0 || strlen(m_addPushProxyStruct.stream) == 0 || strlen(m_addPushProxyStruct.url) == 0)
+	{
+		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"secret,app,stream,url required \"}", IndexApiCode_secretError);
+		ResponseSuccess(szResponseBody);
+		return false;
+	}
 
 	if (strcmp(m_addPushProxyStruct.secret, ABL_MediaServerPort.secret) != 0)
 	{//密码检测

@@ -25,11 +25,21 @@ client::client(boost::asio::io_context& ioc,
 	, m_currwritesize(0)
 	
 {
+	m_closeflag = false ;
+	m_readbuff = new uint8_t[CLIENT_MAX_RECV_BUFF_SIZE];
 }
 
 client::~client(void)
 {
+	m_closeflag = true ;
+
 	recycle_identifier(m_id);
+	if(m_readbuff != NULL)
+	{
+		delete [] m_readbuff;
+		m_readbuff = NULL ;
+	}
+	m_circularbuff.uninit();
 	malloc_trim(0);
 }
 
@@ -39,23 +49,6 @@ int32_t client::run()
 	{
 		return e_libnet_err_climanualread;
 	}
-
-	//设置关闭不拖延
-	boost::system::error_code ec;
-	boost::asio::ip::tcp::no_delay no_delay_option(true);
-	m_socket.set_option(no_delay_option, ec);
-
-	//设置接收，发送缓冲区
-	int  nRecvSize = 1024 * 1024 * 4;
-	boost::asio::socket_base::send_buffer_size    SendSize_option(nRecvSize); //定义发送缓冲区大小
-	boost::asio::socket_base::receive_buffer_size RecvSize_option(nRecvSize); //定义接收缓冲区大小
-	m_socket.set_option(SendSize_option); //设置发送缓存区大小
-	m_socket.set_option(RecvSize_option); //设置接收缓冲区大小
-	//设置发送，接收超时
-	int  nSendRecvTimer = 5000; //3秒超时
-	setsockopt(m_socket.native_handle(), SOL_SOCKET, SO_SNDTIMEO, (const char*)&nSendRecvTimer, sizeof(nSendRecvTimer)); //设置发送超时
-	setsockopt(m_socket.native_handle(), SOL_SOCKET, SO_RCVTIMEO, (const char*)&nSendRecvTimer, sizeof(nSendRecvTimer)); //设置接收超时
-
 
 	m_socket.async_read_some(boost::asio::buffer(m_readbuff, CLIENT_MAX_RECV_BUFF_SIZE),
 		boost::bind(&client::handle_read,
@@ -144,6 +137,23 @@ int32_t client::connect(int8_t* remoteip,
 		return e_libnet_err_clisetsockopt;
 	}
 	
+	//设置接收，发送缓冲区
+	int  nRecvSize = 1024 * 1024 * 1;
+	boost::asio::socket_base::send_buffer_size    SendSize_option(nRecvSize); //定义发送缓冲区大小
+	boost::asio::socket_base::receive_buffer_size RecvSize_option(nRecvSize); //定义接收缓冲区大小
+	m_socket.set_option(SendSize_option); //设置发送缓存区大小
+	m_socket.set_option(RecvSize_option); //设置接收缓冲区大小
+
+	//设置发送，接收超时
+	int  nSendRecvTimer = 5000; //3秒超时
+	int nSocket = m_socket.native_handle();
+	setsockopt(m_socket.native_handle(), SOL_SOCKET, SO_SNDTIMEO, (const char*)&nSendRecvTimer, sizeof(nSendRecvTimer)); //设置发送超时
+	setsockopt(m_socket.native_handle(), SOL_SOCKET, SO_RCVTIMEO, (const char*)&nSendRecvTimer, sizeof(nSendRecvTimer)); //设置接收超时
+
+	//设置关闭不拖延
+	boost::system::error_code ec;
+	boost::asio::ip::tcp::no_delay no_delay_option(true);
+	m_socket.set_option(no_delay_option, ec);
 
 	//connect timeout
 	if (timeout > 0)
@@ -219,12 +229,19 @@ void client::handle_read(const boost::system::error_code& ec, size_t transize)
 
 	if (m_autoread)
 	{
-		if (m_fnread)
+		if (!m_closeflag)
 		{
-			m_fnread(get_server_id(), get_id(), m_readbuff, static_cast<uint32_t>(transize), NULL);
+			if (m_fnread)
+			{
+				m_fnread(get_server_id(), get_id(), m_readbuff, static_cast<uint32_t>(transize), NULL);
+			}
+			else
+				return; //不再读取 
 		}
 		else
+		{
 			return; //不再读取 
+		}
 
 		if (m_socket.is_open())
 		{
@@ -234,6 +251,15 @@ void client::handle_read(const boost::system::error_code& ec, size_t transize)
 				boost::asio::placeholders::error,
 				boost::asio::placeholders::bytes_transferred));
 		}
+			else
+			{
+				m_socket.async_read_some(boost::asio::buffer(m_readbuff, CLIENT_MAX_RECV_BUFF_SIZE),
+					boost::bind(&client::handle_read,
+					shared_from_this(),
+					boost::asio::placeholders::error,
+					boost::asio::placeholders::bytes_transferred));
+				printf("close socket\n");
+			}
 	}
 	else
 	{
@@ -257,7 +283,7 @@ void client::handle_connect(const boost::system::error_code& ec)
 		{
 			if (m_fnconnect)
 			{
-				m_fnconnect(get_id(), 0);
+				m_fnconnect(get_id(), 0,0);
 			}
 		}
 	}
@@ -265,7 +291,7 @@ void client::handle_connect(const boost::system::error_code& ec)
 	{
 		if (m_fnconnect)
 		{
-			m_fnconnect(get_id(), 1);
+			m_fnconnect(get_id(), 1,htons(m_socket.local_endpoint().port()));
 		}
 
 		run();	
@@ -284,6 +310,8 @@ int32_t client::read(uint8_t* buffer,
 	auto_lock::al_lock<auto_lock::al_spin> al(m_readmtx);
 #endif
 #endif
+	 if(m_closeflag)
+		 return e_libnet_err_clisocknotopen;
 
 	if (!buffer || !buffsize || (0 == *buffsize))
 	{
@@ -376,6 +404,8 @@ int32_t client::write(uint8_t* data,
 	auto_lock::al_lock<auto_lock::al_spin> al(m_writemtx);
 #endif
 #endif
+	 if(m_closeflag)
+		 return e_libnet_err_clisocknotopen;
 
 	int32_t ret = e_libnet_err_noerror;
 	int32_t datasize2 = datasize;
@@ -466,16 +496,16 @@ bool client::write_packet()
 
 void client::close()
 {
+    auto_lock::al_lock<auto_lock::al_spin> al(m_climtx);
 	if (!m_closeflag.exchange(true))
 	{
 		//m_fnconnect = NULL; //注释掉，否则异步方式连接失败时，通知不了 
 		m_fnread = NULL;
-		m_timer.cancel();
+		//m_timer.cancel();
 
 		if (m_socket.is_open())
 		{
 			boost::system::error_code ec;
-			m_socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
 			m_socket.close(ec);
 		}
 	}

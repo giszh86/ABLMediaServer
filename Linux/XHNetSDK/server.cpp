@@ -51,7 +51,7 @@ int32_t server::run()
 			return e_libnet_err_srvlistensocknotopen;
 		}
 
-		//set option
+		/* 屏蔽掉地址重用设置，否则绑定相同端口时不会提示端口重复绑定提示 //set option*/
 		boost::asio::ip::tcp::acceptor::reuse_address reuse_address_option(true);
 		m_acceptor.set_option(reuse_address_option, ec);
 		if (ec)
