@@ -7,7 +7,7 @@ namespace ABL {
 	std::string& trim(std::string& s);
 
 	// É¾³ý×Ö·û´®ÖÐÖ¸¶¨µÄ×Ö·û´®
-	int	erase_all(std::string& strBuf, std::string  strDel);
+	int	erase_all(std::string& strBuf, const std::string& strDel);
 
 	//std::string to_lower(std::string strBuf);
 

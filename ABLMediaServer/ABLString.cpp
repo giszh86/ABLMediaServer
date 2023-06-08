@@ -42,38 +42,23 @@ namespace ABL {
 	}
 
 	// 删除字符串中指定的字符串
-	int	erase_all(std::string& strBuf, std::string  strDel)
+	int erase_all(std::string& strBuf, const std::string& strDel)
 	{
-		size_t				sBufSize = strBuf.size();
-		char* pStart = (char*)strBuf.c_str();
-		char* pEnd = pStart + sBufSize;
-		std::string 			strReturn;
-
-		if (strBuf.empty())
+		if (strDel.empty())
 		{
-			return strBuf.size();
+			return 0;  // 无需删除，返回删除次数为0
 		}
-	
-		for (;;)
+
+		std::size_t pos = 0;
+		int nCount = 0;
+
+		while ((pos = strBuf.find(strDel, pos)) != std::string::npos)
 		{
-			char* pFind = strstr(pStart, (char*)strDel.c_str());
-			if (NULL == pFind)
-			{
-				strReturn.append(pStart);
-				break;
-			}
-			strReturn.append(pStart, pFind);
-			pStart = pFind + strDel.size();
-			if (pStart >= pEnd)
-			{
-				break;
-			}
-			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			strBuf.erase(pos, strDel.length());
+			++nCount;
 		}
-		strBuf = strReturn;
-		return strBuf.size();
 
-
+		return nCount;
 	}
 
 	//std::string to_lower(std::string strBuf)
@@ -90,41 +75,23 @@ namespace ABL {
 
 	int	replace_all(std::string& strBuf, std::string  strSrc, std::string  strDes)
 	{
-		size_t				sBufSize = strBuf.size();
-		char* pStart = (char*)strBuf.c_str();
-		char* pEnd = pStart + sBufSize;
-		std::string 			strReturn;
-		int					nCount = 0;
-
-		if (strBuf.empty())
+		if (strSrc.empty())
 		{
-			return strBuf.size();
+			return 0;  // 无需替换，返回替换次数为0
 		}
 
-		for (;;)
+		std::size_t pos = 0;
+		int nCount = 0;
+
+		while ((pos = strBuf.find(strSrc, pos)) != std::string::npos)
 		{
-			char* pFind = strstr(pStart, (char*)strSrc.c_str());
-
-			if (NULL == pFind)
-			{
-				strReturn.append(pStart);
-				break;
-			}
-
-			nCount++;
-			strReturn.append(pStart, pFind);
-			strReturn.append(strDes);
-			pStart = pFind + strSrc.size();
-
-			if (pStart >= pEnd)
-			{
-				break;
-			}
+			strBuf.replace(pos, strSrc.length(), strDes);
+			pos += strDes.length();
+			++nCount;
 		}
-
-		strBuf = strReturn;
 
 		return nCount;
+
 	}
 
 	bool is_digits(const std::string& str)

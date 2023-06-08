@@ -2914,7 +2914,6 @@ int _tmain(int argc, _TCHAR* argv[])
 int main(int argc, char* argv[])
 #endif
 {
-
 ABL_Restart:
 	unsigned char nGet;
 	int nBindHttp, nBindRtsp, nBindRtmp,nBindWsFlv,nBindHttpFlv, nBindHls,nBindMp4;
