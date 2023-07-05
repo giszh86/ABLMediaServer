@@ -178,6 +178,129 @@ ThreadTask ThreadPool::get_one_task()
 
 }
 
+
+ThreadPriorityPool::ThreadPriorityPool(int threadNumber)
+	: m_nThreadNumber(threadNumber),
+	m_bRunning(true),
+	m_vecThread(m_nThreadNumber)
+{
+}
+
+ThreadPriorityPool::~ThreadPriorityPool()
+{
+	stop();
+}
+
+
+bool ThreadPriorityPool::append(ThreadTask task, int nPriority)
+{
+	if (!m_bRunning.load())
+	{
+		return false; // Thread pool is not running
+	}
+
+	{
+		std::lock_guard<std::mutex> guard(m_mutex);
+		m_taskList.emplace(nPriority, std::move(task));
+	}
+
+	m_condition_empty.notify_one();
+	return true;
+}
+
+template<typename Func, typename... Args>
+void ThreadPriorityPool::appendArg(Func&& func, Args&&... args)
+{
+	if (!m_bRunning.load())
+	{
+		return; // Thread pool is not running, do nothing
+	}
+	{
+		std::lock_guard<std::mutex> guard(m_mutex);
+		m_taskList.emplace(0, [func, args...]() { func(args...); });
+	}
+
+	m_condition_empty.notify_one();
+}
+
+ThreadTask ThreadPriorityPool::get_one_task()
+{
+	std::unique_lock<std::mutex> lock(m_mutex);
+	m_condition_empty.wait(lock, [this]() { return !m_taskList.empty() || !m_bRunning.load(); });
+
+	if (!m_bRunning.load())
+	{
+		return nullptr; // Thread pool is stopping, return nullptr
+	}
+
+	auto task = std::move(m_taskList.top().second);
+	m_taskList.pop();
+
+	return task;
+}
+
+bool ThreadPriorityPool::start()
+{
+	if (m_bRunning.exchange(true))
+	{
+		return false; // Thread pool is already running
+	}
+
+	for (int i = 0; i < m_nThreadNumber; i++)
+	{
+		m_vecThread[i] = std::make_shared<std::thread>(&ThreadPriorityPool::threadWork, this);
+	}
+
+	return true;
+}
+
+bool ThreadPriorityPool::stop()
+{
+	if (!m_bRunning.exchange(false))
+	{
+		return false; // Thread pool is not running
+	}
+
+	m_condition_empty.notify_all();
+
+	for (auto& thread : m_vecThread)
+	{
+		if (thread->joinable())
+		{
+			thread->join();
+		}
+	}
+
+	return true;
+}
+
+bool ThreadPriorityPool::IsRunning()
+{
+	return m_bRunning.load();
+}
+
+int ThreadPriorityPool::getThreadNum() const
+{
+	return m_nThreadNumber;
+}
+
+int ThreadPriorityPool::getCompletedTaskCount() const
+{
+	return m_nCompletedTasks.load();
+}
+
+void ThreadPriorityPool::threadWork()
+{
+	while (m_bRunning.load())
+	{
+		auto task = get_one_task();
+		if (task)
+		{
+			task();
+			++m_nCompletedTasks;
+		}
+	}
+}
 //
 //
 //void myTask(int arg1, const std::string& arg2)
