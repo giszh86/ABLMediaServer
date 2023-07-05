@@ -21,8 +21,7 @@ namespace netlib
 	
 	class ThreadPool
 	{
-	public:		
-		//typedef std::function<void(void )> ThreadTask;
+	public:				
 
 		ThreadPool(int threadNumber);
 
@@ -32,10 +31,11 @@ namespace netlib
 		//往任务队列里添加任务
 		bool append(ThreadTask task, bool bPriority = false);
 
+	
+		template<typename Func, typename... Args>
+		void appendArg(Func&& func, Args&&... args);
+
 		ThreadTask get_one_task();
-
-		int  getThreadNum();
-
 		//启动线程池
 		bool start(void);
 
@@ -44,8 +44,11 @@ namespace netlib
 
 		// 线程池是否在运行
 		bool IsRunning();
-		
+
+		int getThreadNum() const;
+
 		int getCompletedTaskCount() const;
+
 		// 获取线程池实例
 		static ThreadPool* GetInstance();
 
@@ -65,13 +68,14 @@ private:
 		void threadWork(void);
 
 private:
-		std::mutex m_mutex;                                        //互斥锁
-		
+		std::mutex m_mutex;                                        //互斥锁	
+	
 		std::atomic< bool> m_bRunning;                              //线程池是否在运行
 		int m_nThreadNumber;                                       //线程数
 
 		std::condition_variable_any m_condition_empty;             //当任务队列为空时的条件变量
 		std::queue<ThreadTask> m_taskList;                          //任务队列
+		
 		std::vector<std::shared_ptr<std::thread>> m_vecThread;     //用来保存线程对象指针
 		//空闲线程数量
 		std::atomic<int>  m_idlThrNum;

@@ -23,30 +23,33 @@ ThreadPool::~ThreadPool()
 
 bool ThreadPool::start(void)
 {
-	m_bRunning.store(true);
+	if (m_bRunning.exchange(true))
+	{
+		return false; // Thread pool is already running
+	}
+
 	for (int i = 0; i < m_nThreadNumber; i++)
 	{
-		m_vecThread.push_back(std::make_shared<std::thread>(std::bind(&ThreadPool::threadWork, this)));//循环创建线程       
+		m_vecThread.push_back(std::make_shared<std::thread>(std::bind(&ThreadPool::threadWork, this)));//循环创建线程     
 	}
+
 	return true;
+
 }
 
 bool ThreadPool::stop(void)
 {
-	if (m_bRunning.load())
+	if (!m_bRunning.exchange(false))
 	{
+		return false; // Thread pool is not running
+	}
+	m_condition_empty.notify_all();
+	//std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+	for (auto& thread : m_vecThread)
+	{
+		if (thread->joinable())
 		{
-			std::unique_lock<std::mutex> _lock(m_mutex);
-			m_bRunning.store(false);
-		}	
-		m_condition_empty.notify_all();
-		//std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-		for (auto & thread : m_vecThread)
-		{		
-			if (thread)
-			{
-				thread->join();
-			}			
+			thread->join();
 		}
 	}
 	return true;
@@ -60,17 +63,28 @@ bool ThreadPool::IsRunning()
 ThreadPool * netlib::ThreadPool::GetInstance()
 {
 	
-	if (NULL != s_pThreadPool)
+	if (!s_pThreadPool)
 	{
-		return s_pThreadPool;
+		s_pThreadPool = new ThreadPool(MAX_THREAD);
+		s_pThreadPool->start();
 	}
-
-	s_pThreadPool = new ThreadPool(MAX_THREAD);
-	s_pThreadPool->start();
-	//atexit(Destory);
 	return s_pThreadPool;
 
+}
 
+template<typename Func, typename... Args>
+void ThreadPool::appendArg(Func&& func, Args&&... args)
+{
+	if (!m_bRunning.load())
+	{
+		return; // Thread pool is not running, do nothing
+	}
+	{
+		std::lock_guard<std::mutex> guard(m_mutex);
+		m_taskList.emplace([func, args...]() { func(args...); });
+	}
+
+	m_condition_empty.notify_one();
 }
 
 
@@ -98,6 +112,16 @@ bool ThreadPool::append(ThreadTask task,  bool bPriority /* = false */)
 	return true;
 }
 
+int ThreadPool::getThreadNum() const
+{
+	return m_nThreadNumber;
+}
+
+int ThreadPool::getCompletedTaskCount() const
+{
+	return m_nCompletedTasks.load();
+}
+
 ThreadTask ThreadPool::get_one_task()
 {
 	//在std::condition_variable的wait()函数中，当等待条件（即第一个参数）为false时，
@@ -120,37 +144,52 @@ ThreadTask ThreadPool::get_one_task()
 
 }
 
-int netlib::ThreadPool::getThreadNum()
-{
-	return m_nThreadNumber;
-}
-
-void ThreadPool::threadWork(void)
+void ThreadPool::threadWork()
 {
 	while (m_bRunning.load())
 	{
-
-		std::unique_lock<std::mutex> _lock(m_mutex);
-		//在std::condition_variable的wait()函数中，当等待条件（即第一个参数）为false时，线程会被阻塞。
-		//即当任务队列不为空(tasks_.empty()为false)或者线程池已经被停止(stop_为true)时
-		//，线程应该继续执行下去。当等待条件为true时，线程会从wait()函数中返回，继续执行后面的代码。
-		m_condition_empty.wait(_lock, [this]() {
-			return !m_taskList.empty() || !m_bRunning.load();
+		ThreadTask task;
+		{
+			std::unique_lock<std::mutex> lock(m_mutex);
+			//在std::condition_variable的wait()函数中，当等待条件（即第一个参数）为false时，线程会被阻塞。
+//即当任务队列不为空(tasks_.empty()为false)或者线程池已经被停止(stop_为true)时
+//，线程应该继续执行下去。当等待条件为true时，线程会从wait()函数中返回，继续执行后面的代码。
+			m_condition_empty.wait(lock, [this]() { return !m_taskList.empty() || !m_bRunning.load(); });
+			//等待有任务到来被唤醒
+			if (!m_bRunning.load())
+			{
+				return; // Thread pool is stopping, exit thread
 			}
-		);  //等待有任务到来被唤醒
-		if (!m_bRunning.load()) {
-			return;
-		}
-		auto task = std::move(m_taskList.front());
-		m_taskList.pop();
-		_lock.unlock();
-		task(); //执行任务		
-		//++m_nCompletedTasks; //任务完成，增加计数器
 
+			task = std::move(m_taskList.front());
+			m_taskList.pop();
+		}
+
+		task();
+
+		++m_nCompletedTasks;
 	}
-	return;
 }
-int ThreadPool::getCompletedTaskCount() const
-{
-	return m_nCompletedTasks.load();
-}
+
+//
+//
+//void myTask(int arg1, const std::string& arg2)
+//{
+//	
+//	std::cout << "Task executed with arg1 = " << arg1 << ", arg2 = " << arg2 << std::endl;
+//}
+//
+//int main()
+//{
+//	// 获取线程池实例
+//	netlib::ThreadPool* threadPool = netlib::ThreadPool::GetInstance();
+//
+//	// 向线程池添加任务
+//	int arg1 = 42;
+//	std::string arg2 = "Hello, world!";
+//	threadPool->append(myTask, arg1, arg2);
+//
+//	// 其他代码...
+//
+//	return 0;
+//}
