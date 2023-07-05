@@ -2,12 +2,15 @@
 
 
 #include "thread_pool.h"
-#include <stdio.h>
+
 #include <iostream>
 
 using namespace netlib;
 
 ThreadPool* ThreadPool::s_pThreadPool = nullptr;
+
+
+
 
 ThreadPool::ThreadPool(int threadNumber)
 :m_nThreadNumber(threadNumber),
@@ -27,7 +30,7 @@ bool ThreadPool::start(void)
 	{
 		return false; // Thread pool is already running
 	}
-
+	m_vecThread.resize(m_nThreadNumber);
 	for (int i = 0; i < m_nThreadNumber; i++)
 	{
 		m_vecThread.push_back(std::make_shared<std::thread>(std::bind(&ThreadPool::threadWork, this)));//循环创建线程     
@@ -39,6 +42,7 @@ bool ThreadPool::start(void)
 
 bool ThreadPool::stop(void)
 {
+
 	if (!m_bRunning.exchange(false))
 	{
 		return false; // Thread pool is not running
@@ -81,7 +85,8 @@ void ThreadPool::appendArg(Func&& func, Args&&... args)
 	}
 	{
 		std::lock_guard<std::mutex> guard(m_mutex);
-		m_taskList.emplace([func, args...]() { func(args...); });
+		m_taskList.emplace(std::forward<Func>(func), std::forward<Args>(args)...);
+	     //m_taskList.emplace([func, args...]() { func(args...); });
 	}
 
 	m_condition_empty.notify_one();
@@ -122,28 +127,6 @@ int ThreadPool::getCompletedTaskCount() const
 	return m_nCompletedTasks.load();
 }
 
-ThreadTask ThreadPool::get_one_task()
-{
-	//在std::condition_variable的wait()函数中，当等待条件（即第一个参数）为false时，
-	//线程会被阻塞。
-	//在这个例子中，我们使用了lambda表达式来定义等待条件，
-	//即当任务队列不为空(tasks_.empty()为false)或者线程池已经被停止(stop_为true)时
-	//，线程应该继续执行下去。当等待条件为true时，线程会从wait()函数中返回，继续执行后面的代码。
-	ThreadTask task = nullptr;
-	std::unique_lock<std::mutex> _lock(m_mutex);
-	if (m_taskList.empty())
-	{
-		m_condition_empty.wait(_lock);  //等待有任务到来被唤醒
-	}
-	if (!m_taskList.empty() && m_bRunning.load())
-	{
-		task=std::move(m_taskList.front());  //从任务队列中获取最开始任务
-		m_taskList.pop();     //将取走的任务弹出任务队列			
-	}
-	return task;
-
-}
-
 void ThreadPool::threadWork()
 {
 	while (m_bRunning.load())
@@ -160,15 +143,39 @@ void ThreadPool::threadWork()
 			{
 				return; // Thread pool is stopping, exit thread
 			}
-
-			task = std::move(m_taskList.front());
-			m_taskList.pop();
+			 if (!m_taskList.empty())
+			{
+				task = std::move(m_taskList.front());
+				m_taskList.pop();
+			}		
 		}
 
 		task();
 
 		++m_nCompletedTasks;
 	}
+}
+
+ThreadTask ThreadPool::get_one_task()
+{
+	//在std::condition_variable的wait()函数中，当等待条件（即第一个参数）为false时，
+	//线程会被阻塞。
+	//在这个例子中，我们使用了lambda表达式来定义等待条件，
+	//即当任务队列不为空(tasks_.empty()为false)或者线程池已经被停止(stop_为true)时
+	//，线程应该继续执行下去。当等待条件为true时，线程会从wait()函数中返回，继续执行后面的代码。
+	ThreadTask task = nullptr;
+	std::unique_lock<std::mutex> _lock(m_mutex);
+	if (m_taskList.empty())
+	{
+		m_condition_empty.wait(_lock);  //等待有任务到来被唤醒
+	}
+	if (!m_taskList.empty() && m_bRunning.load())
+	{
+		task = std::move(m_taskList.front());  //从任务队列中获取最开始任务
+		m_taskList.pop();     //将取走的任务弹出任务队列			
+	}
+	return task;
+
 }
 
 //
