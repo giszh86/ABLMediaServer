@@ -102,7 +102,10 @@ private:
 		ThreadPriorityPool(int threadNumber);
 		~ThreadPriorityPool();
 
-	
+		// 添加任务到任务队列
+		//threadPool.append(task1, 1); // 中等优先级
+		//threadPool.append(task2, 0); // 低优先级
+		//threadPool.append(task3, 2); // 高优先级
 		bool append(ThreadTask task, int nPriority=0);
 
 		template<typename Func, typename... Args>
