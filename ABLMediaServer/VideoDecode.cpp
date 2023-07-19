@@ -213,7 +213,9 @@ bool CVideoDecode::CaptureJpegFromAVFrame(char* OutputFileName, int quality)
 	pCodecCtx->height = m_outHeight;
 	pCodecCtx->time_base.num = 1;
 	pCodecCtx->time_base.den = 25;
-	pCodecCtx->bit_rate = 1024 * 1024 * 3;
+	//pCodecCtx->bit_rate = 1024 * 1024 * 3;
+
+	pCodecCtx->bit_rate = m_outWidth * m_outHeight * 3;
 	pCodecCtx->qcompress = 1 ; //Í¼Æ¬Ñ¹ËõÖÊÁ¿ ·¶Î§£¨ 0.1 ~ 1 £©
 	pCodecCtx->gop_size = 25 ;
 	pCodecCtx->max_b_frames = 0;

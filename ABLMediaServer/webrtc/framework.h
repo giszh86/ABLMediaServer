@@ -48,21 +48,16 @@
 #pragma comment(lib,"dwmapi.lib")
 
 
-#include "../3rd/libffmpeg/include/ffmpeg_headers.h"
-
 
 
 #if (defined _WIN32 || defined _WIN64)
 
 #ifdef _WIN64
-
-#pragma comment(lib, "./lib/x64/libFFmpeg.lib")
-#pragma comment(lib, "./lib/x64/webrtc.lib")
+#pragma comment(lib, "./webrtc/lib/x64/release/webrtc.lib")
 
 #else
 
-#pragma comment(lib, "./lib/x86/libFFmpeg.lib")
-#pragma comment(lib, "../Lib/x64/webrtc.lib")
+#pragma comment(lib, "./webrtc/lib/release/webrtc.lib")
 
 
 

@@ -1,0 +1,14 @@
+﻿  main.cpp
+D:\study\ABLMediaServer\webrtc-streamer\include\media\base\codec.h(1,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+D:\study\ABLMediaServer\webrtc-streamer\HttpServerRequestHandler.h(74,12): warning C4477: “printf”: 格式字符串“%s”需要类型“char *”的参数，但可变参数 1 拥有了类型“int”
+D:\study\ABLMediaServer\webrtc-streamer\HttpServerRequestHandler.h(74,12): warning C4313: “printf”: 格式字符串中的“%s”与“int”类型的参数 1 冲突
+D:\study\ABLMediaServer\webrtc-streamer\HttpServerRequestHandler.h(74,77): warning C4474: printf: 格式字符串中传递的参数太多
+D:\study\ABLMediaServer\webrtc-streamer\HttpServerRequestHandler.h(74,77): message : 占位符和其参数预计 1 可变参数，但提供的却是 2 参数
+D:\study\ABLMediaServer\webrtc-streamer\framework.h(5,1): warning C4005: “WIN32_LEAN_AND_MEAN”: 宏重定义
+D:\study\ABLMediaServer\webrtc-streamer\main.cpp : message : 参见“WIN32_LEAN_AND_MEAN”的前一个定义
+  正在生成代码
+  0 of 5340 functions ( 0.0%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    0 functions had inline decision re-evaluated but remain unchanged
+  已完成代码的生成
+  webrtc-streamer.vcxproj -> D:\study\ABLMediaServer\Lib64\Release\webrtc-streamer.dll

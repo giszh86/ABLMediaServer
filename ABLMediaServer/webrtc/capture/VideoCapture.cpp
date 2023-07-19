@@ -1,18 +1,18 @@
 
 #include "VideoCapture.h"
 #include "VcamVideoCapture.h"
-#include "FFmpegVideoCapture.h"
+//#include "FFmpegVideoCapture.h"
 
 VideoCapture* VideoCapture::CreateVideoCapture(std::string videourl)
 {
 	std::map<std::string, std::string> opts;
 	if ((videourl.find("rtsp://") == 0)|| (videourl.find("rtmp://") == 0))
 	{	
-		return new FFmpegVideoCapture(videourl, opts);
+		//return new FFmpegVideoCapture(videourl, opts);
 	}
 	else if ((videourl.find("file://") == 0))
 	{
-		return new FFmpegVideoCapture(videourl, opts);
+	//	return new FFmpegVideoCapture(videourl, opts);
 	}
 #if defined(WEBRTC_WIN) 
 	else if ((videourl.find("screen://") == 0))
