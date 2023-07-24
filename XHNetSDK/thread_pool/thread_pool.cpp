@@ -14,7 +14,7 @@ ThreadPool* ThreadPool::s_pThreadPool = nullptr;
 
 ThreadPool::ThreadPool(int threadNumber)
 :m_nThreadNumber(threadNumber),
-m_bRunning(true),
+m_bRunning(false),
 m_vecThread(m_nThreadNumber)
 {
 }
