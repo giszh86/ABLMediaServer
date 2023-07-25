@@ -1,4 +1,3 @@
-#pragma once
 
 
 #include "thread_pool.h"
@@ -14,8 +13,7 @@ ThreadPool* ThreadPool::s_pThreadPool = nullptr;
 
 ThreadPool::ThreadPool(int threadNumber)
 :m_nThreadNumber(threadNumber),
-m_bRunning(false),
-m_vecThread(m_nThreadNumber)
+m_bRunning(false)
 {
 }
 
@@ -30,7 +28,7 @@ bool ThreadPool::start(void)
 	{
 		return false; // Thread pool is already running
 	}
-	m_vecThread.resize(m_nThreadNumber);
+	//m_vecThread.resize(m_nThreadNumber);
 	for (int i = 0; i < m_nThreadNumber; i++)
 	{
 		m_vecThread.push_back(std::make_shared<std::thread>(std::bind(&ThreadPool::threadWork, this)));//循环创建线程     
@@ -51,10 +49,13 @@ bool ThreadPool::stop(void)
 	//std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	for (auto& thread : m_vecThread)
 	{
-		if (thread->joinable())
+		if (thread)
 		{
-			thread->join();
-		}
+			if (thread->joinable())
+			{
+				thread->join();
+			}
+		}	
 	}
 	return true;
 }
@@ -74,22 +75,6 @@ ThreadPool * netlib::ThreadPool::GetInstance()
 	}
 	return s_pThreadPool;
 
-}
-
-template<typename Func, typename... Args>
-void ThreadPool::appendArg(Func&& func, Args&&... args)
-{
-	if (!m_bRunning.load())
-	{
-		return; // Thread pool is not running, do nothing
-	}
-	{
-		std::lock_guard<std::mutex> guard(m_mutex);
-		m_taskList.emplace(std::forward<Func>(func), std::forward<Args>(args)...);
-	     //m_taskList.emplace([func, args...]() { func(args...); });
-	}
-
-	m_condition_empty.notify_one();
 }
 
 
@@ -181,7 +166,7 @@ ThreadTask ThreadPool::get_one_task()
 
 ThreadPriorityPool::ThreadPriorityPool(int threadNumber)
 	: m_nThreadNumber(threadNumber),
-	m_bRunning(true),
+	m_bRunning(false),
 	m_vecThread(m_nThreadNumber)
 {
 }
@@ -206,21 +191,6 @@ bool ThreadPriorityPool::append(ThreadTask task, int nPriority)
 
 	m_condition_empty.notify_one();
 	return true;
-}
-
-template<typename Func, typename... Args>
-void ThreadPriorityPool::appendArg(Func&& func, Args&&... args)
-{
-	if (!m_bRunning.load())
-	{
-		return; // Thread pool is not running, do nothing
-	}
-	{
-		std::lock_guard<std::mutex> guard(m_mutex);
-		m_taskList.emplace(0, [func, args...]() { func(args...); });
-	}
-
-	m_condition_empty.notify_one();
 }
 
 ThreadTask ThreadPriorityPool::get_one_task()

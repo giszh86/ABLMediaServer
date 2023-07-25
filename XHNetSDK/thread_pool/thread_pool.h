@@ -34,8 +34,25 @@ namespace netlib
 		bool append(ThreadTask task, bool bPriority = false);
 
 	
+
 		template<typename Func, typename... Args>
-		void appendArg(Func&& func, Args&&... args);
+		void appendArg(Func&& func, Args&&... args)
+		{
+			if (!m_bRunning.load())
+			{
+				return; // 线程池未运行，不执行任何操作
+			}
+			{
+				std::lock_guard<std::mutex> guard(m_mutex);
+				// 通过lambda函数将任务和参数封装在一起，并存储在任务队列中
+				m_taskList.emplace([func = std::forward<Func>(func), args = std::make_tuple(std::forward<Args>(args)...)]() {
+					std::apply(func, args);
+				});
+			}
+
+			m_condition_empty.notify_one();
+		}
+
 
 		ThreadTask get_one_task();
 		//启动线程池
