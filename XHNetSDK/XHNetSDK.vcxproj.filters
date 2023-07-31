@@ -107,5 +107,8 @@
     <ClCompile Include="thread_pool\thread_pool.cpp">
       <Filter>头文件\thread_pool</Filter>
     </ClCompile>
+    <ClCompile Include="thread_pool\testThreadPool.cpp">
+      <Filter>头文件\thread_pool</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

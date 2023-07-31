@@ -58,7 +58,7 @@ int avpriv_mpeg4audio_sample_rates[] = {
 	96000, 88200, 64000, 48000, 44100, 32000,
 	24000, 22050, 16000, 12000, 11025, 8000, 7350
 };
-
+#include "../webrtc-streamer/rtc_obj_sdk.h"
 //rtp解码
 void RTP_DEPACKET_CALL_METHOD rtppacket_callback(_rtp_depacket_cb* cb)
 {
@@ -72,10 +72,13 @@ void RTP_DEPACKET_CALL_METHOD rtppacket_callback(_rtp_depacket_cb* cb)
 	{
  		if (cb->handle == pUserHandle->hRtpHandle[0])
 		{
+			
 			if (pUserHandle->netBaseNetType == NetBaseNetType_RtspServerRecvPush && pUserHandle->pMediaSource != NULL)
 			{
+			
 				if (pUserHandle->m_bHaveSPSPPSFlag && pUserHandle->m_nSpsPPSLength > 0)
 				{
+				
 					if (pUserHandle->CheckVideoIsIFrame(pUserHandle->szVideoName, cb->data, cb->datasize))
 					{
 						memmove(cb->data + pUserHandle->m_nSpsPPSLength, cb->data, cb->datasize);
@@ -87,8 +90,8 @@ void RTP_DEPACKET_CALL_METHOD rtppacket_callback(_rtp_depacket_cb* cb)
 						pUserHandle->pMediaSource->PushVideo(cb->data, cb->datasize, pUserHandle->szVideoName);
 				}else 
  				  pUserHandle->pMediaSource->PushVideo(cb->data, cb->datasize, pUserHandle->szVideoName);
-
 				 // WriteLog(Log_Debug, "CNetRtspServer=%X ,nClient = %llu, rtp 解包回调 %02X %02X %02X %02X %02X, timeStamp = %d ,datasize = %d ", pUserHandle, pUserHandle->nClient, cb->data[0], cb->data[1], cb->data[2], cb->data[3], cb->data[4],cb->timestamp,cb->datasize);
+				VideoCaptureManager::GetInstance()->GetInput("rtsp://192.168.2.100/media/flv/video1")->onData("H264", cb->data, cb->datasize, 1);
 
 #ifdef WriteRtpDepacketFileFlag
 				  if (pUserHandle->CheckVideoIsIFrame(pUserHandle->szVideoName, cb->data, cb->datasize))

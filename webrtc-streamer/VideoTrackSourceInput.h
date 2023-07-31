@@ -66,7 +66,7 @@ private:
 	VideoCapture* m_vCapture = nullptr;
 	std::string m_videourl;
 	std::map<std::string, std::string> m_opts;
-
+	std::mutex m_mutex;                                        //互斥锁	
 	int64_t next_timestamp_us_ = rtc::kNumMicrosecsPerMillisec;
 
 };

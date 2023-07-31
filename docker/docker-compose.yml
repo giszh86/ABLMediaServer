@@ -1,0 +1,9 @@
+version: '3'
+
+services:
+  webrtc-streamer:
+    container_name: webrtc-streamer  #配置容器名
+    build:
+      context: ./
+    network_mode: host
+

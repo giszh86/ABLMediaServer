@@ -18,6 +18,92 @@
 #include "modules/video_capture/video_capture.h"
 #include "modules/video_capture/video_capture_factory.h"
 
+
+
+class RtspVideoCapture :public VideoCapture
+{
+
+
+public:
+	RtspVideoCapture(const std::string& uri, const std::map<std::string, std::string>& opts = {});
+
+	~RtspVideoCapture();
+
+
+	/*VideoCapture callback*/
+	virtual bool Start();
+
+	virtual void Destroy();
+
+	virtual void Stop(VideoYuvCallBack yuvCallback);
+
+	virtual void Init(const char* devicename, int nWidth, int nHeight, int nFrameRate);
+
+
+
+	virtual void RegisterCallback(VideoYuvCallBack yuvCallback);
+
+	virtual void RegisterH264Callback(H264CallBack h264Callback) { m_h264Callback = h264Callback; };
+
+	
+
+	
+	virtual bool onData(const char* id, unsigned char* buffer, int size, int64_t ts);
+
+	virtual bool onData(uint8_t* y, int strideY, uint8_t* u, int strideU, uint8_t* v, int strideV, int nWidth, int nHeight, int64_t nTimeStamp) { return true; };
+	
+private:
+	void CaptureThread();
+	void Init(std::map<std::string, std::string> opts = {});
+
+private:
+	char        m_stop;
+
+private:
+
+	int m_nWidth = 1920;
+	int m_nHeight = 1080;
+	int m_nFrameRate = 30;
+
+
+	int64_t next_timestamp_us_ = rtc::kNumMicrosecsPerMillisec;
+	std::atomic<bool>m_bStop;
+	std::mutex m_mutex;                //互斥锁		
+
+
+	std::list<VideoYuvCallBack> m_YuvCallbackList;
+
+	H264CallBack m_h264Callback;
+	std::thread                        m_capturethread;
+	cricket::VideoFormat               m_format;
+	std::vector<uint8_t>               m_cfg;
+	std::map<std::string, std::string> m_codec;
+
+
+
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef std::function<void(const webrtc::VideoFrame& videoFrame)> FrameCallBack;
+
+
 //摄像头数据获取
 class VideoCaptureImpl :public VideoCapture, public rtc::VideoSinkInterface<webrtc::VideoFrame>
 {

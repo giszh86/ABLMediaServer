@@ -2907,6 +2907,7 @@ void FindHistoryPictureFile(char* szPicturePath)
 }
 
 #endif
+#include "../webrtc-streamer/rtc_obj_sdk.h"
 
 #ifdef OS_System_Windows
 int _tmain(int argc, _TCHAR* argv[])
@@ -2920,6 +2921,9 @@ ABL_Restart:
 	char szConfigFileName[256] = { 0 };
 	
 #ifdef OS_System_Windows
+	//WebRtcEndpoint*p1= CreateWebRtcEndpoint();
+
+	gblDownloadMgrGet->init();
 
 	//鼠标点击控制台窗口，不会再卡住 
 	DWORD mode;

@@ -18,6 +18,10 @@
 #include "modules/video_capture/video_capture.h"
 #include "modules/video_capture/video_capture_factory.h"
 
+
+
+typedef std::function<void(const webrtc::VideoFrame& videoFrame)> FrameCallBack;
+
 class VcamVideoCapture;
 
 //摄像头数据获取

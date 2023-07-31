@@ -6,6 +6,12 @@
 #include "HSingleton.h"
 
 
+#ifdef   WEBRTCSDK_EXPORTS
+#define WEBRTCSDK_EXPORTSIMPL __declspec(dllexport)
+#else
+#define WEBRTCSDK_EXPORTSIMPL __declspec(dllimport)
+#endif 
+
 
 typedef std::function<void(uint8_t* y, int strideY, uint8_t* u, int strideU, uint8_t* v, int strideV, int nWidth, int nHeight, int64_t nTimeStamp)> VideoYuvCallBack; 
 
@@ -13,10 +19,7 @@ typedef std::function<void(char* h264_raw, int file_size, bool bKey, int nWidth,
 
 
 
-#if defined(WEBRTC_WIN) || defined(WEBRTC_LINUX)
-#include "api/video/video_frame.h"
-typedef std::function<void(const webrtc::VideoFrame& videoFrame)> FrameCallBack;
-#endif // WEBRTC_WIN
+
 
 
 /*
@@ -38,7 +41,7 @@ if (opts.find("fps") != opts.end()) {
 
 */
 
-class VideoCapture
+class WEBRTCSDK_EXPORTSIMPL VideoCapture
 {
 public:
 	static VideoCapture* CreateVideoCapture(std::string videourl="");
@@ -68,7 +71,9 @@ public:
 };
 
 
-class VideoCaptureManager
+
+
+class WEBRTCSDK_EXPORTSIMPL VideoCaptureManager
 {
 public:
 	VideoCaptureManager() = default;
@@ -83,9 +88,14 @@ public:
 	// 获取输入流对象
 	VideoCapture* GetInput(const std::string& videoUrl);
 
+	// 获取线程池实例
+	static VideoCaptureManager* GetInstance();
+
 private:
 	std::mutex m_mutex;
 	std::map<std::string, VideoCapture*> m_inputMap;
+public:
+
+	static VideoCaptureManager* s_pVideoTrackMgrGet;
 };
 
-#define gbVideoTrackMgrGet HSingletonTemplatePtr<VideoCaptureManager>::Instance()

@@ -600,6 +600,7 @@
     <Library Include="..\lib\PsMux.lib" />
     <Library Include="..\lib\rtpdepacket.lib" />
     <Library Include="..\lib\rtppacket.lib" />
+    <Library Include="..\lib\webrtc-streamer.lib" />
     <Library Include="..\lib\XHNetSDK.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

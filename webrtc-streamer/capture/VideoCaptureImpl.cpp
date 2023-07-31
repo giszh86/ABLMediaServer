@@ -568,3 +568,109 @@ void MyDesktopCapture::RegisterFrameCallback(FrameCallBack frameCallback)
 
 
 #endif // WEBRTC_WIN
+
+RtspVideoCapture::RtspVideoCapture(const std::string& uri, const std::map<std::string, std::string>& opts)
+{
+	
+
+}
+
+RtspVideoCapture::~RtspVideoCapture()
+{
+	Destroy();
+}
+
+bool RtspVideoCapture::Start()
+{
+	RTC_LOG(LS_INFO) << "LiveVideoSource::Start";
+	return true;
+}
+
+void RtspVideoCapture::Destroy()
+{
+	RTC_LOG(LS_INFO) << "LiveVideoSource::stop";
+
+	m_YuvCallbackList.clear();
+
+	Stop(NULL);
+}
+
+void RtspVideoCapture::Stop(VideoYuvCallBack yuvCallback)
+{
+	bool bEmpty = false;
+
+	std::lock_guard<std::mutex> _lock(m_mutex);
+	std::list<VideoYuvCallBack>::iterator it = m_YuvCallbackList.begin();
+	while (it != m_YuvCallbackList.end())
+	{
+		if (it->target<void*>() == yuvCallback.target<void*>())
+		{
+			m_YuvCallbackList.erase(it);
+			break;
+		}
+		it++;
+	}
+	if (m_YuvCallbackList.empty())
+	{
+		bEmpty = true;
+	}
+
+	if (bEmpty)
+	{
+	}
+}
+
+void RtspVideoCapture::Init(const char* devicename, int nWidth, int nHeight, int nFrameRate)
+{
+
+	m_nWidth = nWidth;
+	m_nHeight = nHeight;
+	m_nFrameRate = nFrameRate;
+}
+
+void RtspVideoCapture::Init(std::map<std::string, std::string> opts)
+{
+	if (opts.find("width") != opts.end())
+	{
+		m_nWidth = std::stoi(opts.at("width"));
+	}
+	if (opts.find("height") != opts.end()) {
+		m_nHeight = std::stoi(opts.at("height"));
+	}
+	if (opts.find("fps") != opts.end()) {
+		m_nFrameRate = std::stoi(opts.at("fps"));
+	}
+}
+
+void RtspVideoCapture::RegisterCallback(VideoYuvCallBack yuvCallback)
+{
+	std::lock_guard<std::mutex> _lock(m_mutex);
+	std::list<VideoYuvCallBack>::iterator it = m_YuvCallbackList.begin();
+	while (it != m_YuvCallbackList.end())
+	{
+		if (it->target<void*>() == yuvCallback.target<void*>())
+		{
+			return;
+		}
+		it++;
+	}
+	m_YuvCallbackList.push_back(yuvCallback);
+}
+
+void RtspVideoCapture::CaptureThread()
+{
+
+}
+
+bool RtspVideoCapture::onData(const char* id, unsigned char* buffer, int size, int64_t ts)
+{
+	std::lock_guard<std::mutex> guard(m_mutex);
+	//std::this_thread::sleep_for(std::chrono::milliseconds(15));
+	if (m_h264Callback)
+	{
+		m_h264Callback((char*)buffer, size, 1, m_nWidth, m_nHeight, ts);
+	}
+
+
+	return false;
+}

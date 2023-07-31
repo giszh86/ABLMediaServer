@@ -2,7 +2,7 @@
 <Project>
   <ProjectOutputs>
     <ProjectOutput>
-      <FullPath>D:\study\ABLMediaServer\Lib64\Release\webrtc-streamer.dll</FullPath>
+      <FullPath>D:\study\ABLMediaServer\bin\x64\webrtc-streamer.dll</FullPath>
     </ProjectOutput>
   </ProjectOutputs>
   <ContentFiles />

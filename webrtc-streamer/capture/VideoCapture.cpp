@@ -1,14 +1,20 @@
 
 #include "VideoCapture.h"
-#include "VcamVideoCapture.h"
+
 //#include "FFmpegVideoCapture.h"
 
+
+
+
+#include "VideoCaptureImpl.h"
+
+VideoCaptureManager* VideoCaptureManager::s_pVideoTrackMgrGet = nullptr;
 VideoCapture* VideoCapture::CreateVideoCapture(std::string videourl)
 {
 	std::map<std::string, std::string> opts;
 	if ((videourl.find("rtsp://") == 0)|| (videourl.find("rtmp://") == 0))
 	{	
-		//return new FFmpegVideoCapture(videourl, opts);
+		return new RtspVideoCapture(videourl, opts);
 	}
 	else if ((videourl.find("file://") == 0))
 	{
@@ -80,4 +86,14 @@ VideoCapture* VideoCaptureManager::GetInput(const std::string& videoUrl)
 		}
 		return input;
 	}
+}
+
+VideoCaptureManager* VideoCaptureManager::GetInstance()
+{
+	if (!s_pVideoTrackMgrGet)
+	{
+		s_pVideoTrackMgrGet = new VideoCaptureManager();
+
+	}
+	return s_pVideoTrackMgrGet;
 }

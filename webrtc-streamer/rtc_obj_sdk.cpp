@@ -148,7 +148,7 @@ void WebRtcEndpoint::init()
 		std::map<std::string, HttpServerRequestHandler::httpFunction> func = webRtcServer->getHttpApi();
 		// http server
 		const char* webroot = "./html";
-		std::string httpAddress("0.0.0.0:8000");
+		std::string httpAddress("0.0.0.0:8100");
 		std::vector<std::string> options;
 		options.push_back("document_root");
 		options.push_back(webroot);

@@ -138,16 +138,7 @@
     <ClInclude Include="CapturerFactory.h">
       <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="darknetTools.h">
-      <Filter>inc</Filter>
-    </ClInclude>
     <ClInclude Include="EncodedVideoFrameBuffer.h">
-      <Filter>inc</Filter>
-    </ClInclude>
-    <ClInclude Include="FFmpegAudioCapturer.h">
-      <Filter>inc</Filter>
-    </ClInclude>
-    <ClInclude Include="FFmpegVideoCapturer.h">
       <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="framework.h">
@@ -157,9 +148,6 @@
       <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="HttpServerRequestHandler.h">
-      <Filter>inc</Filter>
-    </ClInclude>
-    <ClInclude Include="list.h">
       <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="NullDecoder.h">
@@ -188,6 +176,9 @@
     </ClInclude>
     <ClInclude Include="VideoTrackSourceInput.h">
       <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="rtc_obj_sdk.h">
+      <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -245,9 +236,6 @@
     <ClCompile Include="prometheus-cpp\src\detail\utils.cc">
       <Filter>prometheus\src\detail</Filter>
     </ClCompile>
-    <ClCompile Include="main.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="PeerConnectionManager.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -256,6 +244,9 @@
     </ClCompile>
     <ClCompile Include="HttpServerRequestHandler.cpp">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="rtc_obj_sdk.cpp">
+      <Filter>头文件</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
