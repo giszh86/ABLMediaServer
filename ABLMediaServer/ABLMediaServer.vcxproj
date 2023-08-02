@@ -116,8 +116,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>..\rapidjson-master\include;..\media-server-master\libflv\include;..\media-server-master\librtmp\include;..\media-server-master\libmpeg\include;..\media-server-master\libhls\include;..\media-server-master\libmov\include;..\media-server-master\librtp\include;../3rd/ffmpeg-4.2.3\include;./webrtc/civetweb/include;./webrtc/prometheus-cpp/include;./webrtc/include\third_party\abseil-cpp;./webrtc/include;./webrtc;./webrtc/include/third_party\jsoncpp\source\include;./webrtc/include/third_party\libyuv\include;$(IncludePath)</IncludePath>
-    <LibraryPath>..\media-server-master\x64\Release;..\3rd\ffmpeg-4.2.3\lib;./webrtc/lib/x64/release/;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\rapidjson-master\include;..\media-server-master\libflv\include;..\media-server-master\librtmp\include;..\media-server-master\libmpeg\include;..\media-server-master\libhls\include;..\media-server-master\libmov\include;..\media-server-master\librtp\include;../3rd/ffmpeg6\include;$(IncludePath)</IncludePath>
+    <LibraryPath>..\media-server-master\x64\Release;..\3rd\ffmpeg6\lib\x64;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)bin\$(Platform)</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='boost_release|x64'">
@@ -197,7 +197,7 @@
       <Optimization>Disabled</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;OS_System_Windows;NO_SSL;WEBRTC_WIN;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;OS_System_Windows;NO_SSL;NOMINMAX;FFMPEG6;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>

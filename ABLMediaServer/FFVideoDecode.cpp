@@ -56,7 +56,7 @@ bool CFFVideoDecode::startDecode(char* szCodecName, int nWidth, int nHeight)
 
     pDCodecCtx->slice_count = 2;
 	pDCodecCtx->thread_count = 2;
-	pDCodecCtx->thread_safe_callbacks = 1;
+	//pDCodecCtx->thread_safe_callbacks = 1;
  
 	if (avcodec_open2(pDCodecCtx, pDCodec, NULL) < 0)
 	{

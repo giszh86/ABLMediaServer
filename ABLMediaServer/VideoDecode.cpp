@@ -169,7 +169,13 @@ bool CVideoDecode::CaptureJpegFromAVFrame(char* OutputFileName, int quality)
 	AVFormatContext *pFormatCtx;
 	AVStream *video_st;
 	AVCodecContext* pCodecCtx;
-	AVCodec *pCodec;
+
+#ifdef FFMPEG6
+	const  AVCodec* pCodec = nullptr;
+#else
+	AVCodec* pCodec = nullptr;
+#endif // FFMPEG6
+
 	AVPacket *pkt;          //编码后数据，如jpeg等
 	int     ret1;
   
@@ -219,6 +225,7 @@ bool CVideoDecode::CaptureJpegFromAVFrame(char* OutputFileName, int quality)
 	pCodecCtx->qcompress = 1 ; //图片压缩质量 范围（ 0.1 ~ 1 ）
 	pCodecCtx->gop_size = 25 ;
 	pCodecCtx->max_b_frames = 0;
+
 
 	pCodec = avcodec_find_encoder(pCodecCtx->codec_id);
 	if (!pCodec)

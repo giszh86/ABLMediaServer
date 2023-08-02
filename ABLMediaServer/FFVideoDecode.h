@@ -35,7 +35,16 @@ public:
 	AVPacket*          packet;
 	int                nGet,frameFinished ;
 	bool               m_bInitDecode ;
- 	AVCodec*           pDCodec ;
+ 
+
+
+#ifdef FFMPEG6
+	const  AVCodec* pDCodec = nullptr;
+#else
+	AVCodec* pDCodec = nullptr;
+#endif // FFMPEG6
+
+
 	AVCodecContext*    pDCodecCtx ;
 	AVFrame*           pDPicture ;
 	int                nRet;

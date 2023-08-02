@@ -26,7 +26,14 @@ public:
    int					ret;
 
    AVCodecContext* pCodecCtx;
-   AVCodec*        pCodec;
+ 
+
+#ifdef FFMPEG6
+   const  AVCodec* pCodec = nullptr;
+#else
+   AVCodec* pCodec = nullptr;
+#endif // FFMPEG6
+
    AVPacket        pkt;
    uint8_t*        picture_buf;
    AVFrame*        pFrame;

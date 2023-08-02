@@ -2193,7 +2193,13 @@ bool CMediaStreamSource::FFMPEGGetWidthHeight(unsigned char * videooutdata, int 
 	bool ret = false;
 	AVCodecParserContext *parservideo = NULL;
 	AVCodecContext *cvideo = NULL;
-	AVCodec *codecvideo = NULL;
+	
+#ifdef FFMPEG6
+	const  AVCodec* codecvideo = nullptr;
+#else
+	AVCodec* codecvideo = nullptr;
+#endif // FFMPEG6
+
 	AVPacket * outpkt = NULL;
 
 	if (videooutdatasize <= 0 || videooutdata == NULL || !(strcmp(videoName, "H264") == 0 || strcmp(videoName, "H265") == 0))

@@ -89,7 +89,7 @@ bool CFFVideoEncode::StartEncode(char* szEncodeName, AVPixelFormat nAVPixel, int
 
 	 pCodecCtx->slice_count = 2;
 	 pCodecCtx->thread_count = 2;
-	 pCodecCtx->thread_safe_callbacks = 1;
+	// pCodecCtx->thread_safe_callbacks = 1;
 
 	 //H.264
 	 if (pCodecCtx->codec_id == AV_CODEC_ID_H264) {
