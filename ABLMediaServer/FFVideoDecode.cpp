@@ -23,12 +23,14 @@ CFFVideoDecode::CFFVideoDecode()
    pDPicture = NULL;
    m_nWidth = m_nHeight = 0;
    frameSWS = NULL;
+   WriteLog(Log_Debug, "CFFVideoDecode 构造 = %X line= %d ", this, __LINE__);
 }
 
 CFFVideoDecode::~CFFVideoDecode()
 {
   stopDecode() ;
   malloc_trim(0);
+  WriteLog(Log_Debug, "CFFVideoDecode 析构 = %X line= %d ", this, __LINE__);
 }
 
 //启动解码器
@@ -54,9 +56,8 @@ bool CFFVideoDecode::startDecode(char* szCodecName, int nWidth, int nHeight)
 	pDPicture = av_frame_alloc();
 	//pDPicture->format = AV_PIX_FMT_YUVJ420P;
 
-    pDCodecCtx->slice_count = 2;
-	pDCodecCtx->thread_count = 2;
-	//pDCodecCtx->thread_safe_callbacks = 1;
+    pDCodecCtx->slice_count = 4;
+	pDCodecCtx->thread_count = 4;
  
 	if (avcodec_open2(pDCodecCtx, pDCodec, NULL) < 0)
 	{

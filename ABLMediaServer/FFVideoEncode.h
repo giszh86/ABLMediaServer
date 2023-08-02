@@ -43,7 +43,6 @@ public:
    CFFVideoFilter  *videoFilter;  //新增水印类
 
    std::mutex      enable_Lock;
-
 };
 
 //Add by ZXT
