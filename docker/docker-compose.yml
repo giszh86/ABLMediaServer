@@ -1,9 +1,30 @@
 version: '3'
 
 services:
-  webrtc-streamer:
-    container_name: webrtc-streamer  #配置容器名
+  ABLMediaServer:
+    container_name: ABLMediaServer  #配置容器名
+    restart: always
+    ulimits:
+        nproc: 65535
+        nofile:
+            soft: 65535
+            hard: 65535
     build:
-      context: ./
+        context: ./
     network_mode: host
+    volumes:
+        - ./bin:/opt/media/ABLMediaServer
+    ports:      
+        - 5088:5088/udp #http-mp4端口
+        - 5088:5088/tcp
+        - 6088:6088/udp #ws-flv端口
+        - 6088:6088/tcp    
+        - 7088:7088/udp #http端口
+        - 7088:7088/tcp
+        - 8088:8088/udp #http-flv端口
+        - 8088:8088/tcp
+        - 9088:9088/udp #http-hls
+        - 9088:9088/tcp
+        - 554:554    #rtsp端口
+        - 1935:1935    #rtsp端口
 

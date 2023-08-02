@@ -1,5 +1,6 @@
 #!/bin/bash
-cp /config/config.ini /opt/media/config.ini
-cd /opt/assist
-nohup java -jar *.jar --spring.config.location=/config/application.assist.yml &
-/opt/media/MediaServer -d -m 3
+
+cd /opt/media/ABLMediaServer
+sudo chmod +x ABLMediaServer 
+export LD_LIBRARY_PATH=/opt/media/ABLMediaServer:$LD_LIBRARY_PATH
+./MediaServer -d -m 3
