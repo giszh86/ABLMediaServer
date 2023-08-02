@@ -4,6 +4,7 @@
 #pragma  once 
 
 
+
 #if _MSC_VER > 1000
 #pragma once
 #endif // _MSC_VER > 1000
@@ -16,7 +17,7 @@ public:
 	static bool FindFile(char* sCongfigName);
 
 	static char lpBuff[2048];
-	static char szKey[64];
+	static char szKey[256];
 
 	virtual ~CConfigFile();
 	CConfigFile();

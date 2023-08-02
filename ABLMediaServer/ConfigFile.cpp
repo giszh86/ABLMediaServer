@@ -21,7 +21,7 @@ static char THIS_FILE[]=__FILE__;
 
 char CConfigFile::m_ConfigFileName[256] = { 0 };
 char CConfigFile::lpBuff[2048] = { 0 };
-char CConfigFile::szKey[64] = { 0 };
+char CConfigFile::szKey[256] = { 0 };
 
 CConfigFile::CConfigFile()
 {
