@@ -1,20 +1,14 @@
 ﻿C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Microsoft\VC\v160\Microsoft.CppBuild.targets(499,5): warning MSB8004: Output 目录未以斜杠结尾。  此生成实例将添加斜杠，因为必须有这个斜杠才能正确计算 Output 目录。
-  rtc_obj_sdk.cpp
-D:\study\ABLMediaServer\webrtc-streamer\rtc_obj_sdk.h(12,1): warning C4005: “WIN32_LEAN_AND_MEAN”: 宏重定义
-D:\study\ABLMediaServer\webrtc-streamer\rtc_obj_sdk.cpp : message : 参见“WIN32_LEAN_AND_MEAN”的前一个定义
+  VideoCapture.cpp
 D:\study\ABLMediaServer\webrtc-streamer\capture\VideoCapture.h(95,13): warning C4251: “VideoCaptureManager::m_mutex”: class“std::mutex”需要有 dll 接口由 class“VideoCaptureManager”的客户端使用
 C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\include\mutex(86): message : 参见“std::mutex”的声明
 D:\study\ABLMediaServer\webrtc-streamer\capture\VideoCapture.h(96,39): warning C4251: “VideoCaptureManager::m_inputMap”: class“std::map<std::string,VideoCapture *,std::less<std::string>,std::allocator<std::pair<const std::string,VideoCapture *>>>”需要有 dll 接口由 class“VideoCaptureManager”的客户端使用
 D:\study\ABLMediaServer\webrtc-streamer\capture\VideoCapture.h(96): message : 参见“std::map<std::string,VideoCapture *,std::less<std::string>,std::allocator<std::pair<const std::string,VideoCapture *>>>”的声明
 D:\study\ABLMediaServer\webrtc-streamer\include\media\base\codec.h(1,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
-D:\study\ABLMediaServer\webrtc-streamer\HttpServerRequestHandler.h(74,12): warning C4477: “printf”: 格式字符串“%s”需要类型“char *”的参数，但可变参数 1 拥有了类型“int”
-D:\study\ABLMediaServer\webrtc-streamer\HttpServerRequestHandler.h(74,12): warning C4313: “printf”: 格式字符串中的“%s”与“int”类型的参数 1 冲突
-D:\study\ABLMediaServer\webrtc-streamer\HttpServerRequestHandler.h(74,77): warning C4474: printf: 格式字符串中传递的参数太多
-D:\study\ABLMediaServer\webrtc-streamer\HttpServerRequestHandler.h(74,77): message : 占位符和其参数预计 1 可变参数，但提供的却是 2 参数
     正在创建库 ../lib/webrtc-streamer.lib 和对象 ../lib/webrtc-streamer.exp
   正在生成代码
-  1 of 6862 functions (<0.1%) were compiled, the rest were copied from previous compilation.
+  308 of 6864 functions ( 4.5%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    9 functions had inline decision re-evaluated but remain unchanged
+    203 functions had inline decision re-evaluated but remain unchanged
   已完成代码的生成
   webrtc-streamer.vcxproj -> D:\study\ABLMediaServer\bin\x64\webrtc-streamer.dll
