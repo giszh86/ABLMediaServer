@@ -306,7 +306,7 @@ INI_RES CIni::WriteKeyString(char* szSection, char* szKey, char* szValue)
 
 INI_RES CIni::WriteKeyInt(char* szSection, char* szKey, int nValue)
 {
-	char szBuffer[128];
+	char szBuffer[1024]={0};
 	sprintf(szBuffer, "%d", nValue);
 	return WriteKeyString(szSection, szKey, szBuffer);
 }
