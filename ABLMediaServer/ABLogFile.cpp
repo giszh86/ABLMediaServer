@@ -22,6 +22,12 @@
 #define  RetainMaxFileCount                10                                         //最大保留文件个数
 #define  DeleteLogFileTimerSecond      700                                      //多长时间执行一次删除日志文件 单位 秒
 
+#ifdef OS_System_Windows
+extern BOOL GBK2UTF8(char *szGbk, char *szUtf8, int Len);
+#else
+extern int GB2312ToUTF8(char* szSrc, size_t iSrcLen, char* szDst, size_t iDstLen);
+#endif
+
 using namespace std;
 typedef    vector<unsigned long> FileNameNumber ;
 FileNameNumber                   fileNameNumber ;
@@ -30,8 +36,9 @@ pthread_mutex_t                  ABL_LogFileLock;
 int                              ABL_nFileByteCount = 0 ;//当前操作文件的大小
 unsigned long                    ABL_nFileNumber; //当前文件序号
 FILE*                            ABL_fLogFile=NULL ; 
-char                             ABL_wzLog[32000] = {0};
-char                             ABL_LogBuffer[32000] = {0};
+char                             ABL_wzLog[48000] = {0};
+char                             ABL_LogBuffer[48000] = {0};
+char                             ABL_PrintBuffer[48000] = {0};
 pthread_t                        pThread_deleteLogFile ;
 char                             szLogLevel[3][64]={"Log_Debug","Log_Title","Log_Error"};
 
@@ -216,13 +223,16 @@ bool WriteLog(LogLevel nLogLevel,const char* ms, ... )
 		time(&now);
 		struct tm *local;
 		local = localtime(&now);
-		printf("%04d-%02d-%02d %02d:%02d:%02d %s %s\n", local->tm_year+1900, local->tm_mon+1,
-				local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec,szLogLevel[nLogLevel],
-				ABL_wzLog);
+ 
 		sprintf(ABL_LogBuffer,"%04d-%02d-%02d %02d:%02d:%02d %s %s\n", local->tm_year+1900, local->tm_mon+1,
 					local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec,szLogLevel[nLogLevel],
 					ABL_wzLog);
-					
+ 		
+		memset(ABL_PrintBuffer,0x00,sizeof(ABL_PrintBuffer));
+		GB2312ToUTF8(ABL_LogBuffer, strlen(ABL_LogBuffer), ABL_PrintBuffer, sizeof(ABL_PrintBuffer));
+		if(strlen(ABL_PrintBuffer) < 1024)
+		   printf(ABL_PrintBuffer);
+		
 	     if(ABL_fLogFile != NULL)				
 		 {
 		   fwrite(ABL_LogBuffer,1,strlen(ABL_LogBuffer),ABL_fLogFile);
