@@ -86,7 +86,7 @@ public:
    WWW_AuthenticateType       AuthenticateType;//rtsp是什么类型验证
    char                       szBasic[512];//用于rtsp基础验证
    char                       szSessionID[512];//sessionID 
-   char                       szTrackIDArray[16][512];
+   char                       szTrackIDArray[16][string_length_1024];
 
    bool  GetWWW_Authenticate();
    bool  getRealmAndNonce(char* szDigestString, char* szRealm, char* szNonce);
@@ -95,7 +95,7 @@ public:
    void  SendDescribe(WWW_AuthenticateType wwwType);
    void  SendOptions(WWW_AuthenticateType wwwType);
    void  UserPasswordBase64(char* szUserPwdBase64);
-   void  FindVideoAudioInSDP();
+   bool  FindVideoAudioInSDP();
 
    unsigned char           s_extra_data[512];
    int                     extra_data_size;
@@ -137,8 +137,8 @@ public:
    uint32_t                hRtpVideo, hRtpAudio;
    uint32_t                nVideoSSRC;
 
-   char                    szRtspSDPContent[512];
-   char                    szRtspAudioSDP[512];
+   char                    szRtspSDPContent[string_length_4096];
+   char                    szRtspAudioSDP[string_length_4096];
 
    bool                    GetMediaInfoFromRtspSDP();
    void                    SplitterRtpAACData(unsigned char* rtpAAC, int nLength);
@@ -202,9 +202,9 @@ public:
    int            sample_index;//采样频率所对应的序号 
    int            nChannels; //音频通道数
    int            nSampleRate; //音频采样频率
-   char           szRtspContentSDP[1024];
-   char           szVideoSDP[512];
-   char           szAudioSDP[512];
+   char           szRtspContentSDP[string_length_4096];
+   char           szVideoSDP[string_length_4096];
+   char           szAudioSDP[string_length_4096];
    CABLSipParse   sipParseV, sipParseA;   //sdp 信息分析
 #ifdef USE_BOOST
 

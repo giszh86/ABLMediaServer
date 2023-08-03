@@ -43,7 +43,6 @@ public:
    FILE* fWritePSDataFile;
 #endif
 
-   void                     GetAACAudioInfo(unsigned char* nAudioData, int nLength);
    char                     m_recvMediaSource[512];
 #ifdef USE_BOOST
    boost::shared_ptr<CMediaStreamSource> pRecvMediaSource;//接入媒体源

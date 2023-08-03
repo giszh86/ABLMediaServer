@@ -31,14 +31,12 @@ public:
 
    ps_demuxer_t*                         psBeiJingLaoChen;
 
-   void                                  GetAACAudioInfo(unsigned char* nAudioData, int nLength);
    std::mutex                            psRecvLock;
 #ifdef USE_BOOST
    boost::shared_ptr<CMediaStreamSource> pMediaSource;
 #else
    std::shared_ptr<CMediaStreamSource> pMediaSource;
 #endif
-
    _rtp_header                           rtpHead;
 
    int                    m_gbPayload;            //¹ú±êpayload 

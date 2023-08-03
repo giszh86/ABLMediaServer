@@ -8,8 +8,11 @@
 #include <boost/algorithm/string.hpp>
 
 //#define   WriteRecvAACDataFlag   1
-//#define  WriteRtpFileFlag    1 
-//#define    WriteSendPsFileFlag   1 //保存回复的PS数据
+//#define   WriteRtpFileFlag    1 
+//#define   WriteSendPsFileFlag   1 //保存回复的PS数据
+
+//#define     WriteRtpTimestamp      1  //启用当国标rtp包头时间戳为0时，启用覆写时间戳
+
 
 
 using namespace boost;
@@ -18,7 +21,6 @@ using namespace boost;
 
 #endif
 #define  MaxGB28181RtpSendVideoMediaBufferLength  1024*64 
-
 class CNetGB28181RtpServer : public CNetRevcBase
 {
 public:
@@ -35,8 +37,18 @@ public:
    virtual int SendFirstRequst();//发送第一个请求
    virtual bool RequestM3u8File();//请求m3u8文件
 
+#ifdef  WriteRtpTimestamp
+   uint32_t       nStartTimestap ;
+   uint32_t       nWriteTimeStamp;
+   volatile bool  bCheckRtpTimestamp;
+   unsigned char  szRtpDataArray[3][16*1024];
+   int            nRtpDataArrayLength[3];
+   int            nRptDataArrayOrder;
+   volatile int   nRtpTimestampType;//rtp时间戳类型 1 为空的时间戳，2为正常时间戳 
+   _rtp_header*  writeRtpHead;
+#endif
+
    void         ProcessRtcpData(unsigned char* szRtcpData, int nDataLength, int nChan);
-   void         GetAACAudioInfo(unsigned char* nAudioData, int nLength);
 
    void            AddADTSHeadToAAC(unsigned char* szData, int nAACLength);
    unsigned char   aacData[4096];

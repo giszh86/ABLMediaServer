@@ -35,6 +35,7 @@ public:
    virtual int SendFirstRequst();//发送第一个请求
    virtual bool RequestM3u8File();//请求m3u8文件
 
+   bool                    index_api_setServerConfig();
    bool                    index_api_listServerPort();
    bool                    index_api_getTranscodingCount();
    bool                    WriteParamValue(char* szSection, char* szKey, char* szValue);

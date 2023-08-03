@@ -24,6 +24,7 @@ extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
 extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
 extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClientNoLock(NETHANDLE CltHandle);
 extern int                                   avpriv_mpeg4audio_sample_rates[];
+extern int                                   SampleRateArray[];
 #else
 extern CMediaSendThreadPool*                 pMediaSendThreadPool;
 extern CMediaFifo                            pDisconnectBaseNetFifo;             //清理断裂的链接 
@@ -33,6 +34,7 @@ extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
 extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
 extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClientNoLock(NETHANDLE CltHandle);
 extern int                                   avpriv_mpeg4audio_sample_rates[];
+extern int                                   SampleRateArray[];
 #endif
 
 CNetRevcBase::CNetRevcBase()
@@ -390,8 +392,8 @@ int  CNetRevcBase::CalcVideoFrameSpeed(unsigned char* pRtpData, int nLength)
 			//WriteLog(Log_Debug, "this = %X ,nVideoFrameSpeed = %llu ", this,(90000 / (ntohl(rtp_header.timestamp) - oldVideoTimestamp)) );
 
 			nVideoFrameSpeed = 90000 / (ntohl(rtp_header.timestamp) - oldVideoTimestamp);
-			if (nVideoFrameSpeed > 30)
-				nVideoFrameSpeed = 30;
+			if (nVideoFrameSpeed > 120 )
+				nVideoFrameSpeed = 120 ;
 
 			//妈的，有些时间戳乱搞打包，强制赋值为25帧每秒 
 			if (nVideoFrameSpeed <= 5)
@@ -460,8 +462,8 @@ int   CNetRevcBase::CalcFlvVideoFrameSpeed(int nVideoPTS, int nMaxValue)
 		if (nVideoPTS != oldVideoTimestamp && nVideoPTS > oldVideoTimestamp)
 		{
 			nVideoFrameSpeed = nMaxValue / (nVideoPTS  - oldVideoTimestamp);
-			if (nVideoFrameSpeed > 30)
-				nVideoFrameSpeed = 30;
+			if (nVideoFrameSpeed > 120)
+				nVideoFrameSpeed = 120 ;
 
 			oldVideoTimestamp = nVideoPTS;
 			nVideoFrameSpeedOrder ++;
@@ -479,9 +481,14 @@ int   CNetRevcBase::CalcFlvVideoFrameSpeed(int nVideoPTS, int nMaxValue)
 				if (nCalcVideoFrameCount >= CalcMaxVideoFrameSpeed)
 				{
 					double dCount = 0;
+					int    nSmallFrameCount = 0;
 					double dArrayCount = CalcMaxVideoFrameSpeed;
 					for (int i = 0; i < CalcMaxVideoFrameSpeed; i++)
+					{
 						dCount += nVideoFrameSpeedArray[i];
+						if (nVideoFrameSpeedArray[i] < 10)
+							nSmallFrameCount++;
+ 					}
 
 					double dDec = dCount / dArrayCount ;
 					m_nVideoFrameSpeed = dCount / dArrayCount;
@@ -489,6 +496,8 @@ int   CNetRevcBase::CalcFlvVideoFrameSpeed(int nVideoPTS, int nMaxValue)
 					
 					if (dJian > 0.5)
 						m_nVideoFrameSpeed += 1;
+					if (nSmallFrameCount >= 10)
+						m_nVideoFrameSpeed = 30;
 
 					if (m_nVideoFrameSpeed >= 24 && m_nVideoFrameSpeed <= 29)
 						m_nVideoFrameSpeed = 25;
@@ -531,32 +540,29 @@ bool  CNetRevcBase::SplitterAppStream(char* szMediaSoureFile)
 //回复成功信息
 bool  CNetRevcBase::ResponseHttp(uint64_t nHttpClient,char* szSuccessInfo,bool bClose)
 {
+	if (szSuccessInfo == NULL)
+		return false;
+
 	//功能实现类已经回复
 	bResponseHttpFlag = true;
 
-
-#ifdef USE_BOOST
-	boost::shared_ptr<CNetRevcBase>  pClient = GetNetRevcBaseClientNoLock(nHttpClient);
-	if (pClient == NULL)
-		return true;
-	if (pClient->bResponseHttpFlag)
-		return true;
-
-	//回复http请求
-	string strReponseError = szSuccessInfo;
-	replace_all(strReponseError, "\r\n", " ");
-#else
 	auto  pClient = GetNetRevcBaseClientNoLock(nHttpClient);
 	if (pClient == NULL)
-		return true;
+ 		return true;
 	if (pClient->bResponseHttpFlag)
 		return true;
 
 	//回复http请求
-	string strReponseError = szSuccessInfo;
+	string strReponseError = szSuccessInfo ;
+#ifdef USE_BOOST
+	replace_all(strReponseError, "\r\n", " ");
+#else
 	ABL::replace_all(strReponseError, "\r\n", " ");
 #endif
 	strcpy(szSuccessInfo, strReponseError.c_str());
+
+	//插件request_uuid 
+	InsertUUIDtoJson(szSuccessInfo, pClient->request_uuid);
 
 	int nLength = strlen(szSuccessInfo);
 	if(bClose == true)
@@ -579,6 +585,10 @@ bool  CNetRevcBase::ResponseHttp2(uint64_t nHttpClient, char* szSuccessInfo, boo
 	if (bResponseHttpFlag)
 		return false;
 
+	auto  pClient = GetNetRevcBaseClientNoLock(nHttpClient);
+	if (pClient == NULL)
+		return true;
+
 	//功能实现类已经回复
 	bResponseHttpFlag = true;
 
@@ -589,8 +599,10 @@ bool  CNetRevcBase::ResponseHttp2(uint64_t nHttpClient, char* szSuccessInfo, boo
 #else
 	ABL::replace_all(strReponseError, "\r\n", " ");
 #endif
-
 	strcpy(szSuccessInfo, strReponseError.c_str());
+
+	//插件request_uuid 
+	InsertUUIDtoJson(szSuccessInfo, pClient->request_uuid);
 
 	int nLength = strlen(szSuccessInfo);
 	if (bClose == true)
@@ -658,7 +670,7 @@ bool  CNetRevcBase::ResponseImage(uint64_t nHttpClient, HttpImageType imageType,
 //url解码 
 bool CNetRevcBase::DecodeUrl(char *Src, char  *url, int  MaxLen)  
 {  
-    if(NULL == url || NULL == Src)  
+    if(NULL == url || NULL == Src || strlen(Src) == 0)  
     {  
         return false;  
     }  
@@ -830,4 +842,60 @@ char*   CNetRevcBase::getAACConfig(int nChanels, int nSampleRate)
 	sprintf(szConfigStr, "%02X%02x", audioSpecificConfig[0], audioSpecificConfig[1]);
 
 	return (char*) szConfigStr;
+}
+
+//request_uui 的 key 值 插入 回复的json 
+bool CNetRevcBase::InsertUUIDtoJson(char* szSrcJSON,char* szUUID)
+{
+	int  nLength2 = strlen(szUUID);
+	if (nLength2 > 0 && strlen(szSrcJSON) > 0)
+	{
+		if (szSrcJSON[0] == '{' && szSrcJSON[strlen(szSrcJSON) - 1] == '}')
+		{
+			string strJsonSrc = szSrcJSON;
+			int    nPos = strJsonSrc.find(",", 0);
+			int    nLength3 = 0;
+			if (nPos > 0)
+			{
+				sprintf(szTemp2, "\"request_uuid\":\"%s\",", szUUID);
+				nLength3 = strlen(szTemp2);
+
+				//插入原来的json字符串中
+				memmove(szSrcJSON + nPos + nLength3, szSrcJSON + nPos, (strlen(szSrcJSON) - nPos) + strlen(szTemp2));
+				memcpy(szSrcJSON + nPos + 1, szTemp2, nLength3);
+
+				return true;
+			}
+		}
+		else
+			return false;
+	}
+	else
+		return false;
+}
+
+//根据AAC音频数据获取AAC媒体信息
+void CNetRevcBase::GetAACAudioInfo(unsigned char* nAudioData, int nLength)
+{
+	if (mediaCodecInfo.nChannels == 0 && mediaCodecInfo.nSampleRate == 0)
+	{
+		unsigned char nSampleIndex = 1;
+		unsigned char  nChannels = 1;
+
+		nSampleIndex = ((nAudioData[2] & 0x3c) >> 2) & 0x0F;  //从 szAudio[2] 中获取采样频率的序号
+		if (nSampleIndex >= 15)
+			nSampleIndex = 8;
+		mediaCodecInfo.nSampleRate = SampleRateArray[nSampleIndex];
+
+		//通道数量计算 pAVData[2]  中有2个位，在最后2位，根 0x03 与运算，得到两位，左移动2位 ，再 或 上 pAVData[3] 的左边最高2位
+		//pAVData[3] 左边最高2位获取方法 先 和 0xc0 与运算，再右移6位，为什么要右移6位？因为这2位是在最高位，所以要往右边移动6位
+		nChannels = ((nAudioData[2] & 0x03) << 2) | ((nAudioData[3] & 0xc0) >> 6);
+		if (nChannels > 2)
+			nChannels = 1;
+		mediaCodecInfo.nChannels = nChannels;
+
+		strcpy(mediaCodecInfo.szAudioName, "AAC");
+
+		WriteLog(Log_Debug, "CNetRevcBase = %X ,媒体接入 AAC信息 szAudioName = %s,nChannels = %d ,nSampleRate = %d ", this, mediaCodecInfo.szAudioName, mediaCodecInfo.nChannels, mediaCodecInfo.nSampleRate);
+	}
 }

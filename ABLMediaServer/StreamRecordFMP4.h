@@ -29,7 +29,6 @@ using namespace boost;
 
 #endif
 
-
 class CStreamRecordFMP4 : public CNetRevcBase
 {
 public:

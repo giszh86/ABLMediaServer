@@ -223,33 +223,6 @@ CRtpPSStreamInput::~CRtpPSStreamInput()
 	malloc_trim(0);
 }
 
-//根据AAC音频数据获取AAC媒体信息
-void CRtpPSStreamInput::GetAACAudioInfo(unsigned char* nAudioData, int nLength)
-{
-	if (mediaCodecInfo.nChannels == 0 && mediaCodecInfo.nSampleRate == 0)
-	{
-		unsigned char nSampleIndex = 1;
-		unsigned char  nChannels = 1;
-
-		nSampleIndex = ((nAudioData[2] & 0x3c) >> 2) & 0x0F;  //从 szAudio[2] 中获取采样频率的序号
-		if (nSampleIndex >= 15)
-			nSampleIndex = 8;
-		mediaCodecInfo.nSampleRate = SampleRateArray[nSampleIndex];
-
-		//通道数量计算 pAVData[2]  中有2个位，在最后2位，根 0x03 与运算，得到两位，左移动2位 ，再 或 上 pAVData[3] 的左边最高2位
-		//pAVData[3] 左边最高2位获取方法 先 和 0xc0 与运算，再右移6位，为什么要右移6位？因为这2位是在最高位，所以要往右边移动6位
-		nChannels = ((nAudioData[2] & 0x03) << 2) | ((nAudioData[3] & 0xc0) >> 6);
-		if (nChannels > 2)
-			nChannels = 1;
-		mediaCodecInfo.nChannels = nChannels;
-
-		strcpy(mediaCodecInfo.szAudioName, "AAC");
-
-		WriteLog(Log_Debug, "CNetGB28181RtpServer = %X ,获取到国标接入 AAC信息 szAudioName = %s,nChannels = %d ,nSampleRate = %d ", this, mediaCodecInfo.szAudioName, mediaCodecInfo.nChannels, mediaCodecInfo.nSampleRate);
-	}
-}
-
-
 int CRtpPSStreamInput::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, char* szVideoCodec)
 {
 	return 0;

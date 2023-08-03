@@ -12,7 +12,6 @@ using namespace boost;
 
 #endif
 
-
 #define Send_ResponseHttp_MaxPacketCount   1024*48  //回复http包最大发送一次字节
 
 #define  MaxNetClientHttpBuffer        1024*1024*1 
@@ -47,7 +46,7 @@ public:
    int                     nNetStart, nNetEnd; //网络数据起始位置\结束位置
    char                    szHttpHead[1024 * 64];
    char                    szHttpBody[1024 * 64];
-   char                    szContentLength[128];
+   char                    szContentLength[string_length_1024];
    int                     nContent_Length = 0;
    char                    szHttpPath[1024 * 64];
    char                    szConnection[512];

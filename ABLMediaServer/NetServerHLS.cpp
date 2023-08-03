@@ -279,14 +279,15 @@ int CNetServerHLS::ProcessNetData()
 		if(nPos > 0)
 		   memcpy(szPushName, szRequestFileName, nPos);
 	}
+	SplitterAppStream(szPushName);
 
 	//发送播放事件通知，用于播放鉴权
 	if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nPlay > 0 && bOn_playFlag == false)
 	{
-		bOn_playFlag = true;
+ 		bOn_playFlag = true;
 		MessageNoticeStruct msgNotice;
 		msgNotice.nClient = ABL_MediaServerPort.nPlay;
-		sprintf(msgNotice.szMsg, "{\"app\":\"%s\",\"stream\":\"%s\",\"mediaServerId\":\"%s\",\"networkType\":%d,\"key\":%llu,\"ip\":\"%s\" ,\"port\":%d,\"params\":\"%s\"}", app, stream, ABL_MediaServerPort.mediaServerID, netBaseNetType, nClient, szClientIP, nClientPort, szPlayParams);
+		sprintf(msgNotice.szMsg, "{\"app\":\"%s\",\"stream\":\"%s\",\"mediaServerId\":\"%s\",\"networkType\":%d,\"key\":%llu,\"ip\":\"%s\" ,\"port\":%d,\"params\":\"%s\"}", m_addStreamProxyStruct.app, m_addStreamProxyStruct.stream, ABL_MediaServerPort.mediaServerID, netBaseNetType, nClient, szClientIP, nClientPort, szPlayParams);
 		pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
 	}
 
@@ -333,9 +334,8 @@ int CNetServerHLS::ProcessNetData()
 	pushClient->nLastWatchTime = pushClient->nLastWatchTimeDisconect = GetCurrentSecond();
 
 	//记下媒体源
-	SplitterAppStream(szPushName);
 	sprintf(m_addStreamProxyStruct.url, "http://localhost:%d/%s/%s.m3u8", ABL_MediaServerPort.nHlsPort, m_addStreamProxyStruct.app, m_addStreamProxyStruct.stream);
-
+ 
 	if (strstr(szRequestFileName, ".m3u8") != NULL)
 	{//请求M3U8文件
 		if (strlen(pushClient->szDataM3U8) == 0)

@@ -22,12 +22,14 @@ CVideoDecode::CVideoDecode()
    nFrameGopCount = 0;
    pDPicture = NULL;
    frameSWS = NULL;
+   WriteLog(Log_Debug, "CVideoDecode 构造 = %X line= %d ", this, __LINE__);
 }
 
 CVideoDecode::~CVideoDecode()
 {
   stopDecode() ;
   malloc_trim(0);
+  WriteLog(Log_Debug, "CVideoDecode 析构 = %X line= %d ", this, __LINE__);
 }
 
 //启动解码器
@@ -175,7 +177,6 @@ bool CVideoDecode::CaptureJpegFromAVFrame(char* OutputFileName, int quality)
 #else
 	AVCodec* pCodec = nullptr;
 #endif // FFMPEG6
-
 	AVPacket *pkt;          //编码后数据，如jpeg等
 	int     ret1;
   

@@ -1,5 +1,5 @@
 INCLUDES = -I../Linux/boost/include \
-           -I../Linux/ffmpeg-4.3.4/include \
+           -I../Linux/ffmpeg-6.0/include \
            -I../rapidjson-master/include \
            -I../media-server-master/libflv/include \
            -I../media-server-master/librtmp/include \
@@ -8,7 +8,7 @@ INCLUDES = -I../Linux/boost/include \
 		   -I../media-server-master/librtp/include \
 		   -I../media-server-master/libmov/include 
 LIBS = -L../bin \
-       -L../Linux/ffmpeg-4.3.4/lib \
+       -L../Linux/ffmpeg-6.0/lib \
        -L../Linux/faac-1.29.9.2/lib/lib \
        -L../Linux/boost/lib -lboost_system -lboost_thread -lboost_log -lboost_regex -lboost_filesystem -lboost_date_time -lboost_chrono -lboost_atomic -lrtmp -lflv -lmpeg -lhls -lmov -lrtp -lfaac -lavcodec -lavutil -lavformat -lswscale -lavfilter -lpostproc -lswresample
 

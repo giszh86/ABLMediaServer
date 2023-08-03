@@ -399,9 +399,9 @@ int CNetClientRecvFLV::SendFirstRequst()
 			sprintf(szRequestFLVFile, "GET %s HTTP/1.1\r\nUser-Agent: %s\r\nAccept: */*\r\nRange: bytes=0-\r\nConnection: keep-alive\r\nHost: 190.15.240.11:8088\r\nIcy-MetaData: 1\r\n\r\n", szSubPath, MediaServerVerson);
 			XHNetSDK_Write(nClient, (unsigned char*)szRequestFLVFile, strlen(szRequestFLVFile), 1);
 		}else
-			pDisconnectBaseNetFifo.push((unsigned char*)nClient, sizeof(nClient));
+			pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
 	}else
-		pDisconnectBaseNetFifo.push((unsigned char*)nClient, sizeof(nClient));
+		pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
 
 #ifdef  SaveNetDataToFlvFile
 	sprintf(szRequestFLVFile, "%s%X.flv", ABL_MediaSeverRunPath, this);

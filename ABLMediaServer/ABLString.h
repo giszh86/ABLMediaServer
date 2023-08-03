@@ -29,5 +29,8 @@ namespace ABL {
 	void to_upper(char* str);
 
 	void to_upper(std::string& str);
+	// 定义一个用于获取当前时间的函数
+	unsigned long long getCurrentTime();
+
 
 }

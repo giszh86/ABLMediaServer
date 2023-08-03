@@ -119,6 +119,9 @@ CNetClientHttp::~CNetClientHttp()
 		case NetBaseNetType_HttpClient_on_publish:
 			ABL_MediaServerPort.nPublish = 0;
 			break;
+		case NetBaseNetType_HttpClient_on_iframe_arrive:
+			ABL_MediaServerPort.nFrameArrive = 0;
+			break;
 	}
 
 	m_videoFifo.FreeFifo();
@@ -290,6 +293,9 @@ int CNetClientHttp::SendFirstRequst()
 		break;
 	case NetBaseNetType_HttpClient_on_publish:
 		ABL_MediaServerPort.nPublish = nClient;
+		break;
+	case NetBaseNetType_HttpClient_on_iframe_arrive:
+		ABL_MediaServerPort.nFrameArrive = nClient;
 		break;
 	}
 	return 0;

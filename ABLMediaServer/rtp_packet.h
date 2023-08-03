@@ -114,6 +114,8 @@ enum e_rtp_packet_stream_type
 	e_rtppkt_st_dhp = 0xf2,			//DH private
 
 	e_rtppkt_st_gb28181 = 0xf3,     //国标PS 打包 
+
+	e_rtppkt_st_aac_have_adts = 0x0f4, //不去掉adts头的aac
 };
 
 enum e_rtp_packet_align_mode

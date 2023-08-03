@@ -160,4 +160,13 @@ namespace ABL {
 
 	}
 
+	// 定义一个用于获取当前时间的函数
+	unsigned long long getCurrentTime()
+	{
+		return std::chrono::duration_cast<std::chrono::milliseconds>(
+			std::chrono::system_clock::now().time_since_epoch())
+			.count();
+	}
+
+
 }

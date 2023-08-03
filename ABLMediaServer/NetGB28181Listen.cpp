@@ -37,12 +37,14 @@ extern MediaServerPort                       ABL_MediaServerPort;
 extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
 extern CMediaFifo                            pMessageNoticeFifo;          //消息通知FIFO
 #endif
-
 CNetGB28181Listen::CNetGB28181Listen(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort,char* szShareMediaURL)
 {
 	strcpy(m_szShareMediaURL, szShareMediaURL);
 	netBaseNetType = NetBaseNetType_NetGB28181RtpServerListen;
 	nClient = hClient;
+	nClientPort = nPort;
+	if (strlen(szShareMediaURL) > 0)
+		SplitterAppStream(szShareMediaURL);
 	nMediaClient = 0;
 
 	WriteLog(Log_Debug, "CNetGB28181Listen 构造 = %X  nClient = %llu ", this, nClient);

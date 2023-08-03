@@ -438,6 +438,8 @@ bool CNetServerHTTP::SplitterTextParam(char* szTextParam)
 		if (breakFlag)
 			break;
 	} 
+
+	GetKeyValue("request_uuid", request_uuid);
 	return nKeyCount > 0 ? true : false;
 }
 
@@ -521,7 +523,7 @@ bool CNetServerHTTP::SplitterJsonParam(char* szJsonParam)
 			}
 		}
 	}
-
+	GetKeyValue("request_uuid", request_uuid);
 	return nKeyCount > 0 ? true : false;
 }
 
@@ -529,6 +531,9 @@ bool CNetServerHTTP::SplitterJsonParam(char* szJsonParam)
 bool  CNetServerHTTP::ResponseSuccess(char* szSuccessInfo)
 {
 	std::lock_guard<std::mutex> lock(httpResponseLock);
+
+	//插入 resquet_uuid 
+	InsertUUIDtoJson(szSuccessInfo, request_uuid);
 
 	int nLength = strlen(szSuccessInfo);
 	if(strlen(szConnection) == 0)
@@ -592,7 +597,7 @@ bool CNetServerHTTP::ResponseHttpRequest(char* szModem, char* httpURL, char* req
 		(strcmp(httpURL, "/index/hook/on_stream_none_reader") == 0 || strcmp(httpURL, "/index/hook/on_stream_not_found") == 0 || strcmp(httpURL, "/index/hook/on_record_mp4") == 0) || //测试事件回复
 		(strcmp(httpURL, "/index/api/queryPictureList") == 0) || (strcmp(httpURL, "/index/api/controlStreamProxy") == 0) || (strcmp(httpURL, "/index/api/setTransFilter") == 0) ||
 		(strcmp(httpURL, "/index/api/setConfigParamValue") == 0) || (strcmp(httpURL, "/index/api/shutdownServer") == 0) || (strcmp(httpURL, "/index/api/restartServer") == 0) || 
-		(strcmp(httpURL, "/stats/pushers") == 0 ) || (strcmp(httpURL, "/index/api/getTranscodingCount") == 0) || (strcmp(httpURL, "/index/api/listServerPort") == 0)  ))
+		(strcmp(httpURL, "/stats/pushers") == 0 ) || (strcmp(httpURL, "/index/api/getTranscodingCount") == 0) || (strcmp(httpURL, "/index/api/listServerPort") == 0) || (strcmp(httpURL, "/index/api/setServerConfig") == 0) ))
 	{ 
 		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"Http Request [ %s ] Not Supported \",\"key\":%d}", IndexApiCode_ErrorRequest, httpURL, 0);
 		ResponseSuccess(szResponseBody);
@@ -607,27 +612,36 @@ bool CNetServerHTTP::ResponseHttpRequest(char* szModem, char* httpURL, char* req
 	int    nPos1, nPos2;
 	nPos1 = strRequestParam.find("secret", 0);
 	nPos2 = strRequestParam.find(ABL_MediaServerPort.secret, 0);
-	if( !(nPos1 >= 0 && nPos2 >= nPos1 ) )
+	if( !(nPos1 >= 0 && nPos2 >= nPos1 )  )
 	{
-		WriteLog(Log_Debug, "CNetServerHTTP = %X  nClient = %llu http 请求参数非法1 ，requestParam = %s", this, nClient, requestParam);
-		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"Params [ %s ] Error .\"}", IndexApiCode_ParamError, requestParam);
-		ResponseSuccess(szResponseBody);
-		bRunFlag = false;
-		DeleteNetRevcBaseClient(nClient);
-		return false;
+		if (!(strstr(httpURL, ".jpg") != NULL || strstr(httpURL, ".mp4") != NULL ))
+		{
+			WriteLog(Log_Debug, "CNetServerHTTP = %X  nClient = %llu http 请求参数非法1 ，requestParam = %s", this, nClient, requestParam);
+			sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"Params [ %s ] Error .\"}", IndexApiCode_ParamError, requestParam);
+			ResponseSuccess(szResponseBody);
+			bRunFlag = false;
+			DeleteNetRevcBaseClient(nClient);
+			return false;
+ 		}
 	}
+	
+	//先清空 request_uuid 
+	memset(request_uuid, 0x00, sizeof(request_uuid));
 
 	if (strcmp(szModem, "GET") == 0)
 	{
 		nPos1 = strRequestParam.find("secret=", 0);
  		if (nPos1 < 0)
 		{
-			WriteLog(Log_Debug, "CNetServerHTTP = %X  nClient = %llu http 请求参数非法2 ，requestParam = %s", this, nClient, requestParam);
-			sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"Params [ %s ] Error .\"}", IndexApiCode_ParamError, requestParam);
-			ResponseSuccess(szResponseBody);
-			bRunFlag = false;
-			DeleteNetRevcBaseClient(nClient);
-			return false;
+			if (!(strstr(httpURL, ".jpg") != NULL || strstr(httpURL, ".mp4") != NULL))
+			{
+				WriteLog(Log_Debug, "CNetServerHTTP = %X  nClient = %llu http 请求参数非法2 ，requestParam = %s", this, nClient, requestParam);
+				sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"Params [ %s ] Error .\"}", IndexApiCode_ParamError, requestParam);
+				ResponseSuccess(szResponseBody);
+				bRunFlag = false;
+				DeleteNetRevcBaseClient(nClient);
+				return false;
+			}
 		}
 		SplitterTextParam(requestParam);
 	}
@@ -790,6 +804,10 @@ bool CNetServerHTTP::ResponseHttpRequest(char* szModem, char* httpURL, char* req
 	{//获取服务器占用端口
 		index_api_listServerPort();
 	}
+	else if (strcmp(httpURL, "/index/api/setServerConfig") == 0)
+	{//批量设置服务器参数
+		index_api_setServerConfig();
+	}
 	else
 	{
 		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"Http Request [ %s ] error\",\"key\":%d}", IndexApiCode_ErrorRequest, httpURL, 0);
@@ -800,8 +818,11 @@ bool CNetServerHTTP::ResponseHttpRequest(char* szModem, char* httpURL, char* req
 		return false;
  	}
 
-	if (strcmp(szConnection, "close") == 0 || strcmp(szConnection, "Close") == 0)
-		DeleteNetRevcBaseClient(nClient);
+	if (strcmp(httpURL, "/index/api/getSnap") != 0)
+	{
+ 	  if (strcmp(szConnection, "close") == 0 || strcmp(szConnection, "Close") == 0 || ABL_MediaServerPort.httqRequstClose == 1)
+		 DeleteNetRevcBaseClient(nClient);
+	}
 
 	return true;
 }
@@ -845,7 +866,7 @@ bool  CNetServerHTTP::index_api_addStreamProxy()
 		ResponseSuccess(szResponseBody);
 		return false;
 	}
-	
+
 	if (strcmp(m_addStreamProxyStruct.secret, ABL_MediaServerPort.secret) != 0)
 	{//密码检测
 		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"secret error\",\"key\":%d}", IndexApiCode_secretError, 0);
@@ -1032,7 +1053,7 @@ bool CNetServerHTTP::index_api_addPushProxy()
 	GetKeyValue("url", m_addPushProxyStruct.url);
 	GetKeyValue("disableVideo", m_addPushProxyStruct.disableVideo);
 	GetKeyValue("disableAudio", m_addPushProxyStruct.disableAudio);
-	
+
 	//检测一些必填参数
 	if (strlen(m_addPushProxyStruct.secret) == 0 || strlen(m_addPushProxyStruct.app) == 0 || strlen(m_addPushProxyStruct.stream) == 0 || strlen(m_addPushProxyStruct.url) == 0)
 	{
@@ -1163,6 +1184,8 @@ bool  CNetServerHTTP::index_api_openRtpServer()
 	GetKeyValue("send_stream_id", m_openRtpServerStruct.send_stream_id);
 	GetKeyValue("send_disableVideo", m_openRtpServerStruct.send_disableVideo);
 	GetKeyValue("send_disableAudio", m_openRtpServerStruct.send_disableAudio);
+	GetKeyValue("dst_url", m_openRtpServerStruct.dst_url);
+	GetKeyValue("dst_port", m_openRtpServerStruct.dst_port);
 
 	if (strlen(m_openRtpServerStruct.secret) == 0 || strlen(m_openRtpServerStruct.app) == 0 || strlen(m_openRtpServerStruct.stream_id) == 0 || strlen(m_openRtpServerStruct.port) == 0 ||
 		strlen(m_openRtpServerStruct.enable_tcp) == 0 || strlen(m_openRtpServerStruct.payload) == 0 )
@@ -1203,9 +1226,9 @@ bool  CNetServerHTTP::index_api_openRtpServer()
 	}
 
 	int nTcp_Switch = atoi(m_openRtpServerStruct.enable_tcp);
-	if ( !(nTcp_Switch >= 0 && nTcp_Switch <= 1))
+	if ( !(nTcp_Switch >= 0 && nTcp_Switch <= 2))
 	{
-		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"enable_tcp parameter error ,enable_tcp must is  [0 , 1] \",\"key\":%d}", IndexApiCode_ParamError, 0);
+		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"enable_tcp parameter error ,enable_tcp must is  [0 , 1, 2] \",\"key\":%d}", IndexApiCode_ParamError, 0);
 		ResponseSuccess(szResponseBody);
 		return false;
 	}
@@ -1244,6 +1267,17 @@ bool  CNetServerHTTP::index_api_openRtpServer()
 			ResponseSuccess(szResponseBody);
 			return false;
 		}
+	}
+
+	//检测  enable_tcp == 2 TCP主动时 ，dst_ur ,dst_port 不能为空 
+	if (strcmp(m_openRtpServerStruct.enable_tcp, "2") == 0 )
+	{
+		if (strlen(m_openRtpServerStruct.dst_url) == 0 || strlen(m_openRtpServerStruct.dst_port) == 0)
+		{
+			sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"When enable_tcp is 2 , dst_url , dst_port Cannot be empty \"}", IndexApiCode_ParamError);
+			ResponseSuccess(szResponseBody);
+			return false;
+ 		}
 	}
 
 	//检测 disableVideo disableAudio 
@@ -1346,6 +1380,8 @@ int   CNetServerHTTP::bindRtpServerPort()
 	strcpy(m_addStreamProxyStruct.RtpPayloadDataType, m_openRtpServerStruct.RtpPayloadDataType);//Pt 数据类型
 	strcpy(m_addStreamProxyStruct.disableVideo, m_openRtpServerStruct.disableVideo);//是否过滤视频
 	strcpy(m_addStreamProxyStruct.disableAudio, m_openRtpServerStruct.disableAudio);//是否过滤音频
+	strcpy(m_addStreamProxyStruct.dst_url, m_openRtpServerStruct.dst_url);//tcp主动连接IP 
+	strcpy(m_addStreamProxyStruct.dst_port, m_openRtpServerStruct.dst_port);//tcp主动连接端口
 
 	if (nTcp_Switch == 0)
 	{//udp方式
@@ -1438,12 +1474,58 @@ int   CNetServerHTTP::bindRtpServerPort()
 			}
 		}
 	}
+	else if (nTcp_Switch == 2)
+	{//tcp 主动接收 
+		sprintf(m_szShareMediaURL, "/%s/%s", m_openRtpServerStruct.app, m_openRtpServerStruct.stream_id);
+		if (atoi(m_openRtpServerStruct.port) == 0)
+		{
+			sprintf(m_openRtpServerStruct.port, "%d", ABL_nGB28181Port);
+			nRet = XHNetSDK_Connect((int8_t*)m_openRtpServerStruct.dst_url, atoi(m_openRtpServerStruct.dst_port), (int8_t*)(NULL), ABL_nGB28181Port, (uint64_t*)&nMediaClient, onread, onclose, onconnect, 0, MaxClientConnectTimerout, 1);
+		    ABL_nGB28181Port += 2;
+		}
+		else
+			nRet = XHNetSDK_Connect((int8_t*)m_openRtpServerStruct.dst_url, atoi(m_openRtpServerStruct.dst_port), (int8_t*)(NULL), atoi(m_openRtpServerStruct.port), (uint64_t*)&nMediaClient, onread, onclose, onconnect, 0, MaxClientConnectTimerout, 1);
+
+#ifdef USE_BOOST
+		boost::shared_ptr<CNetRevcBase> pClient = NULL;
+#else
+		std::shared_ptr<CNetRevcBase> pClient = NULL;
+#endif
+		if (nRet == 0)
+			pClient = CreateNetRevcBaseClient(NetBaseNetType_NetGB28181RtpServerTCP_Active, 0, nMediaClient, "", atoi(m_openRtpServerStruct.port), m_szShareMediaURL);
+
+		if (pClient != NULL)
+		{
+			pClient->nClient_http = nClient;
+			pClient->nReturnPort = atoi(m_openRtpServerStruct.port);
+			strcpy(pClient->m_addStreamProxyStruct.app, m_openRtpServerStruct.app);
+			strcpy(pClient->m_addStreamProxyStruct.stream, m_openRtpServerStruct.stream_id);
+
+			//记录连接国标的IP，端口 
+			strcpy(pClient->m_rtspStruct.szIP, m_openRtpServerStruct.dst_url);
+			strcpy(pClient->m_rtspStruct.szPort, m_openRtpServerStruct.dst_port);
+
+			memcpy((char*)&pClient->m_addStreamProxyStruct, (char*)&m_addStreamProxyStruct, sizeof(m_addStreamProxyStruct));
+			memcpy((char*)&pClient->m_openRtpServerStruct, (char*)&m_openRtpServerStruct, sizeof(m_openRtpServerStruct));
+			if (strlen(m_addStreamProxyStruct.convertOutWidth) > 0 && strlen(m_addStreamProxyStruct.convertOutHeight) > 0)
+			{//把宽、高赋值给转码结构
+				pClient->m_h265ConvertH264Struct.convertOutWidth = atoi(m_addStreamProxyStruct.convertOutWidth);
+				pClient->m_h265ConvertH264Struct.convertOutHeight = atoi(m_addStreamProxyStruct.convertOutHeight);
+			}
+			if (strlen(m_addStreamProxyStruct.H264DecodeEncode_enable) > 0)
+				pClient->m_h265ConvertH264Struct.H264DecodeEncode_enable = atoi(m_addStreamProxyStruct.H264DecodeEncode_enable);
+
+		}
+		sprintf(szResponseBody, "{\"code\":0,\"memo\":\"success\",\"port\":\"%s\",\"key\":%llu}", m_openRtpServerStruct.port, nMediaClient);
+	}
  
 	 //回复Http 请求
 	if (nRet != 0)
  	   sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"bind port %s failed .\",\"port\":\"%s\",\"key\":%llu}", IndexApiCode_BindPortError, m_openRtpServerStruct.port, m_openRtpServerStruct.port, 0);
 	
-	ResponseSuccess(szResponseBody);
+	// 0 udp 方式、1 tcp 被动方式直接返回响应，2 tcp 被动方式需要连接成功、失败后再返回
+	if(nTcp_Switch == 0 || nTcp_Switch == 1 ) 
+	  ResponseSuccess(szResponseBody);
 
 	ABL_nGB28181Port += 2;//需要优化端口 
 	if (ABL_nGB28181Port >= 65520)
@@ -1461,6 +1543,7 @@ bool  CNetServerHTTP::index_api_startSendRtp()
 	char szShareMediaURL[string_length_512] = { 0 };
 	unsigned short nReturnPort ;
 	int  nRet = 0 ;
+	int is_udp = 0;
 	memset((char*)&m_startSendRtpStruct, 0x00, sizeof(m_startSendRtpStruct));
 	strcpy(m_startSendRtpStruct.RtpPayloadDataType, "1");//默认PS打包
 	strcpy(m_startSendRtpStruct.disableAudio, "0");
@@ -1486,13 +1569,20 @@ bool  CNetServerHTTP::index_api_startSendRtp()
 	GetKeyValue("recv_disableAudio", m_startSendRtpStruct.recv_disableAudio);
 	GetKeyValue("recv_disableVideo", m_startSendRtpStruct.recv_disableVideo);
 
+	is_udp = atoi(m_startSendRtpStruct.is_udp);
 	if (strlen(m_startSendRtpStruct.secret) == 0 || strlen(m_startSendRtpStruct.app) == 0 || strlen(m_startSendRtpStruct.stream) == 0 || strlen(m_startSendRtpStruct.ssrc) == 0 ||
 		strlen(m_startSendRtpStruct.src_port) == 0 || strlen(m_startSendRtpStruct.dst_url) == 0 || strlen(m_startSendRtpStruct.dst_port) == 0 || strlen(m_startSendRtpStruct.is_udp) == 0 ||
 		strlen(m_startSendRtpStruct.payload) == 0)
 	{
-		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"[secret , app , stream , ssrc , src_port , dst_url ,dst_port, is_udp, payload ] parameter need .\",\"key\":%d}", IndexApiCode_ParamError, 0);
-		ResponseSuccess(szResponseBody);
-		return false;
+		if (is_udp == 2)
+		{
+ 		}
+		else
+		{
+			sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"[secret , app , stream , ssrc , src_port , dst_url ,dst_port, is_udp, payload ] parameter need .\",\"key\":%d}", IndexApiCode_ParamError, 0);
+			ResponseSuccess(szResponseBody);
+			return false;
+		}
 	}
 
 	if (strcmp(m_startSendRtpStruct.secret, ABL_MediaServerPort.secret) != 0)
@@ -1503,7 +1593,7 @@ bool  CNetServerHTTP::index_api_startSendRtp()
 	}
 
 	//检测dst_port 端口
-	if (atoi(m_startSendRtpStruct.dst_port) <= 0 )
+	if (atoi(m_startSendRtpStruct.dst_port) <= 0 && (is_udp == 0 || is_udp == 1))
 	{
 		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"dst_port: %s error ,dst_port must > 0 \",\"key\":%d}", IndexApiCode_ParamError, m_startSendRtpStruct.dst_port, 0);
 		ResponseSuccess(szResponseBody);
@@ -1532,13 +1622,23 @@ bool  CNetServerHTTP::index_api_startSendRtp()
 		return false;
 	}
 
-	int is_udp = atoi(m_startSendRtpStruct.is_udp);
-	if (!(is_udp >= 0 && is_udp <= 1))
+	if (!(is_udp == 0 || is_udp == 1 || is_udp == 2))
 	{
-		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"is_udp parameter error ,is_udp in [0 , 1] \",\"key\":%d}", IndexApiCode_ParamError, 0);
+		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"is_udp parameter error ,is_udp in [0 , 1, 2 ] \",\"key\":%d}", IndexApiCode_ParamError, 0);
 		ResponseSuccess(szResponseBody);
 		return false;
 	}
+
+	//如果是tcp 被动连接，必须指定本地端口 
+	if (is_udp == 2)
+	{
+		if (atoi(m_startSendRtpStruct.src_port) == 0)
+		{
+			sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"src_port parameter error ,if tcp passive connected, the binding: src_port must be specified \"}", IndexApiCode_ParamError);
+			ResponseSuccess(szResponseBody);
+			return false;
+		}
+ 	}
 
 	if (strlen(m_startSendRtpStruct.payload) == 0 || atoi(m_startSendRtpStruct.payload) < 0 )
 	{
@@ -1649,7 +1749,7 @@ bool  CNetServerHTTP::index_api_startSendRtp()
 		std::shared_ptr<CNetRevcBase> pClient = NULL;
 #endif
 		if (is_udp == 1)
-		{
+		{//udp 方式 
 			if (atoi(m_startSendRtpStruct.src_port) == 0)
 			{
 				do
@@ -1666,8 +1766,8 @@ bool  CNetServerHTTP::index_api_startSendRtp()
 			if (nRet == 0)
 				pClient = CreateNetRevcBaseClient(NetBaseNetType_NetGB28181SendRtpUDP, 0, nMediaClient, "", 0, szShareMediaURL);
 		}
-		else
-		{
+		else if(is_udp == 0)
+		{//tcp 主动连接方式 
 			if (atoi(m_startSendRtpStruct.src_port) == 0)
 				nRet = XHNetSDK_Connect((int8_t*)m_startSendRtpStruct.dst_url, atoi(m_startSendRtpStruct.dst_port), (int8_t*)(NULL), ABL_nGB28181Port, (uint64_t*)&nMediaClient, onread, onclose, onconnect, 0, MaxClientConnectTimerout, 1);
 			else
@@ -1676,6 +1776,20 @@ bool  CNetServerHTTP::index_api_startSendRtp()
 			if (nRet == 0)
 				pClient = CreateNetRevcBaseClient(NetBaseNetType_NetGB28181SendRtpTCP_Connect, 0, nMediaClient, "", 1, szShareMediaURL);
 		}
+		else if (is_udp == 2)
+		{//tcp 被动连接 
+			nRet = XHNetSDK_Listen((int8_t*)("0.0.0.0"), atoi(m_startSendRtpStruct.src_port), &nMediaClient, onaccept, onread, onclose, true);
+
+			if (nRet == 0 && nMediaClient > 0)
+			{
+				pClient = CreateNetRevcBaseClient(NetBaseNetType_NetGB28181RtpSendListen, 0, nMediaClient, "", atoi(m_startSendRtpStruct.src_port), szShareMediaURL);
+				if (pClient != NULL)
+				{
+					nRet = 0;
+					memcpy((char*)&pClient->m_startSendRtpStruct, (char*)&m_startSendRtpStruct, sizeof(m_startSendRtpStruct)); //把http对象的 m_startSendRtpStruct 拷贝给listen对象的 m_startSendRtpStruct
+				}
+			}
+ 		}
 
 		nReturnPort = ABL_nGB28181Port;
 		if (atoi(m_startSendRtpStruct.src_port) > 0)
@@ -1698,7 +1812,7 @@ bool  CNetServerHTTP::index_api_startSendRtp()
 			strcpy(pClient->m_rtspStruct.szIP, m_startSendRtpStruct.dst_url);
 			strcpy(pClient->m_rtspStruct.szPort, m_startSendRtpStruct.dst_port);
 
-			if (is_udp == 1)
+			if (is_udp == 1 || is_udp == 2)
 			{
  			  if(nRet == 0)
 			   sprintf(szResponseBody, "{\"code\":0,\"port\":%d,\"memo\":\"success\",\"key\":%llu}", nReturnPort, pClient->nClient);
@@ -1791,7 +1905,7 @@ bool CNetServerHTTP::index_api_getOutList()
 bool CNetServerHTTP::index_api_getServerConfig()
 {
 	memset((char*)&m_getServerConfigStruct, 0x00, sizeof(m_getServerConfigStruct));
-
+	char  szTempBuffer[string_length_1024] = { 0 };
 	GetKeyValue("secret", m_getServerConfigStruct.secret);
  
 	if (strcmp(m_getServerConfigStruct.secret, ABL_MediaServerPort.secret) != 0)
@@ -1802,9 +1916,51 @@ bool CNetServerHTTP::index_api_getServerConfig()
 	}
 
 	memset(szMediaSourceInfoBuffer, 0x00, MaxMediaSourceInfoLength);
-	sprintf(szMediaSourceInfoBuffer, "{\"code\":0,\"params\":[{\"secret\":\"%s\",\"memo\":\"server password\"},{\"ServerIP\":\"%s\",\"memo\":\"ABLMediaServer ip address\"},{\"mediaServerID\":\"%s\",\"memo\":\"media Server ID \"},{\"hook_enable\":%d,\"memo\":\"hook_enable = 1 open notice , hook_enable = 0 close notice \"},{\"enable_audio\":%d,\"memo\":\"enable_audio = 1 open Audio , enable_audio = 0 Close Audio \"},{\"httpServerPort\":%d,\"memo\":\"http api port \"},{\"rtspPort\":%d,\"memo\":\"rtsp port \"},{\"rtmpPort\":%d,\"memo\":\"rtmp port \"},{\"httpFlvPort\":%d,\"memo\":\"http-flv port \"},{\"hls_enable\":%d,\"memo\":\"hls whether enable \"},{\"hlsPort\":%d,\"memo\":\"hls port\"},{\"wsPort\":%d,\"memo\":\"websocket flv port\"},{\"mp4Port\":%d,\"memo\":\"http mp4 port\"},{\"ps_tsRecvPort\":%d,\"memo\":\"recv ts , ps Stream port \"},{\"hlsCutType\":%d,\"memo\":\"hlsCutType = 1 hls cut to Harddisk,hlsCutType = 2  hls cut Media to memory\"},{\"h265CutType\":%d,\"memo\":\" 1 h265 cut TS , 2 cut fmp4 \"},{\"RecvThreadCount\":%d,\"memo\":\" RecvThreadCount \"},{\"SendThreadCount\":%d,\"memo\":\"SendThreadCount\"},{\"GB28181RtpTCPHeadType\":%d,\"memo\":\"rtp Length Type\"},{\"ReConnectingCount\":%d,\"memo\":\"Try reconnections times .\"},{\"maxTimeNoOneWatch\":%d,\"memo\":\"maxTimeNoOneWatch .\"},{\"pushEnable_mp4\":%d,\"memo\":\"pushEnable_mp4 .\"},{\"fileSecond\":%d,\"memo\":\"fileSecond .\"},{\"fileKeepMaxTime\":%d,\"memo\":\"fileKeepMaxTime .\"},{\"httpDownloadSpeed\":%d,\"memo\":\"httpDownloadSpeed .\"},{\"RecordReplayThread\":%d,\"memo\":\"Total number of video playback threads .\"},{\"convertMaxObject\":%d,\"memo\":\"Max number of video Convert .\"},{\"version\":\"%s\",\"memo\":\"ABLMediaServer currrent Version .\"}]}", 
+	sprintf(szMediaSourceInfoBuffer, "{\"code\":0,\"params\":[{\"secret\":\"%s\",\"memo\":\"server password\"},{\"ServerIP\":\"%s\",\"memo\":\"ABLMediaServer ip address\"},{\"mediaServerID\":\"%s\",\"memo\":\"media Server ID \"},{\"hook_enable\":%d,\"memo\":\"hook_enable = 1 open notice , hook_enable = 0 close notice \"},{\"enable_audio\":%d,\"memo\":\"enable_audio = 1 open Audio , enable_audio = 0 Close Audio \"},{\"httpServerPort\":%d,\"memo\":\"http api port \"},{\"rtspPort\":%d,\"memo\":\"rtsp port \"},{\"rtmpPort\":%d,\"memo\":\"rtmp port \"},{\"httpFlvPort\":%d,\"memo\":\"http-flv port \"},{\"hls_enable\":%d,\"memo\":\"hls whether enable \"},{\"hlsPort\":%d,\"memo\":\"hls port\"},{\"wsPort\":%d,\"memo\":\"websocket flv port\"},{\"mp4Port\":%d,\"memo\":\"http mp4 port\"},{\"ps_tsRecvPort\":%d,\"memo\":\"recv ts , ps Stream port \"},{\"hlsCutType\":%d,\"memo\":\"hlsCutType = 1 hls cut to Harddisk,hlsCutType = 2  hls cut Media to memory\"},{\"h265CutType\":%d,\"memo\":\" 1 h265 cut TS , 2 cut fmp4 \"},{\"RecvThreadCount\":%d,\"memo\":\" RecvThreadCount \"},{\"SendThreadCount\":%d,\"memo\":\"SendThreadCount\"},{\"GB28181RtpTCPHeadType\":%d,\"memo\":\"rtp Length Type\"},{\"ReConnectingCount\":%d,\"memo\":\"Try reconnections times .\"},{\"maxTimeNoOneWatch\":%d,\"memo\":\"maxTimeNoOneWatch .\"},{\"pushEnable_mp4\":%d,\"memo\":\"pushEnable_mp4 .\"},{\"fileSecond\":%d,\"memo\":\"fileSecond .\"},{\"fileKeepMaxTime\":%d,\"memo\":\"fileKeepMaxTime .\"},{\"httpDownloadSpeed\":%d,\"memo\":\"httpDownloadSpeed .\"},{\"RecordReplayThread\":%d,\"memo\":\"Total number of video playback threads .\"},{\"convertMaxObject\":%d,\"memo\":\"Max number of video Convert .\"},{\"version\":\"%s\",\"memo\":\"ABLMediaServer currrent Version .\"},{\"recordPath\":\"%s\",\"memo\":\"ABLMediaServer Record File Path  .\"},{\"picturePath\":\"%s\",\"memo\":\"ABLMediaServer Snap Picture Path  .\"}", 
 		ABL_MediaServerPort.secret, ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.mediaServerID, ABL_MediaServerPort.hook_enable,ABL_MediaServerPort.nEnableAudio,ABL_MediaServerPort.nHttpServerPort, ABL_MediaServerPort.nRtspPort, ABL_MediaServerPort.nRtmpPort, ABL_MediaServerPort.nHttpFlvPort, ABL_MediaServerPort.nHlsEnable, ABL_MediaServerPort.nHlsPort, ABL_MediaServerPort.nWSFlvPort, ABL_MediaServerPort.nHttpMp4Port, ABL_MediaServerPort.ps_tsRecvPort, ABL_MediaServerPort.nHLSCutType, ABL_MediaServerPort.nH265CutType, ABL_MediaServerPort.nRecvThreadCount, ABL_MediaServerPort.nSendThreadCount, ABL_MediaServerPort.nGBRtpTCPHeadType, ABL_MediaServerPort.nReConnectingCount,
-		ABL_MediaServerPort.maxTimeNoOneWatch, ABL_MediaServerPort.pushEnable_mp4,ABL_MediaServerPort.fileSecond,ABL_MediaServerPort.fileKeepMaxTime,ABL_MediaServerPort.httpDownloadSpeed, ABL_MediaServerPort.nRecordReplayThread, ABL_MediaServerPort.convertMaxObject, MediaServerVerson);
+		ABL_MediaServerPort.maxTimeNoOneWatch, ABL_MediaServerPort.pushEnable_mp4,ABL_MediaServerPort.fileSecond,ABL_MediaServerPort.fileKeepMaxTime,ABL_MediaServerPort.httpDownloadSpeed, ABL_MediaServerPort.nRecordReplayThread, ABL_MediaServerPort.convertMaxObject, MediaServerVerson, ABL_MediaServerPort.recordPath, ABL_MediaServerPort.picturePath);
+
+	sprintf(szTempBuffer, ",{\"noneReaderDuration\":%d,\"memo\":\"How many seconds does it take for no one to watch and send notifications  .\"}", ABL_MediaServerPort.noneReaderDuration);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"on_server_started\":\"%s\",\"memo\":\"Server starts sending event notifications  .\"}", ABL_MediaServerPort.on_server_started);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"on_server_keepalive\":\"%s\",\"memo\":\"Server Heartbeat Event Notification  .\"}", ABL_MediaServerPort.on_server_keepalive);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"on_play\":\"%s\",\"memo\":\"Play a certain stream to send event notifications  .\"}", ABL_MediaServerPort.on_play);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"on_publish\":\"%s\",\"memo\":\"Registering a certain stream to the server to send event notifications  .\"}", ABL_MediaServerPort.on_publish);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"on_stream_arrive\":\"%s\",\"memo\":\"Send event notification when a certain media source stream reaches its destination  .\"}", ABL_MediaServerPort.on_stream_arrive);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"on_stream_not_arrive\":\"%s\",\"memo\":\"A certain media source was registered but the stream timed out and did not arrive. Send event notification  .\"}", ABL_MediaServerPort.on_stream_not_arrive);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"on_stream_none_reader\":\"%s\",\"memo\":\"Send event notification when no one is watching a certain media source  .\"}", ABL_MediaServerPort.on_stream_none_reader);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"on_stream_disconnect\":\"%s\",\"memo\":\"Send event notification when a certain channel of media is disconnected  .\"}", ABL_MediaServerPort.on_stream_disconnect);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"on_stream_not_found\":\"%s\",\"memo\":\"Media source not found Send event notification .\"}", ABL_MediaServerPort.on_stream_not_found);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"on_record_mp4\":\"%s\",\"memo\":\"Send event notification when a recording is completed .\"}", ABL_MediaServerPort.on_record_mp4);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"on_delete_record_mp4\":\"%s\",\"memo\":\"Send event notification when a video recording is overwritten .\"}", ABL_MediaServerPort.on_delete_record_mp4);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"on_record_progress\":\"%s\",\"memo\":\"Sending event notifications every 1 second while recording .\"}", ABL_MediaServerPort.on_record_progress);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"on_record_ts\":\"%s\",\"memo\":\"Send event notification when hls slicing completes a section of ts file .\"}", ABL_MediaServerPort.on_record_ts);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+
+	strcat(szMediaSourceInfoBuffer, "]}");
+#ifdef OS_System_Windows
+	string strResponse = szMediaSourceInfoBuffer;
+
+#ifdef USE_BOOST
+	replace_all(strResponse, "\\", "\\\\");
+#else
+	ABL::replace_all(strResponse, "\\", "\\\\");
+#endif
+	memset(szMediaSourceInfoBuffer, 0x00, MaxMediaSourceInfoLength);
+	strcpy(szMediaSourceInfoBuffer, strResponse.c_str());
+#endif 
 	ResponseSuccess(szMediaSourceInfoBuffer);
 
 	return true;
@@ -2091,7 +2247,6 @@ bool  CNetServerHTTP::index_api_getSnap()
 	}
 #endif
 
-
 	//app ,stream 这两个字符串里面不能有 / 
 	if (strstr(m_getSnapStruct.app, "/") != NULL)
 	{
@@ -2126,7 +2281,9 @@ bool  CNetServerHTTP::index_api_getSnap()
 			sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"MediaSource: %s Not Found \"}", IndexApiCode_ParamError, szShareMediaURL);
 			ResponseSuccess(szResponseBody);
 			return false;
-		}		
+		}
+
+		//boost::shared_ptr<CNetRevcBase>  pClient = NULL;
 		auto pClient = GetNetRevcBaseClientByNetTypeShareMediaURL(NetBaseNetType_SnapPicture_JPEG, szShareMediaURL,true );
 		if (pClient)
 		{//复用以前对象
@@ -2323,6 +2480,9 @@ bool  CNetServerHTTP::index_api_downloadImage(char* szHttpURL)
 		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"Fille: %s Not Found \"}", IndexApiCode_RequestFileNotFound, szHttpURL);
 		ResponseSuccess(szResponseBody);
 	}
+
+    if(ABL_MediaServerPort.httqRequstClose == 1)
+		DeleteNetRevcBaseClient(nClient);
 
 	return true;
 }
@@ -2532,11 +2692,13 @@ bool  CNetServerHTTP::index_api_controlStreamProxy()
 //设置配置参数值
 bool   CNetServerHTTP::index_api_setConfigParamValue()
 {
+	char                 szTempURL[string_length_512] = { 0 };
 	memset((char*)&m_setConfigParamValue, 0x00, sizeof(m_setConfigParamValue));
 	GetKeyValue("secret", m_setConfigParamValue.secret);
 	GetKeyValue("key", m_setConfigParamValue.key);
- 	GetKeyValue("value", m_setConfigParamValue.value);
-
+	GetKeyValue("value", szTempURL);
+ 	DecodeUrl(szTempURL, m_setConfigParamValue.value, sizeof(m_setConfigParamValue.value));
+ 
 	if (strlen(m_setConfigParamValue.secret) == 0 || strlen(m_setConfigParamValue.key) == 0 )
 	{
 		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"[secret , key , value ] parameter need .\"}", IndexApiCode_ParamError);
@@ -2570,6 +2732,65 @@ bool   CNetServerHTTP::index_api_setConfigParamValue()
 	      sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"%s = %s update failed. \"}", IndexApiCode_ErrorRequest, m_setConfigParamValue.key, m_setConfigParamValue.value);
  	}
 
+	ResponseSuccess(szResponseBody);
+
+	return true;
+}
+
+//批量设置配置参数
+bool  CNetServerHTTP::index_api_setServerConfig()
+{
+	char                 szTempURL[string_length_512] = { 0 };
+	char                 szSecret[string_length_256] = { 0 };
+	char                 szSuccessParams[string_length_2048] = { 0 };
+	char                 szFailedParams[string_length_2048] = { 0 };
+	int                  nSuccessCount = 0;
+	int                  nFailedCount = 0;
+
+	GetKeyValue("secret", szSecret);
+
+	if (strlen(szSecret) == 0 )
+	{
+		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\" secret  parameter need .\"}", IndexApiCode_ParamError);
+		ResponseSuccess(szResponseBody);
+		return false;
+	}
+	if (strcmp(ABL_MediaServerPort.secret, szSecret) != 0)
+	{//密码检测
+		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"secret error\"}", IndexApiCode_secretError);
+		ResponseSuccess(szResponseBody);
+		return false;
+	}
+
+	RequestKeyValue* pKey;
+	RequestKeyValueMap::iterator it;
+
+	for (it = requestKeyValueMap.begin(); it != requestKeyValueMap.end();++it)
+	{
+		pKey = (*it).second;
+		if (strcmp(pKey->key, "secret") != 0)
+		{
+			memset(szTempURL, 0x00, sizeof(szTempURL));
+			if(strlen(pKey->value) > 0 )
+			  DecodeUrl(pKey->value, szTempURL, string_length_512);
+
+			if (WriteParamValue("ABLMediaServer", pKey->key, szTempURL))
+			{
+				strcat(szSuccessParams, pKey->key);
+				strcat(szSuccessParams," ");
+				nSuccessCount ++;
+				WriteLog(Log_Debug, "写入参数 %s=%s 成功  ", pKey->key, szTempURL);
+			}
+			else
+			{
+			  WriteLog(Log_Debug, "写入参数 %s=%s 失败  ", pKey->key, szTempURL);
+			  nFailedCount ++;
+			  strcat(szFailedParams, pKey->key);
+			  strcat(szFailedParams, " ");
+			}
+		}
+ 	}
+  	sprintf(szResponseBody, "{\"code\":%d,\"changed\":%d,\"memo\":\"Params of successful modifications [ %s ] , Params of failed modifications [ %s ] \"}", IndexApiCode_OK, nSuccessCount, szSuccessParams, szFailedParams);
 	ResponseSuccess(szResponseBody);
 
 	return true;
@@ -2697,6 +2918,16 @@ bool CNetServerHTTP::WriteParamValue(char* szSection, char* szKey, char* szValue
 		ABL_MediaServerPort.ForceSendingIFrame = atoi(szValue);
 	else if (strcmp("convertMaxObject", szKey) == 0)
 		ABL_MediaServerPort.convertMaxObject = atoi(szValue);
+	else if (strcmp("gb28181LibraryUse", szKey) == 0)
+		ABL_MediaServerPort.gb28181LibraryUse = atoi(szValue);
+	else if (strcmp("deleteSnapPicture", szKey) == 0)
+		ABL_MediaServerPort.deleteSnapPicture = atoi(szValue);
+	else if (strcmp("iframeArriveNoticCount", szKey) == 0)
+		ABL_MediaServerPort.iframeArriveNoticCount = atoi(szValue);
+	else if (strcmp("on_stream_iframe_arrive", szKey) == 0)
+		strcpy(ABL_MediaServerPort.on_stream_iframe_arrive, szValue);
+	else if (strcmp("httqRequstClose", szKey) == 0)
+		ABL_MediaServerPort.httqRequstClose = atoi(szValue);
 	else if (strcmp("wwwPath", szKey) == 0)
 	{
  		if(strlen(szValue) == 0)

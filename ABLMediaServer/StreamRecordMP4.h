@@ -12,7 +12,6 @@ using namespace boost;
 
 #endif
 
-
 #include "mov-writer.h"
 #include "mov-format.h"
 #include "mpeg4-avc.h"

@@ -2,6 +2,9 @@
 
 #include <stdint.h>
 
+//NETHANDLE固定为uint64_t，否则在arm环境编译出问题，认为是 uint32_t 
+#define NETHANDLE uint64_t
+
 #if (defined _WIN32 || defined _WIN64)
 #define LIBNET_CALLMETHOD _stdcall
 #ifdef LIBNET_STATIC

@@ -180,7 +180,6 @@ static int rtmp_server_onplay(void* param, const char* app, const char* stream, 
 	std::shared_ptr<CMediaStreamSource> pushClient = NULL;
 #endif
 
-
 	//确定网络类型
 	pClient->netBaseNetType = NetBaseNetType_RtmpServerSendPush;
 

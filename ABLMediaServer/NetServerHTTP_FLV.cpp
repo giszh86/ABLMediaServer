@@ -378,11 +378,10 @@ int CNetServerHTTP_FLV::ProcessNetData()
 
 		strcpy(szMediaSourceURL, szFlvName);
 #ifdef USE_BOOST
-		boost::shared_ptr<CMediaStreamSource> pushClient = NULL;
+ 		boost::shared_ptr<CMediaStreamSource> pushClient = NULL;
 #else
 		std::shared_ptr<CMediaStreamSource> pushClient = NULL;
-#endif
-
+#endif		
 		if (strstr(szFlvName, RecordFileReplaySplitter) == NULL)
 		{//Êµ¿öµã²¥
 		     pushClient = GetMediaStreamSource(szFlvName);

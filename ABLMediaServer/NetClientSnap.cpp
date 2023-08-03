@@ -18,13 +18,14 @@ extern bool                                  DeleteMediaStreamSource(char* szURL
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 extern boost::shared_ptr<CPictureFileSource> GetPictureFileSource(char* szShareURL, bool bLock);
 
-extern CMediaSendThreadPool* pMediaSendThreadPool;
+extern CMediaSendThreadPool*                 pMediaSendThreadPool;
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
 extern char                                  ABL_MediaSeverRunPath[256]; //当前路径
-extern MediaServerPort                       ABL_MediaServerPort;
+extern MediaServerPort                       ABL_MediaServerPort; 
 extern boost::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
 extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
-int CNetClientSnap::nPictureNumber = 1;
+extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
+int CNetClientSnap::nPictureNumber           = 1;
 #else
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 extern std::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
@@ -92,6 +93,9 @@ CNetClientSnap::~CNetClientSnap()
 
 int CNetClientSnap::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, char* szVideoCodec)
 {
+	//网络断线检测
+	nRecvDataTimerBySecond = 0;
+
 	if (!bSnapSuccessFlag)
 	{
 		if (bWaitIFrameFlag)
@@ -125,9 +129,10 @@ int CNetClientSnap::SendVideo()
 	{
 		if (!videoDecode.m_bInitDecode)
 			videoDecode.startDecode(mediaCodecInfo.szVideoName, 0, 0);
-		if (videoDecode.m_bInitDecode)
+
+		if (videoDecode.m_bInitDecode )
 		{
-			if (videoDecode.DecodeYV12Image(pData, nLength) > 0)
+			if (videoDecode.DecodeYV12Image(pData, nLength) > 0 && videoDecode.pDPicture->key_frame == 1)
 			{
  #ifdef OS_System_Windows
 				SYSTEMTIME st;
@@ -177,7 +182,7 @@ int CNetClientSnap::SendVideo()
  					   }
 
 					   if(ABL_MediaServerPort.snapObjectDestroy == 1)
-					       pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
+						   DeleteNetRevcBaseClient(nClient);
 					   else
 					   {//从拷贝线程、发送线程移除
 						   bWaitIFrameFlag = true;//需要等等I帧

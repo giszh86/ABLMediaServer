@@ -26,6 +26,12 @@ public:
    virtual int   SendFirstRequst() = 0;//发送第一个请求
    virtual bool  RequestM3u8File() = 0 ;
 
+   void                   GetAACAudioInfo(unsigned char* nAudioData, int nLength);
+
+   bool                   InsertUUIDtoJson(char* szSrcJSON, char* szUUID);
+   char                   szTemp2[string_length_512];
+   char                   request_uuid[string_length_256];
+
    int                    m_nXHRtspURLType;
    char*                  getAACConfig(int nChanels, int nSampleRate);
    char                   szConfigStr[64];

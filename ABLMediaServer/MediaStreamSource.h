@@ -3,7 +3,7 @@
 
 #define   MediaStreamSource_VideoFifoLength   1024*1024*3  //视频存储长度
 #define   MediaStreamSource_AudioFifoLength   1024*256     //音频存储长度 
-#define   Default_TS_MediaFileByteCount       1024*1024*5  //缺省的切片文件大小 
+#define   Default_TS_MediaFileByteCount       1024*1024*3  //缺省的切片文件大小 
 #define   MaxStoreTsFileCount                 4            //最大允许保持TS文件数量　
 
 #include "hls-fmp4.h"
@@ -72,7 +72,11 @@ class CMediaStreamSource
 public:
    CMediaStreamSource(char* szURL,uint64_t nClientTemp, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct h265ConvertH264Struct);
    ~CMediaStreamSource();
- 
+
+   char            szSnapPicturePath[string_length_512];
+   uint64_t        iFrameArriveNoticCount;
+   uint64_t        nCreateDateTime;
+   volatile bool   m_bNoticeOnPublish;//发版事件是否通知
    volatile bool   m_bPauseFlag;//媒体源是否暂停发流
 
    bool  SetPause(bool bFlag);
@@ -174,7 +178,7 @@ public:
    int64_t               nAudioOrder ;
    struct mpeg_ts_func_t tshandler;
    CMediaFifo            tsFileNameFifo;
-   int64_t               tsCreateTime;
+   unsigned long long               tsCreateTime;
    CMediaFifo            m3u8FileFifo;
    int64_t               m3u8FileOrder;
    void*                 tsPacketHandle ;
@@ -214,7 +218,7 @@ public:
    void                 CopyM3u8Buffer(char* szM3u8Buffer);
    bool                 ReturnM3u8Buffer(char* szOutM3u8);
 
-   void                 ABLDeletePath(char* szDeletePath);
+   void                 ABLDeletePath(char* szDeletePath,char* srcPath);
    void                 CreateSubPathByURL(char* szMediaURL);
    char                 szTSFileSubPath[string_length_2048];//TS文件二级路径，用于补充TS文件的路径
    char                 szHLSPath[string_length_2048]; //HLS路径，包括子路径，比如 D:\ABLMediaServer\www\Media\Camera_00001\
