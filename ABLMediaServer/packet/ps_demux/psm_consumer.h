@@ -2,6 +2,7 @@
 #define _PS_MUX_DEMUX_PSM_CONSUMER_H_
 
 #include <vector>
+#include <memory>
 #include "consumer_base.h"
 #include "./include/ps_def.h"
 
@@ -22,6 +23,6 @@ public:
 private:
 	std::vector<_ps_elementary_stream> m_streaminfo;
 };
-typedef boost::shared_ptr<psm_consumer> psm_consumer_ptr;
+typedef std::shared_ptr<psm_consumer> psm_consumer_ptr;
 
 #endif

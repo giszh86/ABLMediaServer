@@ -1,6 +1,4 @@
-#ifndef _PS_MUX_DEMUX_PES_CONSUMER_H_
-#define _PS_MUX_DEMUX_PES_CONSUMER_H_
-
+#pragma once
 #include "consumer_base.h"
 #include "ps_demux.h"
 
@@ -31,6 +29,5 @@ private:
 	uint64_t m_lastpts;
 	uint64_t m_lastdts;
 };
-typedef boost::shared_ptr<pes_consumer> pes_consumer_ptr;
+typedef std::shared_ptr<pes_consumer> pes_consumer_ptr;
 
-#endif

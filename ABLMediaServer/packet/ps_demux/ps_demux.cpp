@@ -1,7 +1,7 @@
 #include "ps_demux.h"
 #include "demux_manager.h"
 
-PS_DEMUX_API int32_t ps_demux_start(ps_demux_callback cb, void* userdata, int32_t mode, uint32_t* h)
+int32_t ps_demux_start(ps_demux_callback cb, void* userdata, int32_t mode, uint32_t* h)
 {
 	if (!cb || !h)
 	{
@@ -9,13 +9,13 @@ PS_DEMUX_API int32_t ps_demux_start(ps_demux_callback cb, void* userdata, int32_
 	}
 
 	*h = 0;
-	ps_demux_ptr p = demux_manager::get_mutable_instance().malloc(cb, userdata, mode);
+	ps_demux_ptr p = gblDemuxdMgrGet->malloc(cb, userdata, mode);
 	if (!p)
 	{
 		return e_ps_dux_err_mallocdemuxerror;
 	}
 
-	if (!demux_manager::get_mutable_instance().push(p))
+	if (!gblDemuxdMgrGet->push(p))
 	{
 		return e_ps_dux_err_managerdemuxerror;
 	}
@@ -26,9 +26,9 @@ PS_DEMUX_API int32_t ps_demux_start(ps_demux_callback cb, void* userdata, int32_
 
 }
 
-PS_DEMUX_API int32_t ps_demux_stop(uint32_t h)
+int32_t ps_demux_stop(uint32_t h)
 {
-	if (!demux_manager::get_mutable_instance().pop(h))
+	if (!gblDemuxdMgrGet->pop(h))
 	{
 		return e_ps_dux_err_invalidhandle;
 	}
@@ -36,14 +36,14 @@ PS_DEMUX_API int32_t ps_demux_stop(uint32_t h)
 	return e_ps_dux_err_noerror;
 }
 
-PS_DEMUX_API int32_t ps_demux_input(uint32_t h, uint8_t* data, uint32_t datasize)
+int32_t ps_demux_input(uint32_t h, uint8_t* data, uint32_t datasize)
 {
 	if (!data || (0 == datasize))
 	{
 		return e_ps_dux_err_invalidparameter;
 	}
 
-	ps_demux_ptr p = demux_manager::get_mutable_instance().get(h);
+	ps_demux_ptr p = gblDemuxdMgrGet->get(h);
 	if (!p)
 	{
 		return e_ps_dux_err_invalidhandle;

@@ -1,21 +1,5 @@
-#ifndef _PS_MUX_DEMUX_PS_DEMUX_H_
-#define _PS_MUX_DEMUX_PS_DEMUX_H_
+#pragma once
 
-#if (defined _WIN32 || defined _WIN64)
-#define PS_DEMUX_CALL_METHOD _stdcall
-#ifdef LIB_PS_DEMUX_STATIC
-#define PS_DEMUX_API
-#else 
-#ifdef LIB_PS_DEMUX_EXPORT
-#define PS_DEMUX_API _declspec(dllexport)
-#else
-#define PS_DEMUX_API _declspec(dllimport)
-#endif
-#endif
-#else
-#define PS_DEMUX_CALL_METHOD
-#define PS_DEMUX_API
-#endif
 
 #include <stdint.h>
 
@@ -80,16 +64,15 @@ extern "C"
 {
 #endif // __cplusplus
 
-	typedef void (PS_DEMUX_CALL_METHOD *ps_demux_callback)(_ps_demux_cb* cb);
+	typedef void (*ps_demux_callback)(_ps_demux_cb* cb);
 
-	__attribute__((visibility("default"))) PS_DEMUX_API int32_t ps_demux_start(ps_demux_callback cb, void* userdata, int32_t mode, uint32_t* h);
+	 int32_t ps_demux_start(ps_demux_callback cb, void* userdata, int32_t mode, uint32_t* h);
 
-	__attribute__((visibility("default"))) PS_DEMUX_API int32_t ps_demux_stop(uint32_t h);
+	 int32_t ps_demux_stop(uint32_t h);
 
-	__attribute__((visibility("default"))) PS_DEMUX_API int32_t ps_demux_input(uint32_t h, uint8_t* data, uint32_t datasize);
+	 int32_t ps_demux_input(uint32_t h, uint8_t* data, uint32_t datasize);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif

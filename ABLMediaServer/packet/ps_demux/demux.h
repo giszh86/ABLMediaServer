@@ -1,9 +1,7 @@
-#ifndef _PS_MUX_DEMUX_DEMUX_H_
-#define _PS_MUX_DEMUX_DEMUX_H_
-
+#pragma once
 #include <stdint.h>
-#include <boost/smart_ptr/shared_ptr.hpp>
-#include <boost/unordered/unordered_map.hpp>
+#include <memory>
+#include <map>
 #include "ps_demux.h"
 #include "consumer_base.h"
 
@@ -34,10 +32,9 @@ private:
 	const void* m_userdata;
 	const int32_t m_duxmode;
 
-	boost::unordered_map<uint8_t, consumer_base_ptr> m_consumermap;
+	std::map<uint8_t, consumer_base_ptr> m_consumermap;
 
 	_ps_demux_cb m_out;
 };
-typedef boost::shared_ptr<ps_demux> ps_demux_ptr;
+typedef std::shared_ptr<ps_demux> ps_demux_ptr;
 
-#endif

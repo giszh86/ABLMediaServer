@@ -1,10 +1,6 @@
-#ifndef _PS_MUX_DEMUX_CONSUMER_BASE_H_
-#define _PS_MUX_DEMUX_CONSUMER_BASE_H_
-
-
+#pragma once
 #include <stdint.h>
-#include <boost/smart_ptr/shared_ptr.hpp>
-
+#include <memory>
 #define PS_DEMUX_OUTPUT_BUFF_MAX_SIZE (4 * 1024 * 1024)
 
 class consumer_base
@@ -20,6 +16,5 @@ public:
 	virtual void clean() = 0;
 
 };
-typedef boost::shared_ptr<consumer_base> consumer_base_ptr;
+typedef std::shared_ptr<consumer_base> consumer_base_ptr;
 
-#endif
