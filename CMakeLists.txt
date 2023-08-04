@@ -41,6 +41,15 @@ aux_source_directory(./ABLMediaServer SOURCES)
 # Add executable
 add_executable(ABLMediaServer ${SOURCES})
 
+# 设置头文件搜索路径
+target_include_directories(ABLMediaServer PRIVATE ${INCLUDES})
+
+# 设置链接的库文件搜索路径
+target_link_directories(ABLMediaServer PRIVATE ${LIBS})
+
+# 链接需要的库文件
+target_link_libraries(ABLMediaServer PRIVATE ${LIBRARIES})
+
 # Link libraries
 target_link_libraries(ABLMediaServer
     pthread

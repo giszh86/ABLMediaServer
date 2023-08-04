@@ -3002,6 +3002,14 @@ void FindHistoryPictureFile(char* szPicturePath)
 #endif
 #include "../webrtc-streamer/rtc_obj_sdk.h"
 
+
+void WebRtcCallBack(char* callbackJson, void* pUserHandle) {
+
+
+
+};
+
+
 #ifdef OS_System_Windows
 int _tmain(int argc, _TCHAR* argv[])
 #else
@@ -3016,7 +3024,10 @@ ABL_Restart:
 	
 #ifdef OS_System_Windows
 
-	gblDownloadMgrGet->init();
+	gblWebRtcEndpointMgrGet->init(R"({"webrtcPort":8000})", [=](char* callbackJson, void* pUserHandle) {
+		WebRtcCallBack(callbackJson, pUserHandle);
+		
+		});
 	//鼠标点击控制台窗口，不会再卡住 
 	DWORD mode;
 	HANDLE hstdin = GetStdHandle(STD_INPUT_HANDLE);

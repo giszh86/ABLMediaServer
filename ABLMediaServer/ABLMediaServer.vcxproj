@@ -246,6 +246,7 @@
     <ClInclude Include="g711.h" />
     <ClInclude Include="g711_table.h" />
     <ClInclude Include="H265_SPS_Nal.h" />
+    <ClInclude Include="HSingleton.h" />
     <ClInclude Include="LCbase64.h" />
     <ClInclude Include="ConfigFile.h" />
     <ClInclude Include="MediaFifo.h" />
@@ -275,8 +276,20 @@
     <ClInclude Include="NetServerHTTP_MP4.h" />
     <ClInclude Include="NetServerRecvRtpTS_PS.h" />
     <ClInclude Include="NetServerWS_FLV.h" />
+    <ClInclude Include="packet\ps_demux\auto_lock.h" />
+    <ClInclude Include="packet\ps_demux\common.h" />
+    <ClInclude Include="packet\ps_demux\consumer_base.h" />
+    <ClInclude Include="packet\ps_demux\demux.h" />
+    <ClInclude Include="packet\ps_demux\demux_manager.h" />
+    <ClInclude Include="packet\ps_demux\header_consumer.h" />
+    <ClInclude Include="packet\ps_demux\include\ps_def.h" />
+    <ClInclude Include="packet\ps_demux\pes_consumer.h" />
+    <ClInclude Include="packet\ps_demux\pes_nonmedia_consumer.h" />
+    <ClInclude Include="packet\ps_demux\psm_consumer.h" />
+    <ClInclude Include="packet\ps_demux\ps_def.h" />
+    <ClInclude Include="packet\ps_demux\ps_demux.h" />
+    <ClInclude Include="packet\ps_demux\sysheader_consumer.h" />
     <ClInclude Include="PictureFileSource.h" />
-    <ClInclude Include="ps_demux.h" />
     <ClInclude Include="ps_mux.h" />
     <ClInclude Include="ReadRecordFileInput.h" />
     <ClInclude Include="RecordFileSource.h" />
@@ -497,6 +510,15 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='boost_release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="packet\ps_demux\common.cpp" />
+    <ClCompile Include="packet\ps_demux\demux.cpp" />
+    <ClCompile Include="packet\ps_demux\demux_manager.cpp" />
+    <ClCompile Include="packet\ps_demux\header_consumer.cpp" />
+    <ClCompile Include="packet\ps_demux\pes_consumer.cpp" />
+    <ClCompile Include="packet\ps_demux\pes_nonmedia_consumer.cpp" />
+    <ClCompile Include="packet\ps_demux\psm_consumer.cpp" />
+    <ClCompile Include="packet\ps_demux\ps_demux.cpp" />
+    <ClCompile Include="packet\ps_demux\sysheader_consumer.cpp" />
     <ClCompile Include="PictureFileSource.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
@@ -596,7 +618,6 @@
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\lib\libfaac.lib" />
-    <Library Include="..\lib\PsDemux.lib" />
     <Library Include="..\lib\PsMux.lib" />
     <Library Include="..\lib\rtpdepacket.lib" />
     <Library Include="..\lib\rtppacket.lib" />

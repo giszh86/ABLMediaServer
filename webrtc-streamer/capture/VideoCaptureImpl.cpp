@@ -591,7 +591,7 @@ void RtspVideoCapture::Destroy()
 	RTC_LOG(LS_INFO) << "LiveVideoSource::stop";
 
 	m_YuvCallbackList.clear();
-
+	m_h264Callback = nullptr;
 	Stop(NULL);
 }
 

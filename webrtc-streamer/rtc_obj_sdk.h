@@ -29,6 +29,8 @@ typedef std::function<void(uint8_t* y, int strideY, uint8_t* u, int strideU, uin
 
 typedef std::function<void(std::string userID, uint8_t* y, int strideY, uint8_t* u, int strideU, uint8_t* v, int strideV, int nWidth, int nHeight)> RemoteFrameCallBackFunc;
 
+
+
 class WEBRTCSDK_EXPORTSIMPL MainWndCallback {
 public:
 	MainWndCallback()
@@ -73,17 +75,24 @@ class WEBRTCSDK_EXPORTSIMPL WebRtcEndpoint {
 public:
 	WebRtcEndpoint();
 
-	void init();
+	void init(const char* webrtcConfig, std::function<void(char* callbackJson, void* pUserHandle)> callback);
+
+	bool stopWebRtcPlay(const char* peerid);
+
+	bool  deleteWebRtcSource(const char* szMediaSource);
+
+
 protected:
 	virtual ~WebRtcEndpoint() ;
 
 	PeerConnectionManager* webRtcServer;
 	HttpServerRequestHandler* httpServer;
-
+	std::function<void(char* callbackJson, void* pUserHandle)>  m_callback;
 };
 
 //´´½¨
 WEBRTCSDK_EXPORTSIMPL WebRtcEndpoint* CreateWebRtcEndpoint();
 
 WEBRTCSDK_EXPORTSIMPL void ReleaseCreateWebRtcEndpoint(WebRtcEndpoint*);
-#define gblDownloadMgrGet HSingletonTemplatePtr<WebRtcEndpoint>::Instance()
+
+#define gblWebRtcEndpointMgrGet HSingletonTemplatePtr<WebRtcEndpoint>::Instance()

@@ -48,7 +48,27 @@
 #pragma comment(lib,"dwmapi.lib")
 
 
+#ifdef _DEBUG
 
+#if (defined _WIN32 || defined _WIN64)
+
+#ifdef _WIN64
+#pragma comment(lib, "./lib/x64/debug/webrtc.lib")
+
+#else
+
+#pragma comment(lib, "./webrtc/lib/debug/webrtc.lib")
+
+
+
+#endif
+
+
+
+#endif //WIN64
+
+
+#else
 
 #if (defined _WIN32 || defined _WIN64)
 
@@ -70,3 +90,4 @@
 
 
 
+#endif //_DEBUG
