@@ -1,6 +1,6 @@
 #include <cstring>
 #include "pes_consumer.h"
-#include "./include/ps_def.h"
+#include "ps_def.h"
 #include "ps_demux.h"
 
 pes_consumer::pes_consumer(ps_demux_callback cb, void* userdata, int32_t mode, uint32_t h, uint8_t st, uint8_t sid)

@@ -97,6 +97,7 @@ void WebRtcEndpoint::init(const char* webrtcConfig, std::function<void(char* cal
 
 bool WebRtcEndpoint::stopWebRtcPlay(const char* peerid)
 {
+	webRtcServer->hangUp(peerid);
 	return false;
 }
 

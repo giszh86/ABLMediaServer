@@ -7,27 +7,17 @@
 
 std::unordered_set<uint32_t> g_identifier_set_psDemux;
 
-#if (defined _WIN32 || defined _WIN64)
 
 std::mutex g_identifier_mutex_psDemux;
 
-#else
 
-auto_lock::al_spin g_identifier_spin_psDemux;
-
-#endif
 
 uint32_t generate_identifier()
 {
-#if (defined _WIN32 || defined _WIN64)
 
 	std::lock_guard<std::mutex> lg(g_identifier_mutex_psDemux);
 
-#else
 
-	auto_lock::al_lock<auto_lock::al_spin> al(g_identifier_spin_psDemux);
-
-#endif
 
 	static uint32_t s_id = 1;
 	std::unordered_set<uint32_t>::iterator it;

@@ -276,21 +276,29 @@
     <ClInclude Include="NetServerHTTP_MP4.h" />
     <ClInclude Include="NetServerRecvRtpTS_PS.h" />
     <ClInclude Include="NetServerWS_FLV.h" />
-    <ClInclude Include="packet\ps_demux\auto_lock.h" />
     <ClInclude Include="packet\ps_demux\common.h" />
     <ClInclude Include="packet\ps_demux\consumer_base.h" />
     <ClInclude Include="packet\ps_demux\demux.h" />
     <ClInclude Include="packet\ps_demux\demux_manager.h" />
     <ClInclude Include="packet\ps_demux\header_consumer.h" />
-    <ClInclude Include="packet\ps_demux\include\ps_def.h" />
     <ClInclude Include="packet\ps_demux\pes_consumer.h" />
     <ClInclude Include="packet\ps_demux\pes_nonmedia_consumer.h" />
     <ClInclude Include="packet\ps_demux\psm_consumer.h" />
     <ClInclude Include="packet\ps_demux\ps_def.h" />
     <ClInclude Include="packet\ps_demux\ps_demux.h" />
     <ClInclude Include="packet\ps_demux\sysheader_consumer.h" />
+    <ClInclude Include="packet\Ps_mux\common.h" />
+    <ClInclude Include="packet\Ps_mux\mux.h" />
+    <ClInclude Include="packet\Ps_mux\mux_manager.h" />
+    <ClInclude Include="packet\Ps_mux\ps_def.h" />
+    <ClInclude Include="packet\Ps_mux\ps_mux.h" />
+    <ClInclude Include="packet\rtpdepacket\common.h" />
+    <ClInclude Include="packet\rtpdepacket\depacket.h" />
+    <ClInclude Include="packet\rtpdepacket\rtp_def.h" />
+    <ClInclude Include="packet\rtpdepacket\rtp_depacket.h" />
+    <ClInclude Include="packet\rtpdepacket\session.h" />
+    <ClInclude Include="packet\rtpdepacket\session_manager.h" />
     <ClInclude Include="PictureFileSource.h" />
-    <ClInclude Include="ps_mux.h" />
     <ClInclude Include="ReadRecordFileInput.h" />
     <ClInclude Include="RecordFileSource.h" />
     <ClInclude Include="resource.h" />
@@ -299,7 +307,6 @@
     <ClInclude Include="RtpPSStreamInput.h" />
     <ClInclude Include="RtpTSStreamInput.h" />
     <ClInclude Include="rtp_depacket.h" />
-    <ClInclude Include="rtp_packet.h" />
     <ClInclude Include="rtspMD5\Base64.hh" />
     <ClInclude Include="rtspMD5\DigestAuthentication.hh" />
     <ClInclude Include="rtspMD5\gettimeofday.h" />
@@ -519,6 +526,15 @@
     <ClCompile Include="packet\ps_demux\psm_consumer.cpp" />
     <ClCompile Include="packet\ps_demux\ps_demux.cpp" />
     <ClCompile Include="packet\ps_demux\sysheader_consumer.cpp" />
+    <ClCompile Include="packet\Ps_mux\common.cpp" />
+    <ClCompile Include="packet\Ps_mux\mux.cpp" />
+    <ClCompile Include="packet\Ps_mux\mux_manager.cpp" />
+    <ClCompile Include="packet\Ps_mux\ps_mux.cpp" />
+    <ClCompile Include="packet\rtpdepacket\common.cpp" />
+    <ClCompile Include="packet\rtpdepacket\depacket.cpp" />
+    <ClCompile Include="packet\rtpdepacket\rtp_depacket.cpp" />
+    <ClCompile Include="packet\rtpdepacket\session.cpp" />
+    <ClCompile Include="packet\rtpdepacket\session_manager.cpp" />
     <ClCompile Include="PictureFileSource.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
@@ -618,9 +634,7 @@
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\lib\libfaac.lib" />
-    <Library Include="..\lib\PsMux.lib" />
     <Library Include="..\lib\rtpdepacket.lib" />
-    <Library Include="..\lib\rtppacket.lib" />
     <Library Include="..\lib\webrtc-streamer.lib" />
     <Library Include="..\lib\XHNetSDK.lib" />
   </ItemGroup>

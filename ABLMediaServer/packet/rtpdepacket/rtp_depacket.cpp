@@ -2,7 +2,7 @@
 #include "session_manager.h"
 
 
-RTP_DEPACKET_API int32_t rtp_depacket_start(rtp_depacket_callback cb, void* userdata, uint32_t* h)
+int32_t rtp_depacket_start(rtp_depacket_callback cb, void* userdata, uint32_t* h)
 {
 	if (!cb || !h)
 	{
@@ -11,13 +11,13 @@ RTP_DEPACKET_API int32_t rtp_depacket_start(rtp_depacket_callback cb, void* user
 
 	*h = 0;
 
-	rtp_session_ptr s = rtp_session_manager::get_mutable_instance().malloc(cb, userdata);
+	rtp_session_ptr s = gblRtpDepacketMgrGet->malloc(cb, userdata);
 	if (!s)
 	{
 		return e_rtpdepkt_err_mallocsessionfail;
 	}
 
-	if (!rtp_session_manager::get_mutable_instance().push(s))
+	if (!gblRtpDepacketMgrGet->push(s))
 	{
 		return e_rtpdepkt_err_managersessionfail;
 	}
@@ -27,9 +27,9 @@ RTP_DEPACKET_API int32_t rtp_depacket_start(rtp_depacket_callback cb, void* user
 	return e_rtpdepkt_err_noerror;
 }
 
-RTP_DEPACKET_API int32_t rtp_depacket_stop(uint32_t h)
+int32_t rtp_depacket_stop(uint32_t h)
 {
-	if (!rtp_session_manager::get_mutable_instance().pop(h))
+	if (!gblRtpDepacketMgrGet->pop(h))
 	{
 		return e_rtpdepkt_err_invalidsessionhandle;
 	}
@@ -37,14 +37,14 @@ RTP_DEPACKET_API int32_t rtp_depacket_stop(uint32_t h)
 	return e_rtpdepkt_err_noerror;
 }
 
-RTP_DEPACKET_API int32_t rtp_depacket_input(uint32_t h, uint8_t* data, uint32_t datasize)
+int32_t rtp_depacket_input(uint32_t h, uint8_t* data, uint32_t datasize)
 {
 	if (!data || (0 == datasize))
 	{
 		return e_rtpdepkt_err_invalidparam;
 	}
 
-	rtp_session_ptr s = rtp_session_manager::get_mutable_instance().get(h);
+	rtp_session_ptr s = gblRtpDepacketMgrGet->get(h);
 	if (!s)
 	{
 		return e_rtpdepkt_err_notfindsession;
@@ -54,9 +54,9 @@ RTP_DEPACKET_API int32_t rtp_depacket_input(uint32_t h, uint8_t* data, uint32_t 
 	return s->handle(data, datasize);
 }
 
-RTP_DEPACKET_API int32_t rtp_depacket_setpayload(uint32_t h, uint8_t payload, uint32_t streamtype)
+int32_t rtp_depacket_setpayload(uint32_t h, uint8_t payload, uint32_t streamtype)
 {
-	rtp_session_ptr s = rtp_session_manager::get_mutable_instance().get(h);
+	rtp_session_ptr s = gblRtpDepacketMgrGet->get(h);
 	if (!s)
 	{
 		return e_rtpdepkt_err_notfindsession;
@@ -67,7 +67,7 @@ RTP_DEPACKET_API int32_t rtp_depacket_setpayload(uint32_t h, uint8_t payload, ui
 	return e_rtpdepkt_err_noerror;
 }
 
-RTP_DEPACKET_API int32_t rtp_depacket_setmediaoption(uint32_t h, int8_t* opt, int8_t* parm)
+int32_t rtp_depacket_setmediaoption(uint32_t h, int8_t* opt, int8_t* parm)
 {
 	if (!opt || (0 == strcmp("", reinterpret_cast<char*>(opt))) || 
 		!parm || (0 == strcmp("", reinterpret_cast<char*>(parm))))
@@ -75,7 +75,7 @@ RTP_DEPACKET_API int32_t rtp_depacket_setmediaoption(uint32_t h, int8_t* opt, in
 		return e_rtpdepkt_err_invalidparam;
 	}
 
-	rtp_session_ptr s = rtp_session_manager::get_mutable_instance().get(h);
+	rtp_session_ptr s = gblRtpDepacketMgrGet->get(h);
 	if (!s)
 	{
 		return e_rtpdepkt_err_notfindsession;

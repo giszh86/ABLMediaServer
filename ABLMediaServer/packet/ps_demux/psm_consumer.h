@@ -4,7 +4,7 @@
 #include <vector>
 #include <memory>
 #include "consumer_base.h"
-#include "./include/ps_def.h"
+#include "ps_def.h"
 
 class psm_consumer : public consumer_base
 {

@@ -1,23 +1,4 @@
-#ifndef _PS_MUX_DEMUX_PS_MUX_H_
-#define _PS_MUX_DEMUX_PS_MUX_H_
-
-
-#if (defined _WIN32 || defined _WIN64)
-#define PS_MUX_CALL_METHOD _stdcall
-#ifdef LIB_PS_MUX_STATIC
-#define PS_MUX_API
-#else 
-#ifdef LIB_PS_MUX_EXPORT
-#define PS_MUX_API _declspec(dllexport)
-#else
-#define PS_MUX_API _declspec(dllimport)
-#endif
-#endif
-#else
-#define PS_MUX_CALL_METHOD
-#define PS_MUX_API
-#endif
-
+#pragma once
 #include <stdint.h>
 
 enum e_ps_mux_error
@@ -182,17 +163,16 @@ extern "C"
 {
 #endif
 
-	typedef void (PS_MUX_CALL_METHOD *ps_mux_callback)(_ps_mux_cb* cb);
+	typedef void (*ps_mux_callback)(_ps_mux_cb* cb);
 
-	__attribute__((visibility("default"))) PS_MUX_API int32_t ps_mux_start(_ps_mux_init* init);
+	 int32_t ps_mux_start(_ps_mux_init* init);
 
-	__attribute__((visibility("default"))) PS_MUX_API int32_t ps_mux_stop(uint32_t h);
+	 int32_t ps_mux_stop(uint32_t h);
 
-	__attribute__((visibility("default"))) PS_MUX_API int32_t ps_mux_input(_ps_mux_input* input);
+	 int32_t ps_mux_input(_ps_mux_input* input);
 
 #ifdef __cplusplus
 }
 #endif
 
 
-#endif

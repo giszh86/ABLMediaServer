@@ -19,8 +19,11 @@
     <Filter Include="packet\ps_demux">
       <UniqueIdentifier>{4155a4d8-9b7b-4f45-989a-96ae9d3abd52}</UniqueIdentifier>
     </Filter>
-    <Filter Include="packet\ps_demux\include">
-      <UniqueIdentifier>{ab35e577-3772-42ad-809a-0eb325cb6027}</UniqueIdentifier>
+    <Filter Include="packet\Ps_mux">
+      <UniqueIdentifier>{6135f084-3725-45ca-ace6-403144a265a1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="packet\rtpdepacket">
+      <UniqueIdentifier>{ccbf1408-0d7b-4f4b-84c1-009eeca54820}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -67,9 +70,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ABLSipParse.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="rtp_packet.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ABLogSDK.h">
@@ -150,9 +150,6 @@
     <ClInclude Include="NetGB28181RtpClient.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ps_mux.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="NetServerWS_FLV.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -225,9 +222,6 @@
     <ClInclude Include="ABLString.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="packet\ps_demux\auto_lock.h">
-      <Filter>packet\ps_demux</Filter>
-    </ClInclude>
     <ClInclude Include="packet\ps_demux\common.h">
       <Filter>packet\ps_demux</Filter>
     </ClInclude>
@@ -264,8 +258,38 @@
     <ClInclude Include="HSingleton.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="packet\ps_demux\include\ps_def.h">
-      <Filter>packet\ps_demux\include</Filter>
+    <ClInclude Include="packet\Ps_mux\common.h">
+      <Filter>packet\Ps_mux</Filter>
+    </ClInclude>
+    <ClInclude Include="packet\Ps_mux\mux.h">
+      <Filter>packet\Ps_mux</Filter>
+    </ClInclude>
+    <ClInclude Include="packet\Ps_mux\mux_manager.h">
+      <Filter>packet\Ps_mux</Filter>
+    </ClInclude>
+    <ClInclude Include="packet\Ps_mux\ps_def.h">
+      <Filter>packet\Ps_mux</Filter>
+    </ClInclude>
+    <ClInclude Include="packet\Ps_mux\ps_mux.h">
+      <Filter>packet\Ps_mux</Filter>
+    </ClInclude>
+    <ClInclude Include="packet\rtpdepacket\common.h">
+      <Filter>packet\rtpdepacket</Filter>
+    </ClInclude>
+    <ClInclude Include="packet\rtpdepacket\depacket.h">
+      <Filter>packet\rtpdepacket</Filter>
+    </ClInclude>
+    <ClInclude Include="packet\rtpdepacket\rtp_def.h">
+      <Filter>packet\rtpdepacket</Filter>
+    </ClInclude>
+    <ClInclude Include="packet\rtpdepacket\rtp_depacket.h">
+      <Filter>packet\rtpdepacket</Filter>
+    </ClInclude>
+    <ClInclude Include="packet\rtpdepacket\session.h">
+      <Filter>packet\rtpdepacket</Filter>
+    </ClInclude>
+    <ClInclude Include="packet\rtpdepacket\session_manager.h">
+      <Filter>packet\rtpdepacket</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -467,6 +491,33 @@
     <ClCompile Include="packet\ps_demux\sysheader_consumer.cpp">
       <Filter>packet\ps_demux</Filter>
     </ClCompile>
+    <ClCompile Include="packet\Ps_mux\common.cpp">
+      <Filter>packet\Ps_mux</Filter>
+    </ClCompile>
+    <ClCompile Include="packet\Ps_mux\mux.cpp">
+      <Filter>packet\Ps_mux</Filter>
+    </ClCompile>
+    <ClCompile Include="packet\Ps_mux\mux_manager.cpp">
+      <Filter>packet\Ps_mux</Filter>
+    </ClCompile>
+    <ClCompile Include="packet\Ps_mux\ps_mux.cpp">
+      <Filter>packet\Ps_mux</Filter>
+    </ClCompile>
+    <ClCompile Include="packet\rtpdepacket\common.cpp">
+      <Filter>packet\rtpdepacket</Filter>
+    </ClCompile>
+    <ClCompile Include="packet\rtpdepacket\depacket.cpp">
+      <Filter>packet\rtpdepacket</Filter>
+    </ClCompile>
+    <ClCompile Include="packet\rtpdepacket\rtp_depacket.cpp">
+      <Filter>packet\rtpdepacket</Filter>
+    </ClCompile>
+    <ClCompile Include="packet\rtpdepacket\session.cpp">
+      <Filter>packet\rtpdepacket</Filter>
+    </ClCompile>
+    <ClCompile Include="packet\rtpdepacket\session_manager.cpp">
+      <Filter>packet\rtpdepacket</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="ABLMediaServer.rc">
@@ -475,9 +526,7 @@
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\lib\libfaac.lib" />
-    <Library Include="..\lib\PsMux.lib" />
     <Library Include="..\lib\rtpdepacket.lib" />
-    <Library Include="..\lib\rtppacket.lib" />
     <Library Include="..\lib\XHNetSDK.lib" />
     <Library Include="..\lib\webrtc-streamer.lib" />
   </ItemGroup>

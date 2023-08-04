@@ -4,7 +4,7 @@
 #include "./rtspMD5/DigestAuthentication.hh"
 
 #include "MediaStreamSource.h"
-#include "rtp_packet.h"
+#include "./packet/rtppacket_Linux/rtp_packet.h"
 #include "RtcpPacket.h"
 #ifdef USE_BOOST
 #include <boost/unordered/unordered_map.hpp>
