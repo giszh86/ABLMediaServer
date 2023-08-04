@@ -222,9 +222,6 @@
     <ClInclude Include="ABLString.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="packet\ps_demux\common.h">
-      <Filter>packet\ps_demux</Filter>
-    </ClInclude>
     <ClInclude Include="packet\ps_demux\consumer_base.h">
       <Filter>packet\ps_demux</Filter>
     </ClInclude>
@@ -258,9 +255,6 @@
     <ClInclude Include="HSingleton.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="packet\Ps_mux\common.h">
-      <Filter>packet\Ps_mux</Filter>
-    </ClInclude>
     <ClInclude Include="packet\Ps_mux\mux.h">
       <Filter>packet\Ps_mux</Filter>
     </ClInclude>
@@ -273,7 +267,7 @@
     <ClInclude Include="packet\Ps_mux\ps_mux.h">
       <Filter>packet\Ps_mux</Filter>
     </ClInclude>
-    <ClInclude Include="packet\rtpdepacket\common.h">
+    <ClInclude Include="packet\rtpdepacket\common_depacket.h">
       <Filter>packet\rtpdepacket</Filter>
     </ClInclude>
     <ClInclude Include="packet\rtpdepacket\depacket.h">
@@ -285,16 +279,13 @@
     <ClInclude Include="packet\rtpdepacket\rtp_depacket.h">
       <Filter>packet\rtpdepacket</Filter>
     </ClInclude>
-    <ClInclude Include="packet\rtpdepacket\session.h">
+    <ClInclude Include="packet\rtpdepacket\session_depacket.h">
       <Filter>packet\rtpdepacket</Filter>
     </ClInclude>
     <ClInclude Include="packet\rtpdepacket\session_manager.h">
       <Filter>packet\rtpdepacket</Filter>
     </ClInclude>
-    <ClInclude Include="packet\rtppacket\auto_lock.h">
-      <Filter>packet\rtppacket</Filter>
-    </ClInclude>
-    <ClInclude Include="packet\rtppacket\common.h">
+    <ClInclude Include="packet\rtppacket\common_rtppacket.h">
       <Filter>packet\rtppacket</Filter>
     </ClInclude>
     <ClInclude Include="packet\rtppacket\packet.h">
@@ -309,8 +300,14 @@
     <ClInclude Include="packet\rtppacket\session.h">
       <Filter>packet\rtppacket</Filter>
     </ClInclude>
-    <ClInclude Include="packet\rtppacket\session_manager.h">
+    <ClInclude Include="packet\rtppacket\session_manager_rtppacket.h">
       <Filter>packet\rtppacket</Filter>
+    </ClInclude>
+    <ClInclude Include="packet\Ps_mux\common.h">
+      <Filter>packet\Ps_mux</Filter>
+    </ClInclude>
+    <ClInclude Include="packet\ps_demux\common_demux.h">
+      <Filter>packet\ps_demux</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -485,9 +482,6 @@
     <ClCompile Include="ABLMediaServer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="packet\ps_demux\common.cpp">
-      <Filter>packet\ps_demux</Filter>
-    </ClCompile>
     <ClCompile Include="packet\ps_demux\demux.cpp">
       <Filter>packet\ps_demux</Filter>
     </ClCompile>
@@ -512,9 +506,6 @@
     <ClCompile Include="packet\ps_demux\sysheader_consumer.cpp">
       <Filter>packet\ps_demux</Filter>
     </ClCompile>
-    <ClCompile Include="packet\Ps_mux\common.cpp">
-      <Filter>packet\Ps_mux</Filter>
-    </ClCompile>
     <ClCompile Include="packet\Ps_mux\mux.cpp">
       <Filter>packet\Ps_mux</Filter>
     </ClCompile>
@@ -524,7 +515,7 @@
     <ClCompile Include="packet\Ps_mux\ps_mux.cpp">
       <Filter>packet\Ps_mux</Filter>
     </ClCompile>
-    <ClCompile Include="packet\rtpdepacket\common.cpp">
+    <ClCompile Include="packet\rtpdepacket\common_depacket.cpp">
       <Filter>packet\rtpdepacket</Filter>
     </ClCompile>
     <ClCompile Include="packet\rtpdepacket\depacket.cpp">
@@ -533,13 +524,13 @@
     <ClCompile Include="packet\rtpdepacket\rtp_depacket.cpp">
       <Filter>packet\rtpdepacket</Filter>
     </ClCompile>
-    <ClCompile Include="packet\rtpdepacket\session.cpp">
+    <ClCompile Include="packet\rtpdepacket\session_depacket.cpp">
       <Filter>packet\rtpdepacket</Filter>
     </ClCompile>
     <ClCompile Include="packet\rtpdepacket\session_manager.cpp">
       <Filter>packet\rtpdepacket</Filter>
     </ClCompile>
-    <ClCompile Include="packet\rtppacket\common.cpp">
+    <ClCompile Include="packet\rtppacket\common_rtppacket.cpp">
       <Filter>packet\rtppacket</Filter>
     </ClCompile>
     <ClCompile Include="packet\rtppacket\packet.cpp">
@@ -551,8 +542,14 @@
     <ClCompile Include="packet\rtppacket\session.cpp">
       <Filter>packet\rtppacket</Filter>
     </ClCompile>
-    <ClCompile Include="packet\rtppacket\session_manager.cpp">
+    <ClCompile Include="packet\rtppacket\session_manager_rtppacket.cpp">
       <Filter>packet\rtppacket</Filter>
+    </ClCompile>
+    <ClCompile Include="packet\Ps_mux\common.cpp">
+      <Filter>packet\Ps_mux</Filter>
+    </ClCompile>
+    <ClCompile Include="packet\ps_demux\common_demux.cpp">
+      <Filter>packet\ps_demux</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

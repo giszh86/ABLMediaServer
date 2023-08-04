@@ -276,7 +276,7 @@
     <ClInclude Include="NetServerHTTP_MP4.h" />
     <ClInclude Include="NetServerRecvRtpTS_PS.h" />
     <ClInclude Include="NetServerWS_FLV.h" />
-    <ClInclude Include="packet\ps_demux\common.h" />
+    <ClInclude Include="packet\ps_demux\common_demux.h" />
     <ClInclude Include="packet\ps_demux\consumer_base.h" />
     <ClInclude Include="packet\ps_demux\demux.h" />
     <ClInclude Include="packet\ps_demux\demux_manager.h" />
@@ -292,19 +292,18 @@
     <ClInclude Include="packet\Ps_mux\mux_manager.h" />
     <ClInclude Include="packet\Ps_mux\ps_def.h" />
     <ClInclude Include="packet\Ps_mux\ps_mux.h" />
-    <ClInclude Include="packet\rtpdepacket\common.h" />
+    <ClInclude Include="packet\rtpdepacket\common_depacket.h" />
     <ClInclude Include="packet\rtpdepacket\depacket.h" />
     <ClInclude Include="packet\rtpdepacket\rtp_def.h" />
     <ClInclude Include="packet\rtpdepacket\rtp_depacket.h" />
-    <ClInclude Include="packet\rtpdepacket\session.h" />
+    <ClInclude Include="packet\rtpdepacket\session_depacket.h" />
     <ClInclude Include="packet\rtpdepacket\session_manager.h" />
-    <ClInclude Include="packet\rtppacket\auto_lock.h" />
-    <ClInclude Include="packet\rtppacket\common.h" />
+    <ClInclude Include="packet\rtppacket\common_rtppacket.h" />
     <ClInclude Include="packet\rtppacket\packet.h" />
     <ClInclude Include="packet\rtppacket\rtp_def.h" />
     <ClInclude Include="packet\rtppacket\rtp_packet.h" />
     <ClInclude Include="packet\rtppacket\session.h" />
-    <ClInclude Include="packet\rtppacket\session_manager.h" />
+    <ClInclude Include="packet\rtppacket\session_manager_rtppacket.h" />
     <ClInclude Include="PictureFileSource.h" />
     <ClInclude Include="ReadRecordFileInput.h" />
     <ClInclude Include="RecordFileSource.h" />
@@ -523,7 +522,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='boost_release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="packet\ps_demux\common.cpp" />
+    <ClCompile Include="packet\ps_demux\common_demux.cpp" />
     <ClCompile Include="packet\ps_demux\demux.cpp" />
     <ClCompile Include="packet\ps_demux\demux_manager.cpp" />
     <ClCompile Include="packet\ps_demux\header_consumer.cpp" />
@@ -536,16 +535,16 @@
     <ClCompile Include="packet\Ps_mux\mux.cpp" />
     <ClCompile Include="packet\Ps_mux\mux_manager.cpp" />
     <ClCompile Include="packet\Ps_mux\ps_mux.cpp" />
-    <ClCompile Include="packet\rtpdepacket\common.cpp" />
+    <ClCompile Include="packet\rtpdepacket\common_depacket.cpp" />
     <ClCompile Include="packet\rtpdepacket\depacket.cpp" />
     <ClCompile Include="packet\rtpdepacket\rtp_depacket.cpp" />
-    <ClCompile Include="packet\rtpdepacket\session.cpp" />
+    <ClCompile Include="packet\rtpdepacket\session_depacket.cpp" />
     <ClCompile Include="packet\rtpdepacket\session_manager.cpp" />
-    <ClCompile Include="packet\rtppacket\common.cpp" />
+    <ClCompile Include="packet\rtppacket\common_rtppacket.cpp" />
     <ClCompile Include="packet\rtppacket\packet.cpp" />
     <ClCompile Include="packet\rtppacket\rtp_packet.cpp" />
     <ClCompile Include="packet\rtppacket\session.cpp" />
-    <ClCompile Include="packet\rtppacket\session_manager.cpp" />
+    <ClCompile Include="packet\rtppacket\session_manager_rtppacket.cpp" />
     <ClCompile Include="PictureFileSource.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
