@@ -74,7 +74,7 @@ static int NetGB28181RtpServer_ps_write(void* param, int stream, void* packet, s
 	return 0 ;
 }
 
-void RTP_DEPACKET_CALL_METHOD GB28181_rtppacket_callback_recv(_rtp_depacket_cb* cb)
+void GB28181_rtppacket_callback_recv(_rtp_depacket_cb* cb)
 {
 	CNetGB28181RtpServer* pThis = (CNetGB28181RtpServer*)cb->userdata;
 	if (!pThis->bRunFlag)
@@ -231,7 +231,7 @@ static void mpeg_ps_dec_testonstream(void* param, int stream, int codecid, const
 	printf("stream %d, codecid: %d, finish: %s\n", stream, codecid, finish ? "true" : "false");
 }
 
-void PS_DEMUX_CALL_METHOD GB28181_RtpRecv_demux_callback(_ps_demux_cb* cb)
+void GB28181_RtpRecv_demux_callback(_ps_demux_cb* cb)
 {
 	CNetGB28181RtpServer* pThis = (CNetGB28181RtpServer*)cb->userdata;
 	if (!pThis->bRunFlag)

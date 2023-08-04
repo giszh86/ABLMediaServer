@@ -1,4 +1,5 @@
 #pragma once
+
 #include <stdint.h>
 
 enum e_rtp_depacket_error
@@ -66,6 +67,8 @@ enum e_rtp_depacket_stream_type
 
 	e_rtpdepkt_st_g7231 = 0x93,			//g723.1
 
+	e_rtpdepkt_st_g726le = 0x94,		//g726le
+
 	e_rtpdepkt_st_g729 = 0x99,			//g729
 
 	e_rtpdepkt_st_svaca = 0x9b,			//svac audio
@@ -75,6 +78,10 @@ enum e_rtp_depacket_stream_type
 	e_rtpdepkt_st_hwp = 0xf1,			//HW private
 
 	e_rtpdepkt_st_dhp = 0xf2,			//DH private
+
+	e_rtpdepkt_st_gbps = 0xf3 ,         //国标 PS 
+
+	e_rtpdepkt_st_xhb = 0xf4,         //一家公司 xhb
 };
 
 struct _rtp_depacket_cb
@@ -96,15 +103,15 @@ extern "C"
 
 	typedef void (*rtp_depacket_callback)(_rtp_depacket_cb* cb);
 
-	int32_t rtp_depacket_start(rtp_depacket_callback cb, void* userdata, uint32_t* h);
+	 int32_t rtp_depacket_start(rtp_depacket_callback cb, void* userdata, uint32_t* h);
 
- 	 int32_t rtp_depacket_stop(uint32_t h);
+	 int32_t rtp_depacket_stop(uint32_t h);
 
 	 int32_t rtp_depacket_input(uint32_t h, uint8_t* data, uint32_t datasize);
 
 	 int32_t rtp_depacket_setpayload(uint32_t h, uint8_t payload, uint32_t streamtype);
 
-     int32_t rtp_depacket_setmediaoption(uint32_t h, int8_t* opt, int8_t* parm);
+	 int32_t rtp_depacket_setmediaoption(uint32_t h, int8_t* opt, int8_t* parm);
 
 #ifdef __cplusplus
 }

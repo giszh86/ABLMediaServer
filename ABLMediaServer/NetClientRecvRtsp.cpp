@@ -171,7 +171,7 @@ static int rtp_decode_packetAudio(void* param, const void *packet, int bytes, ui
 	return  0;
 }
 
-void PS_DEMUX_CALL_METHOD NetClientRtspRecv_demux_callback(_ps_demux_cb* cb)
+void NetClientRtspRecv_demux_callback(_ps_demux_cb* cb)
 {
 	CNetClientRecvRtsp* pThis = (CNetClientRecvRtsp*)cb->userdata;
 	if(!pThis->bRunFlag)

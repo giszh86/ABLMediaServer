@@ -1106,8 +1106,8 @@ typedef list<int> LogFileVector;
 #include "NetClientHttp.h"
 #include "NetClientSnap.h"
 
-#include "ps_demux.h"
-#include "ps_mux.h"
+#include "./packet/ps_demux/ps_demux.h"
+#include "./packet/Ps_mux/ps_mux.h"
 #include "MediaFifo.h"
 #include "NetBaseThreadPool.h"
 #include "FFVideoDecode.h"
@@ -1115,7 +1115,7 @@ typedef list<int> LogFileVector;
 
 #include "MediaStreamSource.h"
 #include "MediaSendThreadPool.h"
-#include "rtp_depacket.h"
+#include "./packet/rtpdepacket/rtp_depacket.h"
 #include "NetServerRecvRtpTS_PS.h"
 #include "RtpTSStreamInput.h"
 #include "RtpPSStreamInput.h"

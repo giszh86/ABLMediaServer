@@ -32,7 +32,7 @@ extern CMediaFifo                            pDisconnectBaseNetFifo;       //ÇåÀ
 extern char                                  ABL_MediaSeverRunPath[256];   //µ±Ç°Â·¾¶
 extern int                                   SampleRateArray[];
 
-void RTP_DEPACKET_CALL_METHOD RTP10000_rtppacket_callback_recv(_rtp_depacket_cb* cb)
+void RTP10000_rtppacket_callback_recv(_rtp_depacket_cb* cb)
 {
 	CRtpPSStreamInput* pThis = (CRtpPSStreamInput*)cb->userdata;
  
@@ -55,7 +55,7 @@ void RTP_DEPACKET_CALL_METHOD RTP10000_rtppacket_callback_recv(_rtp_depacket_cb*
 	}
 }
 
-void PS_DEMUX_CALL_METHOD RTP10000_RtpRecv_demux_callback(_ps_demux_cb* cb)
+void  RTP10000_RtpRecv_demux_callback(_ps_demux_cb* cb)
 {
 	CRtpPSStreamInput* pThis = (CRtpPSStreamInput*)cb->userdata;
 	if (!pThis->bRunFlag)

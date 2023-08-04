@@ -1,7 +1,7 @@
 #ifndef _RTP_PACKET_DEPACKET_PACKET_H_
 #define _RTP_PACKET_DEPACKET_PACKET_H_
 
-#include <boost/smart_ptr/shared_ptr.hpp>
+#include <memory>
 #include "rtp_packet.h"
 #include "rtp_def.h"
 
@@ -47,6 +47,6 @@ private:
 	volatile uint32_t   m_inTimestamp;//输入的时间戳
  };
 
-typedef boost::shared_ptr<rtp_packet> rtp_packet_ptr;
+typedef std::shared_ptr<rtp_packet> rtp_packet_ptr;
 
 #endif

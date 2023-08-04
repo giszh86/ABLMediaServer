@@ -25,6 +25,9 @@
     <Filter Include="packet\rtpdepacket">
       <UniqueIdentifier>{ccbf1408-0d7b-4f4b-84c1-009eeca54820}</UniqueIdentifier>
     </Filter>
+    <Filter Include="packet\rtppacket">
+      <UniqueIdentifier>{9f20aed1-272f-415e-b5f5-0382f58ec29a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -64,9 +67,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MediaSendThreadPool.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="rtp_depacket.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ABLSipParse.h">
@@ -290,6 +290,27 @@
     </ClInclude>
     <ClInclude Include="packet\rtpdepacket\session_manager.h">
       <Filter>packet\rtpdepacket</Filter>
+    </ClInclude>
+    <ClInclude Include="packet\rtppacket\auto_lock.h">
+      <Filter>packet\rtppacket</Filter>
+    </ClInclude>
+    <ClInclude Include="packet\rtppacket\common.h">
+      <Filter>packet\rtppacket</Filter>
+    </ClInclude>
+    <ClInclude Include="packet\rtppacket\packet.h">
+      <Filter>packet\rtppacket</Filter>
+    </ClInclude>
+    <ClInclude Include="packet\rtppacket\rtp_def.h">
+      <Filter>packet\rtppacket</Filter>
+    </ClInclude>
+    <ClInclude Include="packet\rtppacket\rtp_packet.h">
+      <Filter>packet\rtppacket</Filter>
+    </ClInclude>
+    <ClInclude Include="packet\rtppacket\session.h">
+      <Filter>packet\rtppacket</Filter>
+    </ClInclude>
+    <ClInclude Include="packet\rtppacket\session_manager.h">
+      <Filter>packet\rtppacket</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -518,6 +539,21 @@
     <ClCompile Include="packet\rtpdepacket\session_manager.cpp">
       <Filter>packet\rtpdepacket</Filter>
     </ClCompile>
+    <ClCompile Include="packet\rtppacket\common.cpp">
+      <Filter>packet\rtppacket</Filter>
+    </ClCompile>
+    <ClCompile Include="packet\rtppacket\packet.cpp">
+      <Filter>packet\rtppacket</Filter>
+    </ClCompile>
+    <ClCompile Include="packet\rtppacket\rtp_packet.cpp">
+      <Filter>packet\rtppacket</Filter>
+    </ClCompile>
+    <ClCompile Include="packet\rtppacket\session.cpp">
+      <Filter>packet\rtppacket</Filter>
+    </ClCompile>
+    <ClCompile Include="packet\rtppacket\session_manager.cpp">
+      <Filter>packet\rtppacket</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="ABLMediaServer.rc">
@@ -526,7 +562,6 @@
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\lib\libfaac.lib" />
-    <Library Include="..\lib\rtpdepacket.lib" />
     <Library Include="..\lib\XHNetSDK.lib" />
     <Library Include="..\lib\webrtc-streamer.lib" />
   </ItemGroup>

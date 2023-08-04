@@ -2,7 +2,7 @@
 #define _NetRtspServer_H
 
 #include "MediaStreamSource.h"
-#include "rtp_packet.h"
+#include "./packet/rtppacket/rtp_packet.h"
 #include "RtcpPacket.h"
 #ifdef USE_BOOST
 #include <boost/unordered/unordered_map.hpp>

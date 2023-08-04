@@ -2,7 +2,7 @@
 #include "session_manager.h"
 
 
-RTP_PACKET_API int32_t rtp_packet_start(rtp_packet_callback cb, void* userdata, uint32_t* h)
+ int32_t rtp_packet_start(rtp_packet_callback cb, void* userdata, uint32_t* h)
 {
 	if (!cb || !h)
 	{
@@ -11,13 +11,13 @@ RTP_PACKET_API int32_t rtp_packet_start(rtp_packet_callback cb, void* userdata, 
 
 	*h = 0;
 
-	rtp_session_ptr s = rtp_session_manager::get_mutable_instance().malloc(cb, userdata);
+	rtp_session_ptr s = gblRtppacketMgrGet->malloc(cb, userdata);
 	if (!s)
 	{
 		return e_rtppkt_err_mallocsessionerror;
 	}
 
-	if (!rtp_session_manager::get_mutable_instance().push(s))
+	if (!gblRtppacketMgrGet->push(s))
 	{
 		return e_rtppkt_err_managersessionerror;
 	}
@@ -28,9 +28,9 @@ RTP_PACKET_API int32_t rtp_packet_start(rtp_packet_callback cb, void* userdata, 
 
 }
 
-RTP_PACKET_API int32_t rtp_packet_stop(uint32_t h)
+int32_t rtp_packet_stop(uint32_t h)
 {
-	if (!rtp_session_manager::get_mutable_instance().pop(h))
+	if (!gblRtppacketMgrGet->pop(h))
 	{
 		return e_rtppkt_err_invalidsessionhandle;
 	}
@@ -38,14 +38,14 @@ RTP_PACKET_API int32_t rtp_packet_stop(uint32_t h)
 	return e_rtppkt_err_noerror;
 }
 
-RTP_PACKET_API int32_t rtp_packet_input(_rtp_packet_input* input)
+ int32_t rtp_packet_input(_rtp_packet_input* input)
 {
 	if (!input || !input->data || (0 == input->datasize))
 	{
 		return e_rtppkt_err_invalidparam;
 	}
 
-	rtp_session_ptr s = rtp_session_manager::get_mutable_instance().get(input->handle);
+	rtp_session_ptr s = gblRtppacketMgrGet->get(input->handle);
 
 	if (!s)
 	{
@@ -55,14 +55,14 @@ RTP_PACKET_API int32_t rtp_packet_input(_rtp_packet_input* input)
 	return s->handle(input); 
 }
 
-RTP_PACKET_API int32_t rtp_packet_setsessionopt(_rtp_packet_sessionopt* opt)
+ int32_t rtp_packet_setsessionopt(_rtp_packet_sessionopt* opt)
 {
 	if (!opt)
 	{
 		return e_rtppkt_err_invalidparam;
 	}
 
-	rtp_session_ptr s = rtp_session_manager::get_mutable_instance().get(opt->handle);
+	rtp_session_ptr s = gblRtppacketMgrGet->get(opt->handle);
 
 	if (!s)
 	{
@@ -72,14 +72,14 @@ RTP_PACKET_API int32_t rtp_packet_setsessionopt(_rtp_packet_sessionopt* opt)
 	return s->set_option(opt);
 }
 
-RTP_PACKET_API int32_t rtp_packet_resetsessionopt(_rtp_packet_sessionopt* opt)
+ int32_t rtp_packet_resetsessionopt(_rtp_packet_sessionopt* opt)
 {
 	if (!opt)
 	{
 		return e_rtppkt_err_invalidparam;
 	}
 
-	rtp_session_ptr s = rtp_session_manager::get_mutable_instance().get(opt->handle);
+	rtp_session_ptr s = gblRtppacketMgrGet->get(opt->handle);
 
 	if (!s)
 	{

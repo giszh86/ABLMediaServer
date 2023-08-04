@@ -39,7 +39,7 @@ extern std::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClient
 extern MediaServerPort                       ABL_MediaServerPort;
 extern int                                   SampleRateArray[];
 #endif
-void PS_MUX_CALL_METHOD GB28181_Send_mux_callback(_ps_mux_cb* cb)
+void GB28181_Send_mux_callback(_ps_mux_cb* cb)
 {
 	CNetGB28181RtpClient* pThis = (CNetGB28181RtpClient*)cb->userdata;
 	if (pThis == NULL || !pThis->bRunFlag)
@@ -714,7 +714,7 @@ int CNetGB28181RtpClient::SendFirstRequst()
 }
 
 //rtp解包回调
-void RTP_DEPACKET_CALL_METHOD NetGB28181RtpClient_rtppacket_callback_recv(_rtp_depacket_cb* cb)
+void NetGB28181RtpClient_rtppacket_callback_recv(_rtp_depacket_cb* cb)
 {
 	CNetGB28181RtpClient* pThis = (CNetGB28181RtpClient*)cb->userdata;
 	if (!pThis->bRunFlag)

@@ -60,7 +60,7 @@ int avpriv_mpeg4audio_sample_rates[] = {
 };
 #include "../webrtc-streamer/rtc_obj_sdk.h"
 //rtp½âÂë
-void RTP_DEPACKET_CALL_METHOD rtppacket_callback(_rtp_depacket_cb* cb)
+void rtppacket_callback(_rtp_depacket_cb* cb)
 {
 	//	int nGet = 5; ABLRtspChan
 	CNetRtspServer* pUserHandle = (CNetRtspServer*)cb->userdata;

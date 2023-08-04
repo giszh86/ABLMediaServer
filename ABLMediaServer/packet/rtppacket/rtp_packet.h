@@ -1,22 +1,4 @@
-#ifndef _RTP_PACKET_DEPACKET_RTP_PACKET_H_
-#define _RTP_PACKET_DEPACKET_RTP_PACKET_H_
-
-
-#if (defined _WIN32 || defined _WIN64)
-#define RTP_PACKET_CALL_METHOD _stdcall
-#ifdef LIB_RTP_PACKET_STATIC
-#define RTP_PACKET_API
-#else 
-#ifdef LIB_RTP_PACKET_EXPORT
-#define RTP_PACKET_API _declspec(dllexport)
-#else
-#define RTP_PACKET_API _declspec(dllimport)
-#endif
-#endif
-#else
-#define RTP_PACKET_CALL_METHOD
-#define RTP_PACKET_API
-#endif
+#pragma once
 
 #include <stdint.h>
 
@@ -112,7 +94,10 @@ enum e_rtp_packet_stream_type
 	e_rtppkt_st_hwp = 0xf1,			//HW private
 
 	e_rtppkt_st_dhp = 0xf2,			//DH private
+
 	e_rtppkt_st_gb28181 = 0xf3,     //国标PS 打包 
+
+	e_rtppkt_st_aac_have_adts = 0x0f4, //不去掉adts头的aac
 };
 
 enum e_rtp_packet_align_mode
@@ -135,7 +120,7 @@ struct _rtp_packet_input
 	{
 		handle = 0 ;
 		ssrc = 0;
-		data = 0;
+		data = NULL;
 		datasize = 0 ;
 		timestamp = 0 ;
 	}
@@ -166,21 +151,20 @@ extern "C"
 {
 #endif
 
-	typedef void (RTP_PACKET_CALL_METHOD *rtp_packet_callback)(_rtp_packet_cb* cb);
+	typedef void ( *rtp_packet_callback)(_rtp_packet_cb* cb);
 
-	__attribute__((visibility("default"))) RTP_PACKET_API int32_t rtp_packet_start(rtp_packet_callback cb, void* userdata, uint32_t* h);
+	 int32_t rtp_packet_start(rtp_packet_callback cb, void* userdata, uint32_t* h);
 
-	__attribute__((visibility("default"))) RTP_PACKET_API int32_t rtp_packet_stop(uint32_t h);
+	 int32_t rtp_packet_stop(uint32_t h);
 
-	__attribute__((visibility("default"))) RTP_PACKET_API int32_t rtp_packet_input(_rtp_packet_input* input);
+	 int32_t rtp_packet_input(_rtp_packet_input* input);
 
-	__attribute__((visibility("default"))) RTP_PACKET_API int32_t rtp_packet_setsessionopt(_rtp_packet_sessionopt* opt);
+	 int32_t rtp_packet_setsessionopt(_rtp_packet_sessionopt* opt);
 
-	__attribute__((visibility("default"))) RTP_PACKET_API int32_t rtp_packet_resetsessionopt(_rtp_packet_sessionopt* opt);
+	 int32_t rtp_packet_resetsessionopt(_rtp_packet_sessionopt* opt);
 
 #ifdef __cplusplus
 }
 #endif
 
 
-#endif

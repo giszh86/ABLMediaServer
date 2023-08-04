@@ -1,11 +1,4 @@
-#include <boost/make_shared.hpp>
-
-#if (defined _WIN32 || defined _WIN64)
-
-#include <boost/thread/lock_guard.hpp>
-
-#endif
-
+#include <memory>
 #include "session_manager.h"
 
 
@@ -15,7 +8,7 @@ rtp_session_ptr rtp_session_manager::malloc(rtp_packet_callback cb, void* userda
 
 	try
 	{
-		p = boost::make_shared<rtp_session_packet>(cb, userdata);
+		p = std::make_shared<rtp_session_packet>(cb, userdata);
 	}
 	catch (const std::bad_alloc& /*e*/)
 	{	
@@ -38,34 +31,19 @@ bool rtp_session_manager::push(rtp_session_ptr s)
 		return false;
 	}
 
-#if (defined _WIN32 || defined _WIN64)
+	std::lock_guard<std::mutex> lg(m_sesmapmtx);
 
-	boost::lock_guard<boost::mutex> lg(m_sesmapmtx);
-
-#else
-
-	auto_lock::al_lock<auto_lock::al_spin> al(m_sesmapspin);
-
-#endif
-
-	std::pair<boost::unordered_map<uint32_t, rtp_session_ptr>::iterator, bool> ret = m_sessionmap.insert(std::make_pair(s->get_id(), s));
+	auto ret = m_sessionmap.insert(std::make_pair(s->get_id(), s));
 
 	return ret.second;
 }
 
 bool rtp_session_manager::pop(uint32_t h)
 {
-#if (defined _WIN32 || defined _WIN64)
 
-	boost::lock_guard<boost::mutex> lg(m_sesmapmtx);
+	std::lock_guard<std::mutex> lg(m_sesmapmtx);
 
-#else
-
-	auto_lock::al_lock<auto_lock::al_spin> al(m_sesmapspin);
-
-#endif
-
-	boost::unordered_map<uint32_t, rtp_session_ptr>::iterator it = m_sessionmap.find(h);
+	auto it = m_sessionmap.find(h);
 	if (m_sessionmap.end() != it)
 	{
 		m_sessionmap.erase(it);
@@ -78,19 +56,9 @@ bool rtp_session_manager::pop(uint32_t h)
 
 rtp_session_ptr rtp_session_manager::get(uint32_t h)
 {
-#if (defined _WIN32 || defined _WIN64)
-
-	boost::lock_guard<boost::mutex> lg(m_sesmapmtx);
-
-#else
-
-	auto_lock::al_lock<auto_lock::al_spin> al(m_sesmapspin);
-
-#endif
-
+	std::lock_guard<std::mutex> lg(m_sesmapmtx);
 	rtp_session_ptr s;
-
-	boost::unordered_map<uint32_t, rtp_session_ptr>::iterator it = m_sessionmap.find(h);
+	auto it = m_sessionmap.find(h);
 	if (m_sessionmap.end() != it)
 	{
 		s = it->second;
