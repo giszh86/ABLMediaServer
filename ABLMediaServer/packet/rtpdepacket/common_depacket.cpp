@@ -1,18 +1,18 @@
 #include <mutex>
 #include <unordered_set>
 
-#include "common.h"
+#include "common_depacket.h"
 
 std::unordered_set<uint32_t> g_identifier_setRtpDepacket;
 
 
-std::mutex g_identifier_mutex;
+std::mutex g_identifier_mutex_depacket;
 
 
-uint32_t generate_identifier()
+uint32_t generate_identifier_rtpdepacket()
 {
 
-	std::lock_guard<std::mutex> lg(g_identifier_mutex);
+	std::lock_guard<std::mutex> lg(g_identifier_mutex_depacket);
 
 
 
@@ -39,10 +39,10 @@ uint32_t generate_identifier()
 	return s_id++;
 }
 
-void recycle_identifier(uint32_t id)
+void recycle_identifier_rtpdepacket(uint32_t id)
 {
 
-	std::lock_guard<std::mutex> lg(g_identifier_mutex);
+	std::lock_guard<std::mutex> lg(g_identifier_mutex_depacket);
 
 	auto it = g_identifier_setRtpDepacket.find(id);
 	if (g_identifier_setRtpDepacket.end() != it)

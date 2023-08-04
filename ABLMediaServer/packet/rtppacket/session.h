@@ -1,5 +1,4 @@
-#ifndef _RTP_PACKET_DEPACKET_SESSION_H_
-#define _RTP_PACKET_DEPACKET_SESSION_H_
+#pragma once
 
 #include <unordered_map>
 #include <memory>
@@ -30,4 +29,3 @@ private:
 
 typedef std::shared_ptr<rtp_session_packet> rtp_session_ptr;
 
-#endif

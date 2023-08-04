@@ -1,6 +1,6 @@
 #include <memory>
 #include "session.h"
-#include "common.h"
+#include "common_rtppacket.h"
 #include <malloc.h>
 
 rtp_session_packet::rtp_session_packet(rtp_packet_callback cb, void* userdata)
@@ -50,7 +50,7 @@ int32_t rtp_session_packet::set_option(_rtp_packet_sessionopt* opt)
 
 		if ((e_rtppkt_mt_audio != newopt.mediatype) && (e_rtppkt_mt_video != newopt.mediatype))
 		{
-			newopt.mediatype = get_mediatype(newopt.streamtype);
+			newopt.mediatype = get_mediatype_rtppacket(newopt.streamtype);
 
 			if ((e_rtppkt_mt_audio != newopt.mediatype) && (e_rtppkt_mt_video != newopt.mediatype))
 			{

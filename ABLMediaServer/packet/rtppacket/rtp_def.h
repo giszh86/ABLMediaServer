@@ -1,5 +1,4 @@
-#ifndef _RTP_PACKET_DEPACKET_RTP_DEF_H_
-#define _RTP_PACKET_DEPACKET_RTP_DEF_H_
+#pragma once
 
 #include <stdint.h>
 
@@ -120,5 +119,3 @@ struct _rtp_paci_header
 };
 
 #pragma pack(pop)
-
-#endif

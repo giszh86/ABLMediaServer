@@ -1,5 +1,4 @@
-#ifndef _RTP_PACKET_DEPACKET_PACKET_H_
-#define _RTP_PACKET_DEPACKET_PACKET_H_
+#pragma once
 
 #include <memory>
 #include "rtp_packet.h"
@@ -48,5 +47,3 @@ private:
  };
 
 typedef std::shared_ptr<rtp_packet> rtp_packet_ptr;
-
-#endif

@@ -7,7 +7,7 @@
 #include "session.h"
 
 
-class rtp_session_manager 
+class rtp_session_manager_rtppacket
 {
 public:
 	rtp_session_ptr malloc(rtp_packet_callback cb, void* userdata);
@@ -26,5 +26,5 @@ private:
 
 };
 
-#define gblRtppacketMgrGet HSingletonTemplatePtr<rtp_session_manager>::Instance()
+#define gblRtppacketMgrGet HSingletonTemplatePtr<rtp_session_manager_rtppacket>::Instance()
 

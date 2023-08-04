@@ -1,8 +1,8 @@
 #include <memory>
-#include "session_manager.h"
+#include "session_manager_rtppacket.h"
 
 
-rtp_session_ptr rtp_session_manager::malloc(rtp_packet_callback cb, void* userdata)
+rtp_session_ptr rtp_session_manager_rtppacket::malloc(rtp_packet_callback cb, void* userdata)
 {
 	rtp_session_ptr p;
 
@@ -20,11 +20,11 @@ rtp_session_ptr rtp_session_manager::malloc(rtp_packet_callback cb, void* userda
 	return p;
 }
 
-void rtp_session_manager::free(rtp_session_ptr p)
+void rtp_session_manager_rtppacket::free(rtp_session_ptr p)
 {
 }
 
-bool rtp_session_manager::push(rtp_session_ptr s)
+bool rtp_session_manager_rtppacket::push(rtp_session_ptr s)
 {
 	if (!s)
 	{
@@ -38,7 +38,7 @@ bool rtp_session_manager::push(rtp_session_ptr s)
 	return ret.second;
 }
 
-bool rtp_session_manager::pop(uint32_t h)
+bool rtp_session_manager_rtppacket::pop(uint32_t h)
 {
 
 	std::lock_guard<std::mutex> lg(m_sesmapmtx);
@@ -54,7 +54,7 @@ bool rtp_session_manager::pop(uint32_t h)
 	return false;
 }
 
-rtp_session_ptr rtp_session_manager::get(uint32_t h)
+rtp_session_ptr rtp_session_manager_rtppacket::get(uint32_t h)
 {
 	std::lock_guard<std::mutex> lg(m_sesmapmtx);
 	rtp_session_ptr s;
