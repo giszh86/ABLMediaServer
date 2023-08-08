@@ -60,6 +60,7 @@ void  recycle_identifier(NETHANDLE id)
 #include "identifier_generator.h"
 #include "auto_lock.h"
 #include <unordered_set>
+#include <mutex>
 std::unordered_set<NETHANDLE> g_idset;
 std::mutex g_idmtx;                //»¥³âËø	
 

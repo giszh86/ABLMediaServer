@@ -76,6 +76,7 @@ inline uint32_t circular_buffer::get_commit_count()
 #include <map>
 #include <vector>
 #include <memory>
+#include <mutex>
 
 class circular_buffer
 {
