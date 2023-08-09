@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.12)
+
 project(ABLMediaServer)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # 设置输出目录, 包括 bin, lib 以及其他文件
 # Windows 也不再区分 32/64
@@ -12,8 +14,7 @@ set(EXECUTABLE_OUTPUT_PATH ${OUTPUT_DIR})
 
 # Include directories
 include_directories(
-    ./Linux/boost/include
-    ./Linux/ffmpeg-4.3.4/include
+    ./3rd/ffmpeg6/include
     ./rapidjson-master/include
     ./media-server-master/libflv/include
     ./media-server-master/librtmp/include
@@ -26,9 +27,8 @@ include_directories(
 # Library directories
 link_directories(
     ./bin
-    ./Linux/ffmpeg-4.3.4/lib
-    ./Linux/faac-1.29.9.2/lib/lib
-    ./Linux/boost/lib
+    ./3rd/ffmpeg6/lib
+    ./3rd/faac-1.29.9.2/lib/lib
 )
 # 添加源文件夹路径
 aux_source_directory(./ABLMediaServer SOURCES)
@@ -37,6 +37,12 @@ aux_source_directory(./ABLMediaServer SOURCES)
 #list(APPEND SOURCES
 #    ./ABLMediaServer-linux/main.cpp
 #)
+
+# 添加 cuda_Decocer_Encoder 子目录
+#add_subdirectory(cuda_Decocer_Encoder)
+
+# 添加 XHNetSDK 子目录
+#add_subdirectory(XHNetSDK)
 
 # Add executable
 add_executable(ABLMediaServer ${SOURCES})
@@ -54,19 +60,7 @@ target_link_libraries(ABLMediaServer PRIVATE ${LIBRARIES})
 target_link_libraries(ABLMediaServer
     pthread
     XHNetSDK
-    PsDemux
-    PsMux
-    RtpDepacket
-    RtpPacket
     dl
-    boost_system
-    boost_thread
-    boost_log
-    boost_regex
-    boost_filesystem
-    boost_date_time
-    boost_chrono
-    boost_atomic
     rtmp
     flv
     mpeg

@@ -370,7 +370,7 @@ void udp_session::handle_read(const boost::system::error_code& ec,
 		return;
 	}
 
-	if (!ec || ec == boost::asio::error::message_size) 
+	if (!ec || ec.value() == 10061 || ec.value() == 10054 || ec == boost::asio::error::message_size)
 	{
 		if (m_start)
 		{
@@ -423,9 +423,9 @@ void udp_session::handle_read(const boost::system::error_code& ec,
 		}
 	}
 	else
-	{// 有时候会触发 10061 这个错误，造成udp关闭，不需要在这里调用关闭
- 		//close();
-		//udp_session_manager_singleton::get_mutable_instance().pop_udp_session(get_id());
+	{
+ 		close();
+		udp_session_manager_singleton::get_mutable_instance().pop_udp_session(get_id());
 	}
 }
 

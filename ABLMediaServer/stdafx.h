@@ -13,8 +13,10 @@
  #define      OS_System_Windows        1
 #endif
 
+
+
 #ifdef OS_System_Windows
-#include "targetver.h"
+
 
 #include <stdio.h>
 #include <tchar.h>

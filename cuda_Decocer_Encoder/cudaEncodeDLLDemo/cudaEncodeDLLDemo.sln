@@ -1,9 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.33529.622
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cudaEncodeDLLDemo", "cudaEncodeDLLDemo\cudaEncodeDLLDemo.vcxproj", "{1212652F-6F8E-4638-BAAD-68B8E4DAEBB8}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cudaEncodeDLLDemo", "cudaEncodeDLLDemo.vcxproj", "{1212652F-6F8E-4638-BAAD-68B8E4DAEBB8}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cudaEncodeDLL", "..\cudaEncodeDLL\cudaEncodeDLL.vcxproj", "{3B7956D6-B1D6-4D0A-807C-9052ED664753}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cudaCodecDLL", "..\cudaCodecDLL\cudaCodecDLL.vcxproj", "{089F3D26-8297-4BEC-81A2-47B585E787C4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,8 +25,27 @@ Global
 		{1212652F-6F8E-4638-BAAD-68B8E4DAEBB8}.Release|x64.Build.0 = Release|x64
 		{1212652F-6F8E-4638-BAAD-68B8E4DAEBB8}.Release|x86.ActiveCfg = Release|Win32
 		{1212652F-6F8E-4638-BAAD-68B8E4DAEBB8}.Release|x86.Build.0 = Release|Win32
+		{3B7956D6-B1D6-4D0A-807C-9052ED664753}.Debug|x64.ActiveCfg = Debug|x64
+		{3B7956D6-B1D6-4D0A-807C-9052ED664753}.Debug|x64.Build.0 = Debug|x64
+		{3B7956D6-B1D6-4D0A-807C-9052ED664753}.Debug|x86.ActiveCfg = Debug|Win32
+		{3B7956D6-B1D6-4D0A-807C-9052ED664753}.Debug|x86.Build.0 = Debug|Win32
+		{3B7956D6-B1D6-4D0A-807C-9052ED664753}.Release|x64.ActiveCfg = Release|x64
+		{3B7956D6-B1D6-4D0A-807C-9052ED664753}.Release|x64.Build.0 = Release|x64
+		{3B7956D6-B1D6-4D0A-807C-9052ED664753}.Release|x86.ActiveCfg = Release|Win32
+		{3B7956D6-B1D6-4D0A-807C-9052ED664753}.Release|x86.Build.0 = Release|Win32
+		{089F3D26-8297-4BEC-81A2-47B585E787C4}.Debug|x64.ActiveCfg = Debug|x64
+		{089F3D26-8297-4BEC-81A2-47B585E787C4}.Debug|x64.Build.0 = Debug|x64
+		{089F3D26-8297-4BEC-81A2-47B585E787C4}.Debug|x86.ActiveCfg = Debug|Win32
+		{089F3D26-8297-4BEC-81A2-47B585E787C4}.Debug|x86.Build.0 = Debug|Win32
+		{089F3D26-8297-4BEC-81A2-47B585E787C4}.Release|x64.ActiveCfg = Release|x64
+		{089F3D26-8297-4BEC-81A2-47B585E787C4}.Release|x64.Build.0 = Release|x64
+		{089F3D26-8297-4BEC-81A2-47B585E787C4}.Release|x86.ActiveCfg = Release|Win32
+		{089F3D26-8297-4BEC-81A2-47B585E787C4}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {AC6E4959-CAED-4D9E-A7CC-72363C93FC41}
 	EndGlobalSection
 EndGlobal

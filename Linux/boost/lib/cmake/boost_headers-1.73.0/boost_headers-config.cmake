@@ -13,15 +13,15 @@ endif()
 get_filename_component(_BOOST_CMAKEDIR "${CMAKE_CURRENT_LIST_DIR}/../" REALPATH)
 
 # If the computed and the original directories are symlink-equivalent, use original
-if(EXISTS "/home/luoshizhen/boost_lib/lib/cmake")
-  get_filename_component(_BOOST_CMAKEDIR_ORIGINAL "/home/luoshizhen/boost_lib/lib/cmake" REALPATH)
+if(EXISTS "/home/boost_1_73_0/stage/lib/cmake")
+  get_filename_component(_BOOST_CMAKEDIR_ORIGINAL "/home/boost_1_73_0/stage/lib/cmake" REALPATH)
   if(_BOOST_CMAKEDIR STREQUAL _BOOST_CMAKEDIR_ORIGINAL)
-    set(_BOOST_CMAKEDIR "/home/luoshizhen/boost_lib/lib/cmake")
+    set(_BOOST_CMAKEDIR "/home/boost_1_73_0/stage/lib/cmake")
   endif()
   unset(_BOOST_CMAKEDIR_ORIGINAL)
 endif()
 
-get_filename_component(_BOOST_INCLUDEDIR "${_BOOST_CMAKEDIR}/../../include/" ABSOLUTE)
+get_filename_component(_BOOST_INCLUDEDIR "${_BOOST_CMAKEDIR}/../../../" ABSOLUTE)
 
 add_library(Boost::headers INTERFACE IMPORTED)
 

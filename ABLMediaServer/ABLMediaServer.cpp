@@ -219,7 +219,8 @@ int64_t                                                          nTestRtmpPushID
 unsigned short                                                   ABL_nGB28181Port = 10002 ;
 
 #ifndef OS_System_Windows
-
+#include <iostream>
+#include <chrono>
 int GB2312ToUTF8(char* szSrc, size_t iSrcLen, char* szDst, size_t iDstLen)
 {
       iconv_t cd = iconv_open("utf-8//IGNORE", "gb2312//IGNORE");
@@ -242,8 +243,6 @@ unsigned long long  GetTickCount()
 	return std::chrono::duration_cast<std::chrono::milliseconds>(
 		std::chrono::system_clock::now().time_since_epoch())
 		.count();
-
-
 }
 unsigned long long  GetTickCount64()
 {
@@ -3000,14 +2999,14 @@ void FindHistoryPictureFile(char* szPicturePath)
 }
 
 #endif
-#include "../webrtc-streamer/rtc_obj_sdk.h"
+//#include "../webrtc-streamer/rtc_obj_sdk.h"
 
 
-void WebRtcCallBack(char* callbackJson, void* pUserHandle) {
-
-
-
-};
+//void WebRtcCallBack(char* callbackJson, void* pUserHandle) {
+//
+//
+//
+//};
 
 
 #ifdef OS_System_Windows
@@ -3024,10 +3023,10 @@ ABL_Restart:
 	
 #ifdef OS_System_Windows
 
-	gblWebRtcEndpointMgrGet->init(R"({"webrtcPort":8000})", [=](char* callbackJson, void* pUserHandle) {
-		WebRtcCallBack(callbackJson, pUserHandle);
-		
-		});
+	//gblWebRtcEndpointMgrGet->init(R"({"webrtcPort":8000})", [=](char* callbackJson, void* pUserHandle) {
+	//	WebRtcCallBack(callbackJson, pUserHandle);
+	//	
+	//	});
 	//鼠标点击控制台窗口，不会再卡住 
 	DWORD mode;
 	HANDLE hstdin = GetStdHandle(STD_INPUT_HANDLE);
