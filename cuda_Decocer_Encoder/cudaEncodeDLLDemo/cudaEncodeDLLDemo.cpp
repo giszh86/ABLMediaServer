@@ -214,6 +214,7 @@ int main()
 		{//如果编码成功 nEncodeLength 大于 0 ，写入编码文件中  fFileH264
 			fwrite(szEncodeBuffer, 1, nEncodeLength, fFileH264);
 			fflush(fFileH264);
+			printf("nEncodeLength %d", nEncodeLength);
 		}
 		else
 		{

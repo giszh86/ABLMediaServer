@@ -13,8 +13,8 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="NvEncoder">
-      <UniqueIdentifier>{109fa1eb-d444-40d1-90bc-9f12cfe3ecca}</UniqueIdentifier>
+    <Filter Include="NvDecoder">
+      <UniqueIdentifier>{33318785-fc65-46d6-904a-155c8ba02999}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -38,8 +38,8 @@
     <ClInclude Include="stdafx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\3rd\Video_Codec_SDK_11.1.5\Samples\NvCodec\NvDecoder\NvDecoder.h">
-      <Filter>NvEncoder</Filter>
+    <ClInclude Include="NvDecoder\NvDecoder.h">
+      <Filter>NvDecoder</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -55,8 +55,8 @@
     <ClCompile Include="dllmain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\3rd\Video_Codec_SDK_11.1.5\Samples\NvCodec\NvDecoder\NvDecoder.cpp">
-      <Filter>NvEncoder</Filter>
+    <ClCompile Include="NvDecoder\NvDecoder.cpp">
+      <Filter>NvDecoder</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
