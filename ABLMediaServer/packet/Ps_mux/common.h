@@ -1,6 +1,6 @@
 #pragma once
 #include <stdint.h>
-
+#include <cstring>
 /***************H264***************/
 enum e_h264_nalu_type
 {

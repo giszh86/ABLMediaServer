@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <memory>
 #include <unordered_map>
-
+#include <string.h> // »ò #include <cstring>
 
 #include "ps_mux.h"
 #include "ps_def.h"

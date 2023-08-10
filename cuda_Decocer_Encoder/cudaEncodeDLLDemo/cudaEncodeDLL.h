@@ -5,8 +5,7 @@
 // CUDAENCODEDLL_API functions as being imported from a DLL, whereas this DLL sees symbols
 // defined with this macro as being exported.
 
-#ifndef _CudaEncodeDLL_H
-#define _CudaEncodeDLL_H
+#pragma once
 #ifdef _WIN32
 #define WINAPI      __stdcall
 #else
@@ -76,6 +75,4 @@ typedef bool (WINAPI* ABL_cudaEncode_DeleteVideoEncode) (uint64_t nCudaChan);
 typedef int  (WINAPI* ABL_cudaEncode_CudaVideoEncode) (uint64_t nCudaChan, unsigned char* pYUVData, int nYUVLength, char* pOutEncodeData);
 
 typedef bool(WINAPI* ABL_cudaEncode_UnInit) ();
-
-#endif
 

@@ -146,6 +146,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="cudaCodecDLL.h" />
     <ClInclude Include="cudaEncodeDLL.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>

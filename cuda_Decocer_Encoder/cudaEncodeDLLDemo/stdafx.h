@@ -9,16 +9,19 @@
 #include <stdio.h>
 #include <tchar.h>
 #include <Windows.h>
+
 #else
 #include <cstring>
 #include <unistd.h>
 #include <dlfcn.h>
 #include <stdio.h>
+
 #endif
 
 #include <string>
 
 #include "cudaEncodeDLL.h"
+#include "cudaCodecDLL.h"
 
 using namespace std;
 // TODO:  在此处引用程序需要的其他头文件
