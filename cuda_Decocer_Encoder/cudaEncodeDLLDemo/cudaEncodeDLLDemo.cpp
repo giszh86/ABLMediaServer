@@ -68,7 +68,7 @@ ABL_cudaEncode_CudaVideoEncode cudaEncode_CudaVideoEncode = NULL;
 ABL_cudaEncode_UnInit cudaEncode_UnInit = NULL;
 
 
-
+HINSTANCE             hCudaDecodeInstance;
 ABL_cudaCodec_Init cudaCodec_Init = NULL;
 ABL_cudaCodec_GetDeviceGetCount  cudaCodec_GetDeviceGetCount = NULL;
 ABL_cudaCodec_GetDeviceName cudaCodec_GetDeviceName = NULL;
@@ -88,7 +88,6 @@ bool GetCurrentPath(char* szCurPath)
 }
 
 //cuda 编码 
-
 ABL_cudaEncode_Init  cudaEncode_Init = NULL;
 ABL_cudaEncode_GetDeviceGetCount cudaEncode_GetDeviceGetCount = NULL;
 ABL_cudaEncode_GetDeviceName cudaEncode_GetDeviceName = NULL;
@@ -134,6 +133,23 @@ int main()
 		cudaEncode_CudaVideoEncode = (ABL_cudaEncode_CudaVideoEncode) ::GetProcAddress(hInstance, "cudaEncode_CudaVideoEncode");
 		cudaEncode_UnInit = (ABL_cudaEncode_UnInit) ::GetProcAddress(hInstance, "cudaEncode_UnInit");
 	}
+	hCudaDecodeInstance = ::LoadLibrary(LR"(cudaCodecDLL.dll)");
+	if (hCudaDecodeInstance != NULL)
+	{
+		cudaCodec_Init = (ABL_cudaCodec_Init)::GetProcAddress(hCudaDecodeInstance, "cudaCodec_Init");
+		cudaCodec_GetDeviceGetCount = (ABL_cudaCodec_GetDeviceGetCount) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_GetDeviceGetCount");
+		cudaCodec_GetDeviceName = (ABL_cudaCodec_GetDeviceName) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_GetDeviceName");
+		cudaCodec_GetDeviceUse = (ABL_cudaCodec_GetDeviceUse) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_GetDeviceUse");
+		cudaCodec_CreateVideoDecode = (ABL_cudaCodec_CreateVideoDecode) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_CreateVideoDecode");
+		cudaCodec_CudaVideoDecode = (ABL_cudaCodec_CudaVideoDecode) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_CudaVideoDecode");
+
+		cudaCodec_DeleteVideoDecode = (ABL_cudaCodec_DeleteVideoDecode) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_DeleteVideoDecode");
+		cudaCodec_GetCudaDecodeCount = (ABL_cudaCodec_GetCudaDecodeCount) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_GetCudaDecodeCount");
+		cudaCodec_UnInit = (ABL_cudaCodec_UnInit) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_UnInit");
+
+	}
+
+
 #else
 	void* pCudaDecodeHandle = NULL;
 	pCudaDecodeHandle = dlopen("libcudaCodecDLL.so", RTLD_LAZY);
@@ -172,7 +188,7 @@ int main()
 		cudaEncode_UnInit = (ABL_cudaEncode_UnInit)dlsym(pCudaEncodeHandle, "cudaEncode_UnInit");
 	}
 #endif
-	bool bCudaFlag=false;
+	/*bool bCudaFlag=false;
 	int ABL_nCudaCount=0;
 	if (cudaCodec_Init)
 		 bCudaFlag = cudaCodec_Init();
@@ -192,118 +208,118 @@ int main()
 	uint64_t nCudaDecodeChan;
 	bool bres= cudaCodec_CreateVideoDecode(cudaCodecVideo_H264, cudaCodecVideo_YV12, 1920, 1080, nCudaDecodeChan);
 
-	printf(" nCudaDecodeChan =[%d]  bres=[%d]! \r\n", nCudaDecodeChan, bres);
-	////初始化cuda编码库
-	//if(cudaEncode_Init)
-	//	bInitCudaFlag = cudaEncode_Init();
-	//
-	////获取cuda显卡个数
-	//if (cudaEncode_GetDeviceGetCount)
-	//	nCudaCount = cudaEncode_GetDeviceGetCount();
+	printf(" nCudaDecodeChan =[%d]  bres=[%d]! \r\n", nCudaDecodeChan, bres);*/
+	//初始化cuda编码库
+	if(cudaEncode_Init)
+		bInitCudaFlag = cudaEncode_Init();
+	
+	//获取cuda显卡个数
+	if (cudaEncode_GetDeviceGetCount)
+		nCudaCount = cudaEncode_GetDeviceGetCount();
 
-	//if (bInitCudaFlag == false || nCudaCount == 0)
-	//{
-	//	printf("error NVIDIA graphics card installed ! nCudaCount=[%d]  bInitCudaFlag=[%d]\r\n ", nCudaCount , bInitCudaFlag);
-	//	return -1;
-	//}
-	//else
-	//{
+	if (bInitCudaFlag == false || nCudaCount == 0)
+	{
+		printf("error NVIDIA graphics card installed ! nCudaCount=[%d]  bInitCudaFlag=[%d]\r\n ", nCudaCount , bInitCudaFlag);
+		return -1;
+	}
+	else
+	{
 
-	//	printf(" nCudaCount =[%d] ! \r\n", nCudaCount);
-	//}
+		printf(" nCudaCount =[%d] ! \r\n", nCudaCount);
+	}
 
-	////获取英伟达第一个显卡名称
-	//if(cudaEncode_GetDeviceName)
-	//  cudaEncode_GetDeviceName(0, szCudaName);
-	//int nRead;
+	//获取英伟达第一个显卡名称
+	if(cudaEncode_GetDeviceName)
+	  cudaEncode_GetDeviceName(0, szCudaName);
+	int nRead;
 
-	//GetCurrentPath(szCurrentPath);
+	GetCurrentPath(szCurrentPath);
 
-	//if (YUV_Width == 1920)
-	//{
- //		sprintf(szYUVName, "%s/YV12_1920x1080.yuv", szCurrentPath);
-	//	sprintf(szOutH264Name, "%s/Encodec_1920x1080.264", szCurrentPath);
-	//}
-	//else if (YUV_Width == 704)
-	//{
-	//	sprintf(szYUVName, "%s/YV12_704x576.yuv", szCurrentPath);
-	//	sprintf(szOutH264Name, "%s/Encodec_704x576.264", szCurrentPath);
-	//}
-	//else if (YUV_Width == 640)
-	//{
-	//	sprintf(szYUVName, "%s/YV12_640x480.yuv", szCurrentPath);
-	//	sprintf(szOutH264Name, "%s/Encodec_640x480.264", szCurrentPath);
-	//}
-	//else if (YUV_Width == 352)
-	//{
-	//	sprintf(szYUVName, "%s/YV12_352x288.yuv", szCurrentPath);
-	//	sprintf(szOutH264Name, "%s/Encodec_352x288.264", szCurrentPath);
-	//}
-	//else //非法的YUV
-	//	return -1;
-	//printf("open file [%s]  \r\n", szYUVName);
-	////打开原始的YUV文件
-	//FILE* fFile;//输入的YUV文件
-	//fFile = fopen(szYUVName, "rb");
-	//if (fFile == NULL)
-	//{
-	//	printf("open fail errno = % d reason = % s \n", errno);
-	//	printf("open file error =[%s] \r\n", szYUVName);
-	//	return 0;
-	//}
-	//
-	//printf("open file [%s]  \r\n", szOutH264Name);
-	////创建准备写入264编码数据的文件句柄
-	//fFileH264 = fopen(szOutH264Name, "wb");
-	//if (fFileH264 == NULL)
-	//{
-	//	printf("open file error =[%s] \r\n", szOutH264Name);
-	//	return 0;
-	//}
-	//
-	////创建cuda 的 H264 编码器，输入的YUV格式为  cudaEncodeVideo_YV12 ，宽、高分别为  YUV_Width, YUV_Height
-	//bool bres= cudaEncode_CreateVideoEncode(cudaEncodeVideo_H264, cudaEncodeVideo_YV12, YUV_Width, YUV_Height, nCudaEncode);
+	if (YUV_Width == 1920)
+	{
+ 		sprintf(szYUVName, "%s/YV12_1920x1080.yuv", szCurrentPath);
+		sprintf(szOutH264Name, "%s/Encodec_1920x1080.264", szCurrentPath);
+	}
+	else if (YUV_Width == 704)
+	{
+		sprintf(szYUVName, "%s/YV12_704x576.yuv", szCurrentPath);
+		sprintf(szOutH264Name, "%s/Encodec_704x576.264", szCurrentPath);
+	}
+	else if (YUV_Width == 640)
+	{
+		sprintf(szYUVName, "%s/YV12_640x480.yuv", szCurrentPath);
+		sprintf(szOutH264Name, "%s/Encodec_640x480.264", szCurrentPath);
+	}
+	else if (YUV_Width == 352)
+	{
+		sprintf(szYUVName, "%s/YV12_352x288.yuv", szCurrentPath);
+		sprintf(szOutH264Name, "%s/Encodec_352x288.264", szCurrentPath);
+	}
+	else //非法的YUV
+		return -1;
+	printf("open file [%s]  \r\n", szYUVName);
+	//打开原始的YUV文件
+	FILE* fFile;//输入的YUV文件
+	fFile = fopen(szYUVName, "rb");
+	if (fFile == NULL)
+	{
+		printf("open fail errno = % d reason = % s \n", errno);
+		printf("open file error =[%s] \r\n", szYUVName);
+		return 0;
+	}
+	
+	printf("open file [%s]  \r\n", szOutH264Name);
+	//创建准备写入264编码数据的文件句柄
+	fFileH264 = fopen(szOutH264Name, "wb");
+	if (fFileH264 == NULL)
+	{
+		printf("open file error =[%s] \r\n", szOutH264Name);
+		return 0;
+	}
+	
+	//创建cuda 的 H264 编码器，输入的YUV格式为  cudaEncodeVideo_YV12 ，宽、高分别为  YUV_Width, YUV_Height
+	bool bres1= cudaEncode_CreateVideoEncode(cudaEncodeVideo_H264, cudaEncodeVideo_YV12, YUV_Width, YUV_Height, nCudaEncode);
 
-	//printf("cudaEncode_CreateVideoEncode =[%d] \r\n", bres);
+	printf("cudaEncode_CreateVideoEncode =[%d] \r\n", bres1);
 
-	//szYUVBuffer = new unsigned char[(YUV_Width*YUV_Height * 3) / 2];
-	//szEncodeBuffer = new unsigned char[(YUV_Width*YUV_Height * 3) / 2];
-	//while (true)
-	//{
-	//	//每次读取一帧的YUV数据，长度为 nSize =  (YUV_Width*YUV_Height * 3) / 2 
-	//	nRead = fread(szYUVBuffer, 1, nSize, fFile);
-	//	if (nRead <= 0)
-	//	{
-	//		printf("open file nRead =[%d] \r\n", nRead);
-	//		break;
-	//	}
-	//	
-	//	nEncodeLength = cudaEncode_CudaVideoEncode(nCudaEncode, szYUVBuffer, nSize,(char*)szEncodeBuffer);
-	//	if (nEncodeLength > 0)
-	//	{//如果编码成功 nEncodeLength 大于 0 ，写入编码文件中  fFileH264
-	//		fwrite(szEncodeBuffer, 1, nEncodeLength, fFileH264);
-	//		fflush(fFileH264);
-	//		printf("nEncodeLength %d", nEncodeLength);
-	//	}
-	//	else
-	//	{
-	//		printf("nEncodeLength %d", nEncodeLength);
-	//	}
-	//}
+	szYUVBuffer = new unsigned char[(YUV_Width*YUV_Height * 3) / 2];
+	szEncodeBuffer = new unsigned char[(YUV_Width*YUV_Height * 3) / 2];
+	while (true)
+	{
+		//每次读取一帧的YUV数据，长度为 nSize =  (YUV_Width*YUV_Height * 3) / 2 
+		nRead = fread(szYUVBuffer, 1, nSize, fFile);
+		if (nRead <= 0)
+		{
+			printf("open file nRead =[%d] \r\n", nRead);
+			break;
+		}
+		
+		nEncodeLength = cudaEncode_CudaVideoEncode(nCudaEncode, szYUVBuffer, nSize,(char*)szEncodeBuffer);
+		if (nEncodeLength > 0)
+		{//如果编码成功 nEncodeLength 大于 0 ，写入编码文件中  fFileH264
+			fwrite(szEncodeBuffer, 1, nEncodeLength, fFileH264);
+			fflush(fFileH264);
+			printf("nEncodeLength %d  \r\n", nEncodeLength);
+		}
+		else
+		{
+			printf("nEncodeLength %d  \r\n", nEncodeLength);
+		}
+	}
 
-	//if (szYUVBuffer)
-	//	delete [] szYUVBuffer;
-	//if (szEncodeBuffer)
-	//	delete szEncodeBuffer;
+	if (szYUVBuffer)
+		delete [] szYUVBuffer;
+	if (szEncodeBuffer)
+		delete szEncodeBuffer;
 
-	//fclose(fFile);
-	//fclose(fFileH264);
+	fclose(fFile);
+	fclose(fFileH264);
 
-	////编码结束后，删除编码句柄 nCudaEncode
-	//cudaEncode_DeleteVideoEncode(nCudaEncode);
+	//编码结束后，删除编码句柄 nCudaEncode
+	cudaEncode_DeleteVideoEncode(nCudaEncode);
 
-	////释放cuda编码库
-	//cudaEncode_UnInit();
+	//释放cuda编码库
+	cudaEncode_UnInit();
 
     return 0;
 }
