@@ -4,8 +4,16 @@ cmake_minimum_required(VERSION 3.5)
 # 设置项目名称和版本号
 project(cudaCodecDLL VERSION 1.0)
 
+
+# 设置C++标准版本
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 # 设置编译选项
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+
+# 添加开关，用于控制是否启用 Jetson Multimedia API
+option(ENABLE_JETSON "Enable Jetson Multimedia API" ON)
 
 # 定义宏定义，根据操作系统平台添加 _WIN32 宏定义
 if(WIN32)
@@ -21,20 +29,26 @@ set(BUILD_SHARED_LIBS ON)
 # 设置输出目录
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
-aux_source_directory(./ SOURCE_FILES)
-
-aux_source_directory(../../3rd/Samples/NvCodec/ SOURCE_FILES)
+# 设置源码路径
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} SOURCE_FILES)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/NvCodec SOURCE_FILES)
 
 # 指定编译为动态库
 #cuda_add_library(cudaCodecDLL SHARED ${SOURCES})
 add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES})
 
+if(ENABLE_JETSON)
 # 设置头文件位置
 target_include_directories(${PROJECT_NAME} PRIVATE
-    ../../3rd/Video_Codec_SDK_11.1.5
-	../../3rd/Video_Codec_SDK_11.1.5/Interface
-	../../3rd/Video_Codec_SDK_11.1.5/Samples
-	../../3rd/Video_Codec_SDK_11.1.5/Samples/NvCodec
+     /usr/local/cuda-11.4/targets/aarch64-linux/include)	 
+endif() 
+# 设置头文件位置
+target_include_directories(${PROJECT_NAME} PRIVATE
+     ${CUDA_INCLUDE_DIRS}
+     ${CMAKE_CURRENT_SOURCE_DIR}/../3rd/Video_Codec_SDK_11.1.5
+	 ${CMAKE_CURRENT_SOURCE_DIR}/../3rd/Video_Codec_SDK_11.1.5/Interface
+	 ${CMAKE_CURRENT_SOURCE_DIR}/../3rd/Video_Codec_SDK_11.1.5/Samples
+	 ${CMAKE_CURRENT_SOURCE_DIR}/../3rd/Video_Codec_SDK_11.1.5/Samples/NvCodec
 )
 
 # 设置头文件位置 暴露给其他项目
@@ -42,29 +56,50 @@ target_include_directories(${PROJECT_NAME} INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-# 设置依赖库位置
-target_link_directories(${PROJECT_NAME} INTERFACE  ${CMAKE_CURRENT_SOURCE_DIR}/../../3rd/Video_Codec_SDK_11.1.5/Lib/linux/stubs/x86_64
+
+# 根据开关决定是否添加 Jetson 头文件路径
+if(ENABLE_JETSON)
+file(GLOB CUDA_LIBS
+    /usr/local/cuda-11.4/targets/aarch64-linux/lib
+    ${CMAKE_CURRENT_SOURCE_DIR}/../3rd/Video_Codec_SDK_11.1.5/Lib/linux/stubs/aarch64
+)
+# Set CUDA architecture
+set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_53,code=sm_53)
+
+else()
+
+set(LIBS
+    ${CMAKE_CURRENT_SOURCE_DIR}/../3rd/Video_Codec_SDK_11.1.5/Lib/linux/stubs/x86_64 
 )
 
 find_library(LIBNVENCODE nvidia-encode HINTS ${CMAKE_CURRENT_SOURCE_DIR}/../../3rd/Video_Codec_SDK_11.1.5/Lib/linux/stubs/x86_64)
 find_library(LIBNVDEC nvcuvid HINTS ${CMAKE_CURRENT_SOURCE_DIR}/../../3rd/Video_Codec_SDK_11.1.5/Lib/linux/stubs/x86_64)
-
+find_library(LIBCUDA cuda HINTS ${CMAKE_CURRENT_SOURCE_DIR}/../../3rd/Video_Codec_SDK_11.1.5/Lib/linux/stubs/x86_64)
 # 查找需要链接的库
 #find_library(LIBNVENCODE nvidia-encode)
 #find_library(LIBNVDEC nvcuvid)
 #find_library(LIBCUDA cuda)
 
+endif()
+
+
+# 设置依赖库位置
+target_link_directories(${PROJECT_NAME} INTERFACE 
+${CUDA_LIBS}
+ ${LIBS})
+
+
 # 添加需要链接的依赖库
 target_link_libraries(${PROJECT_NAME} PRIVATE 
 pthread
-${LIBNVENCODE} 
-${LIBNVDEC})
+cuda
+/usr/lib/aarch64-linux-gnu/tegra/libnvcuvidv4l2.so
+${CUDA_LIBRARIES}
+)
 
 # 链接CUDA库
-#target_link_libraries(cudaCodecDLL ${CUDA_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${CUDA_LIBRARIES})
 
-# 设置C++标准
-target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_11)
 
 
 # 设置输出路径，建议使用 set_target_properties 替代

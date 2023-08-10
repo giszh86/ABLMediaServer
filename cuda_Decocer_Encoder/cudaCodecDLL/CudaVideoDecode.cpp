@@ -116,7 +116,7 @@ CCudaVideoDecode::~CCudaVideoDecode()
 #endif
 
 #ifndef _WIN32
-   malloc_trim(0);
+   //malloc_trim(0);
 #endif // _WIN32
 }
 
