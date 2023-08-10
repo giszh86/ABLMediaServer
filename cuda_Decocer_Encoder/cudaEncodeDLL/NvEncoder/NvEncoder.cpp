@@ -64,14 +64,17 @@ void NvEncoder::LoadNvEncApi()
     HMODULE hModule = LoadLibrary(TEXT("nvEncodeAPI.dll"));
 #endif
 #else
-    void *hModule = dlopen("libnvidia-encode.so.1", RTLD_LAZY);
+    void *hModule = dlopen("libnvidia-encode.so", RTLD_LAZY);
 #endif
 
     if (hModule == NULL)
     {
         NVENC_THROW_ERROR("NVENC library file is not found. Please ensure NV driver is installed", NV_ENC_ERR_NO_ENCODE_DEVICE);
     }
-
+    else
+    {
+        printf("libnvidia-encode.so   found.\r\n");
+    }
     m_hModule = hModule;
 
     typedef NVENCSTATUS(NVENCAPI *NvEncodeAPIGetMaxSupportedVersion_Type)(uint32_t*);
@@ -88,7 +91,7 @@ void NvEncoder::LoadNvEncApi()
     {
         NVENC_THROW_ERROR("Current Driver Version does not support this NvEncodeAPI version, please upgrade driver", NV_ENC_ERR_INVALID_VERSION);
     }
-
+    printf("Current Driver Version=[%d].\r\n", currentVersion);
     typedef NVENCSTATUS(NVENCAPI *NvEncodeAPICreateInstance_Type)(NV_ENCODE_API_FUNCTION_LIST*);
 #if defined(_WIN32)
     NvEncodeAPICreateInstance_Type NvEncodeAPICreateInstance = (NvEncodeAPICreateInstance_Type)GetProcAddress(hModule, "NvEncodeAPICreateInstance");
@@ -100,7 +103,7 @@ void NvEncoder::LoadNvEncApi()
     {
         NVENC_THROW_ERROR("Cannot find NvEncodeAPICreateInstance() entry in NVENC library", NV_ENC_ERR_NO_ENCODE_DEVICE);
     }
-
+    printf("find NvEncodeAPICreateInstance() entry in NVENC library.\r\n");
     m_nvenc = { NV_ENCODE_API_FUNCTION_LIST_VER };
     NVENC_API_CALL(NvEncodeAPICreateInstance(&m_nvenc));
 }
