@@ -91,6 +91,7 @@ bool  CCudaChanManager::AddChanToManager(int nCudaOrder, int64_t nCudaChan)
 //从管理中删除解码序号 
 bool  CCudaChanManager::DeleteChanFromManager(int64_t nCudaChan)
 {
+std::lock_guard<std::mutex> lock(m_mutex);
 	CUDAChanStore* cudaStore;
 	bool           bDeleteFlag = false;
 
@@ -104,5 +105,6 @@ bool  CCudaChanManager::DeleteChanFromManager(int64_t nCudaChan)
 			break; //删除成功 
 		}
  	}
+
   return bDeleteFlag;
 }

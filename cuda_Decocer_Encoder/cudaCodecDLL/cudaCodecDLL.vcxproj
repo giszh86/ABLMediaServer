@@ -88,7 +88,7 @@
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>./;../3rd/Video_Codec_SDK_11.1.5/Interface;../3rd/Video_Codec_SDK_11.1.5/Samples;../3rd/Video_Codec_SDK_11.1.5;../3rd/Video_Codec_SDK_11.1.5/Samples/NvCodec;$(IncludePath)</IncludePath>
     <LibraryPath>../3rd/Video_Codec_SDK_11.1.5/Lib/$(Platform)/;$(LibraryPath)</LibraryPath>
-    <OutDir>$(SolutionDir)/../../bin</OutDir>
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

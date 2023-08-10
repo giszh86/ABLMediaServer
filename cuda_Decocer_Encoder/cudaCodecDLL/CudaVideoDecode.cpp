@@ -115,6 +115,9 @@ CCudaVideoDecode::~CCudaVideoDecode()
 	 fclose(fWritePitch);
 #endif
 
+#ifndef _WIN32
+   malloc_trim(0);
+#endif // _WIN32
 }
 
 void CCudaVideoDecode::ConvertSemiplanarToPlanar(uint8_t *pHostFrame, int nWidth, int nHeight, int nBitDepth) 

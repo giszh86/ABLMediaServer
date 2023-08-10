@@ -105,18 +105,28 @@ CCudaVideoDecode_ptr GetCudaVideoDecodeClient(uint64_t nCudaChan)
 
 			pCudaChanManager = new CCudaChanManager();
 			pCudaChanManager->InitCudaManager(ABL_nCudaGPUCount);
+#if  0
+			char szBuff[256] = { 0 };
+			sprintf(szBuff, "cuInit() nRet = %d\r\n", (int)nRet);
+			
+			FILE* fFile = fopen("/home/cudaInfo.txt", "wb");
+			fwrite(szBuff, 1, strlen(szBuff), fFile);
+			
+			sprintf(szBuff, "ABL_nCudaGPUCount = %d \r\n", ABL_nCudaGPUCount);
+			fwrite(szBuff, 1, strlen(szBuff), fFile);
+			
+			char szDeviceName[256]={0} ;
+	        cudaCodec_GetDeviceName(0,szDeviceName);	
+			sprintf(szBuff, "szDeviceName = %s \r\n", szDeviceName);
+			fwrite(szBuff, 1, strlen(szBuff), fFile);
+		
+			fclose(fFile);
+ #endif
 
  			return true;
 		}
 		else
 		{
-#if  0 
-			char szBuff[256] = { 0 };
-			sprintf(szBuff, "nRet = %llu", (int)nRet);
-			FILE* fFile = fopen("D:\\cuda2.txt", "wb");
-			fwrite(szBuff, 1, strlen(szBuff), fFile);
-			fclose(fFile);
- #endif
 			return false;
 		}
 	}

@@ -1,11 +1,11 @@
-INCLUDES = -I../Interface \
-           -I/usr/local/cuda-11.7/targets/x86_64-linux/include \
-           -I/home/CUDA/Video_Codec_SDK_11.1.5/Samples/NvCodec \
-		   -I/home/ABLMediaServer/Linux/boost/include
+INCLUDES = -I../Video_Codec_SDK_11.1.5/Interface \
+           -I/usr/local/cuda-11.4/targets/aarch64-linux/include \
+           -I/home/ABLMediaServer/Video_Codec_SDK_11.1.5/Samples/NvCodec \
+		   -I/home/admin-nx/include
 		   
-LIBS = -L/usr/local/cuda-11.7/targets/x86_64-linux/lib/stubs/ \
-       -L//home/CUDA/Video_Codec_SDK_11.1.5/Lib/linux/stubs/x86_64 \
-       -L/home/ABLMediaServer/Linux/boost/lib -lboost_system -lboost_thread -lboost_log -lboost_regex -lboost_filesystem -lboost_date_time -lboost_chrono -lboost_atomic -lcuda -lnvcuvid 
+LIBS = -L/usr/local/cuda-11.4/targets/aarch64-linux/lib \
+       -L/home/ABLMediaServer/Video_Codec_SDK_11.1.5/Lib/linux/stubs/aarch64 \
+       -L/home/ABLMediaServer/boost_1_73_so_ARM -lboost_system -lboost_thread -lboost_log -lboost_regex -lboost_filesystem -lboost_date_time -lboost_chrono -lboost_atomic -lcuda 
  
 libcudaCodecDLL.so:CudaChanManager.o cudaCodecDLL.o CudaVideoDecode.o NvDecoder.o
 	g++ -std=c++11 -g -fPIC -shared -fvisibility=hidden -o libcudaCodecDLL.so CudaChanManager.o cudaCodecDLL.o NvDecoder.o CudaVideoDecode.o $(LIBS) -lpthread 
@@ -15,8 +15,8 @@ cudaCodecDLL.o:cudaCodecDLL.cpp
 	g++ -std=c++11 -g $(INCLUDES) -fvisibility=hidden -fPIC -c cudaCodecDLL.cpp 
 CudaVideoDecode.o:CudaVideoDecode.cpp
 	g++ -std=c++11 -g $(INCLUDES) -fvisibility=hidden -fPIC -c CudaVideoDecode.cpp 
-NvDecoder.o:/home/CUDA/Video_Codec_SDK_11.1.5/Samples/NvCodec/NvDecoder/NvDecoder.cpp
-	g++ -std=c++11 -g $(INCLUDES) -fvisibility=hidden -fPIC -c /home/CUDA/Video_Codec_SDK_11.1.5/Samples/NvCodec/NvDecoder/NvDecoder.cpp 
+NvDecoder.o:/home/ABLMediaServer/Video_Codec_SDK_11.1.5/Samples/NvCodec/NvDecoder/NvDecoder.cpp 
+	g++ -std=c++11 -g $(INCLUDES) -fvisibility=hidden -fPIC -c /home/ABLMediaServer/Video_Codec_SDK_11.1.5/Samples/NvCodec/NvDecoder/NvDecoder.cpp 
 	
 clean:
 	rm *.o
