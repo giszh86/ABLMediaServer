@@ -58,7 +58,7 @@ int avpriv_mpeg4audio_sample_rates[] = {
 	96000, 88200, 64000, 48000, 44100, 32000,
 	24000, 22050, 16000, 12000, 11025, 8000, 7350
 };
-#include "../webrtc-streamer/rtc_obj_sdk.h"
+//#include "../webrtc-streamer/rtc_obj_sdk.h"
 //rtp解码
 void rtppacket_callback(_rtp_depacket_cb* cb)
 {
@@ -91,11 +91,11 @@ void rtppacket_callback(_rtp_depacket_cb* cb)
 				}else 
  				  pUserHandle->pMediaSource->PushVideo(cb->data, cb->datasize, pUserHandle->szVideoName);
 				 // WriteLog(Log_Debug, "CNetRtspServer=%X ,nClient = %llu, rtp 解包回调 %02X %02X %02X %02X %02X, timeStamp = %d ,datasize = %d ", pUserHandle, pUserHandle->nClient, cb->data[0], cb->data[1], cb->data[2], cb->data[3], cb->data[4],cb->timestamp,cb->datasize);
-				if (VideoCaptureManager::GetInstance()->GetInput(pUserHandle->pMediaSource->m_szURL))
-				{
-					VideoCaptureManager::GetInstance()->GetInput(pUserHandle->pMediaSource->m_szURL)->onData("H264", cb->data, cb->datasize, 1);
+			//	if (VideoCaptureManager::GetInstance()->GetInput(pUserHandle->pMediaSource->m_szURL))
+			//	{
+				//	VideoCaptureManager::GetInstance()->GetInput(pUserHandle->pMediaSource->m_szURL)->onData("H264", cb->data, cb->datasize, 1);
 
-				}
+				//}
 				
 			
 #ifdef WriteRtpDepacketFileFlag
@@ -310,7 +310,8 @@ CNetRtspServer::~CNetRtspServer()
 	for (int i = 0; i < 3; i++)
 	{
 		while (!bExitProcessFlagArray[i])
-			Sleep(5);
+			std::this_thread::sleep_for(std::chrono::milliseconds(5));
+			//Sleep(5);
 	}
 	WriteLog(Log_Debug, "CNetRtspServer 任务退出完毕 nTime = %llu, nClient = %llu ", GetTickCount64(), nClient);
 
@@ -513,7 +514,8 @@ int32_t  CNetRtspServer::XHNetSDKRead(NETHANDLE clihandle, uint8_t* buffer, uint
 			bExitProcessFlagArray[0] = true;
 			return 0;
 		}
-		Sleep(10);
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		//Sleep(10);
 		
 		nWaitCount ++;
 		if (nWaitCount >= 100 * 3)

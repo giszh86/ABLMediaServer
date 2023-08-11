@@ -113,15 +113,15 @@ volatile bool                                                    ABL_bInitCudaSD
 #ifdef OS_System_Windows
 //cuda 解码 
 HINSTANCE            hCudaDecodeInstance;
-ABL_cudaDecode_Init  cudaEncode_Init = NULL;
-ABL_cudaDecode_GetDeviceGetCount cudaEncode_GetDeviceGetCount = NULL;
-ABL_cudaDecode_GetDeviceName cudaEncode_GetDeviceName = NULL;
-ABL_cudaDecode_GetDeviceUse cudaDecode_GetDeviceUse = NULL;
-ABL_CreateVideoDecode cudaCreateVideoDecode = NULL;
-ABL_CudaVideoDecode cudaVideoDecode = NULL;
-ABL_DeleteVideoDecode cudaDeleteVideoDecode = NULL;
-ABL_GetCudaDecodeCount getCudaDecodeCount = NULL ;
-ABL_VideoDecodeUnInit cudaVideoDecodeUnInit = NULL;
+ABL_cudaDecode_Init  cudaCodec_Init = NULL;
+ABL_cudaDecode_GetDeviceGetCount cudaCodec_GetDeviceGetCount = NULL;
+ABL_cudaDecode_GetDeviceName cudaCodec_GetDeviceName = NULL;
+ABL_cudaDecode_GetDeviceUse cudaCodec_GetDeviceUse = NULL;
+ABL_CreateVideoDecode cudaCodec_CreateVideoDecode = NULL;
+ABL_CudaVideoDecode cudaCodec_CudaVideoDecode = NULL;
+ABL_DeleteVideoDecode cudaCodec_DeleteVideoDecode = NULL;
+ABL_GetCudaDecodeCount cudaCodec_GetCudaDecodeCount = NULL ;
+ABL_VideoDecodeUnInit cudaCodec_UnInit = NULL;
 #else
 void*              pCudaDecodeHandle = NULL ;
 ABL_cudaCodec_Init cudaCodec_Init = NULL ;
@@ -261,10 +261,21 @@ uint64_t GetCurrentSecond()
 //延时
 void  Sleep(int mMicroSecond)
 {
+
+	//if (mMicroSecond > 0)
+	//	usleep(mMicroSecond * 1000);
+	//else
+	//	usleep(5 * 1000);
+
+
 	if (mMicroSecond > 0)
-		usleep(mMicroSecond * 1000);
+	{
+		std::this_thread::sleep_for(std::chrono::milliseconds(mMicroSecond));
+	}
 	else
-		usleep(5 * 1000);
+	{
+		std::this_thread::sleep_for(std::chrono::milliseconds(5));
+	}
 }
 
 bool GetLocalAdaptersInfo(string& strIPList)
@@ -2549,8 +2560,8 @@ void*  ABLMedisServerProcessThread(void* lpVoid)
 		nCheckNetRevcBaseClientDisconnectTime ++;
 		nReConnectStreamProxyTimer ++;
 		nCreateHttpClientTimer ++;
-
-		Sleep(100);
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		//Sleep(100);
 	}
  
   	FillNetRevcBaseClientFifo();//把所有对象装入链表，准备删除
@@ -2569,7 +2580,8 @@ void*  ABLMedisServerProcessThread(void* lpVoid)
 		}
 
 		pDisconnectBaseNetFifo.pop_front();
-		Sleep(5);
+		//Sleep(5);
+		std::this_thread::sleep_for(std::chrono::milliseconds(5));
 	}
 
 	ABL_bExitMediaServerRunFlag = true;
@@ -2599,8 +2611,8 @@ void*  ABLMedisServerFastDeleteThread(void* lpVoid)
 
 			pDisconnectBaseNetFifo.pop_front();
 		}
-
-		Sleep(20);
+		std::this_thread::sleep_for(std::chrono::milliseconds(20));
+		//Sleep(20);
 	}
 	return 0;
 }
@@ -3052,7 +3064,7 @@ ABL_Restart:
 	if (ABL_ConfigFile.FindFile(szConfigFileName) == false)
 	{
 		WriteLog(Log_Error, "没有找到配置文件 ：%s ", szConfigFileName);
-		Sleep(3000);
+		std::this_thread::sleep_for(std::chrono::milliseconds(3000));
 		return -1;
 	}
 
@@ -3264,22 +3276,22 @@ ABL_Restart:
 			hCudaDecodeInstance = ::LoadLibrary("cudaCodecDLL.dll");
 			if (hCudaDecodeInstance != NULL)
 			{
-				cudaEncode_Init = (ABL_cudaDecode_Init)::GetProcAddress(hCudaDecodeInstance, "cudaCodec_Init");
-				cudaEncode_GetDeviceGetCount = (ABL_cudaDecode_GetDeviceGetCount) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_GetDeviceGetCount");
-				cudaEncode_GetDeviceName = (ABL_cudaDecode_GetDeviceName) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_GetDeviceName");
-				cudaDecode_GetDeviceUse = (ABL_cudaDecode_GetDeviceUse) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_GetDeviceUse");
-				cudaCreateVideoDecode = (ABL_CreateVideoDecode) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_CreateVideoDecode");
-				cudaVideoDecode = (ABL_CudaVideoDecode) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_CudaVideoDecode");
+				cudaCodec_Init = (ABL_cudaDecode_Init)::GetProcAddress(hCudaDecodeInstance, "cudaCodec_Init");
+				cudaCodec_GetDeviceGetCount = (ABL_cudaDecode_GetDeviceGetCount) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_GetDeviceGetCount");
+				cudaCodec_GetDeviceName = (ABL_cudaDecode_GetDeviceName) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_GetDeviceName");
+				cudaCodec_GetDeviceUse = (ABL_cudaDecode_GetDeviceUse) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_GetDeviceUse");
+				cudaCodec_CreateVideoDecode = (ABL_CreateVideoDecode) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_CreateVideoDecode");
+				cudaCodec_CudaVideoDecode = (ABL_CudaVideoDecode) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_CudaVideoDecode");
 
-				cudaDeleteVideoDecode = (ABL_DeleteVideoDecode) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_DeleteVideoDecode");
-				getCudaDecodeCount = (ABL_GetCudaDecodeCount) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_GetCudaDecodeCount");
-				cudaVideoDecodeUnInit = (ABL_VideoDecodeUnInit) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_UnInit");
+				cudaCodec_DeleteVideoDecode = (ABL_DeleteVideoDecode) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_DeleteVideoDecode");
+				cudaCodec_GetCudaDecodeCount = (ABL_GetCudaDecodeCount) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_GetCudaDecodeCount");
+				cudaCodec_UnInit = (ABL_VideoDecodeUnInit) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_UnInit");
 
 			}
-			if (cudaEncode_Init)
-				ABL_bCudaFlag = cudaEncode_Init();
-			if (cudaEncode_GetDeviceGetCount)
-				ABL_nCudaCount = cudaEncode_GetDeviceGetCount();
+			if (cudaCodec_Init)
+				ABL_bCudaFlag = cudaCodec_Init();
+			if (cudaCodec_GetDeviceGetCount)
+				ABL_nCudaCount = cudaCodec_GetDeviceGetCount();
 
 			if(ABL_bCudaFlag == false || ABL_nCudaCount <= 0)
 				ABL_MediaServerPort.H265DecodeCpuGpuType = 0; //恢复cpu软解
@@ -3773,12 +3785,13 @@ ABL_Restart:
 				pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
 			}
 		}
-		Sleep(1000);
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
  	}
  
 	ABL_bMediaServerRunFlag = false;
 	while (!ABL_bExitMediaServerRunFlag)
-		Sleep(100);
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		//Sleep(100);
   
 	XHNetSDK_Unlisten(srvhandle_8080);
 	XHNetSDK_Unlisten(srvhandle_554);
@@ -3833,7 +3846,7 @@ ABL_Restart:
 	//cuda 硬件解码，编码资源释放 
 #ifdef OS_System_Windows
 	if(ABL_bInitCudaSDKFlag)
- 	   cudaVideoDecodeUnInit();
+		cudaCodec_UnInit();
 #else
 	if(ABL_bInitCudaSDKFlag && pCudaDecodeHandle != NULL && pCudaEncodeHandle != NULL)
 	{

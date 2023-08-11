@@ -120,7 +120,7 @@ struct _rtp_packet_input
 	{
 		handle = 0 ;
 		ssrc = 0;
-		data = NULL;
+		data = nullptr;
 		datasize = 0 ;
 		timestamp = 0 ;
 	}

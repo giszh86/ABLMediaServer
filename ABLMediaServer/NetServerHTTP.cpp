@@ -10,6 +10,7 @@ E-Mail  79941308@qq.com
 
 #include "stdafx.h"
 #include "NetServerHTTP.h"
+#include "rapidjson/prettywriter.h"
 #ifdef USE_BOOST
 
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
@@ -528,7 +529,7 @@ bool CNetServerHTTP::SplitterJsonParam(char* szJsonParam)
 }
 
 //回复成功信息
-bool  CNetServerHTTP::ResponseSuccess(char* szSuccessInfo)
+bool  CNetServerHTTP::ResponseSuccess( char* szSuccessInfo)
 {
 	std::lock_guard<std::mutex> lock(httpResponseLock);
 
@@ -1910,43 +1911,52 @@ bool CNetServerHTTP::index_api_getServerConfig()
  
 	if (strcmp(m_getServerConfigStruct.secret, ABL_MediaServerPort.secret) != 0)
 	{//密码检测
-		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"secret error\"}", IndexApiCode_secretError);
-		ResponseSuccess(szResponseBody);
+		rapidjson::StringBuffer json;
+		rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(json);
+		writer.StartObject();
+		writer.String("code");
+		writer.Int(IndexApiCode_secretError);
+
+		writer.String("memo");
+		writer.String("secret error");
+		writer.EndObject();
+		//sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"secret error\"}", IndexApiCode_secretError);
+		ResponseSuccess((char *)json.GetString());
 		return false;
 	}
 #ifdef USE_WVP
 	memset(szMediaSourceInfoBuffer, 0x00, MaxMediaSourceInfoLength);
-	sprintf(szMediaSourceInfoBuffer, "{\"code\":0,\"params\":[{\"secret\":\"%s\",\"memo\":\"server password\"},{\"ServerIP\":\"%s\",\"memo\":\"ABLMediaServer ip address\"},{\"mediaServerID\":\"%s\",\"memo\":\"media Server ID \"},{\"hook_enable\":%d,\"memo\":\"hook_enable = 1 open notice , hook_enable = 0 close notice \"},{\"enable_audio\":%d,\"memo\":\"enable_audio = 1 open Audio , enable_audio = 0 Close Audio \"},{\"httpServerPort\":%d,\"memo\":\"http api port \"},{\"rtspPort\":%d,\"memo\":\"rtsp port \"},{\"rtmpPort\":%d,\"memo\":\"rtmp port \"},{\"httpFlvPort\":%d,\"memo\":\"http-flv port \"},{\"hls_enable\":%d,\"memo\":\"hls whether enable \"},{\"hlsPort\":%d,\"memo\":\"hls port\"},{\"wsPort\":%d,\"memo\":\"websocket flv port\"},{\"mp4Port\":%d,\"memo\":\"http mp4 port\"},{\"ps_tsRecvPort\":%d,\"memo\":\"recv ts , ps Stream port \"},{\"hlsCutType\":%d,\"memo\":\"hlsCutType = 1 hls cut to Harddisk,hlsCutType = 2  hls cut Media to memory\"},{\"h265CutType\":%d,\"memo\":\" 1 h265 cut TS , 2 cut fmp4 \"},{\"RecvThreadCount\":%d,\"memo\":\" RecvThreadCount \"},{\"SendThreadCount\":%d,\"memo\":\"SendThreadCount\"},{\"GB28181RtpTCPHeadType\":%d,\"memo\":\"rtp Length Type\"},{\"ReConnectingCount\":%d,\"memo\":\"Try reconnections times .\"},{\"maxTimeNoOneWatch\":%d,\"memo\":\"maxTimeNoOneWatch .\"},{\"pushEnable_mp4\":%d,\"memo\":\"pushEnable_mp4 .\"},{\"fileSecond\":%d,\"memo\":\"fileSecond .\"},{\"fileKeepMaxTime\":%d,\"memo\":\"fileKeepMaxTime .\"},{\"httpDownloadSpeed\":%d,\"memo\":\"httpDownloadSpeed .\"},{\"RecordReplayThread\":%d,\"memo\":\"Total number of video playback threads .\"},{\"convertMaxObject\":%d,\"memo\":\"Max number of video Convert .\"},{\"version\":\"%s\",\"memo\":\"ABLMediaServer currrent Version .\"},{\"recordPath\":\"%s\",\"memo\":\"ABLMediaServer Record File Path  .\"},{\"picturePath\":\"%s\",\"memo\":\"ABLMediaServer Snap Picture Path  .\"}", 
+	sprintf(szMediaSourceInfoBuffer, "{\"code\":0,\"data\":[{\"api.secret\":\"%s\",\"memo\":\"server password\"},{\"ServerIP\":\"%s\",\"memo\":\"ABLMediaServer ip address\"},{\"general.mediaServerId\":\"%s\",\"memo\":\"media Server ID \"},{\"hook.enable\":%d,\"memo\":\"hook.enable = 1 open notice , hook_enable = 0 close notice \"},{\"general.enable_audio\":%d,\"memo\":\"enable_audio = 1 open Audio , enable_audio = 0 Close Audio \"},{\"httpServerPort\":%d,\"memo\":\"http api port \"},{\"rtspPort\":%d,\"memo\":\"rtsp port \"},{\"rtmpPort\":%d,\"memo\":\"rtmp port \"},{\"httpFlvPort\":%d,\"memo\":\"http-flv port \"},{\"hls_enable\":%d,\"memo\":\"hls whether enable \"},{\"hlsPort\":%d,\"memo\":\"hls port\"},{\"wsPort\":%d,\"memo\":\"websocket flv port\"},{\"mp4Port\":%d,\"memo\":\"http mp4 port\"},{\"ps_tsRecvPort\":%d,\"memo\":\"recv ts , ps Stream port \"},{\"hlsCutType\":%d,\"memo\":\"hlsCutType = 1 hls cut to Harddisk,hlsCutType = 2  hls cut Media to memory\"},{\"h265CutType\":%d,\"memo\":\" 1 h265 cut TS , 2 cut fmp4 \"},{\"RecvThreadCount\":%d,\"memo\":\" RecvThreadCount \"},{\"SendThreadCount\":%d,\"memo\":\"SendThreadCount\"},{\"GB28181RtpTCPHeadType\":%d,\"memo\":\"rtp Length Type\"},{\"ReConnectingCount\":%d,\"memo\":\"Try reconnections times .\"},{\"maxTimeNoOneWatch\":%d,\"memo\":\"maxTimeNoOneWatch .\"},{\"pushEnable_mp4\":%d,\"memo\":\"pushEnable_mp4 .\"},{\"fileSecond\":%d,\"memo\":\"fileSecond .\"},{\"fileKeepMaxTime\":%d,\"memo\":\"fileKeepMaxTime .\"},{\"httpDownloadSpeed\":%d,\"memo\":\"httpDownloadSpeed .\"},{\"RecordReplayThread\":%d,\"memo\":\"Total number of video playback threads .\"},{\"convertMaxObject\":%d,\"memo\":\"Max number of video Convert .\"},{\"version\":\"%s\",\"memo\":\"ABLMediaServer currrent Version .\"},{\"recordPath\":\"%s\",\"memo\":\"ABLMediaServer Record File Path  .\"},{\"picturePath\":\"%s\",\"memo\":\"ABLMediaServer Snap Picture Path  .\"}", 
 		ABL_MediaServerPort.secret, ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.mediaServerID, ABL_MediaServerPort.hook_enable,ABL_MediaServerPort.nEnableAudio,ABL_MediaServerPort.nHttpServerPort, ABL_MediaServerPort.nRtspPort, ABL_MediaServerPort.nRtmpPort, ABL_MediaServerPort.nHttpFlvPort, ABL_MediaServerPort.nHlsEnable, ABL_MediaServerPort.nHlsPort, ABL_MediaServerPort.nWSFlvPort, ABL_MediaServerPort.nHttpMp4Port, ABL_MediaServerPort.ps_tsRecvPort, ABL_MediaServerPort.nHLSCutType, ABL_MediaServerPort.nH265CutType, ABL_MediaServerPort.nRecvThreadCount, ABL_MediaServerPort.nSendThreadCount, ABL_MediaServerPort.nGBRtpTCPHeadType, ABL_MediaServerPort.nReConnectingCount,
 		ABL_MediaServerPort.maxTimeNoOneWatch, ABL_MediaServerPort.pushEnable_mp4,ABL_MediaServerPort.fileSecond,ABL_MediaServerPort.fileKeepMaxTime,ABL_MediaServerPort.httpDownloadSpeed, ABL_MediaServerPort.nRecordReplayThread, ABL_MediaServerPort.convertMaxObject, MediaServerVerson, ABL_MediaServerPort.recordPath, ABL_MediaServerPort.picturePath);
 
 	sprintf(szTempBuffer, ",{\"noneReaderDuration\":%d,\"memo\":\"How many seconds does it take for no one to watch and send notifications  .\"}", ABL_MediaServerPort.noneReaderDuration);
 	strcat(szMediaSourceInfoBuffer, szTempBuffer);
-	sprintf(szTempBuffer, ",{\"on_server_started\":\"%s\",\"memo\":\"Server starts sending event notifications  .\"}", ABL_MediaServerPort.on_server_started);
+	sprintf(szTempBuffer, ",{\"hook.on_server_started\":\"%s\",\"memo\":\"Server starts sending event notifications  .\"}", ABL_MediaServerPort.on_server_started);
 	strcat(szMediaSourceInfoBuffer, szTempBuffer);
-	sprintf(szTempBuffer, ",{\"on_server_keepalive\":\"%s\",\"memo\":\"Server Heartbeat Event Notification  .\"}", ABL_MediaServerPort.on_server_keepalive);
+	sprintf(szTempBuffer, ",{\"hook.on_server_keepalive\":\"%s\",\"memo\":\"Server Heartbeat Event Notification  .\"}", ABL_MediaServerPort.on_server_keepalive);
 	strcat(szMediaSourceInfoBuffer, szTempBuffer);
-	sprintf(szTempBuffer, ",{\"on_play\":\"%s\",\"memo\":\"Play a certain stream to send event notifications  .\"}", ABL_MediaServerPort.on_play);
+	sprintf(szTempBuffer, ",{\"hook.on_play\":\"%s\",\"memo\":\"Play a certain stream to send event notifications  .\"}", ABL_MediaServerPort.on_play);
 	strcat(szMediaSourceInfoBuffer, szTempBuffer);
-	sprintf(szTempBuffer, ",{\"on_publish\":\"%s\",\"memo\":\"Registering a certain stream to the server to send event notifications  .\"}", ABL_MediaServerPort.on_publish);
+	sprintf(szTempBuffer, ",{\"hook.on_publish\":\"%s\",\"memo\":\"Registering a certain stream to the server to send event notifications  .\"}", ABL_MediaServerPort.on_publish);
 	strcat(szMediaSourceInfoBuffer, szTempBuffer);
 	sprintf(szTempBuffer, ",{\"on_stream_arrive\":\"%s\",\"memo\":\"Send event notification when a certain media source stream reaches its destination  .\"}", ABL_MediaServerPort.on_stream_arrive);
 	strcat(szMediaSourceInfoBuffer, szTempBuffer);
 	sprintf(szTempBuffer, ",{\"on_stream_not_arrive\":\"%s\",\"memo\":\"A certain media source was registered but the stream timed out and did not arrive. Send event notification  .\"}", ABL_MediaServerPort.on_stream_not_arrive);
 	strcat(szMediaSourceInfoBuffer, szTempBuffer);
-	sprintf(szTempBuffer, ",{\"on_stream_none_reader\":\"%s\",\"memo\":\"Send event notification when no one is watching a certain media source  .\"}", ABL_MediaServerPort.on_stream_none_reader);
+	sprintf(szTempBuffer, ",{\"hook.on_stream_none_reader\":\"%s\",\"memo\":\"Send event notification when no one is watching a certain media source  .\"}", ABL_MediaServerPort.on_stream_none_reader);
 	strcat(szMediaSourceInfoBuffer, szTempBuffer);
 	sprintf(szTempBuffer, ",{\"on_stream_disconnect\":\"%s\",\"memo\":\"Send event notification when a certain channel of media is disconnected  .\"}", ABL_MediaServerPort.on_stream_disconnect);
 	strcat(szMediaSourceInfoBuffer, szTempBuffer);
-	sprintf(szTempBuffer, ",{\"on_stream_not_found\":\"%s\",\"memo\":\"Media source not found Send event notification .\"}", ABL_MediaServerPort.on_stream_not_found);
+	sprintf(szTempBuffer, ",{\"hook.on_stream_not_found\":\"%s\",\"memo\":\"Media source not found Send event notification .\"}", ABL_MediaServerPort.on_stream_not_found);
 	strcat(szMediaSourceInfoBuffer, szTempBuffer);
-	sprintf(szTempBuffer, ",{\"on_record_mp4\":\"%s\",\"memo\":\"Send event notification when a recording is completed .\"}", ABL_MediaServerPort.on_record_mp4);
+	sprintf(szTempBuffer, ",{\"hook.on_record_mp4\":\"%s\",\"memo\":\"Send event notification when a recording is completed .\"}", ABL_MediaServerPort.on_record_mp4);
 	strcat(szMediaSourceInfoBuffer, szTempBuffer);
 	sprintf(szTempBuffer, ",{\"on_delete_record_mp4\":\"%s\",\"memo\":\"Send event notification when a video recording is overwritten .\"}", ABL_MediaServerPort.on_delete_record_mp4);
 	strcat(szMediaSourceInfoBuffer, szTempBuffer);
 	sprintf(szTempBuffer, ",{\"on_record_progress\":\"%s\",\"memo\":\"Sending event notifications every 1 second while recording .\"}", ABL_MediaServerPort.on_record_progress);
 	strcat(szMediaSourceInfoBuffer, szTempBuffer);
-	sprintf(szTempBuffer, ",{\"on_record_ts\":\"%s\",\"memo\":\"Send event notification when hls slicing completes a section of ts file .\"}", ABL_MediaServerPort.on_record_ts);
+	sprintf(szTempBuffer, ",{\"hook.on_record_ts\":\"%s\",\"memo\":\"Send event notification when hls slicing completes a section of ts file .\"}", ABL_MediaServerPort.on_record_ts);
 	strcat(szMediaSourceInfoBuffer, szTempBuffer);
 
 	strcat(szMediaSourceInfoBuffer, "]}");

@@ -1,5 +1,5 @@
 /*
-* Copyright 2017-2018 NVIDIA Corporation.  All rights reserved.
+* Copyright 2017-2021 NVIDIA Corporation.  All rights reserved.
 *
 * Please refer to the NVIDIA end user license agreement (EULA) associated
 * with this source code for terms and conditions that govern your use of
@@ -11,24 +11,10 @@
 
 #include "NvEncoderCuda.h"
 
-#define CUDA_DRVAPI_CALL( call )                                                                                                 \
-    do                                                                                                                           \
-    {                                                                                                                            \
-        CUresult err__ = call;                                                                                                   \
-        if (err__ != CUDA_SUCCESS)                                                                                               \
-        {                                                                                                                        \
-            const char *szErrName = NULL;                                                                                        \
-            cuGetErrorName(err__, &szErrName);                                                                                   \
-            std::ostringstream errorLog;                                                                                         \
-            errorLog << "CUDA driver API error " << szErrName ;                                                                  \
-            throw NVENCException::makeNVENCException(errorLog.str(), NV_ENC_ERR_GENERIC, __FUNCTION__, __FILE__, __LINE__);      \
-        }                                                                                                                        \
-    }                                                                                                                            \
-    while (0)
 
 NvEncoderCuda::NvEncoderCuda(CUcontext cuContext, uint32_t nWidth, uint32_t nHeight, NV_ENC_BUFFER_FORMAT eBufferFormat,
-    uint32_t nExtraOutputDelay, bool bMotionEstimationOnly):
-    NvEncoder(NV_ENC_DEVICE_TYPE_CUDA, cuContext, nWidth, nHeight, eBufferFormat, nExtraOutputDelay, bMotionEstimationOnly),
+    uint32_t nExtraOutputDelay, bool bMotionEstimationOnly, bool bOutputInVideoMemory):
+    NvEncoder(NV_ENC_DEVICE_TYPE_CUDA, cuContext, nWidth, nHeight, eBufferFormat, nExtraOutputDelay, bMotionEstimationOnly, bOutputInVideoMemory),
     m_cuContext(cuContext)
 {
     if (!m_hEncoder) 
@@ -75,7 +61,7 @@ void NvEncoderCuda::AllocateInputBuffers(int32_t numInputBuffers)
         }
         CUDA_DRVAPI_CALL(cuCtxPopCurrent(NULL));
 
-        RegisterResources(inputFrames,
+        RegisterInputResources(inputFrames,
             NV_ENC_INPUT_RESOURCE_TYPE_CUDADEVICEPTR,
             GetMaxEncodeWidth(),
             GetMaxEncodeHeight(),
@@ -83,6 +69,11 @@ void NvEncoderCuda::AllocateInputBuffers(int32_t numInputBuffers)
             GetPixelFormat(),
             (count == 1) ? true : false);
     }
+}
+
+void NvEncoderCuda::SetIOCudaStreams(NV_ENC_CUSTREAM_PTR inputStream, NV_ENC_CUSTREAM_PTR outputStream)
+{
+    NVENC_API_CALL(m_nvenc.nvEncSetIOCudaStreams(m_hEncoder, inputStream, outputStream));
 }
 
 void NvEncoderCuda::ReleaseInputBuffers()
@@ -102,7 +93,7 @@ void NvEncoderCuda::ReleaseCudaResources()
         return;
     }
 
-    UnregisterResources();
+    UnregisterInputResources();
 
     cuCtxPushCurrent(m_cuContext);
 
@@ -139,7 +130,8 @@ void NvEncoderCuda::CopyToDeviceFrame(CUcontext device,
     NV_ENC_BUFFER_FORMAT pixelFormat,
     const uint32_t dstChromaOffsets[],
     uint32_t numChromaPlanes,
-    bool bUnAlignedDeviceCopy)
+    bool bUnAlignedDeviceCopy,
+    CUstream stream)
 {
     if (srcMemoryType != CU_MEMORYTYPE_HOST && srcMemoryType != CU_MEMORYTYPE_DEVICE)
     {
@@ -171,7 +163,7 @@ void NvEncoderCuda::CopyToDeviceFrame(CUcontext device,
     }
     else
     {
-        CUDA_DRVAPI_CALL(cuMemcpy2D(&m));
+        CUDA_DRVAPI_CALL(stream == NULL? cuMemcpy2D(&m) : cuMemcpy2DAsync(&m, stream));
     }
 
     std::vector<uint32_t> srcChromaOffsets;
@@ -205,87 +197,7 @@ void NvEncoderCuda::CopyToDeviceFrame(CUcontext device,
             }
             else
             {
-                CUDA_DRVAPI_CALL(cuMemcpy2D(&m));
-            }
-        }
-    }
-    CUDA_DRVAPI_CALL(cuCtxPopCurrent(NULL));
-}
-
-void NvEncoderCuda::CopyToDeviceFrame_2(CUcontext device,
-    void* pSrcFrame[],
-    uint32_t nSrcPitch[],
-    CUdeviceptr pDstFrame,
-    uint32_t dstPitch,
-    int width,
-    int height,
-    CUmemorytype srcMemoryType,
-    NV_ENC_BUFFER_FORMAT pixelFormat,
-    const uint32_t dstChromaOffsets[],
-    uint32_t numChromaPlanes,
-    bool bUnAlignedDeviceCopy)
-{
-    if (srcMemoryType != CU_MEMORYTYPE_HOST && srcMemoryType != CU_MEMORYTYPE_DEVICE)
-    {
-        NVENC_THROW_ERROR("Invalid source memory type for copy", NV_ENC_ERR_INVALID_PARAM);
-    }
-
-    CUDA_DRVAPI_CALL(cuCtxPushCurrent(device));
-
-    CUDA_MEMCPY2D m = { 0 };
-    m.srcMemoryType = srcMemoryType;
-    if (srcMemoryType == CU_MEMORYTYPE_HOST)
-    {
-        m.srcHost = pSrcFrame[0];
-    }
-    else
-    {
-        m.srcDevice = (CUdeviceptr)pSrcFrame;
-    }
-    m.srcPitch = nSrcPitch[0];
-    m.dstMemoryType = CU_MEMORYTYPE_DEVICE;
-    m.dstDevice = pDstFrame;
-    m.dstPitch = dstPitch;
-    m.WidthInBytes = NvEncoder::GetWidthInBytes(pixelFormat, width);
-    m.Height = height;
-    if (bUnAlignedDeviceCopy && srcMemoryType == CU_MEMORYTYPE_DEVICE)
-    {
-        CUDA_DRVAPI_CALL(cuMemcpy2DUnaligned(&m));
-    }
-    else
-    {
-        CUDA_DRVAPI_CALL(cuMemcpy2D(&m));
-    }
-
-    uint32_t chromaHeight = NvEncoder::GetChromaHeight(pixelFormat, height);
-    uint32_t destChromaPitch = NvEncoder::GetChromaPitch(pixelFormat, dstPitch);
-    uint32_t chromaWidthInBytes = NvEncoder::GetChromaWidthInBytes(pixelFormat, width);
-
-    for (uint32_t i = 0; i < numChromaPlanes; ++i)
-    {
-        if (chromaHeight)
-        {
-            if (srcMemoryType == CU_MEMORYTYPE_HOST)
-            {
-                m.srcHost = (uint8_t*)pSrcFrame[i + 1];
-            }
-            else
-            {
-                m.srcDevice = (CUdeviceptr)pSrcFrame[i + 1];
-            }
-            m.srcPitch = nSrcPitch[i + 1];
-
-            m.dstDevice = (CUdeviceptr)((uint8_t*)pDstFrame + dstChromaOffsets[i]);
-            m.dstPitch = destChromaPitch;
-            m.WidthInBytes = chromaWidthInBytes;
-            m.Height = chromaHeight;
-            if (bUnAlignedDeviceCopy && srcMemoryType == CU_MEMORYTYPE_DEVICE)
-            {
-                CUDA_DRVAPI_CALL(cuMemcpy2DUnaligned(&m));
-            }
-            else
-            {
-                CUDA_DRVAPI_CALL(cuMemcpy2D(&m));
+                CUDA_DRVAPI_CALL(stream == NULL? cuMemcpy2D(&m) : cuMemcpy2DAsync(&m, stream));
             }
         }
     }

@@ -26,12 +26,12 @@ list(APPEND SOURCES ${THREAD_POOL_SOURCES})
 
 
 
-add_library(XHNetSDK SHARED ${SOURCES})
+add_library(${PROJECT_NAME} SHARED ${SOURCES})
 
 # 链接当前文件夹下的 asio 头文件目录
-target_include_directories(XHNetSDK PRIVATE asio/include)
+target_include_directories(${PROJECT_NAME} PRIVATE asio/include)
 
-target_link_libraries(XHNetSDK pthread)
+target_link_libraries(${PROJECT_NAME} pthread)
 
 # 设置生成的库文件路径为上一级目录下的 Bin 文件夹
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/../Bin)

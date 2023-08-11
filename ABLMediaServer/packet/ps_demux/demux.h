@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <memory>
 #include <map>
+#include <string.h> // »ò #include <cstring>
 #include "ps_demux.h"
 #include "consumer_base.h"
 

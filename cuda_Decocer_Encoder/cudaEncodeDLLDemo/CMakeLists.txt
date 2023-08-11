@@ -21,8 +21,6 @@ include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/cudaEncodeDLL)
 include_directories(${PROJECT_SOURCE_DIR}/cudaCodecDLL)
 
-# 添加动态库路径
-link_directories(${PROJECT_SOURCE_DIR}/../../bin)
 
 # 先执行这个目录下的cmake
 # 添加子目录
@@ -31,6 +29,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../cudaCodecDLL ${CMAKE_CURRENT_SOU
 
 # 添加可执行文件编译目标
 add_executable(${PROJECT_NAME} cudaEncodeDLLDemo.cpp)
+
 
 # 添加头文件搜索路径
 target_include_directories(${PROJECT_NAME} PUBLIC

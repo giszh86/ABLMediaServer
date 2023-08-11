@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-
+#include <cstring>
 uint32_t generate_identifier_rtppacket();
 
 void recycle_identifier_rtppacket(uint32_t id);

@@ -1026,8 +1026,8 @@ struct MessageNoticeStruct
 };
 
 #ifndef OS_System_Windows
-unsigned long GetTickCount();
-unsigned long GetTickCount64();
+unsigned long long GetTickCount();
+unsigned long long GetTickCount64();
 #ifdef USE_BOOST
 void          Sleep(int mMicroSecond);
 #endif
@@ -1087,6 +1087,11 @@ extern "C"
 #include <libavutil/opt.h>
 #include <libavutil/imgutils.h>	
 #include <libswresample/swresample.h>
+#include "./packet/ps_demux/ps_demux.h"
+#include "./packet/ps_mux/ps_mux.h"
+#include "./packet/rtppacket/rtp_packet.h"
+#include "./packet/rtpdepacket/rtp_depacket.h"
+
 }
 using namespace std;
 
@@ -1108,8 +1113,7 @@ typedef list<int> LogFileVector;
 #include "NetClientHttp.h"
 #include "NetClientSnap.h"
 
-#include "./packet/ps_demux/ps_demux.h"
-#include "./packet/Ps_mux/ps_mux.h"
+
 #include "MediaFifo.h"
 #include "NetBaseThreadPool.h"
 #include "FFVideoDecode.h"
@@ -1126,7 +1130,7 @@ typedef list<int> LogFileVector;
 #include "NetClientRecvRtmp.h"
 #include "NetClientRecvFLV.h"
 #include "NetClientRecvRtsp.h"
-#include "NetClientRecvJTT1078.h"
+//#include "NetClientRecvJTT1078.h"
 #include "NetClientSendRtsp.h"
 #include "NetClientSendRtmp.h"
 #include "NetClientAddStreamProxy.h"

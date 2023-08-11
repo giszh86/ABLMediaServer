@@ -46,10 +46,11 @@ CCudaVideoEncode::CCudaVideoEncode(cudaEncodeVideo_enum videoCodec, cudaEncodeVi
 	encodeConfig = { NV_ENC_CONFIG_VER };
 
 	initializeParams.encodeConfig = &encodeConfig;
+
 	if (videoCodec == cudaEncodeVideo_H264)
-		enc->CreateDefaultEncoderParams(&initializeParams, NV_ENC_CODEC_H264_GUID, NV_ENC_PRESET_DEFAULT_GUID); //NV_ENC_CODEC_HEVC_GUID
+		enc->CreateDefaultEncoderParams(&initializeParams, NV_ENC_CODEC_H264_GUID, NV_ENC_PRESET_P7_GUID, NV_ENC_TUNING_INFO_HIGH_QUALITY); //NV_ENC_CODEC_HEVC_GUID
 	else if (videoCodec == cudaEncodeVideo_HEVC)
-		enc->CreateDefaultEncoderParams(&initializeParams, NV_ENC_CODEC_HEVC_GUID, NV_ENC_PRESET_DEFAULT_GUID);
+		enc->CreateDefaultEncoderParams(&initializeParams, NV_ENC_CODEC_HEVC_GUID, NV_ENC_PRESET_P4_GUID, NV_ENC_TUNING_INFO_HIGH_QUALITY);
 
 		//encodeConfig.encodeCodecConfig.h264Config.idrPeriod = 25;//IDR 帧的周期为 25 帧；
 		//encodeConfig.gopLength = 25;// GOP 长度为 25 帧；

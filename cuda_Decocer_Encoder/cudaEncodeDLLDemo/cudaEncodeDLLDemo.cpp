@@ -112,7 +112,7 @@ ABL_cudaCodec_UnInit cudaCodec_UnInit = NULL;
 
 
 
-
+#include <thread>
 
 int main()
 {
@@ -188,6 +188,7 @@ int main()
 		cudaEncode_UnInit = (ABL_cudaEncode_UnInit)dlsym(pCudaEncodeHandle, "cudaEncode_UnInit");
 	}
 #endif
+
 	/*bool bCudaFlag=false;
 	int ABL_nCudaCount=0;
 	if (cudaCodec_Init)
@@ -205,6 +206,9 @@ int main()
 
 		printf(" nCudaCount =[%d] ! \r\n", ABL_nCudaCount);
 	}
+	char szDeviceName[512];
+	cudaCodec_GetDeviceName(0, szDeviceName);
+	printf(" szDeviceName =[%s] ! \r\n", szDeviceName);
 	uint64_t nCudaDecodeChan;
 	bool bres= cudaCodec_CreateVideoDecode(cudaCodecVideo_H264, cudaCodecVideo_YV12, 1920, 1080, nCudaDecodeChan);
 

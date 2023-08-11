@@ -46,10 +46,10 @@ extern CMediaFifo                      pMessageNoticeFifo;          //消息通知FI
 extern char                            ABL_szLocalIP[128];
 
 #ifdef OS_System_Windows
-extern ABL_cudaDecode_Init  cudaEncode_Init ;
-extern ABL_CreateVideoDecode cudaCreateVideoDecode ;
-extern ABL_CudaVideoDecode   cudaVideoDecode ;
-extern ABL_DeleteVideoDecode cudaDeleteVideoDecode ;
+extern ABL_cudaDecode_Init  cudaCodec_Init;
+extern ABL_CreateVideoDecode cudaCodec_CreateVideoDecode;
+extern ABL_CudaVideoDecode   cudaCodec_CudaVideoDecode;
+extern ABL_DeleteVideoDecode cudaCodec_DeleteVideoDecode;
 #else
 extern ABL_cudaCodec_Init cudaCodec_Init ;
 extern ABL_cudaCodec_GetDeviceGetCount  cudaCodec_GetDeviceGetCount   ;
@@ -433,7 +433,7 @@ CMediaStreamSource::~CMediaStreamSource()
 #ifdef OS_System_Windows
 	if (nCudaDecodeChan > 0)
 	{
-		cudaDeleteVideoDecode(nCudaDecodeChan);
+		cudaCodec_DeleteVideoDecode(nCudaDecodeChan);
 		nCudaDecodeChan = 0;
 	}
 #else
@@ -936,16 +936,16 @@ bool  CMediaStreamSource::H265ConvertH264(unsigned char* szVideo, int nLength, c
 	else if (ABL_MediaServerPort.H265DecodeCpuGpuType == 1)
 	{//cuda硬解
 #ifdef OS_System_Windows 
-		if (nCudaDecodeChan == 0 && cudaEncode_Init != NULL )
+		if (nCudaDecodeChan == 0 && cudaCodec_Init != NULL )
 		{
 			if (CheckVideoIsIFrame(szVideoCodec, szVideo, nLength))
 			{
 				if (GetVideoWidthHeight(szVideoCodec, szVideo, nLength))
 				{
 					if (strcmp(szVideoCodec, "H264") == 0)
-						cudaCreateVideoDecode(cudaCodecVideo_H264, cudaCodecVideo_YV12, m_mediaCodecInfo.nWidth, m_mediaCodecInfo.nHeight, nCudaDecodeChan);
+						cudaCodec_CreateVideoDecode(cudaCodecVideo_H264, cudaCodecVideo_YV12, m_mediaCodecInfo.nWidth, m_mediaCodecInfo.nHeight, nCudaDecodeChan);
 					else if (strcmp(szVideoCodec, "H265") == 0)
-						cudaCreateVideoDecode(cudaCodecVideo_HEVC, cudaCodecVideo_YV12, m_mediaCodecInfo.nWidth, m_mediaCodecInfo.nHeight, nCudaDecodeChan);
+						cudaCodec_CreateVideoDecode(cudaCodecVideo_HEVC, cudaCodecVideo_YV12, m_mediaCodecInfo.nWidth, m_mediaCodecInfo.nHeight, nCudaDecodeChan);
 
 					//修改转码宽、高 或者 转换输出的宽、高 大于原始视频宽、高 ，强制为原尺寸输出
 					if ((m_h265ConvertH264Struct.convertOutWidth == -1 && m_h265ConvertH264Struct.convertOutHeight == -1) || (m_h265ConvertH264Struct.convertOutWidth >= nSrcWidth))
@@ -959,7 +959,7 @@ bool  CMediaStreamSource::H265ConvertH264(unsigned char* szVideo, int nLength, c
 		 
 		if (nCudaDecodeChan > 0)
 		{
-			pCudaDecodeYUVFrame = cudaVideoDecode(nCudaDecodeChan, szVideo, nLength, nCudaDecodeFrameCount, nCudeDecodeOutLength);
+			pCudaDecodeYUVFrame = cudaCodec_CudaVideoDecode(nCudaDecodeChan, szVideo, nLength, nCudaDecodeFrameCount, nCudeDecodeOutLength);
 			if (nCudeDecodeOutLength > 0 && pCudaDecodeYUVFrame != NULL)
 			{
 				if (m_h265ConvertH264Struct.convertOutWidth != nSrcWidth && m_h265ConvertH264Struct.convertOutHeight != nSrcHeight)
