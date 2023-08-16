@@ -113,15 +113,15 @@ volatile bool                                                    ABL_bInitCudaSD
 #ifdef OS_System_Windows
 //cuda ½âÂë 
 HINSTANCE            hCudaDecodeInstance;
-ABL_cudaDecode_Init  cudaCodec_Init = NULL;
-ABL_cudaDecode_GetDeviceGetCount cudaCodec_GetDeviceGetCount = NULL;
-ABL_cudaDecode_GetDeviceName cudaCodec_GetDeviceName = NULL;
-ABL_cudaDecode_GetDeviceUse cudaCodec_GetDeviceUse = NULL;
-ABL_CreateVideoDecode cudaCodec_CreateVideoDecode = NULL;
-ABL_CudaVideoDecode cudaCodec_CudaVideoDecode = NULL;
-ABL_DeleteVideoDecode cudaCodec_DeleteVideoDecode = NULL;
-ABL_GetCudaDecodeCount cudaCodec_GetCudaDecodeCount = NULL ;
-ABL_VideoDecodeUnInit cudaCodec_UnInit = NULL;
+ABL_cudaCodec_Init cudaCodec_Init = NULL;
+ABL_cudaCodec_GetDeviceGetCount  cudaCodec_GetDeviceGetCount = NULL;
+ABL_cudaCodec_GetDeviceName cudaCodec_GetDeviceName = NULL;
+ABL_cudaCodec_GetDeviceUse cudaCodec_GetDeviceUse = NULL;
+ABL_cudaCodec_CreateVideoDecode cudaCodec_CreateVideoDecode = NULL;
+ABL_cudaCodec_CudaVideoDecode cudaCodec_CudaVideoDecode = NULL;
+ABL_cudaCodec_DeleteVideoDecode cudaCodec_DeleteVideoDecode = NULL;
+ABL_cudaCodec_GetCudaDecodeCount cudaCodec_GetCudaDecodeCount = NULL;
+ABL_cudaCodec_UnInit cudaCodec_UnInit = NULL;
 #else
 void*              pCudaDecodeHandle = NULL ;
 ABL_cudaCodec_Init cudaCodec_Init = NULL ;
@@ -3276,16 +3276,16 @@ ABL_Restart:
 			hCudaDecodeInstance = ::LoadLibrary("cudaCodecDLL.dll");
 			if (hCudaDecodeInstance != NULL)
 			{
-				cudaCodec_Init = (ABL_cudaDecode_Init)::GetProcAddress(hCudaDecodeInstance, "cudaCodec_Init");
-				cudaCodec_GetDeviceGetCount = (ABL_cudaDecode_GetDeviceGetCount) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_GetDeviceGetCount");
-				cudaCodec_GetDeviceName = (ABL_cudaDecode_GetDeviceName) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_GetDeviceName");
-				cudaCodec_GetDeviceUse = (ABL_cudaDecode_GetDeviceUse) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_GetDeviceUse");
-				cudaCodec_CreateVideoDecode = (ABL_CreateVideoDecode) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_CreateVideoDecode");
-				cudaCodec_CudaVideoDecode = (ABL_CudaVideoDecode) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_CudaVideoDecode");
+				cudaCodec_Init = (ABL_cudaCodec_Init)::GetProcAddress(hCudaDecodeInstance, "cudaCodec_Init");
+				cudaCodec_GetDeviceGetCount = (ABL_cudaCodec_GetDeviceGetCount) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_GetDeviceGetCount");
+				cudaCodec_GetDeviceName = (ABL_cudaCodec_GetDeviceName) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_GetDeviceName");
+				cudaCodec_GetDeviceUse = (ABL_cudaCodec_GetDeviceUse) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_GetDeviceUse");
+				cudaCodec_CreateVideoDecode = (ABL_cudaCodec_CreateVideoDecode) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_CreateVideoDecode");
+				cudaCodec_CudaVideoDecode = (ABL_cudaCodec_CudaVideoDecode) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_CudaVideoDecode");
 
-				cudaCodec_DeleteVideoDecode = (ABL_DeleteVideoDecode) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_DeleteVideoDecode");
-				cudaCodec_GetCudaDecodeCount = (ABL_GetCudaDecodeCount) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_GetCudaDecodeCount");
-				cudaCodec_UnInit = (ABL_VideoDecodeUnInit) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_UnInit");
+				cudaCodec_DeleteVideoDecode = (ABL_cudaCodec_DeleteVideoDecode) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_DeleteVideoDecode");
+				cudaCodec_GetCudaDecodeCount = (ABL_cudaCodec_GetCudaDecodeCount) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_GetCudaDecodeCount");
+				cudaCodec_UnInit = (ABL_cudaCodec_UnInit) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_UnInit");
 
 			}
 			if (cudaCodec_Init)

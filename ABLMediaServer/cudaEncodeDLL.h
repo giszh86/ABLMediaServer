@@ -5,8 +5,13 @@
 // CUDAENCODEDLL_API functions as being imported from a DLL, whereas this DLL sees symbols
 // defined with this macro as being exported.
 
-#ifndef _CudaEncodeDLL_H
-#define _CudaEncodeDLL_H
+#pragma once
+#ifdef _WIN32
+#define WINAPI      __stdcall
+#else
+#define WINAPI      
+#endif
+
 
 //视频格式 
 enum cudaEncodeVideo_enum {
@@ -36,7 +41,7 @@ enum cudaEncodeVideo_enum {
 参数：
 无
 */
-typedef  bool (*ABL_cudaEncode_Init) ();
+typedef bool (WINAPI* ABL_cudaEncode_Init) ();
 
 /*
 功能：
@@ -47,7 +52,7 @@ typedef  bool (*ABL_cudaEncode_Init) ();
 0   没有英伟达显卡
 N   有N个英伟达显卡
 */
-typedef int (*ABL_cudaEncode_GetDeviceGetCount) ();
+typedef int (WINAPI* ABL_cudaEncode_GetDeviceGetCount) ();
 
 /*
 功能:
@@ -59,8 +64,9 @@ char*  szName   显卡名称
 true            获取成功
 false           获取失败
 */
-typedef bool (*ABL_cudaEncode_GetDeviceName) (int nOrder, char* szName);
+typedef bool (WINAPI* ABL_cudaEncode_GetDeviceName) (int nOrder, char* szName);
  
+//创建解码句柄 
 /*
 功能：创建解码句柄 
 参数：
@@ -70,14 +76,12 @@ typedef bool (*ABL_cudaEncode_GetDeviceName) (int nOrder, char* szName);
  int nHeight,                      YUV 数据的高
  uint64_t& nCudaChan               创建编码器成功后 返回的句柄 
 */
-typedef bool (*ABL_cudaEncode_CreateVideoEncode) (cudaEncodeVideo_enum videoCodec, cudaEncodeVideo_enum yuvType, int nWidth, int nHeight, uint64_t& nCudaChan);
+typedef bool (WINAPI* ABL_cudaEncode_CreateVideoEncode) (cudaEncodeVideo_enum videoCodec, cudaEncodeVideo_enum yuvType, int nWidth, int nHeight, uint64_t& nCudaChan);
 
 //删除解码句柄
-typedef bool (*ABL_cudaEncode_DeleteVideoEncode) (uint64_t nCudaChan);
+typedef bool (WINAPI* ABL_cudaEncode_DeleteVideoEncode) (uint64_t nCudaChan);
 
-typedef  int (*ABL_cudaEncode_CudaVideoEncode) (uint64_t nCudaChan, unsigned char* pYUVData, int nYUVLength, char* pOutEncodeData);
+typedef int  (WINAPI* ABL_cudaEncode_CudaVideoEncode) (uint64_t nCudaChan, unsigned char* pYUVData, int nYUVLength, char* pOutEncodeData);
 
-typedef  bool (*ABL_cudaEncode_UnInit) ();
-
-#endif
+typedef bool(WINAPI* ABL_cudaEncode_UnInit) ();
 

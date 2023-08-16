@@ -66,7 +66,7 @@
 #include <iconv.h>
 #include <malloc.h>
 #include <dlfcn.h> 
-#include "cudaCodecDLL_Linux.h"
+#include "cudaCodecDLL.h"
 #include "cudaEncodeDLL.h"
 
 #include <limits.h>

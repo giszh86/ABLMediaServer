@@ -46,10 +46,10 @@ extern CMediaFifo                      pMessageNoticeFifo;          //消息通知FI
 extern char                            ABL_szLocalIP[128];
 
 #ifdef OS_System_Windows
-extern ABL_cudaDecode_Init  cudaCodec_Init;
-extern ABL_CreateVideoDecode cudaCodec_CreateVideoDecode;
-extern ABL_CudaVideoDecode   cudaCodec_CudaVideoDecode;
-extern ABL_DeleteVideoDecode cudaCodec_DeleteVideoDecode;
+extern ABL_cudaCodec_Init  cudaCodec_Init;
+extern ABL_cudaCodec_CreateVideoDecode cudaCodec_CreateVideoDecode;
+extern ABL_cudaCodec_CudaVideoDecode   cudaCodec_CudaVideoDecode;
+extern ABL_cudaCodec_DeleteVideoDecode cudaCodec_DeleteVideoDecode;
 #else
 extern ABL_cudaCodec_Init cudaCodec_Init ;
 extern ABL_cudaCodec_GetDeviceGetCount  cudaCodec_GetDeviceGetCount   ;
@@ -1001,21 +1001,21 @@ bool  CMediaStreamSource::H265ConvertH264(unsigned char* szVideo, int nLength, c
 				for (int i = 0; i < nCudaDecodeFrameCount; i++)
 				{
 					if (m_h265ConvertH264Struct.convertOutWidth != nSrcWidth && m_h265ConvertH264Struct.convertOutHeight != nSrcHeight)
-						avFrameSWS.AVFrameSWSYUV(pCudaDecodeYUVFrame[i], nCudeDecodeOutLength);
+						avFrameSWS.AVFrameSWSYUV(pCudaDecodeYUVFrame, nCudeDecodeOutLength);
 
 					if (nCudaDecodeFrameCount == 1)//只有1帧
 					{
 						if (m_h265ConvertH264Struct.convertOutWidth != nSrcWidth && m_h265ConvertH264Struct.convertOutHeight != nSrcHeight)
 							videoEncode.EncodecYUV(avFrameSWS.szDestData, avFrameSWS.numBytes2, pOutEncodeBuffer, &nOutLength);
 						else if (m_h265ConvertH264Struct.convertOutWidth == nSrcWidth && m_h265ConvertH264Struct.convertOutHeight == nSrcHeight)
-							videoEncode.EncodecYUV(pCudaDecodeYUVFrame[i], nCudeDecodeOutLength, pOutEncodeBuffer, &nOutLength);
+							videoEncode.EncodecYUV(pCudaDecodeYUVFrame, nCudeDecodeOutLength, pOutEncodeBuffer, &nOutLength);
 					}
 					else
 					{//多帧 
 						if (m_h265ConvertH264Struct.convertOutWidth != nSrcWidth && m_h265ConvertH264Struct.convertOutHeight != nSrcHeight)
 							videoEncode.EncodecYUV(avFrameSWS.szDestData, avFrameSWS.numBytes2, pOutEncodeBuffer + (nEncodeBufferLengthCount + sizeof(int)), &nOutLength);
 						else if (m_h265ConvertH264Struct.convertOutWidth == nSrcWidth && m_h265ConvertH264Struct.convertOutHeight == nSrcHeight)
-							videoEncode.EncodecYUV(pCudaDecodeYUVFrame[i], nCudeDecodeOutLength, pOutEncodeBuffer + (nEncodeBufferLengthCount + sizeof(int)), &nOutLength);
+							videoEncode.EncodecYUV(pCudaDecodeYUVFrame, nCudeDecodeOutLength, pOutEncodeBuffer + (nEncodeBufferLengthCount + sizeof(int)), &nOutLength);
 
 						if (nOutLength > 0 && (CudaDecodeH264EncodeH264FIFOBufferLength - nEncodeBufferLengthCount) > (nOutLength + sizeof(nOutLength)))
 						{
@@ -1030,7 +1030,7 @@ bool  CMediaStreamSource::H265ConvertH264(unsigned char* szVideo, int nLength, c
 					nWriteYUVCount++;
 					if (nWriteYUVCount <= 40 )
 					{
-						fwrite(pCudaDecodeYUVFrame[i], 1, nCudeDecodeOutLength, fCudaWriteYUVFile);
+						fwrite(pCudaDecodeYUVFrame, 1, nCudeDecodeOutLength, fCudaWriteYUVFile);
 						fflush(fCudaWriteYUVFile);
 					}
 #endif
