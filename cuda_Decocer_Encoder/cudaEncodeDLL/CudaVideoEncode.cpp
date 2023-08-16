@@ -169,7 +169,7 @@ int  CCudaVideoEncode::cudaEncodeVideo(unsigned char* pYUVData, int nLength,char
 	const NvEncInputFrame* encoderInputFrame = enc->GetNextInputFrame();
 	if (encoderInputFrame == NULL)
 	{
-		printf("encoderInputFrame  ==  null");
+		printf("encoderInputFrame  ==  null \r\n");
 		return 0;
 
 	}
@@ -220,7 +220,7 @@ int  CCudaVideoEncode::cudaEncodeVideo(unsigned char* pYUVData, int nLength,char
 	}
 	else
 	{
-		printf("CCudaVideoEncode::cudaEncodeVideo  nSize  == 0");
+		printf("CCudaVideoEncode::cudaEncodeVideo  nSize  == 0 \r\n");
 		return 0 ;
 	}
 

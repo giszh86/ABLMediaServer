@@ -13,7 +13,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 
 # 添加开关，用于控制是否启用 Jetson Multimedia API
-option(ENABLE_JETSON "Enable Jetson Multimedia API" ON)
+option(ENABLE_JETSON "Enable Jetson Multimedia API" OFF)
 
 # 定义宏定义，根据操作系统平台添加 _WIN32 宏定义
 if(WIN32)
@@ -72,9 +72,9 @@ set(LIBS
     ${CMAKE_CURRENT_SOURCE_DIR}/../3rd/Video_Codec_SDK_11.1.5/Lib/linux/stubs/x86_64 
 )
 
-find_library(LIBNVENCODE nvidia-encode HINTS ${CMAKE_CURRENT_SOURCE_DIR}/../../3rd/Video_Codec_SDK_11.1.5/Lib/linux/stubs/x86_64)
-find_library(LIBNVDEC nvcuvid HINTS ${CMAKE_CURRENT_SOURCE_DIR}/../../3rd/Video_Codec_SDK_11.1.5/Lib/linux/stubs/x86_64)
-find_library(LIBCUDA cuda HINTS ${CMAKE_CURRENT_SOURCE_DIR}/../../3rd/Video_Codec_SDK_11.1.5/Lib/linux/stubs/x86_64)
+find_library(LIBNVENCODE nvidia-encode HINTS ${CMAKE_CURRENT_SOURCE_DIR}/../3rd/Video_Codec_SDK_11.1.5/Lib/linux/stubs/x86_64)
+find_library(LIBNVDEC nvcuvid HINTS ${CMAKE_CURRENT_SOURCE_DIR}/../3rd/Video_Codec_SDK_11.1.5/Lib/linux/stubs/x86_64)
+find_library(LIBCUDA cuda HINTS ${CMAKE_CURRENT_SOURCE_DIR}/../3rd/Video_Codec_SDK_11.1.5/Lib/linux/stubs/x86_64)
 # 查找需要链接的库
 #find_library(LIBNVENCODE nvidia-encode)
 #find_library(LIBNVDEC nvcuvid)

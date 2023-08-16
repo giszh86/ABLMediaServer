@@ -113,9 +113,159 @@ ABL_cudaCodec_UnInit cudaCodec_UnInit = NULL;
 
 
 #include <thread>
+#include "../jetson-ffmpeg/include/nvmpi.h"
 
+int test()
+{
+	char szOutH264Name[256] = { 0 };
+
+	GetCurrentPath(szCurrentPath);
+
+	if (YUV_Width == 1920)
+	{
+		sprintf(szYUVName, "%s/YV12_1920x1080.yuv", szCurrentPath);
+		sprintf(szOutH264Name, "%s/Encodec_1920x1080.264", szCurrentPath);
+	}
+	else if (YUV_Width == 704)
+	{
+		sprintf(szYUVName, "%s/YV12_704x576.yuv", szCurrentPath);
+		sprintf(szOutH264Name, "%s/Encodec_704x576.264", szCurrentPath);
+	}
+	else if (YUV_Width == 640)
+	{
+		sprintf(szYUVName, "%s/YV12_640x480.yuv", szCurrentPath);
+		sprintf(szOutH264Name, "%s/Encodec_640x480.264", szCurrentPath);
+	}
+	else if (YUV_Width == 352)
+	{
+		sprintf(szYUVName, "%s/YV12_352x288.yuv", szCurrentPath);
+		sprintf(szOutH264Name, "%s/Encodec_352x288.264", szCurrentPath);
+	}
+	else //非法的YUV
+		return -1;
+	printf("open file [%s]  \r\n", szYUVName);
+	//打开原始的YUV文件
+	FILE* fFile;//输入的YUV文件
+	fFile = fopen(szYUVName, "rb");
+	if (fFile == NULL)
+	{
+		printf("open fail errno = % d reason = % s \n", errno);
+		printf("open file error =[%s] \r\n", szYUVName);
+		return 0;
+	}
+
+	printf("open file [%s]  \r\n", szOutH264Name);
+	//创建准备写入264编码数据的文件句柄
+	fFileH264 = fopen(szOutH264Name, "wb");
+	if (fFileH264 == NULL)
+	{
+		printf("open file error =[%s] \r\n", szOutH264Name);
+		return 0;
+	}
+
+	nvEncParam param = { 0 };
+	param.width = YUV_Width;
+	param.height = YUV_Height;	
+	param.mode_vbr = 0;
+	param.idr_interval = 60;
+	param.iframe_interval = 30;
+	param.fps_n = 1;
+	param.fps_d = 25;
+	param.profile = 77;
+	param.level = 10;
+	param.hw_preset_type = 1;
+
+	nvmpictx* ctx = nvmpi_create_encoder(NV_VIDEO_CodingH264, &param);
+	if (ctx == nullptr)
+	{
+		printf("cudaEncode_CreateVideoEncode  fail \r\n");
+	}
+	else
+	{
+		printf("cudaEncode_CreateVideoEncode  \r\n" );
+	}
+	szYUVBuffer = new unsigned char[(YUV_Width * YUV_Height * 3) / 2];
+	szEncodeBuffer = new unsigned char[(YUV_Width * YUV_Height * 3) / 2];
+	while (true)
+	{
+		//每次读取一帧的YUV数据，长度为 nSize =  (YUV_Width*YUV_Height * 3) / 2 
+		int nRead = fread(szYUVBuffer, 1, nSize, fFile);
+		if (nRead <= 0)
+		{
+			printf("open file nRead =[%d] \r\n", nRead);
+			break;
+		}
+		// 假设您已经读取了YUV数据到 szYUVBuffer 中
+		unsigned char* yuvData = szYUVBuffer; // 指向YUV数据的指针
+		int yuvWidth = YUV_Width;
+		int yuvHeight = YUV_Height;
+		nvFrame *frame=new nvFrame;
+
+		// 设置 nvFrame 的字段
+		frame->flags = 0; // 根据需要设置
+		frame->payload_size[0] = yuvWidth * yuvHeight; // Y分量的大小
+		frame->payload_size[1] = yuvWidth * yuvHeight / 4; // U分量的大小
+		frame->payload_size[2] = yuvWidth * yuvHeight / 4; // V分量的大小
+		frame->payload[0] = yuvData; // Y分量数据指针
+		frame->payload[1] = yuvData + frame->payload_size[0]; // U分量数据指针
+		frame->payload[2] = yuvData + frame->payload_size[0] + frame->payload_size[1]; // V分量数据指针
+		frame->linesize[0] = yuvWidth; // Y分量每行的大小
+		frame->linesize[1] = yuvWidth / 2; // U分量每行的大小
+		frame->linesize[2] = yuvWidth / 2; // V分量每行的大小
+		frame->type = nvPixFormat::NV_PIX_YUV420;
+		frame->width = yuvWidth;
+		frame->height = yuvHeight;
+		frame->timestamp = time(nullptr); // 设置时间戳
+		int num1= nvmpi_encoder_put_frame(ctx, frame);
+		if (num1>0)
+		{
+			printf("nvmpi_encoder_put_frame =[%d] \r\n", num1);
+		}
+		else
+		{
+			printf("nvmpi_encoder_put_frame =[%d] \r\n", num1);
+		}
+		nvPacket *packet;
+		int num2 = nvmpi_encoder_get_packet(ctx, &packet);
+		if (num2 > 0)
+		{
+			printf("nvmpi_encoder_get_packet =[%d] \r\n", num2);
+		}
+		else
+		{
+			printf("nvmpi_encoder_get_packet =[%d] \r\n", num2);
+		}
+
+		if (packet&&packet->payload_size>0)
+		{
+			//如果编码成功 nEncodeLength 大于 0 ，写入编码文件中  fFileH264
+			fwrite(packet->payload, 1, packet->payload_size, fFileH264);
+			fflush(fFileH264);
+			printf("nEncodeLength %d  \r\n", packet->payload_size);
+		}
+		else
+		{
+			printf("nEncodeLength %d  \r\n", packet->payload_size);
+		}
+	}
+
+	if (szYUVBuffer)
+		delete[] szYUVBuffer;
+	if (szEncodeBuffer)
+		delete szEncodeBuffer;
+
+	fclose(fFile);
+	fclose(fFileH264);
+
+	//编码结束后，删除编码句柄 nCudaEncode
+	nvmpi_encoder_close(ctx);
+	return 0;
+
+}
 int main()
 {
+	test();
+
 	char szCudaName[256] = { 0 };
 	char szOutH264Name[256] = { 0 };
 	bool bInitCudaFlag = false;
