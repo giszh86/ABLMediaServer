@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # 要拷贝的应用程序路径
-APP_PATH=/path/to/your/application
+APP_PATH=/home/admin-nx/ABLMediaServer/Bin/ABLMediaServer
 
 # 目标文件夹路径，您可以根据需要修改
-DEST_FOLDER=/path/to/destination/folder
+DEST_FOLDER=/home/admin-nx/ABLMediaServer/Bin
 
 # 获取应用程序所依赖的库列表
 LIBS_LIST=$(ldd "$APP_PATH" | awk '{print $3}')
