@@ -555,8 +555,8 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Library Include="..\lib\libfaac.lib" />
     <Library Include="..\lib\XHNetSDK.lib" />
     <Library Include="..\lib\webrtc-streamer.lib" />
+    <Library Include="..\lib\libfaac.lib" />
   </ItemGroup>
 </Project>
