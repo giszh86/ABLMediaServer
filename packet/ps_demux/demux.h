@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <memory>
 #include <cstring>
+#include <unordered_map>
 #include <map>
 #include "ps_demux.h"
 #include "consumer_base.h"
@@ -34,7 +35,7 @@ private:
 	const void* m_userdata;
 	const int32_t m_duxmode;
 
-	std::map<uint8_t, consumer_base_ptr> m_consumermap;
+	std::unordered_map<uint8_t, consumer_base_ptr> m_consumermap;
 
 	_ps_demux_cb m_out;
 };

@@ -13,6 +13,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "XHNetSDK", "XHNetSDK\XHNetS
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "webrtc-streamer", "webrtc-streamer\webrtc-streamer.vcxproj", "{9436486C-5146-4B7C-A0DA-B7483D917F58}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ps_demux", "packet\test\ps_demux\ps_demux.vcxproj", "{4B97030E-D442-40E4-BDB7-2BBBB7AEEB81}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		boost_release|ARM = boost_release|ARM
@@ -139,6 +141,26 @@ Global
 		{9436486C-5146-4B7C-A0DA-B7483D917F58}.Release|x64.Build.0 = Release|x64
 		{9436486C-5146-4B7C-A0DA-B7483D917F58}.Release|x86.ActiveCfg = Release|Win32
 		{9436486C-5146-4B7C-A0DA-B7483D917F58}.Release|x86.Build.0 = Release|Win32
+		{4B97030E-D442-40E4-BDB7-2BBBB7AEEB81}.boost_release|ARM.ActiveCfg = Debug|Win32
+		{4B97030E-D442-40E4-BDB7-2BBBB7AEEB81}.boost_release|ARM.Build.0 = Debug|Win32
+		{4B97030E-D442-40E4-BDB7-2BBBB7AEEB81}.boost_release|ARM64.ActiveCfg = Debug|Win32
+		{4B97030E-D442-40E4-BDB7-2BBBB7AEEB81}.boost_release|ARM64.Build.0 = Debug|Win32
+		{4B97030E-D442-40E4-BDB7-2BBBB7AEEB81}.boost_release|x64.ActiveCfg = Debug|x64
+		{4B97030E-D442-40E4-BDB7-2BBBB7AEEB81}.boost_release|x64.Build.0 = Debug|x64
+		{4B97030E-D442-40E4-BDB7-2BBBB7AEEB81}.boost_release|x86.ActiveCfg = Debug|Win32
+		{4B97030E-D442-40E4-BDB7-2BBBB7AEEB81}.boost_release|x86.Build.0 = Debug|Win32
+		{4B97030E-D442-40E4-BDB7-2BBBB7AEEB81}.Debug|ARM.ActiveCfg = Debug|Win32
+		{4B97030E-D442-40E4-BDB7-2BBBB7AEEB81}.Debug|ARM64.ActiveCfg = Debug|Win32
+		{4B97030E-D442-40E4-BDB7-2BBBB7AEEB81}.Debug|x64.ActiveCfg = Debug|x64
+		{4B97030E-D442-40E4-BDB7-2BBBB7AEEB81}.Debug|x64.Build.0 = Debug|x64
+		{4B97030E-D442-40E4-BDB7-2BBBB7AEEB81}.Debug|x86.ActiveCfg = Debug|Win32
+		{4B97030E-D442-40E4-BDB7-2BBBB7AEEB81}.Debug|x86.Build.0 = Debug|Win32
+		{4B97030E-D442-40E4-BDB7-2BBBB7AEEB81}.Release|ARM.ActiveCfg = Release|Win32
+		{4B97030E-D442-40E4-BDB7-2BBBB7AEEB81}.Release|ARM64.ActiveCfg = Release|Win32
+		{4B97030E-D442-40E4-BDB7-2BBBB7AEEB81}.Release|x64.ActiveCfg = Release|x64
+		{4B97030E-D442-40E4-BDB7-2BBBB7AEEB81}.Release|x64.Build.0 = Release|x64
+		{4B97030E-D442-40E4-BDB7-2BBBB7AEEB81}.Release|x86.ActiveCfg = Release|Win32
+		{4B97030E-D442-40E4-BDB7-2BBBB7AEEB81}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
