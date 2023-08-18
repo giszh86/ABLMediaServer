@@ -46,7 +46,7 @@ bool CVideoDecode::startDecode(char* szCodecName, int nWidth, int nHeight)
 	strcpy(m_szCodecName, szCodecName);
 
  	if (strcmp(szCodecName, "H264") == 0)
-		pDCodec = avcodec_find_decoder_by_name("h264_nvmpi");
+		pDCodec = avcodec_find_decoder(AV_CODEC_ID_H264);
 	else if (strcmp(szCodecName, "H265") == 0)
 		pDCodec = avcodec_find_decoder(AV_CODEC_ID_H265);
 
