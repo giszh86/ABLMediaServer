@@ -1026,8 +1026,8 @@ struct MessageNoticeStruct
 };
 
 #ifndef OS_System_Windows
-unsigned long long GetTickCount();
-unsigned long long GetTickCount64();
+unsigned long  GetTickCount();
+unsigned long  GetTickCount64();
 #ifdef USE_BOOST
 void          Sleep(int mMicroSecond);
 #endif
@@ -1087,10 +1087,10 @@ extern "C"
 #include <libavutil/opt.h>
 #include <libavutil/imgutils.h>	
 #include <libswresample/swresample.h>
-#include "./packet/ps_demux/ps_demux.h"
-#include "./packet/ps_mux/ps_mux.h"
-#include "./packet/rtppacket/rtp_packet.h"
-#include "./packet/rtpdepacket/rtp_depacket.h"
+
+#include "ps_demux.h"
+#include "ps_mux.h"
+
 
 }
 using namespace std;
@@ -1121,7 +1121,7 @@ typedef list<int> LogFileVector;
 
 #include "MediaStreamSource.h"
 #include "MediaSendThreadPool.h"
-#include "./packet/rtpdepacket/rtp_depacket.h"
+#include "rtp_depacket.h"
 #include "NetServerRecvRtpTS_PS.h"
 #include "RtpTSStreamInput.h"
 #include "RtpPSStreamInput.h"

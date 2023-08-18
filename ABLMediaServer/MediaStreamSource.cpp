@@ -896,7 +896,7 @@ bool  CMediaStreamSource::H265ConvertH264(unsigned char* szVideo, int nLength, c
 				if (!videoEncode.m_bInitFlag)
 				{
 					pOutEncodeBuffer = new unsigned char[((m_h265ConvertH264Struct.convertOutWidth * m_h265ConvertH264Struct.convertOutHeight) * 3) / 2];
-					if (videoEncode.StartEncode("libx264", AV_PIX_FMT_YUV420P, m_h265ConvertH264Struct.convertOutWidth, m_h265ConvertH264Struct.convertOutHeight, 25, m_h265ConvertH264Struct.convertOutBitrate))
+					if (videoEncode.StartEncode("h264_nvmpi", AV_PIX_FMT_YUV420P, m_h265ConvertH264Struct.convertOutWidth, m_h265ConvertH264Struct.convertOutHeight, 25, m_h265ConvertH264Struct.convertOutBitrate))
 					{//libopenh264
 						nConvertObjectCount++;
 						H265ConvertH264_enable = true;
@@ -920,7 +920,7 @@ bool  CMediaStreamSource::H265ConvertH264(unsigned char* szVideo, int nLength, c
 		{//Ô­³ß´çÊä³ö
 			if (!videoEncode.m_bInitFlag)
 			{
-				if (videoEncode.StartEncode("libx264", AV_PIX_FMT_YUV420P, videoDecode.m_nWidth, videoDecode.m_nHeight, 25, m_h265ConvertH264Struct.convertOutBitrate))
+				if (videoEncode.StartEncode("h264_nvmpi", AV_PIX_FMT_YUV420P, videoDecode.m_nWidth, videoDecode.m_nHeight, 25, m_h265ConvertH264Struct.convertOutBitrate))
 				{//libopenh264
 					pOutEncodeBuffer = new unsigned char[((m_h265ConvertH264Struct.convertOutWidth * m_h265ConvertH264Struct.convertOutHeight) * 3) / 2];
 					nConvertObjectCount ++;
@@ -974,7 +974,7 @@ bool  CMediaStreamSource::H265ConvertH264(unsigned char* szVideo, int nLength, c
 						if (!videoEncode.m_bInitFlag)
 						{
 							pOutEncodeBuffer = new unsigned char[CudaDecodeH264EncodeH264FIFOBufferLength];
-							if (videoEncode.StartEncode("libx264", AV_PIX_FMT_YUV420P, m_h265ConvertH264Struct.convertOutWidth, m_h265ConvertH264Struct.convertOutHeight, 25, m_h265ConvertH264Struct.convertOutBitrate))
+							if (videoEncode.StartEncode("h264_nvmpi", AV_PIX_FMT_YUV420P, m_h265ConvertH264Struct.convertOutWidth, m_h265ConvertH264Struct.convertOutHeight, 25, m_h265ConvertH264Struct.convertOutBitrate))
 							{//libopenh264
 								nConvertObjectCount++;
 								H265ConvertH264_enable = true;
@@ -988,7 +988,7 @@ bool  CMediaStreamSource::H265ConvertH264(unsigned char* szVideo, int nLength, c
 					if (pOutEncodeBuffer == NULL)
 					{
 						pOutEncodeBuffer = new unsigned char[CudaDecodeH264EncodeH264FIFOBufferLength];
-						if (videoEncode.StartEncode("libx264", AV_PIX_FMT_YUV420P, m_h265ConvertH264Struct.convertOutWidth, m_h265ConvertH264Struct.convertOutHeight, 25, m_h265ConvertH264Struct.convertOutBitrate))
+						if (videoEncode.StartEncode("h264_nvmpi", AV_PIX_FMT_YUV420P, m_h265ConvertH264Struct.convertOutWidth, m_h265ConvertH264Struct.convertOutHeight, 25, m_h265ConvertH264Struct.convertOutBitrate))
 						{//libopenh264
 							nConvertObjectCount++;
 							H265ConvertH264_enable = true;
