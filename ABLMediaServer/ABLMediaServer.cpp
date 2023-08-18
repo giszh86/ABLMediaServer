@@ -238,17 +238,25 @@ int GB2312ToUTF8(char* szSrc, size_t iSrcLen, char* szDst, size_t iDstLen)
       return 0;
 }
 
-unsigned long long  GetTickCount()
+unsigned long GetTickCount()
 {
-	return std::chrono::duration_cast<std::chrono::milliseconds>(
-		std::chrono::system_clock::now().time_since_epoch())
-		.count();
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	return ((tv.tv_sec * 1000) + (tv.tv_usec / 1000));
 }
-unsigned long long  GetTickCount64()
+unsigned long GetTickCount64()
 {
-	return std::chrono::duration_cast<std::chrono::milliseconds>(
-		std::chrono::system_clock::now().time_since_epoch())
-		.count();
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	return ((tv.tv_sec * 1000) + (tv.tv_usec / 1000));
+}
+#include <chrono>
+
+unsigned long GetTickCount641()
+{
+	auto now = std::chrono::high_resolution_clock::now();
+	auto duration = now.time_since_epoch();
+	return std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
 }
 
 uint64_t GetCurrentSecond()
@@ -3027,6 +3035,7 @@ int _tmain(int argc, _TCHAR* argv[])
 int main(int argc, char* argv[])
 #endif
 {
+
 
 ABL_Restart:
 	unsigned char nGet;
