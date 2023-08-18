@@ -186,8 +186,8 @@ client_ptr client_manager::malloc_client(asio::io_context& ioc,
 	bool autoread)
 {
 	std::unique_lock<std::mutex> _lock(m_poolmtx);
-	client_ptr cli;
-	cli.reset(m_pool.construct(ioc, srvid, fnread, fnclose, autoread), client_deletor());
+	client_ptr cli=std::make_shared<client>(ioc, srvid, fnread, fnclose, autoread);
+	//cli.reset(m_pool.construct(ioc, srvid, fnread, fnclose, autoread), client_deletor());
 	return cli;
 }
 
@@ -196,7 +196,10 @@ client_ptr client_manager::malloc_client(asio::io_context& ioc,
 void client_manager::free_client(client* cli)
 {
 	std::lock_guard<std::mutex> lock(m_poolmtx);
-	m_pool.destroy(cli);
+	delete cli;
+	cli = nullptr;
+	 
+	//m_pool.destroy(cli);
 }
 
 bool client_manager::push_client(client_ptr& cli)

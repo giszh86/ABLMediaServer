@@ -105,11 +105,9 @@ server_manager::~server_manager(void)
 
 bool server_manager::push_server(server_ptr& s)
 {
-#ifdef LIBNET_USE_CORE_SYNC_MUTEX
-	auto_lock::al_lock<auto_lock::al_mutex> al(m_mutex);
-#else
+
 	std::lock_guard<std::mutex> lock(m_climtx);
-#endif
+
 
 	if (s)
 	{
@@ -122,11 +120,9 @@ bool server_manager::push_server(server_ptr& s)
 
 bool server_manager::pop_server(NETHANDLE id)
 {
-#ifdef LIBNET_USE_CORE_SYNC_MUTEX
-	auto_lock::al_lock<auto_lock::al_mutex> al(m_mutex);
-#else
+
 	std::lock_guard<std::mutex> lock(m_climtx);
-#endif
+
 
 	auto iter = m_servers.find(id);
 	if (m_servers.end() != iter)
@@ -145,11 +141,9 @@ bool server_manager::pop_server(NETHANDLE id)
 
 void server_manager::close_all_servers()
 {
-#ifdef LIBNET_USE_CORE_SYNC_MUTEX
-	auto_lock::al_lock<auto_lock::al_mutex> al(m_mutex);
-#else
+
 	std::lock_guard<std::mutex> lock(m_climtx);
-#endif
+
 
 	for (auto iter : m_servers)
 	{
@@ -164,11 +158,9 @@ void server_manager::close_all_servers()
 
 server_ptr server_manager::get_server(NETHANDLE id)
 {
-#ifdef LIBNET_USE_CORE_SYNC_MUTEX
-	auto_lock::al_lock<auto_lock::al_mutex> al(m_mutex);
-#else
+
 	std::lock_guard<std::mutex> lock(m_climtx);
-#endif
+
 
 	server_ptr s = nullptr;
 	auto iter = m_servers.find(id);

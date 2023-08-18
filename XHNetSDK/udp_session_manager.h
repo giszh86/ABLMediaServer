@@ -52,8 +52,9 @@ private:
 #ifdef LIBNET_USE_CORE_SYNC_MUTEX
 	auto_lock::al_mutex m_mutex;
 #else
-	std::mutex          m_climtx;
+
 #endif
+	std::mutex          m_climtx;
 };
 
 #define udp_session_manager_singleton HSingletonTemplatePtr<udp_session_manager>::Instance()
