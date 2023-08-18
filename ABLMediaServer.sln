@@ -13,7 +13,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "XHNetSDK", "XHNetSDK\XHNetS
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "webrtc-streamer", "webrtc-streamer\webrtc-streamer.vcxproj", "{9436486C-5146-4B7C-A0DA-B7483D917F58}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ps_demux", "packet\test\ps_demux\ps_demux.vcxproj", "{4B97030E-D442-40E4-BDB7-2BBBB7AEEB81}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ps_demux", "packet\ps_demux\ps_demux.vcxproj", "{4B97030E-D442-40E4-BDB7-2BBBB7AEEB81}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
