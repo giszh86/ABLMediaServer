@@ -14,7 +14,9 @@
 #endif
 #else
 #define PS_DEMUX_CALL_METHOD
-#define PS_DEMUX_API
+#define PS_DEMUX_API __attribute__((visibility("default")))
+
+
 #endif
 
 #include <stdint.h>
@@ -82,11 +84,11 @@ extern "C"
 
 	typedef void (PS_DEMUX_CALL_METHOD *ps_demux_callback)(_ps_demux_cb* cb);
 
-	__attribute__((visibility("default"))) PS_DEMUX_API int32_t ps_demux_start(ps_demux_callback cb, void* userdata, int32_t mode, uint32_t* h);
+	 PS_DEMUX_API int32_t ps_demux_start(ps_demux_callback cb, void* userdata, int32_t mode, uint32_t* h);
 
-	__attribute__((visibility("default"))) PS_DEMUX_API int32_t ps_demux_stop(uint32_t h);
+	 PS_DEMUX_API int32_t ps_demux_stop(uint32_t h);
 
-	__attribute__((visibility("default"))) PS_DEMUX_API int32_t ps_demux_input(uint32_t h, uint8_t* data, uint32_t datasize);
+	 PS_DEMUX_API int32_t ps_demux_input(uint32_t h, uint8_t* data, uint32_t datasize);
 
 #ifdef __cplusplus
 }

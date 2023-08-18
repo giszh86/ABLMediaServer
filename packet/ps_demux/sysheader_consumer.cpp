@@ -1,5 +1,5 @@
 #include "sysheader_consumer.h"
-#include "./include/ps_def.h"
+#include "ps_def.h"
 #include "ps_demux.h"
 
 sysheader_consumer::sysheader_consumer()

@@ -3,7 +3,7 @@
 
 
 #include <stdint.h>
-#include <boost/smart_ptr/shared_ptr.hpp>
+#include <memory>
 
 #define PS_DEMUX_OUTPUT_BUFF_MAX_SIZE (4 * 1024 * 1024)
 
@@ -20,6 +20,6 @@ public:
 	virtual void clean() = 0;
 
 };
-typedef boost::shared_ptr<consumer_base> consumer_base_ptr;
+typedef std::shared_ptr<consumer_base> consumer_base_ptr;
 
 #endif

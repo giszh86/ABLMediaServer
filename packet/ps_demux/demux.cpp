@@ -1,8 +1,8 @@
 #include <stdexcept>
-#include <boost/make_shared.hpp>
+#include <memory>
 #include "demux.h"
 #include "common.h"
-#include "./include/ps_def.h"
+#include "ps_def.h"
 #include "header_consumer.h"
 #include "sysheader_consumer.h"
 #include "psm_consumer.h"
@@ -22,7 +22,9 @@ ps_demux::ps_demux(ps_demux_callback cb, void* userdata, int32_t duxmode)
 ps_demux::~ps_demux()
 {
 	recycle_identifier(m_id);
+#ifndef _WIN32
 	malloc_trim(0);
+#endif // _WIN32
 }
 
 int32_t ps_demux::handle(uint8_t* data, uint32_t datasize)
@@ -183,7 +185,7 @@ bool ps_demux::check_startcode(uint8_t* data, uint32_t datasize, uint8_t& sid)
 
 consumer_base_ptr& ps_demux::get_consumer(uint8_t sid, bool create)
 {
-	boost::unordered_map<uint8_t, consumer_base_ptr>::iterator it = m_consumermap.find(sid);
+	auto it = m_consumermap.find(sid);
 	if (m_consumermap.end() != it)
 	{
 		return it->second;
@@ -202,19 +204,19 @@ consumer_base_ptr& ps_demux::get_consumer(uint8_t sid, bool create)
 		switch (sid)
 		{
 		case e_ps_segment_psheader:
-			p = boost::static_pointer_cast<consumer_base>(boost::make_shared<header_consumer>());
+			p = std::static_pointer_cast<consumer_base>(std::make_shared<header_consumer>());
 			break;
 
 		case e_ps_segment_pssysheader:
-			p = boost::static_pointer_cast<consumer_base>(boost::make_shared<sysheader_consumer>());
+			p = std::static_pointer_cast<consumer_base>(std::make_shared<sysheader_consumer>());
 			break;
 
 		case e_ps_segment_pspsm:
-			p = boost::static_pointer_cast<consumer_base>(boost::make_shared<psm_consumer>());
+			p = std::static_pointer_cast<consumer_base>(std::make_shared<psm_consumer>());
 			break;
 
 		case e_ps_streamid_private1:
-			p = boost::static_pointer_cast<consumer_base>(boost::make_shared<pes_consumer>(m_cb, const_cast<void*>(m_userdata),
+			p = std::static_pointer_cast<consumer_base>(std::make_shared<pes_consumer>(m_cb, const_cast<void*>(m_userdata),
 														m_duxmode, m_id, 0, e_ps_streamid_private1));
 
 		case e_ps_streamid_padding:
@@ -224,7 +226,7 @@ consumer_base_ptr& ps_demux::get_consumer(uint8_t sid, bool create)
 		case e_ps_streamid_dsm :
 		case e_ps_streamid_iso13522:
 		case e_ps_streamid_psd:
-			p = boost::static_pointer_cast<consumer_base>(boost::make_shared<pes_nonmedia_consumer>());
+			p = std::static_pointer_cast<consumer_base>(std::make_shared<pes_nonmedia_consumer>());
 			break;
 
 		default:
@@ -233,7 +235,7 @@ consumer_base_ptr& ps_demux::get_consumer(uint8_t sid, bool create)
 			{
 				if (get_streamtype(sid, st))
 				{
-					p = boost::static_pointer_cast<consumer_base>(boost::make_shared<pes_consumer>(m_cb, 
+					p = std::static_pointer_cast<consumer_base>(std::make_shared<pes_consumer>(m_cb, 
 																				const_cast<void*>(m_userdata),
 																				m_duxmode, m_id, st, sid));
 				}
@@ -244,7 +246,7 @@ consumer_base_ptr& ps_demux::get_consumer(uint8_t sid, bool create)
 			}
 			else if ((e_ps_streamid_minreserved <= sid) && (e_ps_streamid_maxreserved))	//media stream id
 			{
-				p = boost::static_pointer_cast<consumer_base>(boost::make_shared<pes_nonmedia_consumer>());
+				p = std::static_pointer_cast<consumer_base>(std::make_shared<pes_nonmedia_consumer>());
 			}
 			else
 			{
@@ -264,7 +266,7 @@ consumer_base_ptr& ps_demux::get_consumer(uint8_t sid, bool create)
 		throw;
 	}
 	
-	std::pair<boost::unordered_map<uint8_t, consumer_base_ptr>::iterator, bool> ret = m_consumermap.insert(std::make_pair(sid, p));
+	auto ret = m_consumermap.insert(std::make_pair(sid, p));
 	if (!ret.second)
 	{
 		throw std::runtime_error("manage consumer failed");
@@ -277,7 +279,7 @@ bool ps_demux::get_streamtype(uint8_t sid, uint8_t& st)
 {
 	try
 	{
-		psm_consumer_ptr p = boost::dynamic_pointer_cast<psm_consumer>(get_consumer(e_ps_segment_pspsm, false));
+		psm_consumer_ptr p = std::dynamic_pointer_cast<psm_consumer>(get_consumer(e_ps_segment_pspsm, false));
 
 		const std::vector<_ps_elementary_stream>& v = p->get_streaminfo();
 
@@ -314,13 +316,13 @@ void ps_demux::output()
 			uint8_t* data = NULL/*nullptr*/;
 			uint32_t datasize = 0;
 
-			psm_consumer_ptr p = boost::dynamic_pointer_cast<psm_consumer>(get_consumer(e_ps_segment_pspsm, false));
+			psm_consumer_ptr p = std::dynamic_pointer_cast<psm_consumer>(get_consumer(e_ps_segment_pspsm, false));
 
 			const std::vector<_ps_elementary_stream>& v = p->get_streaminfo();
 
 			for (std::vector<_ps_elementary_stream>::const_iterator it = v.begin(); v.end() != it; ++it)
 			{
-				pes_consumer_ptr c = boost::dynamic_pointer_cast<pes_consumer>(get_consumer(it->sid, false));
+				pes_consumer_ptr c = std::dynamic_pointer_cast<pes_consumer>(get_consumer(it->sid, false));
 
 				data = c->output(datasize);
 
