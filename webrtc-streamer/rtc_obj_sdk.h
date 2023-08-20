@@ -20,16 +20,9 @@
 
 #include "./capture/VideoCapture.h"
 
-
-
-#include "HSingleton.h"
-
-
 typedef std::function<void(uint8_t* y, int strideY, uint8_t* u, int strideU, uint8_t* v, int strideV, int nWidth, int nHeight)> LocalFrameCallBackFunc;
 
 typedef std::function<void(std::string userID, uint8_t* y, int strideY, uint8_t* u, int strideU, uint8_t* v, int strideV, int nWidth, int nHeight)> RemoteFrameCallBackFunc;
-
-
 
 class WEBRTCSDK_EXPORTSIMPL MainWndCallback {
 public:
@@ -73,7 +66,6 @@ class PeerConnectionManager;
 class HttpServerRequestHandler;
 class WEBRTCSDK_EXPORTSIMPL WebRtcEndpoint {
 public:
-	WebRtcEndpoint();
 
 	void init(const char* webrtcConfig, std::function<void(char* callbackJson, void* pUserHandle)> callback);
 
@@ -82,8 +74,17 @@ public:
 	bool  deleteWebRtcSource(const char* szMediaSource);
 
 
-protected:
-	virtual ~WebRtcEndpoint() ;
+public:
+	static WebRtcEndpoint& getInstance();
+private:
+	WebRtcEndpoint() = default;
+
+	~WebRtcEndpoint() = default;
+
+	WebRtcEndpoint(const WebRtcEndpoint&) = delete;
+
+	WebRtcEndpoint& operator=(const WebRtcEndpoint&) = delete;
+
 
 	PeerConnectionManager* webRtcServer;
 	HttpServerRequestHandler* httpServer;
@@ -94,5 +95,3 @@ protected:
 WEBRTCSDK_EXPORTSIMPL WebRtcEndpoint* CreateWebRtcEndpoint();
 
 WEBRTCSDK_EXPORTSIMPL void ReleaseCreateWebRtcEndpoint(WebRtcEndpoint*);
-
-#define gblWebRtcEndpointMgrGet HSingletonTemplatePtr<WebRtcEndpoint>::Instance()

@@ -3,14 +3,14 @@
 #include <functional>
 #include <map>
 #include <string>
-#include "HSingleton.h"
+#include <mutex>
 
 
 #ifdef   WEBRTCSDK_EXPORTS
 #define WEBRTCSDK_EXPORTSIMPL __declspec(dllexport)
 #else
 #define WEBRTCSDK_EXPORTSIMPL __declspec(dllimport)
-#endif 
+#endif
 
 
 typedef std::function<void(uint8_t* y, int strideY, uint8_t* u, int strideU, uint8_t* v, int strideV, int nWidth, int nHeight, int64_t nTimeStamp)> VideoYuvCallBack; 
@@ -76,9 +76,6 @@ public:
 class WEBRTCSDK_EXPORTSIMPL VideoCaptureManager
 {
 public:
-	VideoCaptureManager() = default;
-	~VideoCaptureManager() {};
-
 	// 添加输入流
 	void AddInput(const std::string& videoUrl);
 
@@ -88,8 +85,13 @@ public:
 	// 获取输入流对象
 	VideoCapture* GetInput(const std::string& videoUrl);
 
-	// 获取线程池实例
-	static VideoCaptureManager* GetInstance();
+public:
+	static VideoCaptureManager& getInstance();
+private:
+	VideoCaptureManager() = default;
+	~VideoCaptureManager() {};
+	VideoCaptureManager(const VideoCaptureManager&) = delete;
+	VideoCaptureManager& operator=(const VideoCaptureManager&) = delete;
 
 private:
 	std::mutex m_mutex;

@@ -43,7 +43,7 @@ VideoTrackSourceInput::~VideoTrackSourceInput()
 {
 	if (m_vCapture)
 	{
-		VideoCaptureManager::GetInstance()->RemoveInput(m_videourl);
+		VideoCaptureManager::getInstance().RemoveInput(m_videourl);
 		//m_vCapture->Destroy();
 		//delete m_vCapture;;
 		//m_vCapture = nullptr;
@@ -53,7 +53,7 @@ bool VideoTrackSourceInput::Init(size_t width, size_t height, size_t target_fps,
 {
 
 	m_videourl = videourl;
-	m_vCapture = VideoCaptureManager::GetInstance()->GetInput(videourl);
+	m_vCapture = VideoCaptureManager::getInstance().GetInput(videourl);
 	m_vCapture->Init(videourl.c_str(), width, height, target_fps);
 	m_vCapture->RegisterCallback([this](uint8_t* y, int strideY, uint8_t* u, int strideU, uint8_t* v, int strideV, int nWidth, int nHeight, int64_t nTimeStamp)
 		{

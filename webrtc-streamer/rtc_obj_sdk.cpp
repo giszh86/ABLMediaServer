@@ -30,11 +30,7 @@ public:
 	}
 };
 
-WebRtcEndpoint::WebRtcEndpoint()
-{
 
-	
-}
 void WebRtcEndpoint::init(const char* webrtcConfig, std::function<void(char* callbackJson, void* pUserHandle)> callback)
 {
 
@@ -106,10 +102,14 @@ bool WebRtcEndpoint::deleteWebRtcSource(const char* szMediaSource)
 	return false;
 }
 
-
-WebRtcEndpoint::~WebRtcEndpoint()
+WebRtcEndpoint& WebRtcEndpoint::getInstance()
 {
+	static WebRtcEndpoint instance;
+	return instance;
 }
+
+
+
  WebRtcEndpoint* CreateWebRtcEndpoint()
  {
 	 return nullptr;

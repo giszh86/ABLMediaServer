@@ -8,7 +8,7 @@
 
 #include "VideoCaptureImpl.h"
 
-VideoCaptureManager* VideoCaptureManager::s_pVideoTrackMgrGet = nullptr;
+
 VideoCapture* VideoCapture::CreateVideoCapture(std::string videourl)
 {
 	std::map<std::string, std::string> opts;
@@ -129,12 +129,9 @@ VideoCapture* VideoCaptureManager::GetInput(const std::string& videoUrl)
 	}
 }
 
-VideoCaptureManager* VideoCaptureManager::GetInstance()
+VideoCaptureManager& VideoCaptureManager::getInstance()
 {
-	if (!s_pVideoTrackMgrGet)
-	{
-		s_pVideoTrackMgrGet = new VideoCaptureManager();
-
-	}
-	return s_pVideoTrackMgrGet;
+	static VideoCaptureManager instance;
+	return instance;
 }
+
