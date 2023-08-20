@@ -36,7 +36,9 @@ ps_mux::ps_mux(ps_mux_callback cb, void* userdata, int32_t alignmode, int32_t tt
 ps_mux::~ps_mux()
 {
 	recycle_identifier(m_id);
+#ifndef _WIN32
 	malloc_trim(0);
+#endif // _WIN32
 }
 
 uint32_t ps_mux::get_id() const
@@ -151,7 +153,7 @@ int32_t ps_mux::handle(const _ps_mux_input* in)
 
 void ps_mux::add_stream(int32_t mt, uint8_t st, uint8_t sid)
 {
-	boost::unordered_map<uint8_t, uint8_t>::iterator it = m_stsidmap.find(st);
+	std::unordered_map<uint8_t, uint8_t>::iterator it = m_stsidmap.find(st);
 	if (m_stsidmap.end() != it)
 	{
 		return;
@@ -239,7 +241,7 @@ uint8_t ps_mux::generate_video_sid()
 
 	while (true)
 	{
-		for (boost::unordered_map<uint8_t, uint8_t>::iterator it = m_stsidmap.begin(); m_stsidmap.end() != it; ++it)
+		for (std::unordered_map<uint8_t, uint8_t>::iterator it = m_stsidmap.begin(); m_stsidmap.end() != it; ++it)
 		{
 			if (it->second == m_sidbasev)
 			{
@@ -269,7 +271,7 @@ uint8_t ps_mux::generate_audio_sid()
 
 	while (true)
 	{
-		for (boost::unordered_map<uint8_t, uint8_t>::iterator it = m_stsidmap.begin(); m_stsidmap.end() != it; ++it)
+		for (std::unordered_map<uint8_t, uint8_t>::iterator it = m_stsidmap.begin(); m_stsidmap.end() != it; ++it)
 		{
 			if (it->second == m_sidbasea)
 			{
@@ -374,7 +376,7 @@ int32_t ps_mux::produce_psm()
 
 	_ps_elementary_stream es;
 
-	for (boost::unordered_map<uint8_t, uint8_t>::iterator it = m_stsidmap.begin(); m_stsidmap.end() != it; ++it)
+	for (std::unordered_map<uint8_t, uint8_t>::iterator it = m_stsidmap.begin(); m_stsidmap.end() != it; ++it)
 	{
 		es.st = it->first;
 		es.sid = it->second; 
@@ -779,7 +781,7 @@ uint8_t ps_mux::get_sid(int32_t mt, uint8_t st, uint8_t sid)
 {
 	uint8_t streamid = 0x00;
 
-	boost::unordered_map<uint8_t, uint8_t>::iterator it = m_stsidmap.find(st);
+	auto it = m_stsidmap.find(st);
 	if (m_stsidmap.end() != it)
 	{
 		return it->second;

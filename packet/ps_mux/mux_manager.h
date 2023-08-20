@@ -1,23 +1,14 @@
-#ifndef _PS_MUX_DEMUX_MUX_MANAGER_H_
-#define _PS_MUX_DEMUX_MUX_MANAGER_H_
+#pragma once
 
-#include <boost/serialization/singleton.hpp>
-#include <boost/unordered/unordered_map.hpp>
+#include <unordered_map>
+#include <mutex>
 
-#if (defined _WIN32 || defined _WIN64)
 
-#include <boost/thread/mutex.hpp>
-
-#else
-
-#include "auto_lock.h"
-
-#endif
 
 #include "mux.h"
 
 
-class ps_mux_manager : public boost::serialization::singleton<ps_mux_manager>
+class ps_mux_manager
 {
 public:
 	ps_mux_ptr malloc(ps_mux_callback cb, void* userdata, int32_t alignmode, int32_t ttmode, int32_t ttincre);
@@ -27,18 +18,27 @@ public:
 	bool pop(uint32_t h);
 	ps_mux_ptr get(uint32_t h);
 
+
+
+public:
+	static ps_mux_manager& getInstance();
+	
 private:
-	boost::unordered_map<uint32_t, ps_mux_ptr> m_muxmap;
+	ps_mux_manager() = default;
+	~ps_mux_manager() = default;
+	ps_mux_manager(const ps_mux_manager&) = delete;
+	ps_mux_manager& operator=(const ps_mux_manager&) = delete;
 
-#if (defined _WIN32 || defined _WIN64)
+	
 
-	boost::mutex  m_muxmtx;
+private:
+	std::unordered_map<uint32_t, ps_mux_ptr> m_muxmap;
 
-#else
 
-	auto_lock::al_spin m_muxspin;
+	std::mutex  m_muxmtx;
 
-#endif
+
+
+
 };
 
-#endif

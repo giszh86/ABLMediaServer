@@ -2,6 +2,7 @@
 #define _PS_MUX_DEMUX_PS_DEMUX_H_
 
 #if (defined _WIN32 || defined _WIN64)
+
 #define PS_DEMUX_CALL_METHOD _stdcall
 #ifdef LIB_PS_DEMUX_STATIC
 #define PS_DEMUX_API
@@ -13,6 +14,7 @@
 #endif
 #endif
 #else
+
 #define PS_DEMUX_CALL_METHOD
 #define PS_DEMUX_API __attribute__((visibility("default")))
 

@@ -2,7 +2,6 @@
 
 #include <memory>
 #include "demux_manager.h"
-demux_manager* demux_manager::s_pdemux_manager = nullptr;
 
 ps_demux_ptr demux_manager::malloc(ps_demux_callback cb, void* userdata, int32_t mode)
 {
@@ -66,12 +65,9 @@ ps_demux_ptr demux_manager::get(uint32_t h)
 	return p;
 }
 
-demux_manager* demux_manager::GetInstance()
+demux_manager& demux_manager::getInstance()
 {
-	if (!s_pdemux_manager)
-	{
-		s_pdemux_manager = new demux_manager();
-
-	}
-	return s_pdemux_manager;
+	static demux_manager instance;
+	return instance;
 }
+

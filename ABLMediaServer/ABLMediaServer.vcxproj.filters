@@ -390,9 +390,9 @@
     <Library Include="..\lib\XHNetSDK.lib" />
     <Library Include="..\lib\webrtc-streamer.lib" />
     <Library Include="..\lib\libfaac.lib" />
-    <Library Include="..\lib\PsMux.lib" />
     <Library Include="..\lib\rtpdepacket.lib" />
     <Library Include="..\lib\rtppacket.lib" />
     <Library Include="..\lib\ps_demux.lib" />
+    <Library Include="..\lib\ps_mux.lib" />
   </ItemGroup>
 </Project>

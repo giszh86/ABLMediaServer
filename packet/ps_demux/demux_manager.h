@@ -16,11 +16,17 @@ public:
 	bool pop(uint32_t h);
 	ps_demux_ptr get(uint32_t h);
 
-	// 获取线实例
-	static demux_manager* GetInstance();
-
 public:
-	static demux_manager* s_pdemux_manager;
+	static demux_manager& getInstance();
+private:
+	demux_manager() = default;
+
+	~demux_manager() = default;
+
+	demux_manager(const demux_manager&) = delete;
+
+	demux_manager& operator=(const demux_manager&) = delete;
+
 
 private:
 	std::map<uint32_t, ps_demux_ptr> m_duxmap;

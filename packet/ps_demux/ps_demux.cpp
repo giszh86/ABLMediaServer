@@ -9,13 +9,13 @@ PS_DEMUX_API int32_t ps_demux_start(ps_demux_callback cb, void* userdata, int32_
 	}
 
 	*h = 0;
-	ps_demux_ptr p = demux_manager::GetInstance()->malloc(cb, userdata, mode);
+	ps_demux_ptr p = demux_manager::getInstance().malloc(cb, userdata, mode);
 	if (!p)
 	{
 		return e_ps_dux_err_mallocdemuxerror;
 	}
 
-	if (!demux_manager::GetInstance()->push(p))
+	if (!demux_manager::getInstance().push(p))
 	{
 		return e_ps_dux_err_managerdemuxerror;
 	}
@@ -28,7 +28,7 @@ PS_DEMUX_API int32_t ps_demux_start(ps_demux_callback cb, void* userdata, int32_
 
 PS_DEMUX_API int32_t ps_demux_stop(uint32_t h)
 {
-	if (!demux_manager::GetInstance()->pop(h))
+	if (!demux_manager::getInstance().pop(h))
 	{
 		return e_ps_dux_err_invalidhandle;
 	}
@@ -43,7 +43,7 @@ PS_DEMUX_API int32_t ps_demux_input(uint32_t h, uint8_t* data, uint32_t datasize
 		return e_ps_dux_err_invalidparameter;
 	}
 
-	ps_demux_ptr p = demux_manager::GetInstance()->get(h);
+	ps_demux_ptr p = demux_manager::getInstance().get(h);
 	if (!p)
 	{
 		return e_ps_dux_err_invalidhandle;

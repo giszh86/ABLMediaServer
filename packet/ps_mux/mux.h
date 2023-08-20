@@ -3,9 +3,8 @@
 
 #include <vector>
 #include <stdint.h>
-#include <boost/smart_ptr/shared_ptr.hpp>
-#include <boost/unordered/unordered_map.hpp>
-#include <boost/unordered/unordered_set.hpp>
+#include <memory>
+#include <unordered_map>
 #include "ps_mux.h"
 #include "ps_def.h"
 
@@ -55,7 +54,7 @@ private:
 	int32_t m_ttincrea;
 	uint32_t m_ttbasea;
 
-	boost::unordered_map<uint8_t, uint8_t> m_stsidmap;
+	std::unordered_map<uint8_t, uint8_t> m_stsidmap;
 
 	_ps_header m_psh;
 	_ps_sys_header m_pssys;
@@ -67,6 +66,6 @@ private:
 	uint32_t auido_cache_count_;
 
 };
-typedef boost::shared_ptr<ps_mux> ps_mux_ptr;
+typedef std::shared_ptr<ps_mux> ps_mux_ptr;
 
 #endif

@@ -11,14 +11,14 @@ PS_MUX_API int32_t ps_mux_start(_ps_mux_init* init)
 
 	*(init->h) = 0;
 
-	ps_mux_ptr p = ps_mux_manager::get_mutable_instance().malloc(reinterpret_cast<ps_mux_callback>(init->cb), init->userdata, init->alignmode,
+	ps_mux_ptr p = ps_mux_manager::getInstance().malloc(reinterpret_cast<ps_mux_callback>(init->cb), init->userdata, init->alignmode,
 																init->ttmode, init->ttincre);
 	if (!p)
 	{
 		return e_ps_mux_err_mallocmuxerror;
 	}
 
-	if (!ps_mux_manager::get_mutable_instance().push(p))
+	if (!ps_mux_manager::getInstance().push(p))
 	{
 		return e_ps_mux_err_managermuxerror;
 	}
@@ -30,7 +30,7 @@ PS_MUX_API int32_t ps_mux_start(_ps_mux_init* init)
 
 PS_MUX_API int32_t ps_mux_stop(uint32_t h)
 {
-	if (!ps_mux_manager::get_mutable_instance().pop(h))
+	if (!ps_mux_manager::getInstance().pop(h))
 	{
 		return e_ps_mux_err_invalidhandle;
 	}
@@ -45,7 +45,7 @@ PS_MUX_API int32_t ps_mux_input(_ps_mux_input* input)
 		return e_ps_mux_err_invalidparameter;
 	}
 
-	ps_mux_ptr p = ps_mux_manager::get_mutable_instance().get(input->handle);
+	ps_mux_ptr p = ps_mux_manager::getInstance().get(input->handle);
 	if (!p)
 	{
 		return e_ps_mux_err_invalidhandle;

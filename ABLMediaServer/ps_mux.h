@@ -1,6 +1,4 @@
-#ifndef _PS_MUX_DEMUX_PS_MUX_H_
-#define _PS_MUX_DEMUX_PS_MUX_H_
-
+#pragma once
 
 #if (defined _WIN32 || defined _WIN64)
 #define PS_MUX_CALL_METHOD _stdcall
@@ -15,7 +13,7 @@
 #endif
 #else
 #define PS_MUX_CALL_METHOD
-#define PS_MUX_API
+#define PS_MUX_API __attribute__((visibility("default")))
 #endif
 
 #include <stdint.h>
@@ -71,7 +69,7 @@ enum e_psmux_media_type
 
 enum e_ps_mux_stream_type
 {
-	e_psmux_st_unknow = 0,			
+	e_psmux_st_unknow = 0,
 
 	e_psmux_st_mpeg1v = 0x01,		//mpeg1 video
 
@@ -182,7 +180,7 @@ extern "C"
 {
 #endif
 
-	typedef void (PS_MUX_CALL_METHOD *ps_mux_callback)(_ps_mux_cb* cb);
+	typedef void (PS_MUX_CALL_METHOD* ps_mux_callback)(_ps_mux_cb* cb);
 
 	PS_MUX_API int32_t ps_mux_start(_ps_mux_init* init);
 
@@ -195,4 +193,3 @@ extern "C"
 #endif
 
 
-#endif
