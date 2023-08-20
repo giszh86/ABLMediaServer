@@ -6,15 +6,11 @@
 
 using namespace netlib;
 
-ThreadPool* ThreadPool::s_pThreadPool = nullptr;
-
-
-
-
 ThreadPool::ThreadPool(int threadNumber)
 :m_nThreadNumber(threadNumber),
 m_bRunning(false)
 {
+	start();
 }
 
 ThreadPool::~ThreadPool()
@@ -65,17 +61,7 @@ bool ThreadPool::IsRunning()
 	return m_bRunning.load();
 }
 
-ThreadPool * netlib::ThreadPool::GetInstance()
-{
-	
-	if (!s_pThreadPool)
-	{
-		s_pThreadPool = new ThreadPool(MAX_THREAD);
-		s_pThreadPool->start();
-	}
-	return s_pThreadPool;
 
-}
 
 
 /*
@@ -110,6 +96,13 @@ int ThreadPool::getThreadNum() const
 int ThreadPool::getCompletedTaskCount() const
 {
 	return m_nCompletedTasks.load();
+}
+
+ThreadPool& netlib::ThreadPool::getInstance()
+{
+	static ThreadPool instance(MAX_THREAD);
+	
+	return instance;
 }
 
 void ThreadPool::threadWork()

@@ -10,7 +10,7 @@ struct client_deletor
 	{
 		if (cli)
 		{
-			client_manager_singleton::get_mutable_instance().free_client(cli);
+			client_manager::getInstance::get_mutable_instance().free_client(cli);
 		}
 	}
 };
@@ -154,6 +154,8 @@ client_ptr client_manager::get_client(NETHANDLE id)
 	return cli;
 }
 
+
+
 #else
 #include <memory>
 #include "client_manager.h"
@@ -164,7 +166,7 @@ struct client_deletor
 	{
 		if (cli)
 		{
-			client_manager_singleton->free_client(cli);
+			client_manager::getInstance().free_client(cli);
 		}
 	}
 };

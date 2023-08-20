@@ -59,7 +59,6 @@ typedef boost::serialization::singleton<client_manager> client_manager_singleton
 #else
 #include <memory>
 #include <map>
-#include "HSingleton.h"
 #include "client.h"
 #include "unordered_object_pool.h"
 
@@ -93,9 +92,16 @@ public:
 	void pop_server_clients(NETHANDLE srvid);
 	void pop_all_clients();
 	client_ptr get_client(NETHANDLE id);
-
+public:
+	// 获取线程池实例
+	static client_manager& getInstance() {
+		static client_manager instance;
+		return instance;
+	}
 private:
 
+	client_manager(const client_manager&) = delete;
+	client_manager& operator=(const client_manager&) = delete;
 private:
 	client_pool m_pool;
 	std::mutex          m_poolmtx;
@@ -104,8 +110,6 @@ private:
 
 
 };
-
-#define client_manager_singleton HSingletonTemplatePtr<client_manager>::Instance()
 
 
 #endif

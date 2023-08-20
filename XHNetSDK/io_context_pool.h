@@ -68,7 +68,7 @@ public:
 
 	~io_context_pool();
 
-	uint32_t get_thread_count() const { return static_cast<uint32_t>(GSThreadPool->getThreadNum()); }
+	uint32_t get_thread_count() const { return static_cast<uint32_t>(netlib::ThreadPool::getInstance().getThreadNum()); }
 
 	bool is_init();
 

@@ -560,9 +560,9 @@ LIBNET_API int32_t XHNetSDK_Deinit()
 	}
 	else
 	{
-		server_manager_singleton->close_all_servers();
-		client_manager_singleton->pop_all_clients();
-		udp_session_manager_singleton->pop_all_udp_sessions();
+		server_manager::getInstance().close_all_servers();
+		client_manager::getInstance().pop_all_clients();
+		udp_session_manager::getInstance().pop_all_udp_sessions();
 		g_iocpool.close();
 		g_initret = e_libnet_err_noninit;
 	}
@@ -612,7 +612,7 @@ LIBNET_API int32_t XHNetSDK_Listen(int8_t* localip,
 				auto s = std::make_shared<server>(std::ref(g_iocpool.get_io_context()), std::ref(endpoint),
 					fnaccept, fnread, fnclose, (0 != autoread) ? true : false);
 
-				if (server_manager_singleton->push_server(s))
+				if (server_manager::getInstance().push_server(s))
 				{
 					ret = s->run();
 					if (e_libnet_err_noerror == ret)
@@ -621,7 +621,7 @@ LIBNET_API int32_t XHNetSDK_Listen(int8_t* localip,
 					}
 					else
 					{
-						server_manager_singleton->pop_server(s->get_id());
+						server_manager::getInstance().pop_server(s->get_id());
 					}
 				}
 				else
@@ -662,7 +662,7 @@ LIBNET_API int32_t XHNetSDK_Unlisten(NETHANDLE srvhandle)
 	}
 	else
 	{
-		if (!server_manager_singleton->pop_server(srvhandle))
+		if (!server_manager::getInstance().pop_server(srvhandle))
 		{
 			ret = e_libnet_err_invalidhandle;
 		}
@@ -696,10 +696,10 @@ LIBNET_API int32_t XHNetSDK_Connect(int8_t* remoteip,
 	else
 	{
 		*clihandle = INVALID_NETHANDLE;
-		client_ptr cli = client_manager_singleton->malloc_client(g_iocpool.get_io_context(), INVALID_NETHANDLE, fnread, fnclose, (0 != autoread) ? true : false);
+		client_ptr cli = client_manager::getInstance().malloc_client(g_iocpool.get_io_context(), INVALID_NETHANDLE, fnread, fnclose, (0 != autoread) ? true : false);
 		if (cli)
 		{
-			if (client_manager_singleton->push_client(cli))
+			if (client_manager::getInstance().push_client(cli))
 			{
 				ret = cli->connect(remoteip, remoteport, localip, locaport, (0 != blocked), fnconnect, timeout);
 				if (e_libnet_err_noerror == ret)
@@ -708,7 +708,7 @@ LIBNET_API int32_t XHNetSDK_Connect(int8_t* remoteip,
 				}
 				else
 				{
-					client_manager_singleton->pop_client(cli->get_id());
+					client_manager::getInstance().pop_client(cli->get_id());
 				}
 			}
 			else
@@ -740,7 +740,7 @@ LIBNET_API int32_t XHNetSDK_Disconnect(NETHANDLE clihandle)
 	}
 	else
 	{
-		if (!client_manager_singleton->pop_client(clihandle))
+		if (!client_manager::getInstance().pop_client(clihandle))
 		{
 			ret = e_libnet_err_invalidhandle;
 		}
@@ -766,7 +766,7 @@ LIBNET_API int32_t XHNetSDK_Write(NETHANDLE clihandle,
 	}
 	else
 	{
-		client_ptr cli = client_manager_singleton->get_client(clihandle);
+		client_ptr cli = client_manager::getInstance().get_client(clihandle);
 		if (cli)
 		{
 			ret = cli->write(data, datasize, (0 != blocked) ? true : false);
@@ -798,7 +798,7 @@ LIBNET_API int32_t XHNetSDK_Read(NETHANDLE clihandle,
 	}
 	else
 	{
-		client_ptr cli = client_manager_singleton->get_client(clihandle);
+		client_ptr cli = client_manager::getInstance().get_client(clihandle);
 		if (cli)
 		{
 			ret = cli->read(buffer, buffsize, (0 != blocked) ? true : false, (0 != certain) ? true : false);
@@ -837,7 +837,7 @@ LIBNET_API int32_t XHNetSDK_BuildUdp(int8_t* localip,
 		{
 			udp_session_ptr s = std::make_shared<udp_session>(std::ref(g_iocpool.get_io_context()));
 
-			if (udp_session_manager_singleton->push_udp_session(s))
+			if (udp_session_manager::getInstance().push_udp_session(s))
 			{
 				ret = s->init(localip, localport, bindaddr, fnread, (0 != autoread) ? true : false);
 				if (e_libnet_err_noerror == ret)
@@ -846,7 +846,7 @@ LIBNET_API int32_t XHNetSDK_BuildUdp(int8_t* localip,
 				}
 				else
 				{
-					udp_session_manager_singleton->pop_udp_session(s->get_id());
+					udp_session_manager::getInstance().pop_udp_session(s->get_id());
 				}
 		}
 			else
@@ -883,7 +883,7 @@ LIBNET_API int32_t XHNetSDK_DestoryUdp(NETHANDLE udphandle)
 	}
 	else
 	{
-		if (!udp_session_manager_singleton->pop_udp_session(udphandle))
+		if (!udp_session_manager::getInstance().pop_udp_session(udphandle))
 		{
 			ret = e_libnet_err_invalidhandle;
 		}
@@ -909,7 +909,7 @@ LIBNET_API int32_t XHNetSDK_Sendto(NETHANDLE udphandle,
 	}
 	else
 	{
-		udp_session_ptr s = udp_session_manager_singleton->get_udp_session(udphandle);
+		udp_session_ptr s = udp_session_manager::getInstance().get_udp_session(udphandle);
 		if (s)
 		{
 			ret = s->send_to(data, datasize, remoteaddress);
@@ -941,7 +941,7 @@ LIBNET_API int32_t XHNetSDK_Recvfrom(NETHANDLE udphandle,
 	}
 	else
 	{
-		udp_session_ptr s = udp_session_manager_singleton->get_udp_session(udphandle);
+		udp_session_ptr s = udp_session_manager::getInstance().get_udp_session(udphandle);
 		if (s)
 		{
 			ret = s->recv_from(buffer, buffsize, remoteaddress, (0 != blocked) ? true : false);
@@ -972,7 +972,7 @@ LIBNET_API int32_t XHNetSDK_Multicast(NETHANDLE udphandle,
 	}
 	else
 	{
-		udp_session_ptr s = udp_session_manager_singleton->get_udp_session(udphandle);
+		udp_session_ptr s = udp_session_manager::getInstance().get_udp_session(udphandle);
 		if (s)
 		{
 			ret = s->multicast(option, multicastip, value);

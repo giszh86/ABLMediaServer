@@ -261,7 +261,7 @@ int32_t io_context_pool::run()
 			try
 			{
 		
-				GSThreadPool->append([&, i]() {
+				netlib::ThreadPool::getInstance().append([&, i]() {
 
 					m_iocontexts[i]->run();
 
@@ -309,7 +309,7 @@ void io_context_pool::close()
 	m_iocontexts.clear();
 
 
-	GSThreadPool->stop();
+	netlib::ThreadPool::getInstance().stop();
 
 
 	m_isinit = false;

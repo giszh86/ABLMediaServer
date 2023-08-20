@@ -24,16 +24,11 @@ namespace netlib
 	class ThreadPool
 	{
 	public:				
-
 		ThreadPool(int threadNumber);
-
-		~ThreadPool();
 
 
 		//往任务队列里添加任务
-		bool append(ThreadTask task, bool bPriority = false);
-
-	
+		bool append(ThreadTask task, bool bPriority = false);	
 
 		template<typename Func, typename... Args>
 		void appendArg(Func&& func, Args&&... args)
@@ -68,20 +63,17 @@ namespace netlib
 
 		int getCompletedTaskCount() const;
 
-		// 获取线程池实例
-		static ThreadPool* GetInstance();
-
-		static void Destory()
-		{
-			if (nullptr != s_pThreadPool)
-			{
-				delete s_pThreadPool;
-				s_pThreadPool = nullptr;
-			}
-		};
 public:
 
-		static ThreadPool*		s_pThreadPool;
+		// 获取线程池实例
+		static ThreadPool& getInstance();
+	private:
+
+		~ThreadPool();
+
+		ThreadPool(const ThreadPool&) = delete;
+
+		ThreadPool& operator=(const ThreadPool&) = delete;	
 private:
 		//线程所执行的工作函数
 		void threadWork(void);
@@ -117,7 +109,7 @@ private:
 	{
 	public:
 		ThreadPriorityPool(int threadNumber);
-		~ThreadPriorityPool();
+	;
 
 		// 添加任务到任务队列
 		//threadPool.append(task1, 1); // 中等优先级
@@ -137,15 +129,16 @@ private:
 		int getThreadNum() const;
 		int getCompletedTaskCount() const;
 
-		static ThreadPriorityPool* GetInstance();
-		static void Destory()
-		{
-			if (nullptr != s_pThreadPool)
-			{
-				delete s_pThreadPool;
-				s_pThreadPool = nullptr;
-			}
+	public:
+		static ThreadPriorityPool& getInstance() {
+			static ThreadPriorityPool instance;
+			return instance;
 		}
+	private:
+		ThreadPriorityPool() = default;
+		~ThreadPriorityPool();
+		ThreadPriorityPool(const ThreadPriorityPool&) = delete;
+		ThreadPriorityPool& operator=(const ThreadPriorityPool&) = delete;	
 
 	private:
 		void threadWork();
@@ -164,9 +157,6 @@ private:
 
 }
 
-#define GSThreadPool_AddFun(x)	netlib::ThreadPool::GetInstance()->append(x)
-
-#define GSThreadPool	netlib::ThreadPool::GetInstance()
 
 
 

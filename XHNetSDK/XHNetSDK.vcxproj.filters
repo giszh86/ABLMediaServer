@@ -66,11 +66,11 @@
     <ClInclude Include="XHNetSDK.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="HSingleton.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="thread_pool\thread_pool.h">
       <Filter>头文件\thread_pool</Filter>
+    </ClInclude>
+    <ClInclude Include="HSingleton.h">
+      <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

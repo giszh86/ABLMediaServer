@@ -93,7 +93,7 @@ inline NETHANDLE server::get_id()
 
 inline void server::disconnect_clients()
 {
-	client_manager_singleton->pop_server_clients(get_id());
+	client_manager::getInstance().pop_server_clients(get_id());
 }
 
 

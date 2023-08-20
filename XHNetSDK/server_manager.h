@@ -35,7 +35,6 @@ typedef boost::serialization::singleton<server_manager> server_manager_singleton
 #else
 #include <map>
 #include <mutex>
-#include "HSingleton.h"
 
 #include "server.h"
 #include "auto_lock.h"
@@ -43,23 +42,33 @@ typedef boost::serialization::singleton<server_manager> server_manager_singleton
 class server_manager
 {
 public:
-	server_manager(void);
-	~server_manager(void);
-
 	bool push_server(server_ptr& s);
 	bool pop_server(NETHANDLE id);
 	void close_all_servers();
 	server_ptr get_server(NETHANDLE id);
 
+public:
+	static server_manager& getInstance() {
+		static server_manager instance;
+		return instance;
+	}
+
+private:
+	server_manager();
+
+	~server_manager();
+
+	server_manager(const server_manager&) = delete;
+
+	server_manager& operator=(const server_manager&) = delete;
+
+	
 private:
 	std::map<NETHANDLE, server_ptr> m_servers;
 
 	std::mutex          m_climtx;
 
 };
-
-#define server_manager_singleton HSingletonTemplatePtr<server_manager>::Instance()
-
 
 
 #endif

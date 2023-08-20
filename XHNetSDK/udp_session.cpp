@@ -685,7 +685,7 @@ int32_t udp_session::recv_from(uint8_t* buffer,
 		{
 			*buffsize = 0;
 			//close();
-			udp_session_manager_singleton->pop_udp_session(get_id());
+			udp_session_manager::getInstance().pop_udp_session(get_id());
 			return e_libnet_err_clireaddata;
 		}
 		else
@@ -777,7 +777,7 @@ int32_t udp_session::send_to(uint8_t* data,
 
 	if (ec)
 	{
-		udp_session_manager_singleton->pop_udp_session(get_id());
+		udp_session_manager::getInstance().pop_udp_session(get_id());
 		return e_libnet_err_cliwritedata;
 	}
 	else

@@ -326,7 +326,7 @@ void server::start_accept()
 	client_ptr c;
 	while (m_acceptor.is_open())
 	{
-		c = client_manager_singleton->malloc_client(g_iocpool.get_io_context(), get_id(), m_fnread, m_fnclose, m_autoread);
+		c = client_manager::getInstance().malloc_client(g_iocpool.get_io_context(), get_id(), m_fnread, m_fnclose, m_autoread);
 		if (c)
 		{
 			break;
@@ -354,7 +354,7 @@ void server::handle_accept(client_ptr c, std::error_code ec)
 		{
 			std::error_code ec;
 			asio::ip::tcp::endpoint endpoint = c->socket().remote_endpoint(ec);
-			if (ec || !client_manager_singleton->push_client(c))
+			if (ec || !client_manager::getInstance().push_client(c))
 			{
 				c->close();
 				start_accept();
@@ -387,7 +387,7 @@ void server::handle_accept(client_ptr c, std::error_code ec)
 			}
 		}
 
-		c = client_manager_singleton->get_client(cliid);
+		c = client_manager::getInstance().get_client(cliid);
 		if (c)
 		{
 			c->run();
@@ -397,7 +397,7 @@ void server::handle_accept(client_ptr c, std::error_code ec)
 	}
 	else
 	{
-		if (server_manager_singleton->pop_server(get_id()))
+		if (server_manager::getInstance().pop_server(get_id()))
 		{
 			if (m_fnclose)
 			{

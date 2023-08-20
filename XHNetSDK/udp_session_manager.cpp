@@ -89,6 +89,7 @@ udp_session_ptr udp_session_manager::get_udp_session(NETHANDLE id)
 
 	return s;
 }
+
 #else
 
 
@@ -169,5 +170,13 @@ udp_session_ptr udp_session_manager::get_udp_session(NETHANDLE id)
 	}
 
 	return s;
+}
+
+udp_session_manager& udp_session_manager::getInstance()
+{
+
+	static udp_session_manager instance;
+	return instance;
+
 }
 #endif
