@@ -31,7 +31,9 @@ rtp_packet::rtp_packet(rtp_packet_callback cb, void* userdata, const _rtp_packet
 
 rtp_packet::~rtp_packet()
 {
-	  malloc_trim(0);
+#ifndef _WIN32
+	malloc_trim(0);
+#endif // _WIN32
 }
 
 int32_t rtp_packet::handle(uint8_t* data, uint32_t datasize, uint32_t inTimestamp)

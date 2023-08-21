@@ -1,47 +1,28 @@
-#include <boost/unordered_set.hpp>
-
-#if (defined _WIN32 || defined _WIN64)
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/lock_guard.hpp>
-#else
-#include "auto_lock.h"
-#endif
+#include <unordered_set>
+#include <mutex>
+#include <memory>
 
 #include "common.h"
 #include "rtp_packet.h"
 
-boost::unordered_set<uint32_t> g_identifier_set_rtppacket;
+std::unordered_set<uint32_t> g_identifier_set_rtppacket;
 
-#if (defined _WIN32 || defined _WIN64)
 
-boost::mutex g_identifier_mutex;
-#else
+std::mutex g_identifier_mutex;
 
-auto_lock::al_spin g_identifier_spin_rtppacket;
-
-#endif
 
 uint32_t generate_identifier_rtppacket()
 {
-#if (defined _WIN32 || defined _WIN64)
-
-	boost::lock_guard<boost::mutex> lg(g_identifier_mutex);
-
-#else
-
-	auto_lock::al_lock<auto_lock::al_spin> al(g_identifier_spin_rtppacket);
-
-#endif
+	std::lock_guard<std::mutex> lg(g_identifier_mutex);
 
 	static uint32_t s_id = 1;
-	boost::unordered_set<uint32_t>::iterator it;
 
 	for (;;)
 	{
-		it = g_identifier_set_rtppacket.find(s_id);
+		auto it = g_identifier_set_rtppacket.find(s_id);
 		if ((g_identifier_set_rtppacket.end() == it) && (0 != s_id))
 		{
-			std::pair<boost::unordered_set<uint32_t>::iterator, bool> ret = g_identifier_set_rtppacket.insert(s_id);
+			auto ret = g_identifier_set_rtppacket.insert(s_id);
 			if (ret.second)
 			{
 				break;	//useful
@@ -58,17 +39,10 @@ uint32_t generate_identifier_rtppacket()
 
 void recycle_identifier_rtppacket(uint32_t id)
 {
-#if (defined _WIN32 || defined _WIN64)
 
-	boost::lock_guard<boost::mutex> lg(g_identifier_mutex);
+	std::lock_guard<std::mutex> lg(g_identifier_mutex);
 
-#else
-
-	auto_lock::al_lock<auto_lock::al_spin> al(g_identifier_spin_rtppacket);
-
-#endif
-
-	boost::unordered_set<uint32_t>::iterator it = g_identifier_set_rtppacket.find(id);
+	auto it = g_identifier_set_rtppacket.find(id);
 	if (g_identifier_set_rtppacket.end() != it)
 	{
 		g_identifier_set_rtppacket.erase(it);

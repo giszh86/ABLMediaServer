@@ -1,22 +1,27 @@
-#include <boost/thread/thread.hpp>
-#include <boost/make_shared.hpp>
+#include <memory>
+#include <thread>
+#include <chrono>
+#include <malloc.h>
+
 #include "session.h"
 #include "rtp_def.h"
 #include "rtp_depacket.h"
 #include "common.h"
-#include <malloc.h>
 
 rtp_session::rtp_session(rtp_depacket_callback cb, void* userdata) 
 	: m_id(generate_identifier())
 	, m_cb(cb)
 	, m_userdata(userdata) 
 {
+
 }
 
 rtp_session::~rtp_session()
 {
 	recycle_identifier(m_id);
+#ifndef _WIN32
 	malloc_trim(0);
+#endif // _WIN32
 }
 
 int32_t rtp_session::handle(uint8_t* data, uint32_t datasize)
@@ -45,7 +50,7 @@ void rtp_session::set_payload(uint8_t payload, uint32_t streamtype)
 {
 	m_payloadMap[payload] = streamtype;
 
-	for (boost::unordered_map<uint32_t, rtp_depacket_ptr>::iterator it = m_depacketMap.begin(); m_depacketMap.end() != it; )
+	for (auto it = m_depacketMap.begin(); m_depacketMap.end() != it; )
 	{
 		if (it->second)
 		{
@@ -67,7 +72,7 @@ void rtp_session::set_mediaoption(const std::string& opt, const std::string& par
 
 	m_mediaoptMap[opt] = param;
 
-	for (boost::unordered_map<uint32_t, rtp_depacket_ptr>::iterator it = m_depacketMap.begin(); m_depacketMap.end() != it;)
+	for (auto it = m_depacketMap.begin(); m_depacketMap.end() != it;)
 	{
 		if (it->second)
 		{
@@ -161,7 +166,7 @@ bool rtp_session::is_rtcp(uint8_t payload)
 
 rtp_depacket_ptr& rtp_session::get_depacket(uint32_t ssrc)
 {
-	boost::unordered_map<uint32_t, rtp_depacket_ptr>::iterator it = m_depacketMap.find(ssrc);
+	auto it = m_depacketMap.find(ssrc);
 	if (m_depacketMap.end() != it)
 	{
 		if (it->second)
@@ -174,15 +179,15 @@ rtp_depacket_ptr& rtp_session::get_depacket(uint32_t ssrc)
 		}
 	}
 
-	std::pair<boost::unordered_map<uint32_t, rtp_depacket_ptr>::iterator, bool> ret;
+	std::pair<std::unordered_map<uint32_t, rtp_depacket_ptr>::iterator, bool> ret;
 	rtp_depacket_ptr dux;
 
 	do 
 	{
 		try
 		{
-			dux = boost::make_shared<rtp_depacket>(ssrc, reinterpret_cast<rtp_depacket_callback>(m_cb), const_cast<void*>(m_userdata), get_id());
-
+			dux = std::make_shared<rtp_depacket>(ssrc, reinterpret_cast<rtp_depacket_callback>(m_cb), const_cast<void*>(m_userdata), get_id());
+		
 			ret = m_depacketMap.insert(std::make_pair(ssrc, dux));
 
 			if (!ret.second)
@@ -190,24 +195,24 @@ rtp_depacket_ptr& rtp_session::get_depacket(uint32_t ssrc)
 				dux.reset();
 			}
 
-			for (boost::unordered_map<uint8_t, uint32_t>::iterator it = m_payloadMap.begin(); m_payloadMap.end() != it; ++it)
+			for (std::unordered_map<uint8_t, uint32_t>::iterator it = m_payloadMap.begin(); m_payloadMap.end() != it; ++it)
 			{
 				dux->set_payload(it->first, it->second);
 			}
 
-			for (boost::unordered_map<std::string, std::string>::iterator it = m_mediaoptMap.begin(); m_mediaoptMap.end() != it; ++it)
+			for (std::unordered_map<std::string, std::string>::iterator it = m_mediaoptMap.begin(); m_mediaoptMap.end() != it; ++it)
 			{
 				dux->set_mediaoption(it->first, it->second);
 			}
 		}
 		catch (const std::bad_alloc& /*e*/)
 		{
-			boost::this_thread::sleep_for(boost::chrono::milliseconds(1000));
+			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 			continue;
 		}
 		catch (...)
 		{
-			boost::this_thread::sleep_for(boost::chrono::milliseconds(1000));
+			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 			continue;
 		}
 

@@ -1,4 +1,4 @@
-#include <boost/make_shared.hpp>
+#include <memory>
 #include "session.h"
 #include "common.h"
 #include <malloc.h>
@@ -13,7 +13,9 @@ rtp_session_packet::rtp_session_packet(rtp_packet_callback cb, void* userdata)
 rtp_session_packet::~rtp_session_packet()
 {
 	recycle_identifier_rtppacket(m_id);
-    malloc_trim(0);
+#ifndef _WIN32
+	malloc_trim(0);
+#endif // _WIN32
 }
 
 uint32_t rtp_session_packet::get_id() const
@@ -23,7 +25,7 @@ uint32_t rtp_session_packet::get_id() const
 
 int32_t rtp_session_packet::handle(_rtp_packet_input* in)
 {
-	boost::unordered_map<uint32_t, rtp_packet_ptr>::iterator it = m_pktmap.find(in->ssrc);
+	auto it = m_pktmap.find(in->ssrc);
 	if (m_pktmap.end() == it)
 	{
 		return e_rtppkt_err_notfindpacket;
@@ -34,7 +36,7 @@ int32_t rtp_session_packet::handle(_rtp_packet_input* in)
 
 int32_t rtp_session_packet::set_option(_rtp_packet_sessionopt* opt)
 {
-	boost::unordered_map<uint32_t, rtp_packet_ptr>::iterator it = m_pktmap.find(opt->ssrc);
+	auto it = m_pktmap.find(opt->ssrc);
 	if (m_pktmap.end() != it)
 	{
 		return e_rtppkt_err_existingssrc;
@@ -61,7 +63,7 @@ int32_t rtp_session_packet::set_option(_rtp_packet_sessionopt* opt)
 			newopt.ttincre = (e_rtppkt_mt_audio == newopt.mediatype) ? 400 : 3600;
 		}
 
-		packet = boost::make_shared<rtp_packet>(m_cb, const_cast<void*>(m_userdata), newopt);
+		packet = std::make_shared<rtp_packet>(m_cb, const_cast<void*>(m_userdata), newopt);
 	}
 	catch (const std::bad_alloc& /*e*/)
 	{
@@ -72,7 +74,7 @@ int32_t rtp_session_packet::set_option(_rtp_packet_sessionopt* opt)
 		return e_rtppkt_err_mallocpacketerror;
 	}
 
-	std::pair<boost::unordered_map<uint32_t, rtp_packet_ptr>::iterator, bool> ret = m_pktmap.insert(std::make_pair(opt->ssrc, packet));
+	auto ret = m_pktmap.insert(std::make_pair(opt->ssrc, packet));
 	if (!ret.second)
 	{
 		return e_rtppkt_err_managerpacketerror;
@@ -84,7 +86,7 @@ int32_t rtp_session_packet::set_option(_rtp_packet_sessionopt* opt)
 
 int32_t rtp_session_packet::reset_option(_rtp_packet_sessionopt* opt)
 {
-	boost::unordered_map<uint32_t, rtp_packet_ptr>::iterator it = m_pktmap.find(opt->ssrc);
+	auto it = m_pktmap.find(opt->ssrc);
 	if (m_pktmap.end() == it)
 	{
 		return e_rtppkt_err_nonexistingssrc;

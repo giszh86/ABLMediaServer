@@ -2,8 +2,8 @@
 #define _RTP_PACKET_DEPACKET_DEPACKET_H_
 
 #include <stdint.h>
-#include <boost/shared_ptr.hpp>
-#include <boost/unordered/unordered_map.hpp>
+#include <memory>
+#include <unordered_map>
 #include "rtp_depacket.h"
 
 #define      MaxNaluBlockCount    32   //×î´óNalu¶Î
@@ -69,8 +69,8 @@ private:
 	const rtp_depacket_callback m_cb;
 	const void* m_userdata;
 
-	boost::unordered_map<uint8_t, uint32_t> m_payloadMap;
-	boost::unordered_map<std::string, std::string> m_mediaoptMap;
+	std::unordered_map<uint8_t, uint32_t> m_payloadMap;
+	std::unordered_map<std::string, std::string> m_mediaoptMap;
 
 	_rtp_depacket_cb m_out;
 	uint8_t m_buff[DEPACKET_DATA_BUFFER_MAX_SIZE];
@@ -83,6 +83,6 @@ private:
 
 	uint64_t m_lostpkt;
 };
-typedef boost::shared_ptr<rtp_depacket> rtp_depacket_ptr;
+typedef std::shared_ptr<rtp_depacket> rtp_depacket_ptr;
 
 #endif

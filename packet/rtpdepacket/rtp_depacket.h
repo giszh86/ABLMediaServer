@@ -14,7 +14,7 @@
 #endif
 #else
 #define RTP_DEPACKET_CALL_METHOD
-#define RTP_DEPACKET_API
+#define RTP_DEPACKET_API __attribute__((visibility("default")))
 #endif
 
 #include <stdint.h>
@@ -114,15 +114,15 @@ extern "C"
 
 	typedef void (RTP_DEPACKET_CALL_METHOD *rtp_depacket_callback)(_rtp_depacket_cb* cb);
 
-	__attribute__((visibility("default"))) RTP_DEPACKET_API int32_t rtp_depacket_start(rtp_depacket_callback cb, void* userdata, uint32_t* h);
+	 RTP_DEPACKET_API int32_t rtp_depacket_start(rtp_depacket_callback cb, void* userdata, uint32_t* h);
 
- 	__attribute__((visibility("default"))) RTP_DEPACKET_API int32_t rtp_depacket_stop(uint32_t h);
+ 	 RTP_DEPACKET_API int32_t rtp_depacket_stop(uint32_t h);
 
-	__attribute__((visibility("default"))) RTP_DEPACKET_API int32_t rtp_depacket_input(uint32_t h, uint8_t* data, uint32_t datasize);
+	 RTP_DEPACKET_API int32_t rtp_depacket_input(uint32_t h, uint8_t* data, uint32_t datasize);
 
-	__attribute__((visibility("default"))) RTP_DEPACKET_API int32_t rtp_depacket_setpayload(uint32_t h, uint8_t payload, uint32_t streamtype);
+	 RTP_DEPACKET_API int32_t rtp_depacket_setpayload(uint32_t h, uint8_t payload, uint32_t streamtype);
 
-    __attribute__((visibility("default"))) RTP_DEPACKET_API int32_t rtp_depacket_setmediaoption(uint32_t h, int8_t* opt, int8_t* parm);
+      RTP_DEPACKET_API int32_t rtp_depacket_setmediaoption(uint32_t h, int8_t* opt, int8_t* parm);
 
 #ifdef __cplusplus
 }

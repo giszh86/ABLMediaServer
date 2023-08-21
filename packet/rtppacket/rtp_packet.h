@@ -15,7 +15,7 @@
 #endif
 #else
 #define RTP_PACKET_CALL_METHOD
-#define RTP_PACKET_API
+#define RTP_PACKET_API __attribute__((visibility("default")))
 #endif
 
 #include <stdint.h>
@@ -168,15 +168,15 @@ extern "C"
 
 	typedef void (RTP_PACKET_CALL_METHOD *rtp_packet_callback)(_rtp_packet_cb* cb);
 
-	__attribute__((visibility("default"))) RTP_PACKET_API int32_t rtp_packet_start(rtp_packet_callback cb, void* userdata, uint32_t* h);
+	 RTP_PACKET_API int32_t rtp_packet_start(rtp_packet_callback cb, void* userdata, uint32_t* h);
 
-	__attribute__((visibility("default"))) RTP_PACKET_API int32_t rtp_packet_stop(uint32_t h);
+	 RTP_PACKET_API int32_t rtp_packet_stop(uint32_t h);
 
-	__attribute__((visibility("default"))) RTP_PACKET_API int32_t rtp_packet_input(_rtp_packet_input* input);
+	 RTP_PACKET_API int32_t rtp_packet_input(_rtp_packet_input* input);
 
-	__attribute__((visibility("default"))) RTP_PACKET_API int32_t rtp_packet_setsessionopt(_rtp_packet_sessionopt* opt);
+	 RTP_PACKET_API int32_t rtp_packet_setsessionopt(_rtp_packet_sessionopt* opt);
 
-	__attribute__((visibility("default"))) RTP_PACKET_API int32_t rtp_packet_resetsessionopt(_rtp_packet_sessionopt* opt);
+	 RTP_PACKET_API int32_t rtp_packet_resetsessionopt(_rtp_packet_sessionopt* opt);
 
 #ifdef __cplusplus
 }

@@ -2,22 +2,13 @@
 #define _RTP_PACKET_DEPACKET_SESSION_MANAGER_H_
 
 #include <stdint.h>
-#include <boost/serialization/singleton.hpp>
-#include <boost/unordered/unordered_map.hpp>
+#include <unordered_map>
+#include <mutex>
 
-#if (defined _WIN32 || defined _WIN64)
-
-#include <boost/thread/mutex.hpp>
-
-#else
-
-#include "auto_lock.h"
-
-#endif
 
 #include "session.h"
 
-class rtp_session_manager : public boost::serialization::singleton<rtp_session_manager>
+class rtp_session_manager 
 {
 public:
 	rtp_session_ptr malloc(rtp_depacket_callback cb, void* userdata);
@@ -27,18 +18,30 @@ public:
 	bool pop(uint32_t h);
 	rtp_session_ptr get(uint32_t h);
 
+public:
+	// 获取单实例对象
+	static rtp_session_manager& getInstance() {
+		static rtp_session_manager instance;
+		return instance;
+	}
 private:
-	boost::unordered_map<uint32_t, rtp_session_ptr> m_sessionMap;
+	// 禁止外部构造
+	rtp_session_manager() = default;
+	// 禁止外部析构
+	~rtp_session_manager() = default;
+	// 禁止外部复制构造
+	rtp_session_manager(const rtp_session_manager&) = delete;
 
-#if (defined _WIN32 || defined _WIN64)
+	// 禁止外部赋值操作
+	rtp_session_manager& operator=(const rtp_session_manager&) = delete;
 
-	boost::mutex m_sesMapMtx;
+private:
+	std::unordered_map<uint32_t, rtp_session_ptr> m_sessionMap;
 
-#else
 
-	auto_lock::al_spin m_sesMapSpin;
+	std::mutex m_sesMapMtx;
 
-#endif
+
 };
 
 #endif

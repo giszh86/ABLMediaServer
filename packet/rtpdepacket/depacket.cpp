@@ -4,8 +4,7 @@
 #else
 #include <arpa/inet.h>
 #endif
-
-#include <boost/lexical_cast.hpp>
+#include <sstream>
 #include "depacket.h"
 #include "rtp_def.h"
 #include <malloc.h>
@@ -34,7 +33,9 @@ rtp_depacket::rtp_depacket(uint32_t ssrc, rtp_depacket_callback cb, void* userda
 
 rtp_depacket::~rtp_depacket()
 {
+#ifndef _WIN32
 	malloc_trim(0);
+#endif // _WIN32
 }
 
 void rtp_depacket::set_payload(uint8_t payload, uint32_t streamtype)
@@ -46,7 +47,7 @@ uint32_t rtp_depacket::get_payload(uint8_t payload)
 {
 	uint32_t streamtype = e_rtpdepkt_st_unknow;
 
-	boost::unordered_map<uint8_t, uint32_t>::iterator it = m_payloadMap.find(payload);
+	auto it = m_payloadMap.find(payload);
 	if (m_payloadMap.end() != it)
 	{
 		streamtype = it->second;
@@ -65,24 +66,27 @@ void rtp_depacket::set_mediaoption(const std::string& opt, const std::string& pa
 
 template<typename T> bool rtp_depacket::get_mediaoption(const std::string& opt, T& val)
 {
-	boost::unordered_map<std::string, std::string>::iterator it = m_mediaoptMap.find(opt);
+	auto it = m_mediaoptMap.find(opt);
 	if (m_mediaoptMap.end() == it)
 	{
 		return false;
 	}
-
-	try
-	{
-		val = boost::lexical_cast<T>(it->second.c_str());
-	}
-	catch (const boost::bad_lexical_cast& /*e*/)
-	{
-		return false;
-	}
-	catch (...)
-	{
-		return false;
-	}
+	std::stringstream sstr;
+	sstr << it->second;
+	sstr >> val;
+	//try
+	//{
+	//	
+	//	val = boost::lexical_cast<T>(it->second.c_str());
+	//}
+	//catch (const boost::bad_lexical_cast& /*e*/)
+	//{
+	//	return false;
+	//}
+	//catch (...)
+	//{
+	//	return false;
+	//}
 
 	return true;
 }

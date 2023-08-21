@@ -1,8 +1,8 @@
 #ifndef _RTP_PACKET_DEPACKET_SESSION_H_
 #define _RTP_PACKET_DEPACKET_SESSION_H_
 
-#include <boost/unordered_map.hpp>
-#include <boost/shared_ptr.hpp>
+#include <unordered_map>
+#include <memory>
 #include "packet.h"
 #include "rtp_packet.h"
 
@@ -22,12 +22,12 @@ public:
 
 private:
 	const uint32_t m_id;
-	boost::unordered_map<uint32_t, rtp_packet_ptr> m_pktmap;
+	std::unordered_map<uint32_t, rtp_packet_ptr> m_pktmap;
 	const rtp_packet_callback m_cb;
 	const void* m_userdata;
 
 };
 
-typedef boost::shared_ptr<rtp_session_packet> rtp_session_ptr;
+typedef std::shared_ptr<rtp_session_packet> rtp_session_ptr;
 
 #endif
