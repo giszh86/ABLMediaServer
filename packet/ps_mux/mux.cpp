@@ -1,6 +1,8 @@
+#include <malloc.h>
+#include <cstring>
+
 #include "mux.h"
 #include "common.h"
-#include <malloc.h>
 
 ps_mux::ps_mux(ps_mux_callback cb, void* userdata, int32_t alignmode, int32_t ttmode, int32_t ttincre)
 	: m_id(generate_identifier())

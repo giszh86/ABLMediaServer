@@ -5,9 +5,11 @@
 #include <arpa/inet.h>
 #endif
 #include <sstream>
+#include <malloc.h>
+#include <cstring>
 #include "depacket.h"
 #include "rtp_def.h"
-#include <malloc.h>
+
   
 const uint8_t NALU_START_CODE[] = { 0x00, 0x00, 0x01 };
 const uint8_t SLICE_START_CODE[] = { 0X00, 0X00, 0X00, 0X01 };

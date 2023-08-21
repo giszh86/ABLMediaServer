@@ -1,20 +1,13 @@
 #include <unordered_set>
 #include <memory>
 #include <mutex>
+#include <cstring>
 #include "common.h"
 #include "ps_mux.h"
 
 std::unordered_set<uint32_t> g_identifier_set;
 
-#if (defined _WIN32 || defined _WIN64)
-
 std::mutex g_identifier_mutex;
-
-#else
-
-auto_lock::al_spin g_identifier_spin;
-
-#endif
 
 uint32_t generate_identifier()
 {
