@@ -1,6 +1,8 @@
 #pragma once
 
 #include <iostream>
+
+
 class singleton {
 public:
 	// 获取单实例对象

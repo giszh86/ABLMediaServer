@@ -387,6 +387,8 @@ class PeerConnectionManager
 		bool                                                                      m_useNullCodec;
 		bool                                                                      m_usePlanB;
 		int                                                                       m_maxpc;
+		std::function<void(const char* callbackJson, void* pUserHandle)>  m_callback;
+
 
 };
 

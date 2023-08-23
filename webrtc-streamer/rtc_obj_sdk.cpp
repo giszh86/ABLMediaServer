@@ -31,7 +31,7 @@ public:
 };
 
 
-void WebRtcEndpoint::init(const char* webrtcConfig, std::function<void(char* callbackJson, void* pUserHandle)> callback)
+void WebRtcEndpoint::init(const char* webrtcConfig, std::function<void(const char* callbackJson, void* pUserHandle)> callback)
 {
 
 	static bool bInit = false;

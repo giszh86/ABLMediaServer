@@ -88,7 +88,7 @@ target_link_directories(${PROJECT_NAME} INTERFACE
 ${CUDA_LIBS}
  ${LIBS})
 
-
+if(ENABLE_JETSON)
 # 添加需要链接的依赖库
 target_link_libraries(${PROJECT_NAME} PRIVATE 
 pthread
@@ -96,6 +96,15 @@ cuda
 /usr/lib/aarch64-linux-gnu/tegra/libnvcuvidv4l2.so
 ${CUDA_LIBRARIES}
 )
+else()
+# 添加需要链接的依赖库
+target_link_libraries(${PROJECT_NAME} PRIVATE 
+pthread
+cuda
+${CUDA_LIBRARIES}
+)
+
+endif()
 
 # 链接CUDA库
 target_link_libraries(${PROJECT_NAME} ${CUDA_LIBRARIES})

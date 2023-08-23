@@ -85,6 +85,10 @@ target_link_libraries(${PROJECT_NAME}
 	pthread
     XHNetSDK
     dl
+	rtppacket
+	rtpdepacket
+	ps_mux
+	ps_demux
     avcodec
     avutil
     avformat
