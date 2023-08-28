@@ -3019,14 +3019,14 @@ void FindHistoryPictureFile(char* szPicturePath)
 }
 
 #endif
-//#include "../webrtc-streamer/rtc_obj_sdk.h"
+#include "../webrtc-streamer/rtc_obj_sdk.h"
 
 
-//void WebRtcCallBack(char* callbackJson, void* pUserHandle) {
-//
-//
-//
-//};
+void WebRtcCallBack(const char* callbackJson, void* pUserHandle) {
+
+	WriteLog(Log_Error, "WebRtcCallBack ：%s ", callbackJson);
+
+};
 
 
 #ifdef OS_System_Windows
@@ -3044,10 +3044,10 @@ ABL_Restart:
 	
 #ifdef OS_System_Windows
 
-	//gblWebRtcEndpointMgrGet->init(R"({"webrtcPort":8000})", [=](char* callbackJson, void* pUserHandle) {
-	//	WebRtcCallBack(callbackJson, pUserHandle);
-	//	
-	//	});
+	WebRtcEndpoint::getInstance().init(R"({"webrtcPort":8000})", [=](const char* callbackJson, void* pUserHandle) {
+		WebRtcCallBack(callbackJson, pUserHandle);
+
+		});
 	//鼠标点击控制台窗口，不会再卡住 
 	DWORD mode;
 	HANDLE hstdin = GetStdHandle(STD_INPUT_HANDLE);
