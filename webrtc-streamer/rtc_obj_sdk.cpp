@@ -11,7 +11,7 @@
 #include "rtc_base/win32_socket_init.h"
 #include "system_wrappers/include/field_trial.h"
 #include "rtc_base/physical_socket_server.h"
-
+#include "NSJson.h"
 
 class RtcLogSink :public rtc::LogSink {
 public:
@@ -67,9 +67,21 @@ void WebRtcEndpoint::init(const char* webrtcConfig, std::function<void(const cha
 			std::cout << "Cannot Initialize WebRTC server" << std::endl;
 		}
 		std::map<std::string, HttpServerRequestHandler::httpFunction> func = webRtcServer->getHttpApi();
+
+		webRtcServer->setCallBcak(callback);
 		// http server
 		const char* webroot = "./html";
-		std::string httpAddress("0.0.0.0:8000");
+
+		std::string httpAddress("0.0.0.0:");
+		std::string httpPort =ABL::NSJson::ParseStr(webrtcConfig).GetString("webrtcPort");
+
+		if (httpPort.size()<1)
+		{
+			httpPort = "8000";
+		}
+		httpAddress.append(httpPort);
+
+
 		std::vector<std::string> options;
 		options.push_back("document_root");
 		options.push_back(webroot);
@@ -94,6 +106,7 @@ void WebRtcEndpoint::init(const char* webrtcConfig, std::function<void(const cha
 bool WebRtcEndpoint::stopWebRtcPlay(const char* peerid)
 {
 	webRtcServer->hangUp(peerid);
+
 	return false;
 }
 

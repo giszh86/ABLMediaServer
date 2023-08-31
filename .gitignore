@@ -30,3 +30,5 @@
 *.exe
 *.out
 *.app
+/lib/x64/debug/*.exp
+/lib/x64/release/*.exp

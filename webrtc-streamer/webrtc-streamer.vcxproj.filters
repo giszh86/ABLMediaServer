@@ -180,6 +180,9 @@
     <ClInclude Include="rtc_obj_sdk.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="NSJson.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="civetweb\src\CivetServer.cpp">
@@ -246,6 +249,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="rtc_obj_sdk.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="NSJson.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

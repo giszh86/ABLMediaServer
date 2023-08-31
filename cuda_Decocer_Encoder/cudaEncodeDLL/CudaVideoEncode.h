@@ -3,7 +3,7 @@
 
 #include "cudaEncodeDLL.h"
 
-#include <cuda.h>
+#include "NvEncoder/cuda.h"
 #include "NvEncoder/NvEncoderCuda.h"
 //#include "../Utils/Logger.h"
 //#include "../Utils/NvEncoderCLIOptions.h"

@@ -27,9 +27,13 @@
 
 #include "HttpServerRequestHandler.h"
 #include "framework.h"
+#include "NSJson.h"
+
+#define VERSION	 "7.0.201.0828"
 
 
-#define VERSION	 "5.0.106.0608"
+#include "./capture/VideoCapture.h"
+
 class PeerConnectionManager 
 {
 	class VideoSink : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
@@ -300,6 +304,16 @@ class PeerConnectionManager
 						}).detach();
 					}
 				}
+				if ((state == webrtc::PeerConnectionInterface::kIceConnectionCompleted)
+					|| (state == webrtc::PeerConnectionInterface::kIceConnectionClosed))
+				{
+					
+					ABL::NSJsonObject jsonobj;
+					jsonobj.Put("playerID", m_peerid);
+					jsonobj.Put("eventID", 3);
+					m_peerConnectionManager->m_callback(jsonobj.ToString(false).c_str(),NULL);
+					
+				}
 			}
 			
 			virtual void OnIceGatheringChange(webrtc::PeerConnectionInterface::IceGatheringState state) {
@@ -347,7 +361,11 @@ class PeerConnectionManager
 		const Json::Value setAnswer(const std::string &peerid, const Json::Value& jmessage);
 		std::tuple<int,std::map<std::string,std::string>,Json::Value> whep( const std::string &method,  const std::string &url,  const std::string &peerid, const std::string & videourl, const std::string & audiourl, const std::string & options, const Json::Value &in);
 
-
+		bool setCallBcak(std::function<void(const char* callbackJson, void* pUserHandle)>  callback)
+		{
+			m_callback = callback;
+			return true;
+		};
 	
 	protected:
 		PeerConnectionObserver*                               CreatePeerConnection(const std::string& peerid);
@@ -387,6 +405,7 @@ class PeerConnectionManager
 		bool                                                                      m_useNullCodec;
 		bool                                                                      m_usePlanB;
 		int                                                                       m_maxpc;
+public:
 		std::function<void(const char* callbackJson, void* pUserHandle)>  m_callback;
 
 

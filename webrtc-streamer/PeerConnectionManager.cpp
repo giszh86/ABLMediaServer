@@ -819,6 +819,28 @@ std::unique_ptr<webrtc::SessionDescriptionInterface> PeerConnectionManager::getA
 ** -------------------------------------------------------------------------*/
 const Json::Value PeerConnectionManager::call(const std::string &peerid, const std::string &videourl, const std::string &audiourl, const std::string &options, const Json::Value &jmessage)
 {
+	ABL::NSJsonObject jsonobj;
+	jsonobj.Put("playerID", peerid);
+	jsonobj.Put("eventID", PlayEvenID::MEDIA_START);
+	if (audiourl.empty())
+	{
+		jsonobj.Put("media", "video");
+		jsonobj.Put("stream", videourl);
+	}
+	if (videourl.empty())
+	{
+		jsonobj.Put("media", "audio");
+		jsonobj.Put("stream", audiourl);
+	}
+	if (!videourl.empty()&&  !audiourl.empty())
+	{
+		jsonobj.Put("media", "play");
+		jsonobj.Put("stream", videourl);
+	}	
+	m_callback(jsonobj.ToString(false).c_str(), NULL);
+
+
+
 	RTC_LOG(LS_INFO) << __FUNCTION__ << " video:" << videourl << " audio:" << audiourl << " options:" << options;
 
 	Json::Value answer;
@@ -876,6 +898,14 @@ bool PeerConnectionManager::streamStillUsed(const std::string &streamLabel)
 ** -------------------------------------------------------------------------*/
 const Json::Value PeerConnectionManager::hangUp(const std::string &peerid)
 {
+
+	ABL::NSJsonObject jsonobj;
+	jsonobj.Put("playerID", peerid);
+	jsonobj.Put("eventID", PlayEvenID::MEDIA_END);
+	m_callback(jsonobj.ToString(false).c_str(), NULL);
+
+
+
 	bool result = false;
 	RTC_LOG(LS_INFO) << __FUNCTION__ << " " << peerid;
 

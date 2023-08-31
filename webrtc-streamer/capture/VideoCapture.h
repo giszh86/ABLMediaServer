@@ -18,6 +18,15 @@ typedef std::function<void(uint8_t* y, int strideY, uint8_t* u, int strideU, uin
 typedef std::function<void(char* h264_raw, int file_size, bool bKey, int nWidth, int nHeight, int64_t nTimeStamp)> H264CallBack;
 
 
+enum PlayEvenID {
+	MEDIA_NONE = 0, //无播放
+	MEDIA_START = 1, //开始 
+	MEDIA_PLAY = 2, //播放中 
+	MEDIA_PAUSE = 3,//暂停
+	MEDIA_STOP = 4, //播放停止
+	MEDIA_END = 5, //播放结束
+	MEDIA_ERROR = 6  //播放异常
+};
 
 
 

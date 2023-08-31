@@ -5,6 +5,29 @@ cmake_minimum_required(VERSION 3.5)
 project(cudaEncodeDLL VERSION 1.0)
 
 
+# 获取当前系统的架构
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86")
+    set(TARGET_ARCH "X86")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm")
+    set(TARGET_ARCH "ARM6")
+else()
+    message(FATAL_ERROR "Unsupported architecture: ${CMAKE_SYSTEM_PROCESSOR}")
+endif()
+
+message("Target architecture: ${TARGET_ARCH}")
+
+# 根据不同的架构执行不同的操作
+if(TARGET_ARCH STREQUAL "X86")
+    # X86 架构下的操作
+   # add_executable(my_app_x86 main_x86.cpp)
+elseif(TARGET_ARCH STREQUAL "ARM6")
+    # ARM6 架构下的操作
+    #add_executable(my_app_arm6 main_arm6.cpp)
+else()
+    message(FATAL_ERROR "Unsupported architecture: ${TARGET_ARCH}")
+endif()
+
+
 # 设置C++标准版本
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -13,7 +36,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 
 # 添加开关，用于控制是否启用 Jetson Multimedia API
-option(ENABLE_JETSON "Enable Jetson Multimedia API" ON)
+option(ENABLE_JETSON "Enable Jetson Multimedia API" OFF)
 
 # 定义宏定义，根据操作系统平台添加 _WIN32 宏定义
 if(WIN32)
@@ -28,7 +51,8 @@ set(BUILD_SHARED_LIBS ON)
 
 # 设置输出目录
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-
+# 设置头文件位置 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/NvEncoder)
 # 设置源码路径
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} SOURCE_FILES)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/NvEncoder SOURCE_FILES)
@@ -47,6 +71,7 @@ endif()
 # 设置头文件位置
 target_include_directories(${PROJECT_NAME} PRIVATE
      ${CUDA_INCLUDE_DIRS}
+	 ${CUDA_INCLUDE_DIRS}/NvEncoder
      ${CMAKE_CURRENT_SOURCE_DIR}/../3rd/Video_Codec_SDK_11.1.5
 	 ${CMAKE_CURRENT_SOURCE_DIR}/../3rd/Video_Codec_SDK_11.1.5/Interface
 	 ${CMAKE_CURRENT_SOURCE_DIR}/../3rd/Video_Codec_SDK_11.1.5/Samples

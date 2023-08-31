@@ -588,13 +588,13 @@
     <ResourceCompile Include="ABLMediaServer.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="..\lib\libfaac.lib" />
-    <Library Include="..\lib\ps_demux.lib" />
-    <Library Include="..\lib\ps_mux.lib" />
-    <Library Include="..\lib\rtpdepacket.lib" />
-    <Library Include="..\lib\rtppacket.lib" />
-    <Library Include="..\lib\webrtc-streamer.lib" />
-    <Library Include="..\lib\XHNetSDK.lib" />
+    <Library Include="..\lib\x64\release\libfaac.lib" />
+    <Library Include="..\lib\x64\release\ps_demux.lib" />
+    <Library Include="..\lib\x64\release\ps_mux.lib" />
+    <Library Include="..\lib\x64\release\rtpdepacket.lib" />
+    <Library Include="..\lib\x64\release\rtppacket.lib" />
+    <Library Include="..\lib\x64\release\webrtc-streamer.lib" />
+    <Library Include="..\lib\x64\release\XHNetSDK.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

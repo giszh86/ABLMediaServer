@@ -24,6 +24,10 @@ typedef std::function<void(uint8_t* y, int strideY, uint8_t* u, int strideU, uin
 
 typedef std::function<void(std::string userID, uint8_t* y, int strideY, uint8_t* u, int strideU, uint8_t* v, int strideV, int nWidth, int nHeight)> RemoteFrameCallBackFunc;
 
+
+
+
+
 class WEBRTCSDK_EXPORTSIMPL MainWndCallback {
 public:
 	MainWndCallback()
@@ -89,6 +93,8 @@ private:
 	PeerConnectionManager* webRtcServer;
 	HttpServerRequestHandler* httpServer;
 	std::function<void(const char* callbackJson, void* pUserHandle)>  m_callback;
+
+
 };
 
 //´´½¨
