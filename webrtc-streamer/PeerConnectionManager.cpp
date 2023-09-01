@@ -29,6 +29,7 @@
 #include "VideoEncoderFactory.h"
 #include "VideoDecoderFactory.h"
 
+
 // Names used for a IceCandidate JSON object.
 const char kCandidateSdpMidName[] = "sdpMid";
 const char kCandidateSdpMlineIndexName[] = "sdpMLineIndex";
@@ -237,6 +238,10 @@ PeerConnectionManager::PeerConnectionManager(const std::list<std::string> &iceSe
 
 	m_func["/api/getAudioDeviceList"] = [this](const struct mg_request_info *req_info, const Json::Value &in) -> HttpServerRequestHandler::httpFunctionReturn {
 		return std::make_tuple(200, std::map<std::string,std::string>(),this->getAudioDeviceList());
+	};
+
+	m_func["/api/getAudioPlayoutList"] = [this](const struct mg_request_info *req_info, const Json::Value &in) -> HttpServerRequestHandler::httpFunctionReturn {
+		return std::make_tuple(200, std::map<std::string,std::string>(),this->getAudioPlayoutList());
 	};
 
 	m_func["/api/getIceServers"] = [this](const struct mg_request_info *req_info, const Json::Value &in) -> HttpServerRequestHandler::httpFunctionReturn {
@@ -499,6 +504,19 @@ const Json::Value PeerConnectionManager::getAudioDeviceList()
 	{
 		value.append(audioDevice);
 	}
+
+	return value;
+}
+
+const Json::Value PeerConnectionManager::getAudioPlayoutList()
+{
+	Json::Value value(Json::arrayValue);
+
+	//const std::list<std::string> audioPlayoutDevice = CapturerFactory::GetAudioPlayoutDeviceList(m_publishFilter, m_audioDeviceModule);
+	//for (auto audioDevice : audioPlayoutDevice)
+	//{
+	//	value.append(audioDevice);
+	//}
 
 	return value;
 }
@@ -948,10 +966,7 @@ const Json::Value PeerConnectionManager::hangUp(const std::string &peerid)
 	if (result)
 	{
 		answer = result;
-		ABL::NSJsonObject jsonobj;
-		jsonobj.Put("playerID", peerid);
-		jsonobj.Put("eventID", PlayEvenID::MEDIA_END);
-		m_callback(jsonobj.ToString(false).c_str(), NULL);
+
 	}
 	RTC_LOG(LS_INFO) << __FUNCTION__ << " " << peerid << " result:" << result;
 	return answer;

@@ -19,15 +19,11 @@
 
 
 
-
-
 class VideoTrackSourceInput : public rtc::AdaptedVideoTrackSource
 {
 public:
 	VideoTrackSourceInput();
 	~VideoTrackSourceInput();
-
-
 
 	static VideoTrackSourceInput* Create(const std::string& videourl, const std::map<std::string, std::string>& opts);
 
@@ -58,7 +54,7 @@ public:
 
 	void InputVideoFrame(uint8_t* y, int strideY, uint8_t* u, int strideU, uint8_t* v, int strideV, int nWidth, int nHeight, int64_t nTimeStamp);
 
-	bool InputVideoFrame(unsigned char* data, size_t size, int nWidth, int nHeigh);
+	bool InputVideoFrame(unsigned char* data, size_t size, int nWidth, int nHeigh,int fps);
 
 	//	//直接发送h264的数据
 	bool InputVideoFrame(const char* id, unsigned char* buffer, size_t size, int nWidth, int nHeigh,int64_t ts);
@@ -68,5 +64,5 @@ private:
 	std::map<std::string, std::string> m_opts;
 	std::mutex m_mutex;                                        //互斥锁	
 	int64_t next_timestamp_us_ = rtc::kNumMicrosecsPerMillisec;
-
+	int64_t                               m_prevts;
 };

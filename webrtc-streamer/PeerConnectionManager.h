@@ -14,7 +14,7 @@
 #include <regex>
 #include <thread>
 #include <future>
-#include <tuple>
+
 #include "api/peer_connection_interface.h"
 #include "api/video_codecs/video_decoder_factory.h"
 
@@ -73,7 +73,6 @@ class PeerConnectionManager
 								int sample_rate,
 								size_t number_of_channels,
 								size_t number_of_frames) {
-		
 				RTC_LOG(LS_VERBOSE) << __FUNCTION__ << "size:" << bits_per_sample << " format:" << sample_rate << "/" << number_of_channels << "/" << number_of_frames;
 			}
 
@@ -294,9 +293,15 @@ class PeerConnectionManager
 			}
 			virtual void OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConnectionState state) {
 				RTC_LOG(LS_WARNING) << __FUNCTION__ << " state:" << webrtc::PeerConnectionInterface::AsString(state)  << " peerid:" << m_peerid;
+			
+				ABL::NSJsonObject jsonobj;
 				if ( (state == webrtc::PeerConnectionInterface::kIceConnectionFailed)
 				   ||(state == webrtc::PeerConnectionInterface::kIceConnectionClosed) )
-				{ 
+				{ 				
+			
+					jsonobj.Put("playerID", m_peerid);
+					jsonobj.Put("eventID", PlayEvenID::MEDIA_END);		
+					m_peerConnectionManager->m_callback(jsonobj.ToString(false).c_str(), NULL);
 					m_iceCandidateList.clear();
 					if (!m_deleting) {
 						std::thread([this]() {
@@ -305,15 +310,14 @@ class PeerConnectionManager
 					}
 				}
 				if ((state == webrtc::PeerConnectionInterface::kIceConnectionCompleted)
-					|| (state == webrtc::PeerConnectionInterface::kIceConnectionClosed))
-				{
-					
+					|| (state == webrtc::PeerConnectionInterface::kIceConnectionConnected))
+				{					
 					ABL::NSJsonObject jsonobj;
 					jsonobj.Put("playerID", m_peerid);
-					jsonobj.Put("eventID", 3);
-					m_peerConnectionManager->m_callback(jsonobj.ToString(false).c_str(),NULL);
-					
+					jsonobj.Put("eventID", PlayEvenID::MEDIA_PLAY);	
+					m_peerConnectionManager->m_callback(jsonobj.ToString(false).c_str(), NULL);
 				}
+			
 			}
 			
 			virtual void OnIceGatheringChange(webrtc::PeerConnectionInterface::IceGatheringState state) {
@@ -351,6 +355,7 @@ class PeerConnectionManager
 		const Json::Value addIceCandidate(const std::string &peerid, const Json::Value& jmessage);
 		const Json::Value getVideoDeviceList();
 		const Json::Value getAudioDeviceList();
+		const Json::Value getAudioPlayoutList();
 		const Json::Value getMediaList();
 		const Json::Value hangUp(const std::string &peerid);
 		const Json::Value call(const std::string &peerid, const std::string & videourl, const std::string & audiourl, const std::string & options, const Json::Value& jmessage);

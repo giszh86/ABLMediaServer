@@ -664,13 +664,10 @@ void RtspVideoCapture::CaptureThread()
 
 bool RtspVideoCapture::onData(const char* id, unsigned char* buffer, int size, int64_t ts)
 {
-	std::lock_guard<std::mutex> guard(m_mutex);
-	std::this_thread::sleep_for(std::chrono::milliseconds(15));
+
 	if (m_h264Callback)
 	{
-		m_h264Callback((char*)buffer, size, 1, m_nWidth, m_nHeight, ts);
+		m_h264Callback((char*)buffer, size, 1, m_nWidth, m_nHeight, m_nFrameRate, ts);
 	}
-
-
 	return false;
 }

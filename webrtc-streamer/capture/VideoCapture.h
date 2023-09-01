@@ -15,7 +15,7 @@
 
 typedef std::function<void(uint8_t* y, int strideY, uint8_t* u, int strideU, uint8_t* v, int strideV, int nWidth, int nHeight, int64_t nTimeStamp)> VideoYuvCallBack; 
 
-typedef std::function<void(char* h264_raw, int file_size, bool bKey, int nWidth, int nHeight, int64_t nTimeStamp)> H264CallBack;
+typedef std::function<void(char* h264_raw, int file_size, bool bKey, int nWidth, int nHeight,int fps, int64_t nTimeStamp)> H264CallBack;
 
 
 enum PlayEvenID {

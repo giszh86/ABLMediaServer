@@ -61,8 +61,8 @@ private:
 
 private:
 
-	int m_nWidth = 1920;
-	int m_nHeight = 1080;
+	int m_nWidth = 1280;
+	int m_nHeight = 720;
 	int m_nFrameRate = 30;
 
 
