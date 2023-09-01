@@ -898,14 +898,6 @@ bool PeerConnectionManager::streamStillUsed(const std::string &streamLabel)
 ** -------------------------------------------------------------------------*/
 const Json::Value PeerConnectionManager::hangUp(const std::string &peerid)
 {
-
-	ABL::NSJsonObject jsonobj;
-	jsonobj.Put("playerID", peerid);
-	jsonobj.Put("eventID", PlayEvenID::MEDIA_END);
-	m_callback(jsonobj.ToString(false).c_str(), NULL);
-
-
-
 	bool result = false;
 	RTC_LOG(LS_INFO) << __FUNCTION__ << " " << peerid;
 
@@ -956,6 +948,10 @@ const Json::Value PeerConnectionManager::hangUp(const std::string &peerid)
 	if (result)
 	{
 		answer = result;
+		ABL::NSJsonObject jsonobj;
+		jsonobj.Put("playerID", peerid);
+		jsonobj.Put("eventID", PlayEvenID::MEDIA_END);
+		m_callback(jsonobj.ToString(false).c_str(), NULL);
 	}
 	RTC_LOG(LS_INFO) << __FUNCTION__ << " " << peerid << " result:" << result;
 	return answer;
