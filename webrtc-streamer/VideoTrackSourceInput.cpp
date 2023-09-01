@@ -187,18 +187,12 @@ bool VideoTrackSourceInput::InputVideoFrame(unsigned char* data, size_t size, in
 	_worker_thread_ptr->PostTask([&]()
 		{
 			std::lock_guard<std::mutex> guard(m_mutex);
-
-			int  timestamp_us_ = rtc::TimeMicros();
+			int  timestamp_us_ = rtc::TimeMillis();
 			int64_t perio = timestamp_us_ - m_prevts;
-			if (perio < 0 || m_prevts ==0)
+			if (perio < (1000 / fps) || m_prevts ==0)
 			{
-				std::this_thread::sleep_for(std::chrono::milliseconds(1000/fps));
-			}
-			else
-			{
-				std::this_thread::sleep_for(std::chrono::milliseconds(perio));
-
-			}
+				std::this_thread::sleep_for(std::chrono::milliseconds((1000 / fps) - perio));				
+			}		
 			rtc::scoped_refptr<webrtc::EncodedImageBuffer> imageframe = webrtc::EncodedImageBuffer::Create(data, size);
 			rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer = rtc::make_ref_counted<EncodedVideoFrameBuffer>(1280, 780, imageframe);
 			//	webrtc::VideoFrame frame(buffer, webrtc::kVideoRotation_0, next_timestamp_us_);
@@ -206,16 +200,12 @@ bool VideoTrackSourceInput::InputVideoFrame(unsigned char* data, size_t size, in
 			webrtc::VideoFrame frame = webrtc::VideoFrame::Builder()
 				.set_video_frame_buffer(buffer)
 				.set_rotation(webrtc::kVideoRotation_0)
+				.set_timestamp_rtp(ts)
 				.set_timestamp_ms(ts)
 				.set_id(ts)
 				.build();
-
 			OnFrame(frame);
-
-
-			m_prevts = rtc::TimeMicros();
-
-
+			m_prevts = rtc::TimeMillis();
 		});
 	return true;
 }
