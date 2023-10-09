@@ -64,9 +64,11 @@ public:
 	virtual bool Start() = 0;
 
 	virtual void Init(const char* devicename, int nWidth = 1920, int nHeight = 1080, int nFrameRate = 30) = 0;
-	//virtual void Init(std::map<std::string, std::string> opts ={}) = 0;
+	
+	virtual void Init(const char* strJson) = 0;
 
 	virtual void Stop(VideoYuvCallBack yuvCallback) = 0;
+
 	virtual void Destroy()=0;
 
 	virtual void RegisterCallback(VideoYuvCallBack yuvCallback) = 0;

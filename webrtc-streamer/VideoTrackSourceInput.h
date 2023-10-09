@@ -64,5 +64,6 @@ private:
 	std::map<std::string, std::string> m_opts;
 	std::mutex m_mutex;                                        //互斥锁	
 	int64_t next_timestamp_us_ = rtc::kNumMicrosecsPerMillisec;
-	int64_t                               m_prevts;
+	int64_t                               m_prevts=0;
+	std::atomic<bool>m_bStop;
 };

@@ -39,7 +39,8 @@ public:
 
 	virtual void Init(const char* devicename, int nWidth, int nHeight, int nFrameRate);
 
-
+	virtual void Init(const char* strJson)
+	{};
 
 	virtual void RegisterCallback(VideoYuvCallBack yuvCallback);
 
@@ -47,7 +48,7 @@ public:
 
 	
 
-	
+
 	virtual bool onData(const char* id, unsigned char* buffer, int size, int64_t ts);
 
 	virtual bool onData(uint8_t* y, int strideY, uint8_t* u, int strideU, uint8_t* v, int strideV, int nWidth, int nHeight, int64_t nTimeStamp) { return true; };

@@ -49,6 +49,9 @@
     <Filter Include="prometheus\src\detail">
       <UniqueIdentifier>{fa6a9108-16f0-4bca-b1f3-2c3ddd20d734}</UniqueIdentifier>
     </Filter>
+    <Filter Include="dump">
+      <UniqueIdentifier>{c4a6d1a5-27df-43a5-8864-976b0acc889f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="civetweb\include\CivetServer.h">
@@ -144,9 +147,6 @@
     <ClInclude Include="framework.h">
       <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="HSingleton.h">
-      <Filter>inc</Filter>
-    </ClInclude>
     <ClInclude Include="HttpServerRequestHandler.h">
       <Filter>inc</Filter>
     </ClInclude>
@@ -182,6 +182,9 @@
     </ClInclude>
     <ClInclude Include="NSJson.h">
       <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Dump\Crash_Dumper.h">
+      <Filter>dump</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -253,6 +256,9 @@
     </ClCompile>
     <ClCompile Include="NSJson.cpp">
       <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Dump\Crash_Dumper.cpp">
+      <Filter>dump</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -52,6 +52,7 @@
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
+    <UseOfMfc>Static</UseOfMfc>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -179,9 +180,9 @@
     <ClInclude Include="civetweb\include\CivetServer.h" />
     <ClInclude Include="civetweb\include\civetweb.h" />
     <ClInclude Include="civetweb\src\civetweb_private_lua.h" />
+    <ClInclude Include="Dump\Crash_Dumper.h" />
     <ClInclude Include="EncodedVideoFrameBuffer.h" />
     <ClInclude Include="framework.h" />
-    <ClInclude Include="HSingleton.h" />
     <ClInclude Include="HttpServerRequestHandler.h" />
     <ClInclude Include="NSJson.h" />
     <ClInclude Include="NullDecoder.h" />
@@ -222,6 +223,7 @@
     <ClCompile Include="capture\VideoCaptureImpl.cpp" />
     <ClCompile Include="civetweb\src\CivetServer.cpp" />
     <ClCompile Include="civetweb\src\civetweb.c" />
+    <ClCompile Include="Dump\Crash_Dumper.cpp" />
     <ClCompile Include="HttpServerRequestHandler.cpp" />
     <ClCompile Include="NSJson.cpp" />
     <ClCompile Include="PeerConnectionManager.cpp" />

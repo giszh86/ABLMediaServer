@@ -6,6 +6,7 @@
 VideoCaptureImpl::VideoCaptureImpl()
 {
 
+
 }
 
 VideoCaptureImpl::~VideoCaptureImpl()
@@ -571,7 +572,7 @@ void MyDesktopCapture::RegisterFrameCallback(FrameCallBack frameCallback)
 
 RtspVideoCapture::RtspVideoCapture(const std::string& uri, const std::map<std::string, std::string>& opts)
 {
-	
+	m_bStop.store(false);
 
 }
 
@@ -589,7 +590,7 @@ bool RtspVideoCapture::Start()
 void RtspVideoCapture::Destroy()
 {
 	RTC_LOG(LS_INFO) << "LiveVideoSource::stop";
-
+	m_bStop.store(true);
 	m_YuvCallbackList.clear();
 	m_h264Callback = nullptr;
 	Stop(NULL);
@@ -664,10 +665,13 @@ void RtspVideoCapture::CaptureThread()
 
 bool RtspVideoCapture::onData(const char* id, unsigned char* buffer, int size, int64_t ts)
 {
-
+	if (m_bStop.load())
+	{
+		return false;
+	}
 	if (m_h264Callback)
 	{
 		m_h264Callback((char*)buffer, size, 1, m_nWidth, m_nHeight, m_nFrameRate, ts);
 	}
-	return false;
+	return true;
 }
