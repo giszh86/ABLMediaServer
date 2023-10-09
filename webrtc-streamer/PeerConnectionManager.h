@@ -29,7 +29,7 @@
 #include "framework.h"
 #include "NSJson.h"
 
-#define VERSION	 "7.0.201.0828"
+#define VERSION	 "10.0.101.1008"
 
 
 #include "./capture/VideoCapture.h"
