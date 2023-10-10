@@ -445,6 +445,7 @@ enum NetBaseNetType
 	NetBaseNetType_HttpClient_on_play              = 123,//播放视频事件通知
 	NetBaseNetType_HttpClient_on_publish           = 124,//码流接入通知 
 	NetBaseNetType_HttpClient_on_iframe_arrive     = 125,//i帧到达事件
+	NetBaseNetType_NetClientWebrtcPlayer = 130,//webrtc的播放 
 
 };
 
@@ -1024,6 +1025,22 @@ struct MessageNoticeStruct
 		memset(szMsg, 0x00, sizeof(szMsg));
 	}
 };
+
+
+struct WebRtcCallStruct
+{
+	uint64_t eventID;
+	char     media[string_length_512];
+	char     playerID[string_length_512];
+	char     stream[string_length_512];
+	WebRtcCallStruct()
+	{
+		eventID = 0;
+		memset(media, 0x00, sizeof(media));
+		memset(playerID, 0x00, sizeof(playerID));
+		memset(stream, 0x00, sizeof(stream));
+	}
+	};
 
 #ifndef OS_System_Windows
 unsigned long  GetTickCount();

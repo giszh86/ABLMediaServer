@@ -201,7 +201,7 @@
     <ClInclude Include="ABLString.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="HSingleton.h">
+    <ClInclude Include="NetClientWebrtcPlayer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -375,6 +375,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ABLMediaServer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NetClientWebrtcPlayer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

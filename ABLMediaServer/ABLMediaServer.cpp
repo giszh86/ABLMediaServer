@@ -1604,6 +1604,7 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType,NETHANDLE serverHandl
 }
 
 #else
+#include "NetClientWebrtcPlayer.h"
 CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL)
 {
 	std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
@@ -1883,6 +1884,11 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHand
 				CltHandle = pXHClient->nClient;
 				pXHClient->netBaseNetType = NetBaseNetType_NetGB28181RtpSendListen;
 			}
+			else if (netClientType == NetBaseNetType_NetClientWebrtcPlayer)
+		{//webrtc播放 
+		CltHandle = XHNetSDK_GenerateIdentifier();
+		pXHClient = std::make_shared<CNetClientWebrtcPlayer>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+		}
 		} while (pXHClient == NULL);
 	}
 	catch (const std::exception& e)
@@ -3022,12 +3028,54 @@ void FindHistoryPictureFile(char* szPicturePath)
 #include "../webrtc-streamer/rtc_obj_sdk.h"
 
 
-void WebRtcCallBack(const char* callbackJson, void* pUserHandle) {
+void WebRtcCallBack(const char* callbackJson, void* pUserHandle)
+{
+	WriteLog(Log_Debug, "WebRtcCallBack ：%s ", callbackJson);
+	if (strlen(callbackJson) > 0 /* && callbackJson[0] == '{' && callbackJson[strlen(callbackJson) - 1] == '}' */)
+	{
+		WebRtcCallStruct callbackStruct;
+		rapidjson::Document doc;
+		doc.Parse<0>((char*)callbackJson);
+		int listSize;
+		if (!doc.HasParseError())
+		{
+			if (strstr(callbackJson, "eventID") != NULL)
+				callbackStruct.eventID = doc["eventID"].GetInt64();
+			if (strstr(callbackJson, "media") != NULL)
+				strcpy(callbackStruct.media, doc["media"].GetString());
+			if (strstr(callbackJson, "playerID") != NULL)
+				strcpy(callbackStruct.playerID, doc["playerID"].GetString());
+			if (strstr(callbackJson, "stream") != NULL)
+				strcpy(callbackStruct.stream, doc["stream"].GetString());
+	     }
 
-	WriteLog(Log_Error, "WebRtcCallBack ：%s ", callbackJson);
-
-};
-
+		if (callbackStruct.eventID == 1)
+		{//创建webrtc播放
+			CMediaStreamSource_ptr pMediaSource = GetMediaStreamSource(callbackStruct.stream);
+			if (pMediaSource == NULL)
+				WriteLog(Log_Debug, "不存在流 %s ", callbackStruct.stream);
+			else
+			{
+				if (strcmp(pMediaSource->m_mediaCodecInfo.szVideoName, "H264") == 0)
+				{
+					CNetRevcBase_ptr pClient = CreateNetRevcBaseClient(NetBaseNetType_NetClientWebrtcPlayer, 0, 0, "", 0, callbackStruct.stream);
+					if (pClient != NULL)
+					{
+						WriteLog(Log_Debug, "创建webrtc播放  %s ", callbackStruct.stream);
+						//memcpy((char*)&pClient->webRtcCallStruct, (char*)&callbackStruct, sizeof(WebRtcCallStruct));
+					}
+				}
+				else
+					WriteLog(Log_Debug, "媒体源 %s 的视频格式为 %s ,不支持WebRTC播放，必须为H264 ", callbackStruct.stream, pMediaSource->m_mediaCodecInfo.szVideoName);
+			}
+		}
+		else if (callbackStruct.eventID == 5 || callbackStruct.eventID == 3)
+		{//删除webrtc播放
+			//DeleteNetRevcBaseClientByPlayerID(callbackStruct.playerID);
+			//pWebRtcDisconnectFifo.push((unsigned char*)callbackStruct.playerID, strlen(callbackStruct.playerID));
+		}
+	}
+ }
 
 #ifdef OS_System_Windows
 int _tmain(int argc, _TCHAR* argv[])

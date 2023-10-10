@@ -243,7 +243,6 @@
     <ClInclude Include="g711.h" />
     <ClInclude Include="g711_table.h" />
     <ClInclude Include="H265_SPS_Nal.h" />
-    <ClInclude Include="HSingleton.h" />
     <ClInclude Include="LCbase64.h" />
     <ClInclude Include="ConfigFile.h" />
     <ClInclude Include="MediaFifo.h" />
@@ -252,6 +251,7 @@
     <ClInclude Include="MyWriteLogFile.h" />
     <ClInclude Include="NetClientHttp.h" />
     <ClInclude Include="NetClientSnap.h" />
+    <ClInclude Include="NetClientWebrtcPlayer.h" />
     <ClInclude Include="NetGB28181Listen.h" />
     <ClInclude Include="NetClientAddPushProxy.h" />
     <ClInclude Include="NetClientAddStreamProxy.h" />
@@ -385,6 +385,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='boost_release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="NetClientWebrtcPlayer.cpp" />
     <ClCompile Include="NetGB28181Listen.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>

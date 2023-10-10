@@ -1205,7 +1205,7 @@ bool  CMediaStreamSource::H265ConvertH264(unsigned char* szVideo, int nLength, c
 	else
 		return true;
 }
-
+#include "../webrtc-streamer/rtc_obj_sdk.h"
 bool CMediaStreamSource::PushVideo(unsigned char* szVideo, int nLength, char* szVideoCodec)
 {//直接拷贝给每个网络发送对象 
 	std::lock_guard<std::mutex> lock(mediaSendMapLock);
