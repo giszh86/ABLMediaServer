@@ -20,7 +20,7 @@ extern bool                                  DeleteNetRevcBaseClient(NETHANDLE C
 extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClientNoLock(NETHANDLE CltHandle);
 extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
 extern boost::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szURL, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
-extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
+extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound = false);
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
@@ -88,6 +88,9 @@ static int rtp_decode_packet(void* param, const void *packet, int bytes, uint32_
 			if (pRtsp->cbVideoTimestamp != 0 && pRtsp->cbVideoTimestamp != timestamp)
 			{
  				pRtsp->nRecvDataTimerBySecond = 0;//网络断线检测
+
+				if (pRtsp->m_nSpsPPSLength > 0 && pRtsp->CheckVideoIsIFrame(pRtsp->szVideoName, pRtsp->szCallBackVideo, pRtsp->cbVideoLength))
+					pRtsp->pMediaSource->PushVideo((unsigned char*)pRtsp->m_pSpsPPSBuffer, pRtsp->m_nSpsPPSLength, pRtsp->szVideoName);
 
 				pRtsp->pMediaSource->PushVideo(pRtsp->szCallBackVideo, pRtsp->cbVideoLength, pRtsp->szVideoName);
 
@@ -732,7 +735,7 @@ int  CNetClientRecvRtsp::GetRtspPathCount(char* szRtspURL)
 //处理rtsp数据
 void  CNetClientRecvRtsp::InputRtspData(unsigned char* pRecvData, int nDataLength)
 {
-#if  0 
+#if  1 
 	 if (nDataLength < 1024)
 		WriteLog(Log_Debug, "RecvData \r\n%s \r\n", pRecvData);
 #endif
@@ -819,7 +822,16 @@ void  CNetClientRecvRtsp::InputRtspData(unsigned char* pRecvData, int nDataLengt
  			memcpy(pMediaSource->pSPSPPSBuffer, m_pSpsPPSBuffer, m_nSpsPPSLength);
 			pMediaSource->nSPSPPSLength = m_nSpsPPSLength;
  		}
- 
+
+		if (strcmp(szVideoName, "H265") == 0)
+		{//获取h265的VPS、SPS、PPS 
+			if (GetH265VPSSPSPPS(szRtspContentSDP, nVideoPayload))
+			{
+				memcpy(pMediaSource->pSPSPPSBuffer, m_pSpsPPSBuffer, m_nSpsPPSLength);
+				pMediaSource->nSPSPPSLength = m_nSpsPPSLength;
+			}
+		}
+
 		//确定ADTS头相关参数
 		sample_index = 11;
 		for (int i = 0; i < 13; i++)
@@ -1461,32 +1473,6 @@ bool  CNetClientRecvRtsp::RequestM3u8File()
 	return true;
 }
 
-int CNetClientRecvRtsp::sdp_h264_load(uint8_t* data, int bytes, const char* config)
-{
-	int n, len, off;
-	const char* p, *next;
-	const uint8_t startcode[] = { 0x00, 0x00, 0x00, 0x01 };
-
-	off = 0;
-	p = config;
-	while (p)
-	{
-		next = strchr(p, ',');
-		len = next ? (int)(next - p) : (int)strlen(p);
-		if (off + (len + 3) / 4 * 3 + (int)sizeof(startcode) > bytes)
-			return -1; // don't have enough space
-
-		memcpy(data + off, startcode, sizeof(startcode));
-		n = (int)base64_decode(data + off + sizeof(startcode), p, len);
-		assert(n <= (len + 3) / 4 * 3);
-		off += n + sizeof(startcode);
-
-		p = next ? next + 1 : NULL;
-	}
-
-	return off;
-}
-
 //从 SDP中获取  SPS，PPS 信息
 bool  CNetClientRecvRtsp::GetSPSPPSFromDescribeSDP()
 {
@@ -1659,7 +1645,7 @@ void  CNetClientRecvRtsp::SendOptions(WWW_AuthenticateType wwwType)
 	}
 	nRtspProcessStep = RtspProcessStep_OPTIONS;
 
-	//WriteLog(Log_Debug, "\r\n%s", szResponseBuffer);
+	WriteLog(Log_Debug, "\r\n%s", szResponseBuffer);
 
 	CSeq++;
 }
@@ -1693,7 +1679,7 @@ void  CNetClientRecvRtsp::SendDescribe(WWW_AuthenticateType wwwType)
 	XHNetSDK_Write(nClient, (unsigned char*)szResponseBuffer, strlen(szResponseBuffer), 1);
 	nRtspProcessStep = RtspProcessStep_DESCRIBE;
 
-	//WriteLog(Log_Debug, "\r\n%s", szResponseBuffer);
+	WriteLog(Log_Debug, "\r\n%s", szResponseBuffer);
 
 	CSeq++;
 }
@@ -1718,17 +1704,17 @@ void  CNetClientRecvRtsp::SendSetup(WWW_AuthenticateType wwwType)
 	{
 		if (nSendSetupCount == 1)
 		{
-			if (m_rtspStruct.szSrcRtspPullUrl[strlen(m_rtspStruct.szSrcRtspPullUrl) - 1] == '/')
-				sprintf(szResponseBuffer, "SETUP %s%s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nTransport: RTP/AVP/TCP;unicast;interleaved=0-1\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, szTrackIDArray[nSendSetupCount], CSeq, MediaServerVerson);
+			if (m_rtspStruct.szRtspURLTrim[strlen(m_rtspStruct.szRtspURLTrim) - 1] == '/')
+				sprintf(szResponseBuffer, "SETUP %s%s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nTransport: RTP/AVP/TCP;unicast;interleaved=0-1\r\n\r\n", m_rtspStruct.szRtspURLTrim, szTrackIDArray[nSendSetupCount], CSeq, MediaServerVerson);
 			else
-				sprintf(szResponseBuffer, "SETUP %s/%s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nTransport: RTP/AVP/TCP;unicast;interleaved=0-1\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, szTrackIDArray[nSendSetupCount], CSeq, MediaServerVerson);
+				sprintf(szResponseBuffer, "SETUP %s/%s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nTransport: RTP/AVP/TCP;unicast;interleaved=0-1\r\n\r\n", m_rtspStruct.szRtspURLTrim, szTrackIDArray[nSendSetupCount], CSeq, MediaServerVerson);
 		}
 		else if (nSendSetupCount == 2)
 		{
-			if (m_rtspStruct.szSrcRtspPullUrl[strlen(m_rtspStruct.szSrcRtspPullUrl) - 1] == '/')
-				sprintf(szResponseBuffer, "SETUP %s%s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nTransport: RTP/AVP/TCP;unicast;interleaved=2-3\r\nSession: %s\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, szTrackIDArray[nSendSetupCount], CSeq, MediaServerVerson, szSessionID);
+			if (m_rtspStruct.szRtspURLTrim[strlen(m_rtspStruct.szRtspURLTrim) - 1] == '/')
+				sprintf(szResponseBuffer, "SETUP %s%s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nTransport: RTP/AVP/TCP;unicast;interleaved=2-3\r\nSession: %s\r\n\r\n", m_rtspStruct.szRtspURLTrim, szTrackIDArray[nSendSetupCount], CSeq, MediaServerVerson, szSessionID);
 			else
-				sprintf(szResponseBuffer, "SETUP %s/%s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nTransport: RTP/AVP/TCP;unicast;interleaved=2-3\r\nSession: %s\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, szTrackIDArray[nSendSetupCount], CSeq, MediaServerVerson, szSessionID);
+				sprintf(szResponseBuffer, "SETUP %s/%s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nTransport: RTP/AVP/TCP;unicast;interleaved=2-3\r\nSession: %s\r\n\r\n", m_rtspStruct.szRtspURLTrim, szTrackIDArray[nSendSetupCount], CSeq, MediaServerVerson, szSessionID);
 		}
 	}
 	else if (wwwType == WWW_Authenticate_MD5)
@@ -1738,21 +1724,21 @@ void  CNetClientRecvRtsp::SendSetup(WWW_AuthenticateType wwwType)
 
 		author.setRealmAndNonce(m_rtspStruct.szRealm, m_rtspStruct.szNonce);
 		author.setUsernameAndPassword(m_rtspStruct.szUser, m_rtspStruct.szPwd);
-		szResponse = (char*)author.computeDigestResponse("SETUP", m_rtspStruct.szSrcRtspPullUrl); //要注意 uri ,有时候没有最后的 斜杠 /
+		szResponse = (char*)author.computeDigestResponse("SETUP", m_rtspStruct.szRtspURLTrim); //要注意 uri ,有时候没有最后的 斜杠 /
 
 		if (nSendSetupCount == 1)
 		{
-			if (m_rtspStruct.szSrcRtspPullUrl[strlen(m_rtspStruct.szSrcRtspPullUrl) - 1] == '/')
-				sprintf(szResponseBuffer, "SETUP %s%s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nAuthorization: Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", response=\"%s\"\r\nTransport: RTP/AVP/TCP;unicast;interleaved=0-1\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, szTrackIDArray[nSendSetupCount], CSeq, MediaServerVerson, m_rtspStruct.szUser, m_rtspStruct.szRealm, m_rtspStruct.szNonce, m_rtspStruct.szRtspURLTrim, szResponse);
+			if (m_rtspStruct.szRtspURLTrim[strlen(m_rtspStruct.szRtspURLTrim) - 1] == '/')
+				sprintf(szResponseBuffer, "SETUP %s%s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nAuthorization: Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", response=\"%s\"\r\nTransport: RTP/AVP/TCP;unicast;interleaved=0-1\r\n\r\n", m_rtspStruct.szRtspURLTrim, szTrackIDArray[nSendSetupCount], CSeq, MediaServerVerson, m_rtspStruct.szUser, m_rtspStruct.szRealm, m_rtspStruct.szNonce, m_rtspStruct.szRtspURLTrim, szResponse);
 			else
-				sprintf(szResponseBuffer, "SETUP %s/%s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nAuthorization: Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", response=\"%s\"\r\nTransport: RTP/AVP/TCP;unicast;interleaved=0-1\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, szTrackIDArray[nSendSetupCount], CSeq, MediaServerVerson, m_rtspStruct.szUser, m_rtspStruct.szRealm, m_rtspStruct.szNonce, m_rtspStruct.szRtspURLTrim, szResponse);
+				sprintf(szResponseBuffer, "SETUP %s/%s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nAuthorization: Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", response=\"%s\"\r\nTransport: RTP/AVP/TCP;unicast;interleaved=0-1\r\n\r\n", m_rtspStruct.szRtspURLTrim, szTrackIDArray[nSendSetupCount], CSeq, MediaServerVerson, m_rtspStruct.szUser, m_rtspStruct.szRealm, m_rtspStruct.szNonce, m_rtspStruct.szRtspURLTrim, szResponse);
 		}
 		else if (nSendSetupCount == 2)
 		{
-			if (m_rtspStruct.szSrcRtspPullUrl[strlen(m_rtspStruct.szSrcRtspPullUrl) - 1] == '/')
-				sprintf(szResponseBuffer, "SETUP %s%s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nAuthorization: Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", response=\"%s\"\r\nTransport: RTP/AVP/TCP;unicast;interleaved=2-3\r\nSession: %s\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, szTrackIDArray[nSendSetupCount], CSeq, MediaServerVerson, m_rtspStruct.szUser, m_rtspStruct.szRealm, m_rtspStruct.szNonce, m_rtspStruct.szRtspURLTrim, szResponse, szSessionID);
+			if (m_rtspStruct.szRtspURLTrim[strlen(m_rtspStruct.szRtspURLTrim) - 1] == '/')
+				sprintf(szResponseBuffer, "SETUP %s%s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nAuthorization: Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", response=\"%s\"\r\nTransport: RTP/AVP/TCP;unicast;interleaved=2-3\r\nSession: %s\r\n\r\n", m_rtspStruct.szRtspURLTrim, szTrackIDArray[nSendSetupCount], CSeq, MediaServerVerson, m_rtspStruct.szUser, m_rtspStruct.szRealm, m_rtspStruct.szNonce, m_rtspStruct.szRtspURLTrim, szResponse, szSessionID);
 			else
-				sprintf(szResponseBuffer, "SETUP %s/%s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nAuthorization: Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", response=\"%s\"\r\nTransport: RTP/AVP/TCP;unicast;interleaved=2-3\r\nSession: %s\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, szTrackIDArray[nSendSetupCount], CSeq, MediaServerVerson, m_rtspStruct.szUser, m_rtspStruct.szRealm, m_rtspStruct.szNonce, m_rtspStruct.szRtspURLTrim, szResponse, szSessionID);
+				sprintf(szResponseBuffer, "SETUP %s/%s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nAuthorization: Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", response=\"%s\"\r\nTransport: RTP/AVP/TCP;unicast;interleaved=2-3\r\nSession: %s\r\n\r\n", m_rtspStruct.szRtspURLTrim, szTrackIDArray[nSendSetupCount], CSeq, MediaServerVerson, m_rtspStruct.szUser, m_rtspStruct.szRealm, m_rtspStruct.szNonce, m_rtspStruct.szRtspURLTrim, szResponse, szSessionID);
 		}
 
 		author.reclaimDigestResponse(szResponse);
@@ -1763,17 +1749,17 @@ void  CNetClientRecvRtsp::SendSetup(WWW_AuthenticateType wwwType)
 
 		if (nSendSetupCount == 1)
 		{
-			if (m_rtspStruct.szSrcRtspPullUrl[strlen(m_rtspStruct.szSrcRtspPullUrl) - 1] == '/')
-				sprintf(szResponseBuffer, "SETUP %s%s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nAuthorization: Basic %s\r\nTransport: RTP/AVP/TCP;unicast;interleaved=0-1\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, szTrackIDArray[nSendSetupCount], CSeq, MediaServerVerson, szBasic);
+			if (m_rtspStruct.szRtspURLTrim[strlen(m_rtspStruct.szRtspURLTrim) - 1] == '/')
+				sprintf(szResponseBuffer, "SETUP %s%s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nAuthorization: Basic %s\r\nTransport: RTP/AVP/TCP;unicast;interleaved=0-1\r\n\r\n", m_rtspStruct.szRtspURLTrim, szTrackIDArray[nSendSetupCount], CSeq, MediaServerVerson, szBasic);
 			else
-				sprintf(szResponseBuffer, "SETUP %s/%s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nAuthorization: Basic %s\r\nTransport: RTP/AVP/TCP;unicast;interleaved=0-1\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, szTrackIDArray[nSendSetupCount], CSeq, MediaServerVerson, szBasic);
+				sprintf(szResponseBuffer, "SETUP %s/%s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nAuthorization: Basic %s\r\nTransport: RTP/AVP/TCP;unicast;interleaved=0-1\r\n\r\n", m_rtspStruct.szRtspURLTrim, szTrackIDArray[nSendSetupCount], CSeq, MediaServerVerson, szBasic);
 		}
 		else if (nSendSetupCount == 2)
 		{
-			if (m_rtspStruct.szSrcRtspPullUrl[strlen(m_rtspStruct.szSrcRtspPullUrl) - 1] == '/')
-				sprintf(szResponseBuffer, "SETUP %s%s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nAuthorization: Basic %s\r\nTransport: RTP/AVP/TCP;unicast;interleaved=2-3\r\nSession: %s\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, szTrackIDArray[nSendSetupCount], CSeq, MediaServerVerson, szBasic, szSessionID);
+			if (m_rtspStruct.szRtspURLTrim[strlen(m_rtspStruct.szRtspURLTrim) - 1] == '/')
+				sprintf(szResponseBuffer, "SETUP %s%s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nAuthorization: Basic %s\r\nTransport: RTP/AVP/TCP;unicast;interleaved=2-3\r\nSession: %s\r\n\r\n", m_rtspStruct.szRtspURLTrim, szTrackIDArray[nSendSetupCount], CSeq, MediaServerVerson, szBasic, szSessionID);
 			else
-				sprintf(szResponseBuffer, "SETUP %s/%s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nAuthorization: Basic %s\r\nTransport: RTP/AVP/TCP;unicast;interleaved=2-3\r\nSession: %s\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, szTrackIDArray[nSendSetupCount], CSeq, MediaServerVerson, szBasic, szSessionID);
+				sprintf(szResponseBuffer, "SETUP %s/%s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nAuthorization: Basic %s\r\nTransport: RTP/AVP/TCP;unicast;interleaved=2-3\r\nSession: %s\r\n\r\n", m_rtspStruct.szRtspURLTrim, szTrackIDArray[nSendSetupCount], CSeq, MediaServerVerson, szBasic, szSessionID);
 		}
 	}
 
@@ -1781,7 +1767,7 @@ void  CNetClientRecvRtsp::SendSetup(WWW_AuthenticateType wwwType)
 
 	nRtspProcessStep = RtspProcessStep_SETUP;
 
-	//WriteLog(Log_Debug, "\r\n%s", szResponseBuffer);
+	WriteLog(Log_Debug, "\r\n%s", szResponseBuffer);
 
 	CSeq++;
 }
@@ -1825,8 +1811,7 @@ void  CNetClientRecvRtsp::SendPlay(WWW_AuthenticateType wwwType)
 
 	nRtspProcessStep = RtspProcessStep_PLAY;
 	m_wwwType = wwwType;
-	
-	//WriteLog(Log_Debug, "\r\n%s", szResponseBuffer);
+	WriteLog(Log_Debug, "\r\n%s", szResponseBuffer);
 
 	CSeq++;
 }
@@ -1839,7 +1824,7 @@ bool CNetClientRecvRtsp::RtspPause()
 
 	if (m_wwwType == WWW_Authenticate_None)
 	{
-		sprintf(szResponseBuffer, "PAUSE %s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, CSeq, MediaServerVerson, szSessionID);
+		sprintf(szResponseBuffer, "PAUSE %s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\n\r\n", m_rtspStruct.szRtspURLTrim, CSeq, MediaServerVerson, szSessionID);
 	}
 	else if (m_wwwType == WWW_Authenticate_MD5)
 	{
@@ -1857,7 +1842,7 @@ bool CNetClientRecvRtsp::RtspPause()
 	else if (m_wwwType == WWW_Authenticate_Basic)
 	{
 		UserPasswordBase64(szBasic);
-		sprintf(szResponseBuffer, "PAUSE %s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\nAuthorization: Basic %s\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, CSeq, MediaServerVerson, szSessionID, szBasic);
+		sprintf(szResponseBuffer, "PAUSE %s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\nAuthorization: Basic %s\r\n\r\n", m_rtspStruct.szRtspURLTrim, CSeq, MediaServerVerson, szSessionID, szBasic);
 	}
 
 	XHNetSDK_Write(nClient, (unsigned char*)szResponseBuffer, strlen(szResponseBuffer), 1);
@@ -1879,7 +1864,7 @@ bool CNetClientRecvRtsp::RtspResume()
 
 	if (m_wwwType == WWW_Authenticate_None)
 	{
-		sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, CSeq, MediaServerVerson, szSessionID);
+		sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\n\r\n", m_rtspStruct.szRtspURLTrim, CSeq, MediaServerVerson, szSessionID);
 	}
 	else if (m_wwwType == WWW_Authenticate_MD5)
 	{
@@ -1897,7 +1882,7 @@ bool CNetClientRecvRtsp::RtspResume()
 	else if (m_wwwType == WWW_Authenticate_Basic)
 	{
 		UserPasswordBase64(szBasic);
-		sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\nAuthorization: Basic %s\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, CSeq, MediaServerVerson, szSessionID, szBasic);
+		sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\nAuthorization: Basic %s\r\n\r\n", m_rtspStruct.szRtspURLTrim, CSeq, MediaServerVerson, szSessionID, szBasic);
 	}
 
 	XHNetSDK_Write(nClient, (unsigned char*)szResponseBuffer, strlen(szResponseBuffer), 1);
@@ -1919,7 +1904,7 @@ bool  CNetClientRecvRtsp::RtspSpeed(char* nSpeed)
 
 	if (m_wwwType == WWW_Authenticate_None)
 	{
-		sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nScale: %s\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, nSpeed, CSeq, MediaServerVerson, szSessionID);
+		sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nScale: %s\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\n\r\n", m_rtspStruct.szRtspURLTrim, nSpeed, CSeq, MediaServerVerson, szSessionID);
 	}
 	else if (m_wwwType == WWW_Authenticate_MD5)
 	{
@@ -1930,14 +1915,14 @@ bool  CNetClientRecvRtsp::RtspSpeed(char* nSpeed)
 		author.setUsernameAndPassword(m_rtspStruct.szUser, m_rtspStruct.szPwd);
 		szResponse = (char*)author.computeDigestResponse("PLAY", m_rtspStruct.szSrcRtspPullUrl); //要注意 uri ,有时候没有最后的 斜杠 /
 
-		sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nScale: %s\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\nAuthorization: Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", response=\"%s\"\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, nSpeed, CSeq, MediaServerVerson, szSessionID, m_rtspStruct.szUser, m_rtspStruct.szRealm, m_rtspStruct.szNonce, m_rtspStruct.szSrcRtspPullUrl, szResponse);
+		sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nScale: %s\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\nAuthorization: Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", response=\"%s\"\r\n\r\n", m_rtspStruct.szRtspURLTrim, nSpeed, CSeq, MediaServerVerson, szSessionID, m_rtspStruct.szUser, m_rtspStruct.szRealm, m_rtspStruct.szNonce, m_rtspStruct.szSrcRtspPullUrl, szResponse);
 
 		author.reclaimDigestResponse(szResponse);
 	}
 	else if (m_wwwType == WWW_Authenticate_Basic)
 	{
 		UserPasswordBase64(szBasic);
-		sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nScale: %s\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\nAuthorization: Basic %s\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, nSpeed, CSeq, MediaServerVerson, szSessionID, szBasic);
+		sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nScale: %s\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\nAuthorization: Basic %s\r\n\r\n", m_rtspStruct.szRtspURLTrim, nSpeed, CSeq, MediaServerVerson, szSessionID, szBasic);
 	}
 
 	XHNetSDK_Write(nClient, (unsigned char*)szResponseBuffer, strlen(szResponseBuffer), 1);
@@ -1956,9 +1941,9 @@ bool CNetClientRecvRtsp::RtspSeek(char* szSeekTime)
 	if (m_wwwType == WWW_Authenticate_None)
 	{
 		if(boost::all(szSeekTime, boost::is_digit()) == true)
-		  sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nRange: npt=%s-0\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, szSeekTime, CSeq, MediaServerVerson, szSessionID);
+		  sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nRange: npt=%s-0\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\n\r\n", m_rtspStruct.szRtspURLTrim, szSeekTime, CSeq, MediaServerVerson, szSessionID);
 		else 
-		  sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nRange: %s\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, szSeekTime, CSeq, MediaServerVerson, szSessionID);
+		  sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nRange: %s\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\n\r\n", m_rtspStruct.szRtspURLTrim, szSeekTime, CSeq, MediaServerVerson, szSessionID);
 	}
 	else if (m_wwwType == WWW_Authenticate_MD5)
 	{
@@ -1970,9 +1955,9 @@ bool CNetClientRecvRtsp::RtspSeek(char* szSeekTime)
 		szResponse = (char*)author.computeDigestResponse("PLAY", m_rtspStruct.szSrcRtspPullUrl); //要注意 uri ,有时候没有最后的 斜杠 /
 
 		if (boost::all(szSeekTime, boost::is_digit()) == true)
-			sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nRange: npt=%s-0\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\nAuthorization: Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", response=\"%s\"\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, szSeekTime, CSeq, MediaServerVerson, szSessionID, m_rtspStruct.szUser, m_rtspStruct.szRealm, m_rtspStruct.szNonce, m_rtspStruct.szSrcRtspPullUrl, szResponse);
+			sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nRange: npt=%s-0\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\nAuthorization: Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", response=\"%s\"\r\n\r\n", m_rtspStruct.szRtspURLTrim, szSeekTime, CSeq, MediaServerVerson, szSessionID, m_rtspStruct.szUser, m_rtspStruct.szRealm, m_rtspStruct.szNonce, m_rtspStruct.szSrcRtspPullUrl, szResponse);
 		else 
-			sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nRange: %s\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\nAuthorization: Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", response=\"%s\"\r\nUpgrade: StreamSystem4.1\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, szSeekTime, CSeq, MediaServerVerson, szSessionID, m_rtspStruct.szUser, m_rtspStruct.szRealm, m_rtspStruct.szNonce, m_rtspStruct.szSrcRtspPullUrl, szResponse);
+			sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nRange: %s\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\nAuthorization: Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", response=\"%s\"\r\nUpgrade: StreamSystem4.1\r\n\r\n", m_rtspStruct.szRtspURLTrim, szSeekTime, CSeq, MediaServerVerson, szSessionID, m_rtspStruct.szUser, m_rtspStruct.szRealm, m_rtspStruct.szNonce, m_rtspStruct.szSrcRtspPullUrl, szResponse);
 
 		author.reclaimDigestResponse(szResponse);
 	}
@@ -1980,9 +1965,9 @@ bool CNetClientRecvRtsp::RtspSeek(char* szSeekTime)
 	{
 		UserPasswordBase64(szBasic);
 		if (boost::all(szSeekTime, boost::is_digit()) == true)
-			sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nRange: npt=%s-0\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\nAuthorization: Basic %s\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, szSeekTime, CSeq, MediaServerVerson, szSessionID, szBasic);
+			sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nRange: npt=%s-0\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\nAuthorization: Basic %s\r\n\r\n", m_rtspStruct.szRtspURLTrim, szSeekTime, CSeq, MediaServerVerson, szSessionID, szBasic);
 		else
-			sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nRange: %s\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\nAuthorization: Basic %s\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, szSeekTime, CSeq, MediaServerVerson, szSessionID, szBasic);
+			sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nRange: %s\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\nAuthorization: Basic %s\r\n\r\n", m_rtspStruct.szRtspURLTrim, szSeekTime, CSeq, MediaServerVerson, szSessionID, szBasic);
 	}
 
 	XHNetSDK_Write(nClient, (unsigned char*)szResponseBuffer, strlen(szResponseBuffer), 1);

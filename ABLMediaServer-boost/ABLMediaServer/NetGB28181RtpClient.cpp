@@ -13,7 +13,7 @@ E-Mail  79941308@qq.com
 
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 extern boost::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
-extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
+extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound = false);
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 
@@ -153,6 +153,7 @@ void  CNetGB28181RtpClient::GB28181SentRtpVideoData(unsigned char* pRtpVideo, in
 
 CNetGB28181RtpClient::CNetGB28181RtpClient(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort,char* szShareMediaURL)
 {
+	nSendRtcpTime = GetTickCount64();
 	memset(m_recvMediaSource, 0x00, sizeof(m_recvMediaSource));
 	pRecvMediaSource = NULL;
 	psBeiJingLaoChenDemuxer = NULL;
@@ -224,6 +225,7 @@ CNetGB28181RtpClient::~CNetGB28181RtpClient()
 	if (netBaseNetType == NetBaseNetType_NetGB28181SendRtpUDP)
 	{
 		XHNetSDK_DestoryUdp(nClient);
+		XHNetSDK_DestoryUdp(nClientRtcp);
 	}
 	else if (netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Connect )
 	{
@@ -373,6 +375,10 @@ void  CNetGB28181RtpClient::CreateRtpHandle()
 		gbDstAddr.sin_family = AF_INET;
 		gbDstAddr.sin_addr.s_addr = inet_addr(m_startSendRtpStruct.dst_url);
 		gbDstAddr.sin_port = htons(atoi(m_startSendRtpStruct.dst_port));
+		memset((char*)&gbDstAddrRTCP, 0x00, sizeof(gbDstAddrRTCP));
+		gbDstAddrRTCP.sin_family = AF_INET;
+		gbDstAddrRTCP.sin_addr.s_addr = inet_addr(m_startSendRtpStruct.dst_url);
+		gbDstAddrRTCP.sin_port = htons(atoi(m_startSendRtpStruct.dst_port)+1);//rtcp端口
 
 		//记下媒体源
 		SplitterAppStream(m_szShareMediaURL);
@@ -548,6 +554,17 @@ int CNetGB28181RtpClient::SendAudio()
 void  CNetGB28181RtpClient::SendGBRtpPacketUDP(unsigned char* pRtpData, int nLength)
 {
 	XHNetSDK_Sendto(nClient, pRtpData, nLength, (void*)&gbDstAddr);
+
+ 	if (GetTickCount64() - nSendRtcpTime >= 5 * 1000 ) 
+	{//主动发送rtcp包
+		nSendRtcpTime = GetTickCount64();
+
+		memset(szRtcpSRBuffer, 0x00, sizeof(szRtcpSRBuffer));
+		rtcpSRBufferLength = sizeof(szRtcpSRBuffer);
+		rtcpSR.BuildRtcpPacket(szRtcpSRBuffer, rtcpSRBufferLength, nSSRC);
+
+		XHNetSDK_Sendto(nClientRtcp, szRtcpSRBuffer, rtcpSRBufferLength, (void*)&gbDstAddrRTCP);
+	}
 }
 
 int CNetGB28181RtpClient::InputNetData(NETHANDLE nServerHandle, NETHANDLE nClientHandle, uint8_t* pData, uint32_t nDataLength, void* address)

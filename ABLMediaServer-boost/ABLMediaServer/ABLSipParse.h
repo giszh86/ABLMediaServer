@@ -10,8 +10,8 @@ using namespace std;
 
 struct SipFieldStruct
 {
-	char szKey[384];
-	char szValue[1024*16];
+	char szKey[512];
+	char szValue[1024*32];
 	SipFieldStruct()
 	{
 		memset(szKey, 0x00, sizeof(szKey));

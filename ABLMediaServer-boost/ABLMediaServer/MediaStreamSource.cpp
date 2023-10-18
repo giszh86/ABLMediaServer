@@ -71,6 +71,11 @@ CMediaStreamSource::CMediaStreamSource(char* szURL, uint64_t nClientTemp, MediaS
 	sprintf(szFileName, "%s_%X.264", ABL_MediaSeverRunPath, this);
 	fWriteInputVideo = fopen(szFileName,"wb") ;
 #endif
+#ifdef WriteInputVideoFileFlag
+	char szFileName[256] = { 0 };
+	sprintf(szFileName, "%s_%X.264", ABL_MediaSeverRunPath, this);
+	fWriteInputVideoFile = fopen(szFileName, "wb");
+#endif
 	memset(szSPSPPSBuffer, 0x00, sizeof(szSPSPPSBuffer));
 	nSPSPPSBufferLength = 0;
 
@@ -460,7 +465,10 @@ CMediaStreamSource::~CMediaStreamSource()
 	if(fWriteInputVideo)
  	  fclose(fWriteInputVideo);
 #endif
-
+#ifdef WriteInputVideoFileFlag
+	if(fWriteInputVideoFile)
+      fclose(fWriteInputVideoFile);
+#endif
 	WriteLog(Log_Debug, "CMediaStreamSource 析构 %X 完成 nClient = %llu \r\n", this , nClient);
 }
 
@@ -1185,6 +1193,14 @@ bool CMediaStreamSource::PushVideo(unsigned char* szVideo, int nLength, char* sz
 
 	if (!(strcmp(szVideoCodec, "H264") == 0 || strcmp(szVideoCodec, "H265") == 0))
 		return false;
+
+#ifdef WriteInputVideoFileFlag
+	if (fWriteInputVideoFile && nLength > 0)
+	{
+		fwrite(szVideo, 1, nLength, fWriteInputVideoFile);
+		fflush(fWriteInputVideoFile);
+	}
+#endif
 
 	//发布事件通知，用于发布鉴权
 	if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nPublish > 0 && !m_bNoticeOnPublish)
@@ -2419,7 +2435,7 @@ bool  CMediaStreamSource::GetVideoWidthHeight(char* szVideoCodeName, unsigned ch
 		return false;
 
 	//防止有些视频分析不出宽、高，一直在疯狂的计算视频宽、高，30秒内，如分析不出，往后就不再分析、计算宽高 
-	if ((GetTickCount64() - tsCreateTime) > 1000 * 30)
+	if ((GetTickCount64() - tsCreateTime) > 1000 * 45)
 		return false;
 
 	int  nWidth = 0, nHeight = 0;
