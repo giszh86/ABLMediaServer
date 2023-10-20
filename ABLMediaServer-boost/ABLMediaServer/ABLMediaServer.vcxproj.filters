@@ -402,6 +402,5 @@
     <Library Include="..\lib\rtpdepacket.lib" />
     <Library Include="..\lib\rtppacket.lib" />
     <Library Include="..\lib\XHNetSDK.lib" />
-    <Library Include="..\..\lib\x64\release\webrtc-streamer.lib" />
   </ItemGroup>
 </Project>

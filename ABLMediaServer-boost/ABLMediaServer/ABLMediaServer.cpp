@@ -63,7 +63,8 @@ volatile bool                                                    ABL_bExitMediaS
 CMediaFifo                                                       pDisconnectBaseNetFifo;             //清理断裂的链接 
 CMediaFifo                                                       pReConnectStreamProxyFifo;          //需要重新连接代理ID 
 CMediaFifo                                                       pMessageNoticeFifo;          //消息通知FIFO
-CMediaFifo                                                       pWebRtcDisconnectFifo;          //webrtc删除对象 
+CMediaFifo                                                       pWebRtcDisconnectFifo;      //webrtc删除对象 
+CMediaFifo                                                       pWebRtcSourceFifo;          //webrtc媒体源对象列表  
 char                                                             ABL_MediaSeverRunPath[256] = { 0 }; //当前路径
 char                                                             ABL_wwwMediaPath[256] = { 0 }; //www 子路径
 uint64_t                                                         ABL_nBaseCookieNumber = 100; //Cookie 序号 
@@ -2256,6 +2257,7 @@ void*  ABLMedisServerProcessThread(void* lpVoid)
 	char           szDeleteMediaSource[512] = { 0 };
 	int            nLength;
 	uint64_t       nClient;
+	char           szWebRtcURL[512] = { 0 };
 	MessageNoticeStruct msgNotice;
 
 	while (ABL_bMediaServerRunFlag)
@@ -2320,12 +2322,24 @@ void*  ABLMedisServerProcessThread(void* lpVoid)
 					char szPlayerID[256] = { 0 };
 					memcpy(szPlayerID, pData, nLength);
 					WriteLog(Log_Debug, "删除webrtc 对象 szPlayerID = %s ", szPlayerID);
-
  					WebRtcEndpoint::getInstance().stopWebRtcPlay(szPlayerID);
 				}
 				pWebRtcDisconnectFifo.pop_front();
 			}
  		}
+
+		//删除webrtc 媒体源
+		while ((pData = pWebRtcSourceFifo.pop(&nLength)) != NULL)
+		{
+			if (pData != NULL && nLength > 0)
+			{
+				memset(szWebRtcURL, 0x00, sizeof(szWebRtcURL));
+				memcpy(szWebRtcURL, pData, nLength);
+				WriteLog(Log_Debug, "删除webrtc 媒体源szWebRtcURL  = %s ", szWebRtcURL);
+ 				WebRtcEndpoint::getInstance().deleteWebRtcSource(szWebRtcURL);
+			}
+			pWebRtcSourceFifo.pop_front();
+		}
 
 		nDeleteWebRtcPlayerTimer ++;
 		nDeleteBreakTimer ++;
@@ -3453,6 +3467,7 @@ ABL_Restart:
 	pReConnectStreamProxyFifo.InitFifo(1024 * 1024 * 4);
 	pMessageNoticeFifo.InitFifo(1024 * 1024 * 4);
 	pWebRtcDisconnectFifo.InitFifo(1024 * 1024 * 2);
+	pWebRtcSourceFifo.InitFifo(1024 * 1024 * 1);
 
 	//创建www子路径 
 #ifdef OS_System_Windows

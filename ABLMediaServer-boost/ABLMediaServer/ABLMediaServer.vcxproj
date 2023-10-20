@@ -51,7 +51,7 @@
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
-    <UseOfMfc>false</UseOfMfc>
+    <UseOfMfc>Static</UseOfMfc>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -84,9 +84,9 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>D:\study\ABLMediaServer\ABLMediaServer-boost\Linux\boost\include;..\rapidjson-master\include;..\media-server-master\libflv\include;..\media-server-master\librtmp\include;..\media-server-master\libmpeg\include;..\media-server-master\libhls\include;..\media-server-master\libmov\include;..\media-server-master\librtp\include;..\ffmpeg-4.2.3\include;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\study\ABLMediaServer\ABLMediaServer-boost\Linux\boost\x64;..\media-server-master\x64\Release;..\ffmpeg-4.2.3\lib;..\directx9\lib\x64;..\lib\Release;$(LibraryPath)</LibraryPath>
-    <OutDir>..\x64\$(Configuration)\</OutDir>
+    <IncludePath>D:\boost_1_73_0\boost_1_73_0;..\rapidjson-master\include;..\media-server-master\libflv\include;..\media-server-master\librtmp\include;..\media-server-master\libmpeg\include;..\media-server-master\libhls\include;..\media-server-master\libmov\include;..\media-server-master\librtp\include;..\ffmpeg-4.2.3\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\boost_1_73_0_Lib_VC2019-NEW\lib;..\media-server-master\x64\Release;..\ffmpeg-4.2.3\lib;..\directx9\lib\x64;..\lib\Release;$(LibraryPath)</LibraryPath>
+    <OutDir>..\x64\Debug\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -116,7 +116,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>librtmp.lib;libflv.lib;libmpeg.lib;libhls.lib;libmov.lib;librtp.lib;ws2_32.lib;iphlpapi.lib;avcodec.lib;avutil.lib;avformat.lib;swscale.lib;avfilter.lib;swresample.lib;webrtc-streamer.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
-      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <OutputFile>$(OutDir)ABLMediaServer.exe</OutputFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -146,15 +146,14 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <LanguageStandard>stdcpp14</LanguageStandard>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>librtmp.lib;libflv.lib;libmpeg.lib;libhls.lib;libmov.lib;librtp.lib;ws2_32.lib;iphlpapi.lib;avcodec.lib;avutil.lib;avformat.lib;swscale.lib;avfilter.lib;swresample.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <AdditionalDependencies>librtmp.lib;libflv.lib;libmpeg.lib;libhls.lib;libmov.lib;librtp.lib;ws2_32.lib;iphlpapi.lib;avcodec.lib;avutil.lib;avformat.lib;swscale.lib;avfilter.lib;swresample.lib;webrtc-streamer.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>..\x64\Debug\ABLMediaServer.exe</OutputFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -325,7 +324,6 @@
     <ResourceCompile Include="ABLMediaServer.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="..\..\lib\x64\release\webrtc-streamer.lib" />
     <Library Include="..\lib\libfaac.lib" />
     <Library Include="..\lib\PsDemux.lib" />
     <Library Include="..\lib\PsMux.lib" />

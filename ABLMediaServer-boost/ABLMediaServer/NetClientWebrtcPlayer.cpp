@@ -20,6 +20,8 @@ extern bool                                  DeleteClientMediaStreamSource(uint6
 extern CMediaSendThreadPool*                 pMediaSendThreadPool;
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
 extern char                                  ABL_MediaSeverRunPath[256]; //当前路径
+extern CMediaFifo                            pWebRtcDisconnectFifo;          //webrtc删除对象 
+
 extern boost::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
 #include "../webrtc-streamer/rtc_obj_sdk.h"
 
@@ -48,6 +50,7 @@ CNetClientWebrtcPlayer::~CNetClientWebrtcPlayer()
 {
   	WriteLog(Log_Debug, "CNetClientWebrtcPlayer 析构 = %X  nClient = %llu ,nMediaClient = %llu\r\n", this, nClient, nMediaClient);
 	malloc_trim(0);
+	pWebRtcDisconnectFifo.push((unsigned char*)webRtcCallStruct.playerID, strlen(webRtcCallStruct.playerID));
 }
 
 int CNetClientWebrtcPlayer::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, char* szVideoCodec)
