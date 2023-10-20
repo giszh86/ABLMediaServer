@@ -13,7 +13,7 @@ E-Mail  79941308@qq.com
 #ifdef USE_BOOST
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 extern boost::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
-extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
+extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound = false);
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 
@@ -29,7 +29,7 @@ extern CMediaFifo                            pMessageNoticeFifo;  //消息通知FIFO
 #else
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 extern std::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
-extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
+extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound = false);
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 
@@ -440,7 +440,7 @@ int CNetServerHTTP_MP4::ProcessNetData()
 		strcpy(szMediaSourceURL, szMP4Name);
 		if (strstr(szMP4Name, RecordFileReplaySplitter) == NULL)
 		{
-			 pushClient = GetMediaStreamSource(szMP4Name);
+			pushClient = GetMediaStreamSource(szMP4Name, true);
 			if (pushClient == NULL)
 			{
  				return  ResponseError("没有推流对象的地址");

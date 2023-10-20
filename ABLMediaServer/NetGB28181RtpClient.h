@@ -91,8 +91,12 @@ public:
    _rtp_packet_sessionopt  optionPS;
    _rtp_packet_input       inputPS;
    uint32_t                hRtpPS ;
-   sockaddr_in             gbDstAddr;
+   sockaddr_in             gbDstAddr, gbDstAddrRTCP;
 
+   int64_t                 nSendRtcpTime;
+   CRtcpPacketSR           rtcpSR;//发送者报告
+   unsigned char           szRtcpSRBuffer[512];
+   unsigned int            rtcpSRBufferLength;
 #ifdef  WriteGB28181PSFileFlag
    FILE*   writePsFile;
 #endif

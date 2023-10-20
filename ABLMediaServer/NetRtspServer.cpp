@@ -21,7 +21,7 @@ E-Mail  79941308@qq.com
 uint64_t                                     CNetRtspServer::Session = 1000;
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 extern boost::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szURL, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
-extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
+extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound = false);
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
@@ -39,7 +39,7 @@ extern void LIBNET_CALLMETHOD                onread(NETHANDLE srvhandle, NETHAND
 uint64_t                                     CNetRtspServer::Session = 1000;
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 extern std::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szURL, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
-extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
+extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound = false);
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
@@ -1084,7 +1084,7 @@ void  CNetRtspServer::InputRtspData(unsigned char* pRecvData, int nDataLength)
 			return;
 
 		//判断推流地址是否存在
-		auto pMediaSourceTemp = GetMediaStreamSource(szMediaSourceURL);
+		auto pMediaSourceTemp = GetMediaStreamSource(szMediaSourceURL, true);
 		if (pMediaSourceTemp != NULL || strstr(szMediaSourceURL, RecordFileReplaySplitter) != NULL )
 		{
 			sprintf(szResponseBuffer, "RTSP/1.0 406 Not Acceptable\r\nServer: %s\r\nCSeq: %s\r\n\r\n", MediaServerVerson, szCSeq);
@@ -1188,6 +1188,10 @@ void  CNetRtspServer::InputRtspData(unsigned char* pRecvData, int nDataLength)
 				break;
 			}
 		} 
+		if (strcmp(szVideoName, "H265") == 0)
+		{//获取h265的VPS、SPS、PPS 
+			GetH265VPSSPSPPS(szRtspContentSDP, nVideoPayload);
+		}
 
 		//把视频，音频相关信息拷贝给媒体源
 		strcpy(pMediaSource->rtspSDPContent.szVideoName, szVideoName);
@@ -1211,7 +1215,7 @@ void  CNetRtspServer::InputRtspData(unsigned char* pRecvData, int nDataLength)
 		//判断源流媒体是否存在
 		if (strstr(szMediaSourceURL, RecordFileReplaySplitter) == NULL)
 		{//观看实况
-			pMediaSource = GetMediaStreamSource(szMediaSourceURL);
+			pMediaSource = GetMediaStreamSource(szMediaSourceURL, true);
 			if (pMediaSource == NULL || !(strlen(pMediaSource->m_mediaCodecInfo.szVideoName) > 0 || strlen(pMediaSource->m_mediaCodecInfo.szAudioName) > 0))
 			{
 				sprintf(szResponseBuffer, "RTSP/1.0 404 Not FOUND\r\nServer: %s\r\nCSeq: %s\r\n\r\n", MediaServerVerson, szCSeq);
@@ -1934,31 +1938,6 @@ bool  CNetRtspServer::RequestM3u8File()
 	return true;
 }
 
-int CNetRtspServer::sdp_h264_load(uint8_t* data, int bytes, const char* config)
-{
-	int n, len, off;
-	const char* p, *next;
-	const uint8_t startcode[] = { 0x00, 0x00, 0x00, 0x01 };
-
-	off = 0;
-	p = config;
-	while (p)
-	{
-		next = strchr(p, ',');
-		len = next ? (int)(next - p) : (int)strlen(p);
-		if (off + (len + 3) / 4 * 3 + (int)sizeof(startcode) > bytes)
-			return -1; // don't have enough space
-
-		memcpy(data + off, startcode, sizeof(startcode));
-		n = (int)base64_decode(data + off + sizeof(startcode), p, len);
-		assert(n <= (len + 3) / 4 * 3);
-		off += n + sizeof(startcode);
-
-		p = next ? next + 1 : NULL;
-	}
-
-	return off;
-}
 
 //从 SDP中获取  SPS，PPS 信息
 bool  CNetRtspServer::GetSPSPPSFromDescribeSDP()

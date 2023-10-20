@@ -15,7 +15,7 @@ E-Mail  79941308@qq.com
 
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 extern boost::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
-extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
+extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound = false);
 extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSourceNoLock(char* szURL);
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
@@ -51,7 +51,7 @@ extern int                                   GetALLListServerPort(char* szMediaS
 #else
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 extern std::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
-extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
+extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound = false);
 extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSourceNoLock(char* szURL);
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
@@ -724,7 +724,12 @@ bool CNetServerHTTP::ResponseHttpRequest(char* szModem, char* httpURL, char* req
 	}
 	else if (strcmp(httpURL, "/index/api/stopSendRtp") == 0)
 	{//删除GB28181发送码流
+#ifdef WVP
+		index_api_close_streams();
+#else
 		index_api_delRequest();
+#endif
+
 	}
 	else if (strcmp(httpURL, "/index/api/getMediaList") == 0)
 	{//请求列表
@@ -821,8 +826,12 @@ bool CNetServerHTTP::ResponseHttpRequest(char* szModem, char* httpURL, char* req
 
 	if (strcmp(httpURL, "/index/api/getSnap") != 0)
 	{
- 	  if (strcmp(szConnection, "close") == 0 || strcmp(szConnection, "Close") == 0 || ABL_MediaServerPort.httqRequstClose == 1)
-		 DeleteNetRevcBaseClient(nClient);
+		if (strcmp(szConnection, "close") == 0 || strcmp(szConnection, "Close") == 0 || ABL_MediaServerPort.httqRequstClose == 1)
+		{
+			//Sleep(10);
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
+			pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
+		}
 	}
 
 	return true;
@@ -1388,13 +1397,21 @@ int   CNetServerHTTP::bindRtpServerPort()
 	{//udp方式
 		if (atoi(m_openRtpServerStruct.port) == 0)
 		{
-			do
+			while (true)
 			{
 				nRet = XHNetSDK_BuildUdp(NULL, ABL_nGB28181Port, NULL, &nMediaClient, onread, 1);//rtp
 				nRet2 = XHNetSDK_BuildUdp(NULL, ABL_nGB28181Port + 1, NULL, &nMediaClient2, onread, 1);//rtcp
-				if (nRet != 0 || nRet2 != 0)
-					ABL_nGB28181Port += 2;
-			} while (nRet != 0 || nRet2 != 0);
+				ABL_nGB28181Port += 2;
+				if (nRet == 0 && nRet2 == 0)
+					break;
+				else
+				{//关闭其中一个
+					if (nRet == 0)
+						XHNetSDK_DestoryUdp(nMediaClient);
+					if (nRet2 == 0)
+						XHNetSDK_DestoryUdp(nMediaClient2);
+				}
+			}
 		}
 		else
 		{
@@ -1404,12 +1421,12 @@ int   CNetServerHTTP::bindRtpServerPort()
 
 		//自动产生端口
 		if (atoi(m_openRtpServerStruct.port) == 0)
-			sprintf(m_openRtpServerStruct.port, "%d", ABL_nGB28181Port); //记下真实端口 
+			sprintf(m_openRtpServerStruct.port, "%d", ABL_nGB28181Port - 2); //记下真实端口 
 
 		if (nRet == 0 && nRet2 == 0)
 		{//rtp ,rtcp 都绑定成功
-			auto pClient = CreateNetRevcBaseClient(NetBaseNetType_NetGB28181RtpServerUDP, 0, nMediaClient, "", ABL_nGB28181Port, szTemp);
- 			if (pClient != NULL)
+			auto pClient = CreateNetRevcBaseClient(NetBaseNetType_NetGB28181RtpServerUDP, 0, nMediaClient, "", atoi(m_openRtpServerStruct.port), szTemp);
+			if (pClient != NULL)
 			{
 				pClient->hParent = nMediaClient;//udp方式没有父类对象 ，所以把本身ID作为父类对象，在码流到达、码流断开时使用
 				pClient->nClientPort = atoi(m_openRtpServerStruct.port);
@@ -1437,13 +1454,14 @@ int   CNetServerHTTP::bindRtpServerPort()
 	}
 	else if (nTcp_Switch == 1)
 	{//如果是TCP
+		WriteLog(Log_Debug, "准备绑定tcp 端口 ");
+
 		if (atoi(m_openRtpServerStruct.port) == 0)
 		{
 			do
 			{
- 				nRet =  XHNetSDK_Listen((int8_t*)("0.0.0.0"), ABL_nGB28181Port, &nMediaClient, onaccept, onread, onclose, true);
-				if (nRet != 0)
-					ABL_nGB28181Port += 2;
+				nRet = XHNetSDK_Listen((int8_t*)("0.0.0.0"), ABL_nGB28181Port, &nMediaClient, onaccept, onread, onclose, true);
+				ABL_nGB28181Port += 2;
 			} while (nRet != 0);
 		}
 		else
@@ -1457,7 +1475,7 @@ int   CNetServerHTTP::bindRtpServerPort()
 
 		if (nRet == 0)
 		{
- 			auto pClient = CreateNetRevcBaseClient(NetBaseNetType_NetGB28181RtpServerListen, 0, nMediaClient, "", ABL_nGB28181Port, szTemp);
+			auto pClient = CreateNetRevcBaseClient(NetBaseNetType_NetGB28181RtpServerListen, 0, nMediaClient, "", atoi(m_openRtpServerStruct.port), szTemp);
 			if (pClient != NULL)
 			{
 				pClient->nClientPort = atoi(m_openRtpServerStruct.port);
@@ -1473,6 +1491,11 @@ int   CNetServerHTTP::bindRtpServerPort()
 
 				sprintf(szResponseBody, "{\"code\":0,\"memo\":\"success\",\"port\":\"%s\",\"key\":%llu}", m_openRtpServerStruct.port, nMediaClient);
 			}
+			else
+			{
+				WriteLog(Log_Debug, "开始创建国标监听失败 ");
+			}
+
 		}
 	}
 	else if (nTcp_Switch == 2)
@@ -1528,7 +1551,6 @@ int   CNetServerHTTP::bindRtpServerPort()
 	if(nTcp_Switch == 0 || nTcp_Switch == 1 ) 
 	  ResponseSuccess(szResponseBody);
 
-	ABL_nGB28181Port += 2;//需要优化端口 
 	if (ABL_nGB28181Port >= 65520)
 		ABL_nGB28181Port = 10002;  //端口重新反转
 
@@ -1542,9 +1564,11 @@ int   CNetServerHTTP::bindRtpServerPort()
 bool  CNetServerHTTP::index_api_startSendRtp()
 {
 	char szShareMediaURL[string_length_512] = { 0 };
-	unsigned short nReturnPort ;
-	int  nRet = 0 ;
+	unsigned short nReturnPort;
+	int  nRet = 0, nRet2 = 0;
 	int is_udp = 0;
+	NETHANDLE nRtcpClient;
+
 	memset((char*)&m_startSendRtpStruct, 0x00, sizeof(m_startSendRtpStruct));
 	strcpy(m_startSendRtpStruct.RtpPayloadDataType, "1");//默认PS打包
 	strcpy(m_startSendRtpStruct.disableAudio, "0");
@@ -1753,24 +1777,47 @@ bool  CNetServerHTTP::index_api_startSendRtp()
 		{//udp 方式 
 			if (atoi(m_startSendRtpStruct.src_port) == 0)
 			{
-				do
+				while (true)
 				{
 					nRet = XHNetSDK_BuildUdp(NULL, ABL_nGB28181Port, NULL, &nMediaClient, onread, 1);
-					if (nRet != 0)
-						ABL_nGB28181Port += 2;
-				} while (nRet != 0);
+					nRet2 = XHNetSDK_BuildUdp(NULL, ABL_nGB28181Port + 1, NULL, &nRtcpClient, onread, 1);
+					ABL_nGB28181Port += 2;
+					if (nRet == 0 && nRet2 == 0)
+						break;
+					else
+					{//关闭掉其中一个成功的udp 
+						if (nRet == 0)
+							XHNetSDK_DestoryUdp(nMediaClient);
+						if (nRet2 == 0)
+							XHNetSDK_DestoryUdp(nRtcpClient);
+					}
+				}
 			}
 			else
 			{
 				nRet = XHNetSDK_BuildUdp(NULL, atoi(m_startSendRtpStruct.src_port), NULL, &nMediaClient, onread, 1);
+				nRet2 = XHNetSDK_BuildUdp(NULL, atoi(m_startSendRtpStruct.src_port) + 1, NULL, &nRtcpClient, onread, 1);
 			}
-			if (nRet == 0)
+			if (nRet == 0 && nRet2 == 0)
+			{//必须绑定两个端口成功 
 				pClient = CreateNetRevcBaseClient(NetBaseNetType_NetGB28181SendRtpUDP, 0, nMediaClient, "", 0, szShareMediaURL);
+				if (pClient != NULL && nRtcpClient > 0)
+					pClient->nClientRtcp = nRtcpClient;
+			}
+			else
+			{//只要其中一个不成功，则需要关闭 
+				nRet = -1; //绑定端口失败
+				XHNetSDK_DestoryUdp(nMediaClient);
+				XHNetSDK_DestoryUdp(nRtcpClient);
+			}
 		}
-		else if(is_udp == 0)
+		else if (is_udp == 0)
 		{//tcp 主动连接方式 
 			if (atoi(m_startSendRtpStruct.src_port) == 0)
+			{
 				nRet = XHNetSDK_Connect((int8_t*)m_startSendRtpStruct.dst_url, atoi(m_startSendRtpStruct.dst_port), (int8_t*)(NULL), ABL_nGB28181Port, (uint64_t*)&nMediaClient, onread, onclose, onconnect, 0, MaxClientConnectTimerout, 1);
+				ABL_nGB28181Port += 2;
+			}
 			else
 				nRet = XHNetSDK_Connect((int8_t*)m_startSendRtpStruct.dst_url, atoi(m_startSendRtpStruct.dst_port), (int8_t*)(NULL), atoi(m_startSendRtpStruct.src_port), (uint64_t*)&nMediaClient, onread, onclose, onconnect, 0, MaxClientConnectTimerout, 1);
 
@@ -1790,17 +1837,17 @@ bool  CNetServerHTTP::index_api_startSendRtp()
 					memcpy((char*)&pClient->m_startSendRtpStruct, (char*)&m_startSendRtpStruct, sizeof(m_startSendRtpStruct)); //把http对象的 m_startSendRtpStruct 拷贝给listen对象的 m_startSendRtpStruct
 				}
 			}
- 		}
+		}
 
-		nReturnPort = ABL_nGB28181Port;
+		nReturnPort = ABL_nGB28181Port - 2;
 		if (atoi(m_startSendRtpStruct.src_port) > 0)
 			nReturnPort = atoi(m_startSendRtpStruct.src_port);
 
 		if (nRet != 0)
 		{//网络资源启动失败，需要删除 netGB28181RtpClient 对象
- 		    sprintf(szResponseBody, "{\"code\":%d,\"port\":%d,\"memo\":\"bind port %d Failed .\",\"key\":%d}", IndexApiCode_BindPortError, nReturnPort, nReturnPort, 0);
- 		    ResponseSuccess(szResponseBody);
- 	     }
+			sprintf(szResponseBody, "{\"code\":%d,\"port\":%d,\"memo\":\"bind port %d Failed .\",\"key\":%d}", IndexApiCode_BindPortError, nReturnPort, nReturnPort, 0);
+			ResponseSuccess(szResponseBody);
+		}
 
 		if (pClient != NULL)
 		{
@@ -1808,20 +1855,20 @@ bool  CNetServerHTTP::index_api_startSendRtp()
 
 			pClient->nClient_http = nClient; //赋值给http请求连接 
 			pClient->nReturnPort = pClient->nClientPort = nReturnPort;//国标本地发送端口
- 
+
 			//记录连接国标的IP，端口 
 			strcpy(pClient->m_rtspStruct.szIP, m_startSendRtpStruct.dst_url);
 			strcpy(pClient->m_rtspStruct.szPort, m_startSendRtpStruct.dst_port);
 
 			if (is_udp == 1 || is_udp == 2)
 			{
- 			  if(nRet == 0)
-			   sprintf(szResponseBody, "{\"code\":0,\"port\":%d,\"memo\":\"success\",\"key\":%llu}", nReturnPort, pClient->nClient);
-			 else 
-			   sprintf(szResponseBody, "{\"code\":%d,\"port\":%d,\"memo\":\"bind port %d Failed .\",\"key\":%d}", IndexApiCode_BindPortError, nReturnPort, nReturnPort, 0);
+				if (nRet == 0)
+					sprintf(szResponseBody, "{\"code\":0,\"port\":%d,\"memo\":\"success\",\"key\":%llu}", nReturnPort, pClient->nClient);
+				else
+					sprintf(szResponseBody, "{\"code\":%d,\"port\":%d,\"memo\":\"bind port %d Failed .\",\"key\":%d}", IndexApiCode_BindPortError, nReturnPort, nReturnPort, 0);
 
- 			  ResponseSuccess(szResponseBody);
- 			}
+				ResponseSuccess(szResponseBody);
+			}
 			else
 			{//tcp 需要判断是否链接成功
 
@@ -1830,8 +1877,7 @@ bool  CNetServerHTTP::index_api_startSendRtp()
 
 		if (atoi(m_startSendRtpStruct.src_port) == 0)
 		{
-			WriteLog(Log_Debug, "index_api_startSendRtp() nClient = %llu ,is_udp = %s, 使用的端口为 %d ",nClient, m_startSendRtpStruct.is_udp,ABL_nGB28181Port );
-			ABL_nGB28181Port += 2;
+			WriteLog(Log_Debug, "index_api_startSendRtp() nClient = %llu ,is_udp = %s, 使用的端口为 %d ", nClient, m_startSendRtpStruct.is_udp, ABL_nGB28181Port - 2);
 			if (ABL_nGB28181Port >= 65520)
 				ABL_nGB28181Port = 10002;  //端口重新反转
 		}
@@ -1839,7 +1885,7 @@ bool  CNetServerHTTP::index_api_startSendRtp()
 		{
 			WriteLog(Log_Debug, "index_api_startSendRtp() nClient = %llu ,is_udp = %s, 使用的端口为 %s ", nClient, m_startSendRtpStruct.is_udp, m_startSendRtpStruct.src_port);
 		}
-	}
+		}
 	else
 	{//参数错误 
 		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"parameter error\",\"key\":0}", IndexApiCode_ParamError);
@@ -1848,7 +1894,8 @@ bool  CNetServerHTTP::index_api_startSendRtp()
 	}
 
 	return true;
-}
+	}
+
 
 //获取媒体列表
 bool CNetServerHTTP::index_api_getMediaList()
@@ -2030,10 +2077,78 @@ bool CNetServerHTTP::index_api_getServerConfig()
 //根据app,stream 来关闭指定媒体源
 bool  CNetServerHTTP::index_api_close_streams()
 {
+#ifdef WVP
 	char  szTemp2[256] = { 0 };
- 	memset((char*)&m_closeStreamsStruct, 0x00, sizeof(m_closeStreamsStruct));
+	memset((char*)&m_closeStreamsStruct, 0x00, sizeof(m_closeStreamsStruct));
 	int   nDeleteCount = 0;
 
+	GetKeyValue("secret", m_closeStreamsStruct.secret);
+	GetKeyValue("vhost", m_closeStreamsStruct.vhost);
+	GetKeyValue("app", m_closeStreamsStruct.app);
+	GetKeyValue("stream", m_closeStreamsStruct.stream);
+	GetKeyValue("vhost", m_closeStreamsStruct.vhost);
+	GetKeyValue("schema", m_closeStreamsStruct.schema);
+	GetKeyValue("force", szTemp2);
+	m_closeStreamsStruct.force = atoi(szTemp2);
+
+	memset(szResponseBody, 0x00, sizeof(szResponseBody));
+	if (strcmp(m_closeStreamsStruct.secret, ABL_MediaServerPort.secret) != 0)
+	{//密码检测
+
+#ifdef WVP
+		sprintf(szResponseBody, "{\"code\":%d,\"msg\":\"secret error\"}", IndexApiCode_secretError);
+		ResponseSuccess(szResponseBody);
+		return false;
+#else
+		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"secret error\"}", IndexApiCode_secretError);
+		ResponseSuccess(szResponseBody);
+		return false;
+#endif // WVP	
+	}
+	if (strlen(szTemp2) == 0)
+	{//force 参数检测
+#ifdef WVP
+		sprintf(szResponseBody, "{\"code\":%d,\"msg\":\"force param need \"}", IndexApiCode_ParamError);
+		ResponseSuccess(szResponseBody);
+		return false;
+#else
+		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"force param need \"}", IndexApiCode_ParamError);
+		ResponseSuccess(szResponseBody);
+		return false;
+#endif // WVP
+	}
+
+	if (!(m_closeStreamsStruct.force >= 0 && m_closeStreamsStruct.force <= 1))
+	{//force 参数检测
+#ifdef WVP
+		sprintf(szResponseBody, "{\"code\":%d,\"msg\":\"force value error ,[ 0, 1 ] \"}", IndexApiCode_ParamError);
+		ResponseSuccess(szResponseBody);
+		return false;
+#else
+		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"force value error ,[ 0, 1 ] \"}", IndexApiCode_ParamError);
+		ResponseSuccess(szResponseBody);
+		return false;
+#endif // WVP
+
+	}
+
+	nDeleteCount = CloseMediaStreamSource(m_closeStreamsStruct);
+
+#ifdef WVP
+	sprintf(szResponseBody, "{\"code\":0,\"msg\":\"succes\"}");
+	ResponseSuccess(szResponseBody);
+#else
+	sprintf(szResponseBody, "{\"code\":0,\"count_closed\":\"%d\"}", nDeleteCount);
+	ResponseSuccess(szResponseBody);
+#endif // WVP
+
+
+
+	return true;
+#else
+	char  szTemp2[256] = { 0 };
+	memset((char*)&m_closeStreamsStruct, 0x00, sizeof(m_closeStreamsStruct));
+	int   nDeleteCount = 0;
 	GetKeyValue("secret", m_closeStreamsStruct.secret);
 	GetKeyValue("vhost", m_closeStreamsStruct.vhost);
 	GetKeyValue("app", m_closeStreamsStruct.app);
@@ -2062,14 +2177,14 @@ bool  CNetServerHTTP::index_api_close_streams()
 		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"force value error ,[ 0, 1 ] \"}", IndexApiCode_ParamError);
 		ResponseSuccess(szResponseBody);
 		return false;
+
 	}
-
 	nDeleteCount = CloseMediaStreamSource(m_closeStreamsStruct);
-
 	sprintf(szResponseBody, "{\"code\":0,\"count_closed\":\"%d\"}", nDeleteCount);
 	ResponseSuccess(szResponseBody);
-
 	return true;
+#endif // WVP	
+	
 }
 
 //开始、停止录像
@@ -2542,8 +2657,12 @@ bool  CNetServerHTTP::index_api_downloadImage(char* szHttpURL)
 		ResponseSuccess(szResponseBody);
 	}
 
-    if(ABL_MediaServerPort.httqRequstClose == 1)
-		DeleteNetRevcBaseClient(nClient);
+	if (ABL_MediaServerPort.httqRequstClose == 1)
+	{
+		//Sleep(10);
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
+	}
 
 	return true;
 }

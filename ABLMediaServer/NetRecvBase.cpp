@@ -20,7 +20,7 @@ extern CMediaSendThreadPool*                 pMediaSendThreadPool;
 extern CMediaFifo                            pDisconnectBaseNetFifo;             //清理断裂的链接 
 extern MediaServerPort                       ABL_MediaServerPort;
 extern boost::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
-extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
+extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound = false);
 extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
 extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClientNoLock(NETHANDLE CltHandle);
 extern int                                   avpriv_mpeg4audio_sample_rates[];
@@ -30,7 +30,7 @@ extern CMediaSendThreadPool*                 pMediaSendThreadPool;
 extern CMediaFifo                            pDisconnectBaseNetFifo;             //清理断裂的链接 
 extern MediaServerPort                       ABL_MediaServerPort;
 extern std::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
-extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
+extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound = false);
 extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
 extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClientNoLock(NETHANDLE CltHandle);
 extern int                                   avpriv_mpeg4audio_sample_rates[];
@@ -39,6 +39,8 @@ extern int                                   SampleRateArray[];
 
 CNetRevcBase::CNetRevcBase()
 {
+	m_nSpsPPSLength = 0;
+	m_bHaveSPSPPSFlag = false;
 	nReplayClient = 0;
 	m_nXHRtspURLType = 0;
 	bProxySuccessFlag = false;
@@ -303,11 +305,21 @@ bool  CNetRevcBase::ParseRtspRtmpHttpURL(char* szURL)
 			}
 		}
 
+		char   szRtspURLTrim[2048] = { 0 };
 		nPos5 = strRtspURL.find("?", 0);
 		if (nPos5 > 0)
-			memcpy(m_rtspStruct.szRtspURLTrim, szURL, nPos5);
+			memcpy(szRtspURLTrim, szURL, nPos5);
 		else
-			strcpy(m_rtspStruct.szRtspURLTrim, szURL);
+			strcpy(szRtspURLTrim, szURL);
+		strRtspURL = szRtspURLTrim;
+		nPos5 = strRtspURL.find("@", 0);
+		if (nPos5 > 0)
+		{
+			strcpy(m_rtspStruct.szRtspURLTrim, "rtsp://");
+			memcpy(m_rtspStruct.szRtspURLTrim + 7, szRtspURLTrim + nPos5 + 1, strlen(szRtspURLTrim) - nPos5);
+		}
+		else
+			strcpy(m_rtspStruct.szRtspURLTrim, szRtspURLTrim);
 
 		return true;
 	}
@@ -898,4 +910,82 @@ void CNetRevcBase::GetAACAudioInfo(unsigned char* nAudioData, int nLength)
 
 		WriteLog(Log_Debug, "CNetRevcBase = %X ,媒体接入 AAC信息 szAudioName = %s,nChannels = %d ,nSampleRate = %d ", this, mediaCodecInfo.szAudioName, mediaCodecInfo.nChannels, mediaCodecInfo.nSampleRate);
 	}
+}
+
+int CNetRevcBase::sdp_h264_load(uint8_t* data, int bytes, const char* config)
+{
+	int n, len, off;
+	const char* p, * next;
+	const uint8_t startcode[] = { 0x00, 0x00, 0x00, 0x01 };
+
+	off = 0;
+	p = config;
+	while (p)
+	{
+		next = strchr(p, ',');
+		len = next ? (int)(next - p) : (int)strlen(p);
+		if (off + (len + 3) / 4 * 3 + (int)sizeof(startcode) > bytes)
+			return -1; // don't have enough space
+
+		memcpy(data + off, startcode, sizeof(startcode));
+		n = (int)base64_decode(data + off + sizeof(startcode), p, len);
+		assert(n <= (len + 3) / 4 * 3);
+		off += n + sizeof(startcode);
+
+		p = next ? next + 1 : NULL;
+	}
+
+	return off;
+}
+
+//从一个字符串中拷贝出两个标志之间的子字符串
+int  CNetRevcBase::GetSubFromString(char* szString, char* szStringFlag1, char* szStringFlag2, char* szOutString)
+{
+	string strSrc = szString;
+	int   nRet = 0;
+	int nPos1 = 0, nPos2 = 0;
+	nPos1 = strSrc.find(szStringFlag1, 0);
+
+	if (nPos1 >= 0)
+		nPos2 = strSrc.find(szStringFlag2, nPos1 + strlen(szStringFlag1));
+	if (nPos1 > 0 && nPos2 > nPos1)
+	{
+		memcpy(szOutString, szString + nPos1 + strlen(szStringFlag1), nPos2 - nPos1 - strlen(szStringFlag1));
+		nRet = strlen(szOutString);
+	}
+	else if (nPos1 > 0 && nPos2 < 0)
+	{
+		memcpy(szOutString, szString + nPos1 + strlen(szStringFlag1), strlen(szString) - nPos1 - strlen(szStringFlag1));
+		nRet = strlen(szOutString);
+	}
+	return nRet;
+}
+
+bool  CNetRevcBase::GetH265VPSSPSPPS(char* szSDPString, int  nVideoPayload)
+{//获取h265的VPS、SPS、PPS 
+	m_bHaveSPSPPSFlag = false;
+	char  vpsspsppsStr[string_length_2048] = { 0 };
+	char  szFmt[64] = { 0 };
+	char  szVPS[string_length_512] = { 0 };
+	char  szSPS[string_length_512] = { 0 };
+	char  szPPS[string_length_512] = { 0 };
+	sprintf(szFmt, "a=fmtp:%d", nVideoPayload);
+	if (GetSubFromString(szSDPString, szFmt, "\r\n", vpsspsppsStr) > 0)
+	{
+		GetSubFromString(vpsspsppsStr, "sprop-vps=", ";", szVPS);
+		GetSubFromString(vpsspsppsStr, "sprop-sps=", ";", szSPS);
+		GetSubFromString(vpsspsppsStr, "sprop-pps=", ";", szPPS);
+		int nLength1 = 0, nLength2 = 0, nLength3 = 0;
+		if (strlen(vpsspsppsStr) > 0)
+		{//转换为二进制的VPS、SPS、PPS
+			nLength1 = sdp_h264_load((unsigned char*)m_pSpsPPSBuffer, sizeof(m_pSpsPPSBuffer), szVPS);
+			nLength2 = sdp_h264_load((unsigned char*)m_pSpsPPSBuffer + nLength1, sizeof(m_pSpsPPSBuffer), szSPS);
+			nLength3 = sdp_h264_load((unsigned char*)m_pSpsPPSBuffer + nLength1 + nLength2, sizeof(m_pSpsPPSBuffer), szPPS);
+			m_nSpsPPSLength = nLength1 + nLength2 + nLength3;
+			m_bHaveSPSPPSFlag = true;
+
+			WriteLog(Log_Debug, "H265 vps = %s ,sps = %s ,pps = %s ", szVPS, szSPS, szPPS);
+		}
+	}
+	return m_bHaveSPSPPSFlag;
 }

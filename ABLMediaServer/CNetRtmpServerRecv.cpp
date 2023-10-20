@@ -14,11 +14,10 @@ E-Mail  79941308@qq.com
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 #ifdef USE_BOOST
 extern boost::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
-extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
-
+extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound = false);
 #else
 extern std::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
-extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
+extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound = false);
 
 #endif
 
@@ -114,7 +113,7 @@ static int rtmp_server_onpublish(void* param, const char* app, const char* strea
 		std::shared_ptr<CMediaStreamSource> pTempSource = NULL;
 
 #endif
-		pTempSource = GetMediaStreamSource(pClient->szURL);
+		pTempSource = GetMediaStreamSource(pClient->szURL,true);
 		if (pTempSource != NULL)
 		{//推流地址已经存在 
 			WriteLog(Log_Debug, "--- 推流地址已经存在--- %s ",pClient->szURL );
@@ -186,7 +185,7 @@ static int rtmp_server_onplay(void* param, const char* app, const char* stream, 
 	//判断源流媒体是否存在
 	if (strstr(szTemp, RecordFileReplaySplitter) == NULL)
 	{//观看实况
-		pushClient = GetMediaStreamSource(szTemp);
+		pushClient = GetMediaStreamSource(szTemp,true);
 		if (pushClient == NULL || !(strlen(pushClient->m_mediaCodecInfo.szVideoName) > 0 || strlen(pushClient->m_mediaCodecInfo.szAudioName) > 0))
 		{
 			WriteLog(Log_Debug, "CNetRtmpServerRecv=%X, 没有推流对象的地址 %s nClient = %llu ", pClient, szTemp, pClient->nClient);

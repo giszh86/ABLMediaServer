@@ -11,10 +11,10 @@ E-Mail  79941308@qq.com
 #include "NetServerWS_FLV.h"
 #ifdef USE_BOOST
 extern             bool                DeleteNetRevcBaseClient(NETHANDLE CltHandle);
-boost::shared_ptr<CMediaStreamSource>  GetMediaStreamSource(char* szURL);
+extern boost::shared_ptr<CMediaStreamSource>  GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound = false);
 #else
 extern             bool                DeleteNetRevcBaseClient(NETHANDLE CltHandle);
-std::shared_ptr<CMediaStreamSource>  GetMediaStreamSource(char* szURL);
+extern std::shared_ptr<CMediaStreamSource>  GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound = false);
 #endif
 
 extern CMediaSendThreadPool*           pMediaSendThreadPool;
@@ -444,7 +444,7 @@ bool  CNetServerWS_FLV::Create_WS_FLV_Handle()
 
 		if (strstr(szFlvName, RecordFileReplaySplitter) == NULL)
 		{//实况点播
-			pushClient = GetMediaStreamSource(szFlvName);
+			pushClient = GetMediaStreamSource(szFlvName, true);
 			if (pushClient == NULL)
 			{
 				WriteLog(Log_Debug, "CNetServerWS_FLV=%X, 没有推流对象的地址 %s nClient = %llu ", this, szFlvName, nClient);

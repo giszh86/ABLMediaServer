@@ -19,13 +19,13 @@ uint64_t                                     CNetClientSendRtsp::Session = 1000;
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
 extern boost::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szURL, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
-extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
+extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound = false);
 #else
 uint64_t                                     CNetClientSendRtsp::Session = 1000;
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
 extern std::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szURL, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
-extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
+extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound = false);
 #endif
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
@@ -775,7 +775,7 @@ void  CNetClientSendRtsp::InputRtspData(unsigned char* pRecvData, int nDataLengt
 	{
 		RtspSDPContentStruct sdpContent;
 
-		auto pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
+		auto pMediaSource = GetMediaStreamSource(m_szShareMediaURL, true);
 		if (pMediaSource == NULL)
 		{
 			WriteLog(Log_Debug, "CNetClientSendRtsp = %X ,媒体源 %s 不存在 , nClient = %llu ", this, m_szShareMediaURL,nClient);
@@ -854,7 +854,7 @@ void  CNetClientSendRtsp::InputRtspData(unsigned char* pRecvData, int nDataLengt
 	else if (memcmp(data_, "RTSP/1.0 200", 12) == 0 && nRtspProcessStep == RtspProcessStep_RECORD && strstr((char*)pRecvData, "\r\n\r\n") != NULL)
 	{
 		WriteLog(Log_Debug, "收到 RECORD 回复命令，rtsp交互完毕 nClient = %llu ", nClient);
-		auto  pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
+		auto  pMediaSource = GetMediaStreamSource(m_szShareMediaURL, true);
 		if (pMediaSource == NULL )
 		{
 			WriteLog(Log_Debug, "CNetClientSendRtsp = %X nClient = %llu ,不存在媒体源 %s", this, nClient, m_szShareMediaURL);
@@ -1135,31 +1135,6 @@ bool  CNetClientSendRtsp::RequestM3u8File()
 	return true;
 }
 
-int CNetClientSendRtsp::sdp_h264_load(uint8_t* data, int bytes, const char* config)
-{
-	int n, len, off;
-	const char* p, *next;
-	const uint8_t startcode[] = { 0x00, 0x00, 0x00, 0x01 };
-
-	off = 0;
-	p = config;
-	while (p)
-	{
-		next = strchr(p, ',');
-		len = next ? (int)(next - p) : (int)strlen(p);
-		if (off + (len + 3) / 4 * 3 + (int)sizeof(startcode) > bytes)
-			return -1; // don't have enough space
-
-		memcpy(data + off, startcode, sizeof(startcode));
-		n = (int)base64_decode(data + off + sizeof(startcode), p, len);
-		assert(n <= (len + 3) / 4 * 3);
-		off += n + sizeof(startcode);
-
-		p = next ? next + 1 : NULL;
-	}
-
-	return off;
-}
 
 //从 SDP中获取  SPS，PPS 信息
 bool  CNetClientSendRtsp::GetSPSPPSFromDescribeSDP()

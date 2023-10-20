@@ -52,23 +52,7 @@ CNetGB28181Listen::CNetGB28181Listen(NETHANDLE hServer, NETHANDLE hClient, char*
 
 CNetGB28181Listen::~CNetGB28181Listen()
 {
-	XHNetSDK_Unlisten(nClient);
- 
-	if(nMediaClient > 0)
-		pDisconnectBaseNetFifo.push((unsigned char*)&nMediaClient, sizeof(nMediaClient));
-	else
-	{//码流没有达到通知
- 		if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nClientNotArrive > 0 && bUpdateVideoFrameSpeedFlag == false)
-		{
-			MessageNoticeStruct msgNotice;
-			msgNotice.nClient = ABL_MediaServerPort.nClientNotArrive;
-			sprintf(msgNotice.szMsg, "{\"mediaServerId\":\"%s\",\"app\":\"%s\",\"stream\":\"%s\",\"networkType\":%d,\"key\":%llu}", ABL_MediaServerPort.mediaServerID, m_addStreamProxyStruct.app, m_addStreamProxyStruct.stream, netBaseNetType, nClient);
-			pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
-		}
-	}
-
-	WriteLog(Log_Debug, "CNetGB28181Listen 析构 = %X  nClient = %llu ,nMediaClient = %llu\r\n", this, nClient, nMediaClient);
-	malloc_trim(0);
+  malloc_trim(0);
 }
 
 int CNetGB28181Listen::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, char* szVideoCodec)

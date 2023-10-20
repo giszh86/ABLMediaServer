@@ -446,10 +446,9 @@ enum NetBaseNetType
 	NetBaseNetType_HttpClient_on_publish           = 124,//码流接入通知 
 	NetBaseNetType_HttpClient_on_iframe_arrive     = 125,//i帧到达事件
 	NetBaseNetType_NetClientWebrtcPlayer = 130,//webrtc的播放 
-
 };
 
-#define   MediaServerVerson                 "ABLMediaServer-6.3.6(2023-07-28)"
+#define   MediaServerVerson                 "ABLMediaServer-6.3.6(2023-10-19)"
 #define   RtspServerPublic                  "DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE, OPTIONS, ANNOUNCE, RECORD，GET_PARAMETER"
 #define   RecordFileReplaySplitter          "__ReplayFMP4RecordFile__"  //实况、录像区分的标志字符串，用于区分实况，放置在url中。
 
@@ -876,6 +875,20 @@ struct RequestKeyValue
 		memset(value, 0x00, sizeof(value));
 	}
 };
+struct WebRtcCallStruct
+{
+	uint64_t eventID;
+	char     media[string_length_512];
+	char     playerID[string_length_512];
+	char     stream[string_length_512];
+	WebRtcCallStruct()
+	{
+		eventID = 0;
+		memset(media, 0x00, sizeof(media));
+		memset(playerID, 0x00, sizeof(playerID));
+		memset(stream, 0x00, sizeof(stream));
+	}
+};
 
 //http 操作返回码
 enum HttpReponseIndexApiCode
@@ -1027,20 +1040,6 @@ struct MessageNoticeStruct
 };
 
 
-struct WebRtcCallStruct
-{
-	uint64_t eventID;
-	char     media[string_length_512];
-	char     playerID[string_length_512];
-	char     stream[string_length_512];
-	WebRtcCallStruct()
-	{
-		eventID = 0;
-		memset(media, 0x00, sizeof(media));
-		memset(playerID, 0x00, sizeof(playerID));
-		memset(stream, 0x00, sizeof(stream));
-	}
-	};
 
 #ifndef OS_System_Windows
 unsigned long  GetTickCount();
@@ -1129,7 +1128,7 @@ typedef list<int> LogFileVector;
 #include "NetServerHLS.h"
 #include "NetClientHttp.h"
 #include "NetClientSnap.h"
-
+#include "NetClientWebrtcPlayer.h"
 
 #include "MediaFifo.h"
 #include "NetBaseThreadPool.h"

@@ -105,13 +105,18 @@ void WebRtcEndpoint::init(const char* webrtcConfig, std::function<void(const cha
 
 bool WebRtcEndpoint::stopWebRtcPlay(const char* peerid)
 {
-	webRtcServer->hangUp(peerid);
+	if (webRtcServer)
+	{
+		webRtcServer->hangUp(peerid);
+	}
+
 
 	return false;
 }
 
 bool WebRtcEndpoint::deleteWebRtcSource(const char* szMediaSource)
 {
+	VideoCaptureManager::getInstance().RemoveInput(szMediaSource);
 	return false;
 }
 

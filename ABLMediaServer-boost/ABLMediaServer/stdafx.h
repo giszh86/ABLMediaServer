@@ -70,7 +70,6 @@
 #include <limits.h>
 #include <sys/resource.h>
 
-
 #define      BYTE     unsigned char 
 
 #endif
@@ -95,11 +94,6 @@ enum ABLRtspPlayerType
 	RtspPlayerType_RecordReplay = 1 ,//录像回放
 	RtspPlayerType_RecordDownload = 2,//录像下载
 };
-
-
-#pragma comment(lib, "D:/study/ABLMediaServer/lib/x64/release/webrtc-streamer.lib")
-
-
 
 //媒体格式信息
 struct MediaCodecInfo

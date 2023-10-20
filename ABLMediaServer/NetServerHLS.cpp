@@ -12,9 +12,9 @@ E-Mail  79941308@qq.com
 
 extern             bool                DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 #ifdef USE_BOOST
-boost::shared_ptr<CMediaStreamSource>  GetMediaStreamSource(char* szURL);
+extern boost::shared_ptr<CMediaStreamSource>  GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound = false);
 #else
-std::shared_ptr<CMediaStreamSource>  GetMediaStreamSource(char* szURL);
+extern std::shared_ptr<CMediaStreamSource>  GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound = false);
 #endif
 
 extern CMediaSendThreadPool*           pMediaSendThreadPool;
@@ -318,7 +318,7 @@ int CNetServerHLS::ProcessNetData()
 	//WriteLog(Log_Debug, "CNetServerHLS=%X, 获取到 Origin = %s , nClient = %llu ", this, szOrigin, nClient);
 
 	//根据推流名字找到
-	auto pushClient = GetMediaStreamSource(szPushName);
+	auto pushClient = GetMediaStreamSource(szPushName, true);
 	if (pushClient == NULL)
 	{
 		WriteLog(Log_Debug, "CNetServerHLS=%X, 没有推流对象的地址 %s nClient = %llu ", this, szPushName, nClient);

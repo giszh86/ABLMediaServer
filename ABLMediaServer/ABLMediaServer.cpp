@@ -27,7 +27,7 @@ E-Mail  79941308@qq.com
 */
 
 #include "stdafx.h"
-
+#include "../webrtc-streamer/rtc_obj_sdk.h"
 NETHANDLE srvhandle_8080,srvhandle_554, srvhandle_1935, srvhandle_6088, srvhandle_8088, srvhandle_8089, srvhandle_9088;
 #ifdef USE_BOOST
 
@@ -98,6 +98,7 @@ volatile bool                                                    ABL_bExitMediaS
 CMediaFifo                                                       pDisconnectBaseNetFifo;             //清理断裂的链接 
 CMediaFifo                                                       pReConnectStreamProxyFifo;          //需要重新连接代理ID 
 CMediaFifo                                                       pMessageNoticeFifo;          //消息通知FIFO
+CMediaFifo                                                       pWebRtcDisconnectFifo;          //webrtc删除对象
 char                                                             ABL_MediaSeverRunPath[256] = { 0 }; //当前路径
 char                                                             ABL_wwwMediaPath[256] = { 0 }; //www 子路径
 uint64_t                                                         ABL_nBaseCookieNumber = 100; //Cookie 序号 
@@ -393,14 +394,14 @@ CMediaStreamSource_ptr CreateMediaStreamSource(char* szURL, uint64_t nClient, Me
 	auto ret =xh_ABLMediaStreamSourceMap.insert(std::make_pair(strURL, pXHClient));
 	if (!ret.second)
 	{
-		pXHClient.reset();
+		//pXHClient.reset();
 		return NULL;
 	}
 
 	return pXHClient;
 }
 
-CMediaStreamSource_ptr GetMediaStreamSource(char* szURL)
+CMediaStreamSource_ptr GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound = false)
 {
 	std::lock_guard<std::mutex> lock(ABL_CMediaStreamSourceMapLock);
 
@@ -416,7 +417,7 @@ CMediaStreamSource_ptr GetMediaStreamSource(char* szURL)
 	else
 	{
 		//码流找不到
-		if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nClientNotFound > 0 && strstr(szURL, RecordFileReplaySplitter) == NULL)
+		if (ABL_MediaServerPort.hook_enable == 1 && bNoticeStreamNoFound && ABL_MediaServerPort.nClientNotFound > 0 && strstr(szURL, RecordFileReplaySplitter) == NULL)
 		{
 			int      nPos2 = 0;
 			char     szApp[512] = { 0 };
@@ -901,6 +902,9 @@ bool CheckAppStreamExisting(char* szAppStreamURL)
 			}
 		}
 	}
+	if (!bAppStreamExisting)
+		WriteLog(Log_Debug, "CheckAppStreamExisting(), url = %s  尚未使用 !", szAppStreamURL);
+
 	return bAppStreamExisting ;
 }
 
@@ -963,7 +967,7 @@ CRecordFileSource_ptr CreateRecordFileSource(char* app,char* stream)
 		xh_ABLRecordFileSourceMap.insert(std::make_pair(pRecord->m_szShareURL, pRecord));
 	if (!ret.second)
 	{
-		pRecord.reset();
+		//pRecord.reset();
 		return NULL;
 	}
 
@@ -1171,7 +1175,7 @@ CPictureFileSource_ptr CreatePictureFileSource(char* app, char* stream)
 		xh_ABLPictureFileSourceMap.insert(std::make_pair(pPicture->m_szShareURL, pPicture));
 	if (!ret.second)
 	{
-		pPicture.reset();
+		//pPicture.reset();
 		return NULL;
 	}
 
@@ -1307,7 +1311,7 @@ void LIBNET_CALLMETHOD onread(NETHANDLE srvhandle,
 void LIBNET_CALLMETHOD	onclose(NETHANDLE srvhandle,
 	NETHANDLE clihandle);
 #ifdef USE_BOOST
-CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType,NETHANDLE serverHandle, NETHANDLE CltHandle,char* szIP,unsigned short nPort,char* szShareMediaURL)
+CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL)
 {
 	std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
 
@@ -1321,7 +1325,7 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType,NETHANDLE serverHandl
 				if (serverHandle == srvhandle_8080)
 					pXHClient = boost::make_shared<CNetServerHTTP>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				else if (serverHandle == srvhandle_554)
-					pXHClient = boost::make_shared<CNetRtspServer>(serverHandle, CltHandle,szIP,nPort, szShareMediaURL);
+					pXHClient = boost::make_shared<CNetRtspServer>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				else if (serverHandle == srvhandle_1935)
 					pXHClient = boost::make_shared<CNetRtmpServerRecv>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				else if (serverHandle == srvhandle_8088)
@@ -1334,13 +1338,14 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType,NETHANDLE serverHandl
 					pXHClient = boost::make_shared<CNetServerHTTP_MP4>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				else
 				{
-					    CNetRevcBase_ptr gb28181Listen = GetNetRevcBaseClientNoLock(serverHandle);
-						if (gb28181Listen && gb28181Listen->netBaseNetType == NetBaseNetType_NetGB28181RtpServerListen &&  gb28181Listen->nMediaClient == 0 )
-						{//国标TCP 被动方式接入 
-							CNetGB28181RtpServer* gb28181TCP = NULL;
-							pXHClient = boost::make_shared<CNetGB28181RtpServer>(serverHandle, CltHandle, szIP, nPort, gb28181Listen->m_szShareMediaURL);
+					CNetRevcBase_ptr gb28181Listen = GetNetRevcBaseClientNoLock(serverHandle);
+					if (gb28181Listen && gb28181Listen->netBaseNetType == NetBaseNetType_NetGB28181RtpServerListen && gb28181Listen->nMediaClient == 0)
+					{//国标TCP 被动方式接入 
+						CNetGB28181RtpServer* gb28181TCP = NULL;
+						pXHClient = boost::make_shared<CNetGB28181RtpServer>(serverHandle, CltHandle, szIP, nPort, gb28181Listen->m_szShareMediaURL);
+						if (pXHClient != NULL)
+						{
 							pXHClient->netBaseNetType = NetBaseNetType_NetGB28181RtpServerTCP_Server;//国标28181 tcp 方式接收码流 
-
 							gb28181Listen->nMediaClient = CltHandle; //已经有人连接进来
 
 							gb28181TCP = (CNetGB28181RtpServer*)pXHClient.get();
@@ -1357,81 +1362,92 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType,NETHANDLE serverHandl
 							memcpy((char*)&pXHClient->m_openRtpServerStruct, (char*)&gb28181Listen->m_openRtpServerStruct, sizeof(gb28181Listen->m_openRtpServerStruct));
 							memcpy((char*)&pXHClient->m_h265ConvertH264Struct, (char*)&gb28181Listen->m_h265ConvertH264Struct, sizeof(gb28181Listen->m_h265ConvertH264Struct));//单独指定转码参数
 						}
-						else if (gb28181Listen && gb28181Listen->netBaseNetType == NetBaseNetType_NetGB28181RtpSendListen &&  gb28181Listen->nMediaClient == 0)
-						{//国标 tcp 被动方式 发送 
-							pXHClient = boost::make_shared<CNetGB28181RtpClient>(serverHandle, CltHandle, szIP, nPort, gb28181Listen->m_szShareMediaURL);
-							if (pXHClient != NULL)
-							{
-								pXHClient->hParent = gb28181Listen->nClient;//记录listen的ID 
-								pXHClient->netBaseNetType = NetBaseNetType_NetGB28181SendRtpTCP_Passive;//国标28181 tcp 被动方式发送码流 
-								gb28181Listen->nMediaClient = CltHandle; //已经有人连接进来，只允许一个连接进来 
- 								memcpy((char*)&pXHClient->m_startSendRtpStruct, (char*)&gb28181Listen->m_startSendRtpStruct, sizeof(pXHClient->m_startSendRtpStruct)); //把listen对象的 m_startSendRtpStruct 拷贝给CNetGB28181RtpClient对象的 m_startSendRtpStruct
-								pXHClient->SendFirstRequst();
-							}
-  						}
-						else
-							return NULL;
- 				}
+					}
+					else if (gb28181Listen && gb28181Listen->netBaseNetType == NetBaseNetType_NetGB28181RtpSendListen && gb28181Listen->nMediaClient == 0)
+					{//国标 tcp 被动方式 发送 
+						pXHClient = boost::make_shared<CNetGB28181RtpClient>(serverHandle, CltHandle, szIP, nPort, gb28181Listen->m_szShareMediaURL);
+						if (pXHClient != NULL)
+						{
+							pXHClient->hParent = gb28181Listen->nClient;//记录listen的ID 
+							pXHClient->netBaseNetType = NetBaseNetType_NetGB28181SendRtpTCP_Passive;//国标28181 tcp 被动方式发送码流 
+							gb28181Listen->nMediaClient = CltHandle; //已经有人连接进来，只允许一个连接进来 
+							memcpy((char*)&pXHClient->m_startSendRtpStruct, (char*)&gb28181Listen->m_startSendRtpStruct, sizeof(pXHClient->m_startSendRtpStruct)); //把listen对象的 m_startSendRtpStruct 拷贝给CNetGB28181RtpClient对象的 m_startSendRtpStruct
+							pXHClient->SendFirstRequst();
+						}
+					}
+					else
+						return NULL;
+				}
 			}
 			else if (netClientType == NetRevcBaseClient_addStreamProxyControl)
 			{//代理拉流控制
 				CltHandle = XHNetSDK_GenerateIdentifier();
 				pXHClient = boost::make_shared<CNetClientAddStreamProxy>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				pXHClient->nClient = CltHandle;
+				if (pXHClient)
+					pXHClient->nClient = CltHandle;
 			}
 			else if (netClientType == NetRevcBaseClient_addPushProxyControl)
 			{//代理推流控制 
 				CltHandle = XHNetSDK_GenerateIdentifier();
 				pXHClient = boost::make_shared<CNetClientAddPushProxy>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				pXHClient->nClient = CltHandle;
+				if (pXHClient)
+					pXHClient->nClient = CltHandle;
 			}
-			else if(netClientType == NetRevcBaseClient_addStreamProxy)
+			else if (netClientType == NetRevcBaseClient_addStreamProxy)
 			{//代理拉流
-				if (memcmp(szIP, "http://", 7) == 0 && strstr(szIP,".m3u8") != NULL )
+				if (memcmp(szIP, "http://", 7) == 0 && strstr(szIP, ".m3u8") != NULL)
 				{//hls 暂时不支持 hls 拉流 
- 					pXHClient = boost::make_shared<CNetClientRecvHttpHLS>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-					CltHandle = pXHClient->nClient; //把nClient赋值给 CltHandle ,作为关键字 ，如果连接失败，会收到回调通知，在回调通知进行删除即可 
+					pXHClient = boost::make_shared<CNetClientRecvHttpHLS>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+					if (pXHClient)
+						CltHandle = pXHClient->nClient; //把nClient赋值给 CltHandle ,作为关键字 ，如果连接失败，会收到回调通知，在回调通知进行删除即可 
 				}
 				else if (memcmp(szIP, "http://", 7) == 0 && strstr(szIP, ".flv") != NULL)
 				{//flv 
 					pXHClient = boost::make_shared<CNetClientRecvFLV>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-					CltHandle = pXHClient->nClient; //把nClient赋值给 CltHandle ,作为关键字 ，如果连接失败，会收到回调通知，在回调通知进行删除即可 
+					if (pXHClient)
+						CltHandle = pXHClient->nClient; //把nClient赋值给 CltHandle ,作为关键字 ，如果连接失败，会收到回调通知，在回调通知进行删除即可 
 				}
-				else if (memcmp(szIP, "rtsp://", 7) == 0 )
+				else if (memcmp(szIP, "rtsp://", 7) == 0)
 				{//rtsp 
 					pXHClient = boost::make_shared<CNetClientRecvRtsp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-					CltHandle = pXHClient->nClient; //把nClient赋值给 CltHandle ,作为关键字 ，如果连接失败，会收到回调通知，在回调通知进行删除即可 
+					if (pXHClient)
+						CltHandle = pXHClient->nClient; //把nClient赋值给 CltHandle ,作为关键字 ，如果连接失败，会收到回调通知，在回调通知进行删除即可 
 					if (CltHandle == 0)
 					{//连接失败
 						WriteLog(Log_Debug, "CreateNetRevcBaseClient()，连接 rtsp 服务器 失败 szURL = %s , szIP = %s ,port = %s ", szIP, pXHClient->m_rtspStruct.szIP, pXHClient->m_rtspStruct.szPort);
 						pDisconnectBaseNetFifo.push((unsigned char*)&pXHClient->nClient, sizeof(pXHClient->nClient));
 					}
- 				}
-				else if (memcmp(szIP, "rtmp://", 7) == 0 )
+				}
+				else if (memcmp(szIP, "rtmp://", 7) == 0)
 				{//rtmp
 					pXHClient = boost::make_shared<CNetClientRecvRtmp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-					CltHandle = pXHClient->nClient; //把nClient赋值给 CltHandle ,作为关键字 ，如果连接失败，会收到回调通知，在回调通知进行删除即可 
-				}else 
-				  return NULL;
+					if (pXHClient)
+						CltHandle = pXHClient->nClient; //把nClient赋值给 CltHandle ,作为关键字 ，如果连接失败，会收到回调通知，在回调通知进行删除即可 
+				}
+				else
+					return NULL;
 			}
 			else if (netClientType == NetRevcBaseClient_addPushStreamProxy)
 			{//代理推流
 				if (memcmp(szIP, "rtsp://", 7) == 0)
 				{//hls 暂时不支持 hls 拉流 
- 					pXHClient = boost::make_shared<CNetClientSendRtsp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-					CltHandle = pXHClient->nClient; //把nClient赋值给 CltHandle ,作为关键字 ，如果连接失败，会收到回调通知，在回调通知进行删除即可 
+					pXHClient = boost::make_shared<CNetClientSendRtsp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+					if (pXHClient)
+						CltHandle = pXHClient->nClient; //把nClient赋值给 CltHandle ,作为关键字 ，如果连接失败，会收到回调通知，在回调通知进行删除即可 
 				}
 				else if (memcmp(szIP, "rtmp://", 7) == 0)
 				{
- 					pXHClient = boost::make_shared<CNetClientSendRtmp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-					CltHandle = pXHClient->nClient; //把nClient赋值给 CltHandle ,作为关键字 ，如果连接失败，会收到回调通知，在回调通知进行删除即可 
- 			    }
+					pXHClient = boost::make_shared<CNetClientSendRtmp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+					if (pXHClient)
+						CltHandle = pXHClient->nClient; //把nClient赋值给 CltHandle ,作为关键字 ，如果连接失败，会收到回调通知，在回调通知进行删除即可 
+				}
 			}
 			else if (netClientType == NetBaseNetType_NetGB28181RtpServerUDP)
 			{//创建GB28181 的udp接收
 				pXHClient = boost::make_shared<CNetGB28181RtpServer>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				pXHClient->netBaseNetType = NetBaseNetType_NetGB28181RtpServerUDP;
- 			}
+				if (pXHClient)
+					pXHClient->netBaseNetType = NetBaseNetType_NetGB28181RtpServerUDP;
+			}
 			else if (netClientType == NetBaseNetType_NetGB28181RtpServerTCP_Active)
 			{//创建GB28181 的TCP 主动连接方式 
 				pXHClient = boost::make_shared<CNetGB28181RtpServer>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
@@ -1446,28 +1462,33 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType,NETHANDLE serverHandl
 			else if (netClientType == NetBaseNetType_NetGB28181SendRtpUDP)
 			{//创建GB28181 的udp发送
 				pXHClient = boost::make_shared<CNetGB28181RtpClient>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				pXHClient->netBaseNetType = NetBaseNetType_NetGB28181SendRtpUDP;
+				if (pXHClient)
+					pXHClient->netBaseNetType = NetBaseNetType_NetGB28181SendRtpUDP;
 			}
 			else if (netClientType == NetBaseNetType_NetGB28181SendRtpTCP_Connect)
 			{//创建GB28181 的tcp发送 
 				pXHClient = boost::make_shared<CNetGB28181RtpClient>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				pXHClient->netBaseNetType = NetBaseNetType_NetGB28181SendRtpTCP_Connect;
+				if (pXHClient)
+					pXHClient->netBaseNetType = NetBaseNetType_NetGB28181SendRtpTCP_Connect;
 			}
 			else if (netClientType == NetBaseNetType_RecordFile_FMP4)
 			{//fmp4录像
 				pXHClient = boost::make_shared<CStreamRecordFMP4>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				pXHClient->netBaseNetType = NetBaseNetType_RecordFile_FMP4;
+				if (pXHClient)
+					pXHClient->netBaseNetType = NetBaseNetType_RecordFile_FMP4;
 			}
 			else if (netClientType == NetBaseNetType_RecordFile_MP4)
 			{//mp4录像
 				pXHClient = boost::make_shared<CStreamRecordMP4>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				pXHClient->netBaseNetType = NetBaseNetType_RecordFile_MP4;
+				if (pXHClient)
+					pXHClient->netBaseNetType = NetBaseNetType_RecordFile_MP4;
 			}
 			else if (netClientType == ReadRecordFileInput_ReadFMP4File)
 			{//读取fmp4文件
 				CltHandle = XHNetSDK_GenerateIdentifier();
 				pXHClient = boost::make_shared<CReadRecordFileInput>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				pXHClient->netBaseNetType = ReadRecordFileInput_ReadFMP4File;
+				if (pXHClient)
+					pXHClient->netBaseNetType = ReadRecordFileInput_ReadFMP4File;
 			}
 			else if (netClientType == NetBaseNetType_SnapPicture_JPEG)
 			{//抓拍图片
@@ -1477,117 +1498,173 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType,NETHANDLE serverHandl
 			else if (netClientType == NetBaseNetType_HttpClient_None_reader)
 			{//事件通知1
 				pXHClient = boost::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = ABL_MediaServerPort.nClientNoneReader = pXHClient->nClient;
-				pXHClient->netBaseNetType = netClientType; //更新网络类型  
+				if (pXHClient)
+				{
+					CltHandle = ABL_MediaServerPort.nClientNoneReader = pXHClient->nClient;
+					pXHClient->netBaseNetType = netClientType; //更新网络类型  
+				}
 			}
-			else if ( netClientType == NetBaseNetType_HttpClient_Not_found)
+			else if (netClientType == NetBaseNetType_HttpClient_Not_found)
 			{//事件通知2
 				pXHClient = boost::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = ABL_MediaServerPort.nClientNotFound = pXHClient->nClient;
-				pXHClient->netBaseNetType = netClientType; //更新网络类型
- 			}
+				if (pXHClient)
+				{
+					CltHandle = ABL_MediaServerPort.nClientNotFound = pXHClient->nClient;
+					pXHClient->netBaseNetType = netClientType; //更新网络类型
+				}
+			}
 			else if (netClientType == NetBaseNetType_HttpClient_Record_mp4)
 			{//事件通知3
 				pXHClient = boost::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = ABL_MediaServerPort.nClientRecordMp4 = pXHClient->nClient;
-				pXHClient->netBaseNetType = netClientType; //更新网络类型
- 			}
+				if (pXHClient)
+				{
+					CltHandle = ABL_MediaServerPort.nClientRecordMp4 = pXHClient->nClient;
+					pXHClient->netBaseNetType = netClientType; //更新网络类型
+				}
+			}
 			else if (netClientType == NetBaseNetType_HttpClient_on_stream_arrive)
 			{//事件通知4
 				pXHClient = boost::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = ABL_MediaServerPort.nClientArrive = pXHClient->nClient;
-				pXHClient->netBaseNetType = netClientType; //更新网络类型
+				if (pXHClient)
+				{
+					CltHandle = ABL_MediaServerPort.nClientArrive = pXHClient->nClient;
+					pXHClient->netBaseNetType = netClientType; //更新网络类型
+				}
 			}
 			else if (netClientType == NetBaseNetType_HttpClient_on_stream_not_arrive)
 			{//事件通知5
 				pXHClient = boost::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = ABL_MediaServerPort.nClientNotArrive = pXHClient->nClient;
-				pXHClient->netBaseNetType = netClientType; //更新网络类型
+				if (pXHClient)
+				{
+					CltHandle = ABL_MediaServerPort.nClientNotArrive = pXHClient->nClient;
+					pXHClient->netBaseNetType = netClientType; //更新网络类型
+				}
 			}
 			else if (netClientType == NetBaseNetType_HttpClient_on_stream_disconnect)
 			{//事件通知6
 				pXHClient = boost::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = ABL_MediaServerPort.nClientDisconnect = pXHClient->nClient;
-				pXHClient->netBaseNetType = netClientType; //更新网络类型
+				if (pXHClient)
+				{
+					CltHandle = ABL_MediaServerPort.nClientDisconnect = pXHClient->nClient;
+					pXHClient->netBaseNetType = netClientType; //更新网络类型
+				}
 			}
 			else if (netClientType == NetBaseNetType_HttpClient_on_record_ts)
 			{//事件通知7
 				pXHClient = boost::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = ABL_MediaServerPort.nClientRecordTS = pXHClient->nClient;
-				pXHClient->netBaseNetType = netClientType; //更新网络类型
+				if (pXHClient)
+				{
+					CltHandle = ABL_MediaServerPort.nClientRecordTS = pXHClient->nClient;
+					pXHClient->netBaseNetType = netClientType; //更新网络类型
+				}
 			}
 			else if (netClientType == NetBaseNetType_HttpClient_Record_Progress)
 			{//事件通知8
 				pXHClient = boost::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = ABL_MediaServerPort.nClientRecordProgress = pXHClient->nClient;
-				pXHClient->netBaseNetType = netClientType; //更新网络类型
+				if (pXHClient)
+				{
+					CltHandle = ABL_MediaServerPort.nClientRecordProgress = pXHClient->nClient;
+					pXHClient->netBaseNetType = netClientType; //更新网络类型
+				}
 			}
 			else if (netClientType == NetBaseNetType_HttpClient_ServerStarted)
 			{//事件通知9
 				pXHClient = boost::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = ABL_MediaServerPort.nServerStarted = pXHClient->nClient;
-				pXHClient->netBaseNetType = netClientType; //更新网络类型
+				if (pXHClient)
+				{
+					CltHandle = ABL_MediaServerPort.nServerStarted = pXHClient->nClient;
+					pXHClient->netBaseNetType = netClientType; //更新网络类型
+				}
 			}
 			else if (netClientType == NetBaseNetType_HttpClient_ServerKeepalive)
 			{//事件通知10
 				pXHClient = boost::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = ABL_MediaServerPort.nServerKeepalive = pXHClient->nClient;
-				pXHClient->netBaseNetType = netClientType; //更新网络类型
+				if (pXHClient)
+				{
+					CltHandle = ABL_MediaServerPort.nServerKeepalive = pXHClient->nClient;
+					pXHClient->netBaseNetType = netClientType; //更新网络类型
+				}
 			}
 			else if (netClientType == NetBaseNetType_HttpClient_DeleteRecordMp4)
 			{//事件通知11
 				pXHClient = boost::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = ABL_MediaServerPort.nClientDeleteRecordMp4 = pXHClient->nClient;
-				pXHClient->netBaseNetType = netClientType; //更新网络类型
+				if (pXHClient)
+				{
+					CltHandle = ABL_MediaServerPort.nClientDeleteRecordMp4 = pXHClient->nClient;
+					pXHClient->netBaseNetType = netClientType; //更新网络类型
+				}
 			}
 			else if (netClientType == NetBaseNetType_HttpClient_on_play)
 			{//事件通知12
 				pXHClient = boost::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = ABL_MediaServerPort.nPlay = pXHClient->nClient;
-				pXHClient->netBaseNetType = netClientType; //更新网络类型
+				if (pXHClient)
+				{
+					CltHandle = ABL_MediaServerPort.nPlay = pXHClient->nClient;
+					pXHClient->netBaseNetType = netClientType; //更新网络类型
+				}
 			}
 			else if (netClientType == NetBaseNetType_HttpClient_on_publish)
 			{//事件通知13
 				pXHClient = boost::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = ABL_MediaServerPort.nPublish = pXHClient->nClient;
-				pXHClient->netBaseNetType = netClientType; //更新网络类型
+				if (pXHClient)
+				{
+					CltHandle = ABL_MediaServerPort.nPublish = pXHClient->nClient;
+					pXHClient->netBaseNetType = netClientType; //更新网络类型
+				}
 			}
 			else if (netClientType == NetBaseNetType_HttpClient_on_iframe_arrive)
 			{//事件通知14
 				pXHClient = boost::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = ABL_MediaServerPort.nFrameArrive = pXHClient->nClient;
-				pXHClient->netBaseNetType = netClientType; //更新网络类型
+				if (pXHClient)
+				{
+					CltHandle = ABL_MediaServerPort.nFrameArrive = pXHClient->nClient;
+					pXHClient->netBaseNetType = netClientType; //更新网络类型
+				}
 			}
 			else if (netClientType == NetBaseNetType_NetGB28181RecvRtpPS_TS)
 			{//单端口接收国标 
 				pXHClient = boost::make_shared<CNetServerRecvRtpTS_PS>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = pXHClient->nClient; 
- 			}
+				if (pXHClient)
+					CltHandle = pXHClient->nClient;
+			}
 			else if (netClientType == NetBaseNetType_NetGB28181UDPTSStreamInput)
 			{//TS 解包形成媒体源
 				pXHClient = boost::make_shared<CRtpTSStreamInput>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = pXHClient->nClient;
+				if (pXHClient)
+					CltHandle = pXHClient->nClient;
 			}
 			else if (netClientType == NetBaseNetType_NetGB28181UDPPSStreamInput)
 			{//PS 解包形成媒体源
 				pXHClient = boost::make_shared<CRtpPSStreamInput>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = pXHClient->nClient;
+				if (pXHClient)
+					CltHandle = pXHClient->nClient;
 			}
 			else if (netClientType == NetBaseNetType_NetGB28181RtpServerListen)
 			{//国标TCP被动接收的Listen 
 				pXHClient = boost::make_shared<CNetGB28181Listen>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = pXHClient->nClient;
-				pXHClient->netBaseNetType = NetBaseNetType_NetGB28181RtpServerListen;
+				if (pXHClient)
+				{
+					CltHandle = pXHClient->nClient;
+					pXHClient->netBaseNetType = NetBaseNetType_NetGB28181RtpServerListen;
+				}
 			}
 			else if (netClientType == NetBaseNetType_NetGB28181RtpSendListen)
 			{//国标TCP被动发送的Listen
 				pXHClient = boost::make_shared<CNetGB28181Listen>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = pXHClient->nClient;
-				pXHClient->netBaseNetType = NetBaseNetType_NetGB28181RtpSendListen;
+				if (pXHClient)
+				{
+					CltHandle = pXHClient->nClient;
+					pXHClient->netBaseNetType = NetBaseNetType_NetGB28181RtpSendListen;
+				}
 			}
- 		} while (pXHClient == NULL);
+			else if (netClientType == NetBaseNetType_NetClientWebrtcPlayer)
+			{//webrtc播放 
+				CltHandle = XHNetSDK_GenerateIdentifier();
+				pXHClient = boost::make_shared<CNetClientWebrtcPlayer>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+			}
+		} while (pXHClient == NULL);
 	}
-	catch (const std::exception &e)
+	catch (const std::exception& e)
 	{
 		return NULL;
 	}
@@ -1596,7 +1673,6 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType,NETHANDLE serverHandl
 		xh_ABLNetRevcBaseMap.insert(std::make_pair(CltHandle, pXHClient));
 	if (!ret.second)
 	{
-		pXHClient.reset();
 		return NULL;
 	}
 
@@ -1637,23 +1713,25 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHand
 					{//国标TCP 被动方式接入 
 						CNetGB28181RtpServer* gb28181TCP = NULL;
 						pXHClient = std::make_shared<CNetGB28181RtpServer>(serverHandle, CltHandle, szIP, nPort, gb28181Listen->m_szShareMediaURL);
-						pXHClient->netBaseNetType = NetBaseNetType_NetGB28181RtpServerTCP_Server;//国标28181 tcp 方式接收码流 
-
-						gb28181Listen->nMediaClient = CltHandle; //已经有人连接进来
-
-						gb28181TCP = (CNetGB28181RtpServer*)pXHClient.get();
-						if (gb28181TCP)
+						if (pXHClient != NULL)
 						{
-							strcpy(gb28181TCP->szClientIP, szIP);
-							gb28181TCP->nClientPort = nPort;
-							gb28181TCP->netDataCache = new unsigned char[MaxNetDataCacheBufferLength]; //在使用前先准备好内存 
-						}
+							pXHClient->netBaseNetType = NetBaseNetType_NetGB28181RtpServerTCP_Server;//国标28181 tcp 方式接收码流 
+							gb28181Listen->nMediaClient = CltHandle; //已经有人连接进来
 
-						pXHClient->hParent = gb28181Listen->nClient;//记录国标代理句柄号
-						pXHClient->m_gbPayload = atoi(gb28181Listen->m_openRtpServerStruct.payload);//更新paylad 
-						memcpy((char*)&pXHClient->m_addStreamProxyStruct, (char*)&gb28181Listen->m_addStreamProxyStruct, sizeof(gb28181Listen->m_addStreamProxyStruct));
-						memcpy((char*)&pXHClient->m_openRtpServerStruct, (char*)&gb28181Listen->m_openRtpServerStruct, sizeof(gb28181Listen->m_openRtpServerStruct));
-						memcpy((char*)&pXHClient->m_h265ConvertH264Struct, (char*)&gb28181Listen->m_h265ConvertH264Struct, sizeof(gb28181Listen->m_h265ConvertH264Struct));//单独指定转码参数
+							gb28181TCP = (CNetGB28181RtpServer*)pXHClient.get();
+							if (gb28181TCP)
+							{
+								strcpy(gb28181TCP->szClientIP, szIP);
+								gb28181TCP->nClientPort = nPort;
+								gb28181TCP->netDataCache = new unsigned char[MaxNetDataCacheBufferLength]; //在使用前先准备好内存 
+							}
+
+							pXHClient->hParent = gb28181Listen->nClient;//记录国标代理句柄号
+							pXHClient->m_gbPayload = atoi(gb28181Listen->m_openRtpServerStruct.payload);//更新paylad 
+							memcpy((char*)&pXHClient->m_addStreamProxyStruct, (char*)&gb28181Listen->m_addStreamProxyStruct, sizeof(gb28181Listen->m_addStreamProxyStruct));
+							memcpy((char*)&pXHClient->m_openRtpServerStruct, (char*)&gb28181Listen->m_openRtpServerStruct, sizeof(gb28181Listen->m_openRtpServerStruct));
+							memcpy((char*)&pXHClient->m_h265ConvertH264Struct, (char*)&gb28181Listen->m_h265ConvertH264Struct, sizeof(gb28181Listen->m_h265ConvertH264Struct));//单独指定转码参数
+						}
 					}
 					else if (gb28181Listen && gb28181Listen->netBaseNetType == NetBaseNetType_NetGB28181RtpSendListen && gb28181Listen->nMediaClient == 0)
 					{//国标 tcp 被动方式 发送 
@@ -1675,30 +1753,35 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHand
 			{//代理拉流控制
 				CltHandle = XHNetSDK_GenerateIdentifier();
 				pXHClient = std::make_shared<CNetClientAddStreamProxy>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				pXHClient->nClient = CltHandle;
+				if (pXHClient)
+					pXHClient->nClient = CltHandle;
 			}
 			else if (netClientType == NetRevcBaseClient_addPushProxyControl)
 			{//代理推流控制 
 				CltHandle = XHNetSDK_GenerateIdentifier();
 				pXHClient = std::make_shared<CNetClientAddPushProxy>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				pXHClient->nClient = CltHandle;
+				if (pXHClient)
+					pXHClient->nClient = CltHandle;
 			}
 			else if (netClientType == NetRevcBaseClient_addStreamProxy)
 			{//代理拉流
 				if (memcmp(szIP, "http://", 7) == 0 && strstr(szIP, ".m3u8") != NULL)
 				{//hls 暂时不支持 hls 拉流 
 					pXHClient = std::make_shared<CNetClientRecvHttpHLS>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-					CltHandle = pXHClient->nClient; //把nClient赋值给 CltHandle ,作为关键字 ，如果连接失败，会收到回调通知，在回调通知进行删除即可 
+					if (pXHClient)
+						CltHandle = pXHClient->nClient; //把nClient赋值给 CltHandle ,作为关键字 ，如果连接失败，会收到回调通知，在回调通知进行删除即可 
 				}
 				else if (memcmp(szIP, "http://", 7) == 0 && strstr(szIP, ".flv") != NULL)
 				{//flv 
 					pXHClient = std::make_shared<CNetClientRecvFLV>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-					CltHandle = pXHClient->nClient; //把nClient赋值给 CltHandle ,作为关键字 ，如果连接失败，会收到回调通知，在回调通知进行删除即可 
+					if (pXHClient)
+						CltHandle = pXHClient->nClient; //把nClient赋值给 CltHandle ,作为关键字 ，如果连接失败，会收到回调通知，在回调通知进行删除即可 
 				}
 				else if (memcmp(szIP, "rtsp://", 7) == 0)
 				{//rtsp 
 					pXHClient = std::make_shared<CNetClientRecvRtsp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-					CltHandle = pXHClient->nClient; //把nClient赋值给 CltHandle ,作为关键字 ，如果连接失败，会收到回调通知，在回调通知进行删除即可 
+					if (pXHClient)
+						CltHandle = pXHClient->nClient; //把nClient赋值给 CltHandle ,作为关键字 ，如果连接失败，会收到回调通知，在回调通知进行删除即可 
 					if (CltHandle == 0)
 					{//连接失败
 						WriteLog(Log_Debug, "CreateNetRevcBaseClient()，连接 rtsp 服务器 失败 szURL = %s , szIP = %s ,port = %s ", szIP, pXHClient->m_rtspStruct.szIP, pXHClient->m_rtspStruct.szPort);
@@ -1708,7 +1791,8 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHand
 				else if (memcmp(szIP, "rtmp://", 7) == 0)
 				{//rtmp
 					pXHClient = std::make_shared<CNetClientRecvRtmp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-					CltHandle = pXHClient->nClient; //把nClient赋值给 CltHandle ,作为关键字 ，如果连接失败，会收到回调通知，在回调通知进行删除即可 
+					if (pXHClient)
+						CltHandle = pXHClient->nClient; //把nClient赋值给 CltHandle ,作为关键字 ，如果连接失败，会收到回调通知，在回调通知进行删除即可 
 				}
 				else
 					return NULL;
@@ -1718,18 +1802,21 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHand
 				if (memcmp(szIP, "rtsp://", 7) == 0)
 				{//hls 暂时不支持 hls 拉流 
 					pXHClient = std::make_shared<CNetClientSendRtsp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-					CltHandle = pXHClient->nClient; //把nClient赋值给 CltHandle ,作为关键字 ，如果连接失败，会收到回调通知，在回调通知进行删除即可 
+					if (pXHClient)
+						CltHandle = pXHClient->nClient; //把nClient赋值给 CltHandle ,作为关键字 ，如果连接失败，会收到回调通知，在回调通知进行删除即可 
 				}
 				else if (memcmp(szIP, "rtmp://", 7) == 0)
 				{
 					pXHClient = std::make_shared<CNetClientSendRtmp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-					CltHandle = pXHClient->nClient; //把nClient赋值给 CltHandle ,作为关键字 ，如果连接失败，会收到回调通知，在回调通知进行删除即可 
+					if (pXHClient)
+						CltHandle = pXHClient->nClient; //把nClient赋值给 CltHandle ,作为关键字 ，如果连接失败，会收到回调通知，在回调通知进行删除即可 
 				}
 			}
 			else if (netClientType == NetBaseNetType_NetGB28181RtpServerUDP)
 			{//创建GB28181 的udp接收
 				pXHClient = std::make_shared<CNetGB28181RtpServer>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				pXHClient->netBaseNetType = NetBaseNetType_NetGB28181RtpServerUDP;
+				if (pXHClient)
+					pXHClient->netBaseNetType = NetBaseNetType_NetGB28181RtpServerUDP;
 			}
 			else if (netClientType == NetBaseNetType_NetGB28181RtpServerTCP_Active)
 			{//创建GB28181 的TCP 主动连接方式 
@@ -1745,28 +1832,33 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHand
 			else if (netClientType == NetBaseNetType_NetGB28181SendRtpUDP)
 			{//创建GB28181 的udp发送
 				pXHClient = std::make_shared<CNetGB28181RtpClient>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				pXHClient->netBaseNetType = NetBaseNetType_NetGB28181SendRtpUDP;
+				if (pXHClient)
+					pXHClient->netBaseNetType = NetBaseNetType_NetGB28181SendRtpUDP;
 			}
 			else if (netClientType == NetBaseNetType_NetGB28181SendRtpTCP_Connect)
 			{//创建GB28181 的tcp发送 
 				pXHClient = std::make_shared<CNetGB28181RtpClient>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				pXHClient->netBaseNetType = NetBaseNetType_NetGB28181SendRtpTCP_Connect;
+				if (pXHClient)
+					pXHClient->netBaseNetType = NetBaseNetType_NetGB28181SendRtpTCP_Connect;
 			}
 			else if (netClientType == NetBaseNetType_RecordFile_FMP4)
 			{//fmp4录像
 				pXHClient = std::make_shared<CStreamRecordFMP4>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				pXHClient->netBaseNetType = NetBaseNetType_RecordFile_FMP4;
+				if (pXHClient)
+					pXHClient->netBaseNetType = NetBaseNetType_RecordFile_FMP4;
 			}
 			else if (netClientType == NetBaseNetType_RecordFile_MP4)
 			{//mp4录像
 				pXHClient = std::make_shared<CStreamRecordMP4>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				pXHClient->netBaseNetType = NetBaseNetType_RecordFile_MP4;
+				if (pXHClient)
+					pXHClient->netBaseNetType = NetBaseNetType_RecordFile_MP4;
 			}
 			else if (netClientType == ReadRecordFileInput_ReadFMP4File)
 			{//读取fmp4文件
 				CltHandle = XHNetSDK_GenerateIdentifier();
 				pXHClient = std::make_shared<CReadRecordFileInput>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				pXHClient->netBaseNetType = ReadRecordFileInput_ReadFMP4File;
+				if (pXHClient)
+					pXHClient->netBaseNetType = ReadRecordFileInput_ReadFMP4File;
 			}
 			else if (netClientType == NetBaseNetType_SnapPicture_JPEG)
 			{//抓拍图片
@@ -1776,119 +1868,170 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHand
 			else if (netClientType == NetBaseNetType_HttpClient_None_reader)
 			{//事件通知1
 				pXHClient = std::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = ABL_MediaServerPort.nClientNoneReader = pXHClient->nClient;
-				pXHClient->netBaseNetType = netClientType; //更新网络类型  
+				if (pXHClient)
+				{
+					CltHandle = ABL_MediaServerPort.nClientNoneReader = pXHClient->nClient;
+					pXHClient->netBaseNetType = netClientType; //更新网络类型  
+				}
 			}
 			else if (netClientType == NetBaseNetType_HttpClient_Not_found)
 			{//事件通知2
 				pXHClient = std::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = ABL_MediaServerPort.nClientNotFound = pXHClient->nClient;
-				pXHClient->netBaseNetType = netClientType; //更新网络类型
+				if (pXHClient)
+				{
+					CltHandle = ABL_MediaServerPort.nClientNotFound = pXHClient->nClient;
+					pXHClient->netBaseNetType = netClientType; //更新网络类型
+				}
 			}
 			else if (netClientType == NetBaseNetType_HttpClient_Record_mp4)
 			{//事件通知3
 				pXHClient = std::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = ABL_MediaServerPort.nClientRecordMp4 = pXHClient->nClient;
-				pXHClient->netBaseNetType = netClientType; //更新网络类型
+				if (pXHClient)
+				{
+					CltHandle = ABL_MediaServerPort.nClientRecordMp4 = pXHClient->nClient;
+					pXHClient->netBaseNetType = netClientType; //更新网络类型
+				}
 			}
 			else if (netClientType == NetBaseNetType_HttpClient_on_stream_arrive)
 			{//事件通知4
 				pXHClient = std::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = ABL_MediaServerPort.nClientArrive = pXHClient->nClient;
-				pXHClient->netBaseNetType = netClientType; //更新网络类型
+				if (pXHClient)
+				{
+					CltHandle = ABL_MediaServerPort.nClientArrive = pXHClient->nClient;
+					pXHClient->netBaseNetType = netClientType; //更新网络类型
+				}
 			}
 			else if (netClientType == NetBaseNetType_HttpClient_on_stream_not_arrive)
 			{//事件通知5
 				pXHClient = std::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = ABL_MediaServerPort.nClientNotArrive = pXHClient->nClient;
-				pXHClient->netBaseNetType = netClientType; //更新网络类型
+				if (pXHClient)
+				{
+					CltHandle = ABL_MediaServerPort.nClientNotArrive = pXHClient->nClient;
+					pXHClient->netBaseNetType = netClientType; //更新网络类型
+				}
 			}
 			else if (netClientType == NetBaseNetType_HttpClient_on_stream_disconnect)
 			{//事件通知6
 				pXHClient = std::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = ABL_MediaServerPort.nClientDisconnect = pXHClient->nClient;
-				pXHClient->netBaseNetType = netClientType; //更新网络类型
+				if (pXHClient)
+				{
+					CltHandle = ABL_MediaServerPort.nClientDisconnect = pXHClient->nClient;
+					pXHClient->netBaseNetType = netClientType; //更新网络类型
+				}
 			}
 			else if (netClientType == NetBaseNetType_HttpClient_on_record_ts)
 			{//事件通知7
 				pXHClient = std::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = ABL_MediaServerPort.nClientRecordTS = pXHClient->nClient;
-				pXHClient->netBaseNetType = netClientType; //更新网络类型
+				if (pXHClient)
+				{
+					CltHandle = ABL_MediaServerPort.nClientRecordTS = pXHClient->nClient;
+					pXHClient->netBaseNetType = netClientType; //更新网络类型
+				}
 			}
 			else if (netClientType == NetBaseNetType_HttpClient_Record_Progress)
 			{//事件通知8
 				pXHClient = std::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = ABL_MediaServerPort.nClientRecordProgress = pXHClient->nClient;
-				pXHClient->netBaseNetType = netClientType; //更新网络类型
+				if (pXHClient)
+				{
+					CltHandle = ABL_MediaServerPort.nClientRecordProgress = pXHClient->nClient;
+					pXHClient->netBaseNetType = netClientType; //更新网络类型
+				}
 			}
 			else if (netClientType == NetBaseNetType_HttpClient_ServerStarted)
 			{//事件通知9
 				pXHClient = std::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = ABL_MediaServerPort.nServerStarted = pXHClient->nClient;
-				pXHClient->netBaseNetType = netClientType; //更新网络类型
+				if (pXHClient)
+				{
+					CltHandle = ABL_MediaServerPort.nServerStarted = pXHClient->nClient;
+					pXHClient->netBaseNetType = netClientType; //更新网络类型
+				}
 			}
 			else if (netClientType == NetBaseNetType_HttpClient_ServerKeepalive)
 			{//事件通知10
 				pXHClient = std::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = ABL_MediaServerPort.nServerKeepalive = pXHClient->nClient;
-				pXHClient->netBaseNetType = netClientType; //更新网络类型
+				if (pXHClient)
+				{
+					CltHandle = ABL_MediaServerPort.nServerKeepalive = pXHClient->nClient;
+					pXHClient->netBaseNetType = netClientType; //更新网络类型
+				}
 			}
 			else if (netClientType == NetBaseNetType_HttpClient_DeleteRecordMp4)
 			{//事件通知11
 				pXHClient = std::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = ABL_MediaServerPort.nClientDeleteRecordMp4 = pXHClient->nClient;
-				pXHClient->netBaseNetType = netClientType; //更新网络类型
+				if (pXHClient)
+				{
+					CltHandle = ABL_MediaServerPort.nClientDeleteRecordMp4 = pXHClient->nClient;
+					pXHClient->netBaseNetType = netClientType; //更新网络类型
+				}
 			}
 			else if (netClientType == NetBaseNetType_HttpClient_on_play)
 			{//事件通知12
 				pXHClient = std::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = ABL_MediaServerPort.nPlay = pXHClient->nClient;
-				pXHClient->netBaseNetType = netClientType; //更新网络类型
+				if (pXHClient)
+				{
+					CltHandle = ABL_MediaServerPort.nPlay = pXHClient->nClient;
+					pXHClient->netBaseNetType = netClientType; //更新网络类型
+				}
 			}
 			else if (netClientType == NetBaseNetType_HttpClient_on_publish)
 			{//事件通知13
 				pXHClient = std::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = ABL_MediaServerPort.nPublish = pXHClient->nClient;
-				pXHClient->netBaseNetType = netClientType; //更新网络类型
+				if (pXHClient)
+				{
+					CltHandle = ABL_MediaServerPort.nPublish = pXHClient->nClient;
+					pXHClient->netBaseNetType = netClientType; //更新网络类型
+				}
 			}
 			else if (netClientType == NetBaseNetType_HttpClient_on_iframe_arrive)
 			{//事件通知14
 				pXHClient = std::make_shared<CNetClientHttp>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = ABL_MediaServerPort.nFrameArrive = pXHClient->nClient;
-				pXHClient->netBaseNetType = netClientType; //更新网络类型
+				if (pXHClient)
+				{
+					CltHandle = ABL_MediaServerPort.nFrameArrive = pXHClient->nClient;
+					pXHClient->netBaseNetType = netClientType; //更新网络类型
+				}
 			}
 			else if (netClientType == NetBaseNetType_NetGB28181RecvRtpPS_TS)
 			{//单端口接收国标 
 				pXHClient = std::make_shared<CNetServerRecvRtpTS_PS>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = pXHClient->nClient;
+				if (pXHClient)
+					CltHandle = pXHClient->nClient;
 			}
 			else if (netClientType == NetBaseNetType_NetGB28181UDPTSStreamInput)
 			{//TS 解包形成媒体源
 				pXHClient = std::make_shared<CRtpTSStreamInput>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = pXHClient->nClient;
+				if (pXHClient)
+					CltHandle = pXHClient->nClient;
 			}
 			else if (netClientType == NetBaseNetType_NetGB28181UDPPSStreamInput)
 			{//PS 解包形成媒体源
 				pXHClient = std::make_shared<CRtpPSStreamInput>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = pXHClient->nClient;
+				if (pXHClient)
+					CltHandle = pXHClient->nClient;
 			}
 			else if (netClientType == NetBaseNetType_NetGB28181RtpServerListen)
 			{//国标TCP被动接收的Listen 
 				pXHClient = std::make_shared<CNetGB28181Listen>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = pXHClient->nClient;
-				pXHClient->netBaseNetType = NetBaseNetType_NetGB28181RtpServerListen;
+				if (pXHClient)
+				{
+					CltHandle = pXHClient->nClient;
+					pXHClient->netBaseNetType = NetBaseNetType_NetGB28181RtpServerListen;
+				}
 			}
 			else if (netClientType == NetBaseNetType_NetGB28181RtpSendListen)
 			{//国标TCP被动发送的Listen
 				pXHClient = std::make_shared<CNetGB28181Listen>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				CltHandle = pXHClient->nClient;
-				pXHClient->netBaseNetType = NetBaseNetType_NetGB28181RtpSendListen;
+				if (pXHClient)
+				{
+					CltHandle = pXHClient->nClient;
+					pXHClient->netBaseNetType = NetBaseNetType_NetGB28181RtpSendListen;
+				}
 			}
 			else if (netClientType == NetBaseNetType_NetClientWebrtcPlayer)
-		{//webrtc播放 
-		CltHandle = XHNetSDK_GenerateIdentifier();
-		pXHClient = std::make_shared<CNetClientWebrtcPlayer>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-		}
+			{//webrtc播放 
+				CltHandle = XHNetSDK_GenerateIdentifier();
+				pXHClient = std::make_shared<CNetClientWebrtcPlayer>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+			}
 		} while (pXHClient == NULL);
 	}
 	catch (const std::exception& e)
@@ -1900,13 +2043,11 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHand
 		xh_ABLNetRevcBaseMap.insert(std::make_pair(CltHandle, pXHClient));
 	if (!ret.second)
 	{
-		pXHClient.reset();
 		return NULL;
 	}
 
 	return pXHClient;
 }
-
 
 #endif
 CNetRevcBase_ptr GetNetRevcBaseClient(NETHANDLE CltHandle)
@@ -1927,7 +2068,6 @@ CNetRevcBase_ptr GetNetRevcBaseClient(NETHANDLE CltHandle)
 		return NULL;
 	}
 }
-
 bool  DeleteNetRevcBaseClient(NETHANDLE CltHandle)
 {
 	std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
@@ -1938,27 +2078,45 @@ bool  DeleteNetRevcBaseClient(NETHANDLE CltHandle)
 	if (iterator1 != xh_ABLNetRevcBaseMap.end())
 	{
 		(*iterator1).second->bRunFlag = false;
- 		if ( ((*iterator1).second->netBaseNetType == NetBaseNetType_RtspClientPush || (*iterator1).second->netBaseNetType ==  NetBaseNetType_RtmpClientPush ||
+		if (((*iterator1).second->netBaseNetType == NetBaseNetType_RtspClientPush || (*iterator1).second->netBaseNetType == NetBaseNetType_RtmpClientPush ||
 			(*iterator1).second->netBaseNetType == NetBaseNetType_RtspClientRecv || (*iterator1).second->netBaseNetType == NetBaseNetType_RtmpClientRecv)
 			&& (*iterator1).second->bProxySuccessFlag == false)
 		{//rtsp\rtmp 代理拉流，rtsp \ rtmp 代理推流
 			//如果没有成功过则需要删除父类 
 			auto  pParentPtr = GetNetRevcBaseClientNoLock((*iterator1).second->hParent);
 			if (pParentPtr && pParentPtr->bProxySuccessFlag == false || (*iterator1).second->m_nXHRtspURLType == XHRtspURLType_RecordPlay)
- 			   pDisconnectBaseNetFifo.push((unsigned char*)&(*iterator1).second->hParent, sizeof((*iterator1).second->hParent));
+				pDisconnectBaseNetFifo.push((unsigned char*)&(*iterator1).second->hParent, sizeof((*iterator1).second->hParent));
 		}
 
-		//在此处关闭，确保boost:asio 单线程状态下 close(pSocket) ;
-		XHNetSDK_Disconnect((*iterator1).second->nClient);
+		//关闭国标监听 
+		if ((*iterator1).second->netBaseNetType == NetBaseNetType_NetGB28181RtpServerListen)
+		{
+			XHNetSDK_Unlisten((*iterator1).second->nClient);
+			if ((*iterator1).second->nMediaClient == 0)
+			{//码流没有达到通知
+				if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nClientNotArrive > 0 && (*iterator1).second->bUpdateVideoFrameSpeedFlag == false)
+				{
+					MessageNoticeStruct msgNotice;
+					msgNotice.nClient = ABL_MediaServerPort.nClientNotArrive;
+					sprintf(msgNotice.szMsg, "{\"mediaServerId\":\"%s\",\"app\":\"%s\",\"stream\":\"%s\",\"networkType\":%d,\"key\":%llu}", ABL_MediaServerPort.mediaServerID, (*iterator1).second->m_addStreamProxyStruct.app, (*iterator1).second->m_addStreamProxyStruct.stream, (*iterator1).second->netBaseNetType, (*iterator1).second->nClient);
+					pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
+				}
+			}
+			if ((*iterator1).second->nMediaClient > 0)
+				pDisconnectBaseNetFifo.push((unsigned char*)&(*iterator1).second->nMediaClient, sizeof((*iterator1).second->nMediaClient));
+		}
+		else //在此处关闭，确保boost:asio 单线程状态下 close(pSocket) ;
+			XHNetSDK_Disconnect((*iterator1).second->nClient);
 
- 		xh_ABLNetRevcBaseMap.erase(iterator1);
-  		return true;
+		xh_ABLNetRevcBaseMap.erase(iterator1);
+		return true;
 	}
 	else
 	{
 		return false;
 	}
 }
+
 
 /*
  功能：
@@ -2032,6 +2190,28 @@ bool  CheckSSRCAlreadyUsed(int nSSRC, bool bLockFlag)
 	WriteLog(Log_Debug, "CheckSSRCAlreadyUsed() bRet = %d  ", bRet);
 	return bRet;
 }
+
+bool  DeleteNetRevcBaseClientByPlayerID(char* szPlayerID)
+{
+	std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
+
+	CNetRevcBase_ptrMap::iterator iterator1;
+	bool                 bRet = false;
+	CNetRevcBase_ptr     pClient = NULL;
+
+	for (iterator1 = xh_ABLNetRevcBaseMap.begin(); iterator1 != xh_ABLNetRevcBaseMap.end(); iterator1++)
+	{
+		pClient = (*iterator1).second;
+		if (pClient && strlen(szPlayerID) > 0 && strcmp(pClient->webRtcCallStruct.playerID, szPlayerID) == 0)
+		{
+			bRet = true;
+			pDisconnectBaseNetFifo.push((unsigned char*)&pClient->nClient, sizeof(pClient->nClient));
+			WriteLog(Log_Debug, "DeleteNetRevcBaseClientByPlayerID() szPlayerID = %s  ", szPlayerID);
+		}
+	}
+	return bRet;
+}
+
 
 //查找某一个网络类型的对象总数
 int  GetNetRevcBaseClientCountByNetType(NetBaseNetType netType,bool bLockFlag)
@@ -2179,7 +2359,8 @@ int  CheckNetRevcBaseClientDisconnect()
 			((*iterator1).second)->netBaseNetType == NetBaseNetType_NetGB28181UDPTSStreamInput || // 单端口 TS 流接入
 			((*iterator1).second)->netBaseNetType == NetBaseNetType_NetGB28181UDPPSStreamInput || // 单端口 PS 流接入
 			((*iterator1).second)->netBaseNetType == NetBaseNetType_NetGB28181RtpServerTCP_Active || //国标TCP方式接收 tcp主动连接方式 
-			((*iterator1).second)->netBaseNetType == NetBaseNetType_SnapPicture_JPEG //抓拍对象超时检测
+			((*iterator1).second)->netBaseNetType == NetBaseNetType_SnapPicture_JPEG || //抓拍对象超时检测
+			((*iterator1).second)->netBaseNetType == NetBaseNetType_NetClientWebrtcPlayer  //webrtc 播放检测
 		)
 		{//现在检测 HLS 网络断线 ，还可以增加别的类型检测 
 			if (((*iterator1).second)->netBaseNetType == NetBaseNetType_HttpHLSClientRecv)
@@ -2505,12 +2686,13 @@ void CreateHttpClientFunc()
 }
 
 //一些事务处理 
-void*  ABLMedisServerProcessThread(void* lpVoid)
+void* ABLMedisServerProcessThread(void* lpVoid)
 {
 	int nDeleteBreakTimer = 0;
 	int nCheckNetRevcBaseClientDisconnectTime = 0;
 	int nReConnectStreamProxyTimer = 0;
 	int nCreateHttpClientTimer = 0;
+	int nDeleteWebRtcPlayerTimer = 0;
 	ABL_bExitMediaServerRunFlag = false;
 	unsigned char* pData = NULL;
 	char           szDeleteMediaSource[512] = { 0 };
@@ -2521,7 +2703,7 @@ void*  ABLMedisServerProcessThread(void* lpVoid)
 	while (ABL_bMediaServerRunFlag)
 	{
 		//检查消息通知 
-		if (ABL_MediaServerPort.hook_enable == 1 && ( nCreateHttpClientTimer >= 30 || pMessageNoticeFifo.GetSize() > 0 ) )
+		if (ABL_MediaServerPort.hook_enable == 1 && (nCreateHttpClientTimer >= 30 || pMessageNoticeFifo.GetSize() > 0))
 		{//5秒检查一下
 			nCreateHttpClientTimer = 0;
 			CreateHttpClientFunc();
@@ -2533,7 +2715,7 @@ void*  ABLMedisServerProcessThread(void* lpVoid)
 			nCheckNetRevcBaseClientDisconnectTime = 0;
 			CheckNetRevcBaseClientDisconnect();
 		}
-		
+
 		//处理消息通知
 		while ((pData = pMessageNoticeFifo.pop(&nLength)) != NULL)
 		{
@@ -2544,9 +2726,9 @@ void*  ABLMedisServerProcessThread(void* lpVoid)
 
 				auto pHttpClient = GetNetRevcBaseClient(msgNotice.nClient);
 				if (pHttpClient != NULL)
-  					pHttpClient->PushVideo((unsigned char*)msgNotice.szMsg, strlen(msgNotice.szMsg), "JSON");
- 			}
- 			pMessageNoticeFifo.pop_front();
+					pHttpClient->PushVideo((unsigned char*)msgNotice.szMsg, strlen(msgNotice.szMsg), "JSON");
+			}
+			pMessageNoticeFifo.pop_front();
 		}
 
 		//代理拉流重连
@@ -2563,22 +2745,38 @@ void*  ABLMedisServerProcessThread(void* lpVoid)
 						CNetRevcBase_ptr pClient = GetNetRevcBaseClient(nClient);
 						if (pClient)
 							pClient->SendFirstRequst(); //执行重连
- 					}
+					}
 				}
 
 				pReConnectStreamProxyFifo.pop_front();
- 			}
- 		}
- 
-		nDeleteBreakTimer ++;
-		nCheckNetRevcBaseClientDisconnectTime ++;
-		nReConnectStreamProxyTimer ++;
-		nCreateHttpClientTimer ++;
+			}
+		}
+
+		if (nDeleteWebRtcPlayerTimer >= 10 * 2)
+		{
+			nDeleteWebRtcPlayerTimer = 0;
+			while ((pData = pWebRtcDisconnectFifo.pop(&nLength)) != NULL)
+			{
+				if (nLength > 0)
+				{
+					char szPlayerID[256] = { 0 };
+					memcpy(szPlayerID, pData, nLength);
+					WriteLog(Log_Debug, "删除webrtc 对象 szPlayerID = %s ", szPlayerID);
+					WebRtcEndpoint::getInstance().stopWebRtcPlay(szPlayerID);
+				}
+			}
+		}
+
+		nDeleteWebRtcPlayerTimer++;
+		nDeleteBreakTimer++;
+		nCheckNetRevcBaseClientDisconnectTime++;
+		nReConnectStreamProxyTimer++;
+		nCreateHttpClientTimer++;
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		//Sleep(100);
 	}
- 
-  	FillNetRevcBaseClientFifo();//把所有对象装入链表，准备删除
+
+	FillNetRevcBaseClientFifo();//把所有对象装入链表，准备删除
 
 	while ((pData = pDisconnectBaseNetFifo.pop(&nLength)) != NULL)
 	{
@@ -2594,8 +2792,8 @@ void*  ABLMedisServerProcessThread(void* lpVoid)
 		}
 
 		pDisconnectBaseNetFifo.pop_front();
-		//Sleep(5);
 		std::this_thread::sleep_for(std::chrono::milliseconds(5));
+		//Sleep(5);
 	}
 
 	ABL_bExitMediaServerRunFlag = true;
@@ -2625,8 +2823,8 @@ void*  ABLMedisServerFastDeleteThread(void* lpVoid)
 
 			pDisconnectBaseNetFifo.pop_front();
 		}
-		std::this_thread::sleep_for(std::chrono::milliseconds(20));
-		//Sleep(20);
+		std::this_thread::sleep_for(std::chrono::milliseconds(50));
+		//Sleep(50);
 	}
 	return 0;
 }
@@ -3031,6 +3229,7 @@ void FindHistoryPictureFile(char* szPicturePath)
 void WebRtcCallBack(const char* callbackJson, void* pUserHandle)
 {
 	WriteLog(Log_Debug, "WebRtcCallBack ：%s ", callbackJson);
+
 	if (strlen(callbackJson) > 0 /* && callbackJson[0] == '{' && callbackJson[strlen(callbackJson) - 1] == '}' */)
 	{
 		WebRtcCallStruct callbackStruct;
@@ -3047,11 +3246,11 @@ void WebRtcCallBack(const char* callbackJson, void* pUserHandle)
 				strcpy(callbackStruct.playerID, doc["playerID"].GetString());
 			if (strstr(callbackJson, "stream") != NULL)
 				strcpy(callbackStruct.stream, doc["stream"].GetString());
-	     }
+		}
 
 		if (callbackStruct.eventID == 1)
 		{//创建webrtc播放
-			CMediaStreamSource_ptr pMediaSource = GetMediaStreamSource(callbackStruct.stream);
+			CMediaStreamSource_ptr pMediaSource = GetMediaStreamSource(callbackStruct.stream, false);
 			if (pMediaSource == NULL)
 				WriteLog(Log_Debug, "不存在流 %s ", callbackStruct.stream);
 			else
@@ -3062,7 +3261,7 @@ void WebRtcCallBack(const char* callbackJson, void* pUserHandle)
 					if (pClient != NULL)
 					{
 						WriteLog(Log_Debug, "创建webrtc播放  %s ", callbackStruct.stream);
-						//memcpy((char*)&pClient->webRtcCallStruct, (char*)&callbackStruct, sizeof(WebRtcCallStruct));
+						memcpy((char*)&pClient->webRtcCallStruct, (char*)&callbackStruct, sizeof(WebRtcCallStruct));
 					}
 				}
 				else
@@ -3071,11 +3270,11 @@ void WebRtcCallBack(const char* callbackJson, void* pUserHandle)
 		}
 		else if (callbackStruct.eventID == 5 || callbackStruct.eventID == 3)
 		{//删除webrtc播放
-			//DeleteNetRevcBaseClientByPlayerID(callbackStruct.playerID);
-			//pWebRtcDisconnectFifo.push((unsigned char*)callbackStruct.playerID, strlen(callbackStruct.playerID));
+			DeleteNetRevcBaseClientByPlayerID(callbackStruct.playerID);
+			pWebRtcDisconnectFifo.push((unsigned char*)callbackStruct.playerID, strlen(callbackStruct.playerID));
 		}
 	}
- }
+};
 
 #ifdef OS_System_Windows
 int _tmain(int argc, _TCHAR* argv[])
@@ -3094,7 +3293,6 @@ ABL_Restart:
 
 	WebRtcEndpoint::getInstance().init(R"({"webrtcPort":8000})", [=](const char* callbackJson, void* pUserHandle) {
 		WebRtcCallBack(callbackJson, pUserHandle);
-
 		});
 	//鼠标点击控制台窗口，不会再卡住 
 	DWORD mode;

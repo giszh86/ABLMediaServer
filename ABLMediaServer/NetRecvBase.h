@@ -26,6 +26,8 @@ public:
    virtual int   SendFirstRequst() = 0;//发送第一个请求
    virtual bool  RequestM3u8File() = 0 ;
 
+   WebRtcCallStruct       webRtcCallStruct;
+
    void                   GetAACAudioInfo(unsigned char* nAudioData, int nLength);
 
    bool                   InsertUUIDtoJson(char* szSrcJSON, char* szUUID);
@@ -216,6 +218,12 @@ public:
    int                   nRtspRtpPayloadType;//rtp负载方式 0 未知 ，1 ES，2 PS ,用在rtsp代理拉流时使用，
    char                  szReponseTemp[string_length_1024];
 
+   bool                    m_bHaveSPSPPSFlag;
+   char                    m_szSPSPPSBuffer[512];
+   char                    m_pSpsPPSBuffer[512];
+   unsigned int            m_nSpsPPSLength;
+   int                     sdp_h264_load(uint8_t* data, int bytes, const char* config);
+   int                     GetSubFromString(char* szString, char* szStringFlag1, char* szStringFlag2, char* szOutString);
+   bool                    GetH265VPSSPSPPS(char* szSDPString, int  nVideoPayload);
 };
-
 #endif

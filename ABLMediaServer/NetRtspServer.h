@@ -102,7 +102,7 @@ public:
    unsigned char           s_extra_data[256];
    int                     extra_data_size;
    struct mpeg4_avc_t      avc;
-   int                     sdp_h264_load(uint8_t* data, int bytes, const char* config);
+
 #ifdef WriteRtpDepacketFileFlag
    bool                     bStartWriteFlag ;
 #endif 
@@ -110,10 +110,7 @@ public:
    int                     nSendRtpFailCount;//累计发送rtp包失败次数 
 
    bool                    GetSPSPPSFromDescribeSDP();
-   bool                    m_bHaveSPSPPSFlag;
-   char                    m_szSPSPPSBuffer[512];
-   char                    m_pSpsPPSBuffer[512];
-   unsigned int            m_nSpsPPSLength;
+
 
    CRtcpPacketSR           rtcpSR;
    CRtcpPacketRR           rtcpRR;
@@ -217,7 +214,7 @@ public:
    int            sample_index;//采样频率所对应的序号 
    int            nChannels; //音频通道数
    int            nSampleRate; //音频采样频率
-   char           szRtspContentSDP[512];
+   char           szRtspContentSDP[string_length_1024];
    char           szVideoSDP[512];
    char           szAudioSDP[512];
    CABLSipParse   sipParseV, sipParseA;   //sdp 信息分析

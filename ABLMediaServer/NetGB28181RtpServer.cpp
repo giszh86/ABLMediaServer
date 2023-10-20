@@ -13,7 +13,7 @@ E-Mail  79941308@qq.com
 #ifdef USE_BOOST
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 extern boost::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
-extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
+extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound = false);
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 extern MediaServerPort                       ABL_MediaServerPort;
@@ -28,7 +28,7 @@ extern CMediaFifo                            pMessageNoticeFifo;          //消息
 #else
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 extern std::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
-extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL);
+extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound = false);
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 extern MediaServerPort                       ABL_MediaServerPort;
@@ -507,18 +507,30 @@ int CNetGB28181RtpServer::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, c
 {
 	std::lock_guard<std::mutex> lock(netDataLock);
 
-	if (!bRunFlag || psBeiJingLaoChenMuxer == NULL || m_openRtpServerStruct.send_disableVideo[0] == 0x31)
+	if (!bRunFlag || m_openRtpServerStruct.send_disableVideo[0] == 0x31)
 		return -1;
 
-	if (nVideoStreamID != -1 && psBeiJingLaoChenMuxer != NULL && strlen(mediaCodecInfo.szVideoName) > 0)
-	{
-		if (strcmp(mediaCodecInfo.szVideoName, "H264") == 0)
-			nflags = CheckVideoIsIFrame("H264", pVideoData, nDataLength);
-		else if (strcmp(mediaCodecInfo.szVideoName, "H265") == 0)
-			nflags = CheckVideoIsIFrame("H265", pVideoData, nDataLength);
+	if (m_openRtpServerStruct.RtpPayloadDataType[0] == 0x31)
+	{//PS 
+		if (nVideoStreamID != -1 && psBeiJingLaoChenMuxer != NULL && strlen(mediaCodecInfo.szVideoName) > 0)
+		{
+			if (strcmp(mediaCodecInfo.szVideoName, "H264") == 0)
+				nflags = CheckVideoIsIFrame("H264", pVideoData, nDataLength);
+			else if (strcmp(mediaCodecInfo.szVideoName, "H265") == 0)
+				nflags = CheckVideoIsIFrame("H265", pVideoData, nDataLength);
 
-		ps_muxer_input((ps_muxer_t*)psBeiJingLaoChenMuxer, nVideoStreamID, nflags, videoPTS, videoPTS, pVideoData, nDataLength);
-		videoPTS += (90000 / mediaCodecInfo.nVideoFrameRate);
+			ps_muxer_input((ps_muxer_t*)psBeiJingLaoChenMuxer, nVideoStreamID, nflags, videoPTS, videoPTS, pVideoData, nDataLength);
+			videoPTS += (90000 / mediaCodecInfo.nVideoFrameRate);
+		}
+	}
+	else if (m_openRtpServerStruct.RtpPayloadDataType[0] == 0x32)
+	{//ES 
+		if (hRtpPS > 0)
+		{
+			inputPS.data = pVideoData;
+			inputPS.datasize = nDataLength;
+			rtp_packet_input(&inputPS);
+		}
 	}
 	return 0;
 }
@@ -527,20 +539,30 @@ int CNetGB28181RtpServer::PushAudio(uint8_t* pAudioData, uint32_t nDataLength, c
 {
 	std::lock_guard<std::mutex> lock(netDataLock);
 
-	if (!bRunFlag || psBeiJingLaoChenMuxer == NULL || m_openRtpServerStruct.send_disableAudio[0] == 0x31)
+	if (!bRunFlag || m_openRtpServerStruct.send_disableAudio[0] == 0x31)
 		return -1;
 
-	if (nAudioStreamID != -1 && psBeiJingLaoChen != NULL && strlen(mediaCodecInfo.szAudioName) > 0)
+	if (strlen(mediaCodecInfo.szAudioName) > 0)
 	{
-		ps_muxer_input((ps_muxer_t*)psBeiJingLaoChenMuxer, nAudioStreamID, 0, audioPTS, audioPTS, pAudioData, nDataLength);
+		if (m_openRtpServerStruct.RtpPayloadDataType[0] == 0x31 && nAudioStreamID != -1 && psBeiJingLaoChenMuxer != NULL)
+		{//PS 
+			ps_muxer_input((ps_muxer_t*)psBeiJingLaoChenMuxer, nAudioStreamID, 0, audioPTS, audioPTS, pAudioData, nDataLength);
 
-		if (strcmp(mediaCodecInfo.szAudioName, "AAC") == 0)
-			audioPTS += mediaCodecInfo.nBaseAddAudioTimeStamp;
-		else if (strcmp(mediaCodecInfo.szAudioName, "G711_A") == 0 || strcmp(mediaCodecInfo.szAudioName, "G711_U") == 0)
-			audioPTS += nDataLength / 8;
+			if (strcmp(mediaCodecInfo.szAudioName, "AAC") == 0)
+				audioPTS += mediaCodecInfo.nBaseAddAudioTimeStamp;
+			else if (strcmp(mediaCodecInfo.szAudioName, "G711_A") == 0 || strcmp(mediaCodecInfo.szAudioName, "G711_U") == 0)
+				audioPTS += nDataLength / 8;
+		}
+		else if (m_openRtpServerStruct.RtpPayloadDataType[0] == 0x32)
+		{//ES 
+			inputPS.data = pAudioData;
+			inputPS.datasize = nDataLength;
+			rtp_packet_input(&inputPS);
+		}
 	}
 	return 0;
 }
+
 
 int CNetGB28181RtpServer::SendVideo()
 {
@@ -943,7 +965,7 @@ void GB28181RtpServer_rtp_packet_callback_func_send(_rtp_packet_cb* cb)
 //创建回复rtp\ps 
 void  CNetGB28181RtpServer::CreateSendRtpByPS()
 {
-	if (strlen(m_openRtpServerStruct.send_app) > 0 && strlen(m_openRtpServerStruct.send_stream_id) > 0 && addThreadPoolFlag == false  )
+	if (strlen(m_openRtpServerStruct.send_app) > 0 && strlen(m_openRtpServerStruct.send_stream_id) > 0 && addThreadPoolFlag == false)
 	{//保证加入线程池只有一次
 		addThreadPoolFlag = true;
 
@@ -954,16 +976,16 @@ void  CNetGB28181RtpServer::CreateSendRtpByPS()
 		if (pMediaSource != NULL)
 		{//把客户端 加入源流媒体拷贝队列
 			pMediaSource->AddClientToMap(nClient);
-		}	
+		}
 	}
- 
-	if (strlen(m_openRtpServerStruct.send_app) > 0 && strlen(m_openRtpServerStruct.send_stream_id) > 0 &&  mediaCodecInfo.nVideoFrameRate > 0 && hRtpPS == 0 )
+
+	if (strlen(m_openRtpServerStruct.send_app) > 0 && strlen(m_openRtpServerStruct.send_stream_id) > 0 && mediaCodecInfo.nVideoFrameRate > 0 && hRtpPS == 0)
 	{
-		if (strlen(mediaCodecInfo.szVideoName) == 0 )
+		if (strlen(mediaCodecInfo.szVideoName) == 0)
 			nMaxRtpSendVideoMediaBufferLength = 640;
 		else
 			nMaxRtpSendVideoMediaBufferLength = MaxRtpSendVideoMediaBufferLength;
- 
+
 		//创建rtp 
 		int nRet = rtp_packet_start(GB28181RtpServer_rtp_packet_callback_func_send, (void*)this, &hRtpPS);
 		if (nRet != e_rtppkt_err_noerror)
@@ -972,39 +994,92 @@ void  CNetGB28181RtpServer::CreateSendRtpByPS()
 			return;
 		}
 		optionPS.handle = hRtpPS;
-		optionPS.mediatype = e_rtppkt_mt_video;
- 		optionPS.payload = 96 ;
-		optionPS.streamtype = e_rtppkt_st_gb28181;
- 		optionPS.ssrc =  rand() ;
-		optionPS.ttincre = (90000 / mediaCodecInfo.nVideoFrameRate);
-		rtp_packet_setsessionopt(&optionPS);
 
-		inputPS.handle = hRtpPS;
-		inputPS.ssrc = optionPS.ssrc;
+		if (m_openRtpServerStruct.RtpPayloadDataType[0] == 0x31)
+		{
+			optionPS.mediatype = e_rtppkt_mt_video;
+			optionPS.payload = 96;
+			optionPS.streamtype = e_rtppkt_st_gb28181;
+			optionPS.ssrc = rand();
+			optionPS.ttincre = (90000 / mediaCodecInfo.nVideoFrameRate);
 
-		//创建PS
-		s_buffer = new  char[IDRFrameMaxBufferLength];
-		psBeiJingLaoChenMuxer = ps_muxer_create(&handler, this);
+			rtp_packet_setsessionopt(&optionPS);
+			inputPS.handle = hRtpPS;
+			inputPS.ssrc = optionPS.ssrc;
 
-		if (nVideoStreamID == -1 && psBeiJingLaoChenMuxer != NULL && m_openRtpServerStruct.send_disableVideo[0] == 0x30 )
-		{//增加视频 
-			if (strcmp(mediaCodecInfo.szVideoName, "H264") == 0)
-				nVideoStreamID = ps_muxer_add_stream((ps_muxer_t*)psBeiJingLaoChenMuxer, PSI_STREAM_H264, NULL, 0);
-			else if (strcmp(mediaCodecInfo.szVideoName, "H265") == 0)
-				nVideoStreamID = ps_muxer_add_stream((ps_muxer_t*)psBeiJingLaoChenMuxer, PSI_STREAM_H265, NULL, 0);
-		}
+			//创建PS
+			s_buffer = new  char[IDRFrameMaxBufferLength];
+			psBeiJingLaoChenMuxer = ps_muxer_create(&handler, this);
 
-		if (nAudioStreamID == -1 && psBeiJingLaoChenMuxer != NULL && strlen(mediaCodecInfo.szAudioName) > 0 && m_openRtpServerStruct.send_disableAudio[0] == 0x30)
-		{//增加音频
-			if (strcmp(mediaCodecInfo.szAudioName, "AAC") == 0)
-				nAudioStreamID = ps_muxer_add_stream((ps_muxer_t*)psBeiJingLaoChenMuxer, PSI_STREAM_AAC, NULL, 0);
-			else if (strcmp(mediaCodecInfo.szAudioName, "G711_A") == 0)
-				nAudioStreamID = ps_muxer_add_stream((ps_muxer_t*)psBeiJingLaoChenMuxer, PSI_STREAM_AUDIO_G711A, NULL, 0);
-			else if (strcmp(mediaCodecInfo.szAudioName, "G711_U") == 0)
-				nAudioStreamID = ps_muxer_add_stream((ps_muxer_t*)psBeiJingLaoChenMuxer, PSI_STREAM_AUDIO_G711U, NULL, 0);
-		}
- 	}
+			if (nVideoStreamID == -1 && psBeiJingLaoChenMuxer != NULL && m_openRtpServerStruct.send_disableVideo[0] == 0x30)
+			{//增加视频 
+				if (strcmp(mediaCodecInfo.szVideoName, "H264") == 0)
+					nVideoStreamID = ps_muxer_add_stream((ps_muxer_t*)psBeiJingLaoChenMuxer, PSI_STREAM_H264, NULL, 0);
+				else if (strcmp(mediaCodecInfo.szVideoName, "H265") == 0)
+					nVideoStreamID = ps_muxer_add_stream((ps_muxer_t*)psBeiJingLaoChenMuxer, PSI_STREAM_H265, NULL, 0);
+			}
+
+			if (nAudioStreamID == -1 && psBeiJingLaoChenMuxer != NULL && strlen(mediaCodecInfo.szAudioName) > 0 && m_openRtpServerStruct.send_disableAudio[0] == 0x30)
+			{//增加音频
+				if (strcmp(mediaCodecInfo.szAudioName, "AAC") == 0)
+					nAudioStreamID = ps_muxer_add_stream((ps_muxer_t*)psBeiJingLaoChenMuxer, PSI_STREAM_AAC, NULL, 0);
+				else if (strcmp(mediaCodecInfo.szAudioName, "G711_A") == 0)
+					nAudioStreamID = ps_muxer_add_stream((ps_muxer_t*)psBeiJingLaoChenMuxer, PSI_STREAM_AUDIO_G711A, NULL, 0);
+				else if (strcmp(mediaCodecInfo.szAudioName, "G711_U") == 0)
+					nAudioStreamID = ps_muxer_add_stream((ps_muxer_t*)psBeiJingLaoChenMuxer, PSI_STREAM_AUDIO_G711U, NULL, 0);
+			}
+		}//if (m_openRtpServerStruct.RtpPayloadDataType[0] == 0x31)
+		else if (m_openRtpServerStruct.RtpPayloadDataType[0] == 0x32)
+		{
+			if (atoi(m_openRtpServerStruct.send_disableAudio) == 1)
+			{//只有视频
+				optionPS.mediatype = e_rtppkt_mt_video;
+				if (strcmp(mediaCodecInfo.szVideoName, "H264") == 0)
+				{
+					strcpy(m_openRtpServerStruct.payload, "98");
+					optionPS.payload = 98;
+					optionPS.streamtype = e_rtppkt_st_h264;
+				}
+				else  if (strcmp(mediaCodecInfo.szVideoName, "H265") == 0)
+				{
+					strcpy(m_openRtpServerStruct.payload, "99");
+					optionPS.payload = 99;
+					optionPS.streamtype = e_rtppkt_st_h265;
+				}
+				optionPS.ssrc = rand();
+				optionPS.ttincre = (90000 / mediaCodecInfo.nVideoFrameRate);
+			}
+			else if (atoi(m_openRtpServerStruct.send_disableVideo) == 1)
+			{//只有音频 
+				optionPS.mediatype = e_rtppkt_mt_audio;
+				optionPS.ssrc = rand();
+				if (strcmp(mediaCodecInfo.szAudioName, "G711_A") == 0)
+				{
+					optionPS.ttincre = 320;
+					optionPS.streamtype = e_rtppkt_st_g711a;
+					optionPS.payload = 8;
+				}
+				else if (strcmp(mediaCodecInfo.szAudioName, "G711_U") == 0)
+				{
+					optionPS.ttincre = 320;
+					optionPS.streamtype = e_rtppkt_st_g711u;
+					optionPS.payload = 0;
+				}
+				else if (strcmp(mediaCodecInfo.szAudioName, "AAC") == 0)
+				{
+					optionPS.ttincre = 1024;
+					optionPS.streamtype = e_rtppkt_st_aac_have_adts;
+					optionPS.payload = 97;
+				}
+			}
+
+			rtp_packet_setsessionopt(&optionPS);
+			inputPS.handle = hRtpPS;
+			inputPS.ssrc = optionPS.ssrc;
+		}//else if (m_openRtpServerStruct.RtpPayloadDataType[0] == 0x32)
+	}
 }
+
 
 //PS 数据打包成rtp 
 void  CNetGB28181RtpServer::GB28181PsToRtPacket(unsigned char* pPsData, int nLength)

@@ -100,16 +100,13 @@ public:
    unsigned char           s_extra_data[512];
    int                     extra_data_size;
    struct mpeg4_avc_t      avc;
-   int                     sdp_h264_load(uint8_t* data, int bytes, const char* config);
+ 
    bool                     bStartWriteFlag ;
 
    int                     nSendRtpFailCount;//累计发送rtp包失败次数 
 
    bool                    GetSPSPPSFromDescribeSDP();
-   bool                    m_bHaveSPSPPSFlag;
-   char                    m_szSPSPPSBuffer[512];
-   char                    m_pSpsPPSBuffer[512];
-   unsigned int            m_nSpsPPSLength;
+
 
    int64_t                 nCurrentTime;
    int                     videoSSRC;

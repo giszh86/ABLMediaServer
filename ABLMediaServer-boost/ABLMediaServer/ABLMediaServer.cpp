@@ -2320,8 +2320,10 @@ void*  ABLMedisServerProcessThread(void* lpVoid)
 					char szPlayerID[256] = { 0 };
 					memcpy(szPlayerID, pData, nLength);
 					WriteLog(Log_Debug, "É¾³ýwebrtc ¶ÔÏó szPlayerID = %s ", szPlayerID);
+
  					WebRtcEndpoint::getInstance().stopWebRtcPlay(szPlayerID);
 				}
+				pWebRtcDisconnectFifo.pop_front();
 			}
  		}
 
@@ -2784,7 +2786,6 @@ void FindHistoryPictureFile(char* szPicturePath)
 void WebRtcCallBack(const char* callbackJson, void* pUserHandle)
 {
  	WriteLog(Log_Debug, "WebRtcCallBack £º%s ", callbackJson);
-	
 	if (strlen(callbackJson) > 0 /* && callbackJson[0] == '{' && callbackJson[strlen(callbackJson) - 1] == '}' */ )
 	 {
 		WebRtcCallStruct callbackStruct;

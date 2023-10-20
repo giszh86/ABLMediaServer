@@ -29,6 +29,7 @@
 #include <map>
 //#define  WriteCudaDecodeYUVFlag    1
 //#define    WriteInputVdideoFlag      1
+//#define   WriteInputVideoFileFlag      1 
 
 #define   CudaDecodeH264EncodeH264FIFOBufferLength  2048*1024*1
 
@@ -72,7 +73,9 @@ class CMediaStreamSource
 public:
    CMediaStreamSource(char* szURL,uint64_t nClientTemp, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct h265ConvertH264Struct);
    ~CMediaStreamSource();
-
+#ifdef WriteInputVideoFileFlag
+   FILE* fWriteInputVideoFile;
+#endif
    char            szSnapPicturePath[string_length_512];
    uint64_t        iFrameArriveNoticCount;
    uint64_t        nCreateDateTime;
