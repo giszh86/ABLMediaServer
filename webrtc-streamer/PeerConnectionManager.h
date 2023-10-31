@@ -245,6 +245,9 @@ class PeerConnectionManager
 					m_pc->Close();
 				}
 			}
+			void setVideoUrl(std::string strVideo) {
+				m_videourl = strVideo;
+			}
 
 			Json::Value getIceCandidateList() { return m_iceCandidateList; }
 			
@@ -298,10 +301,22 @@ class PeerConnectionManager
 				if ( (state == webrtc::PeerConnectionInterface::kIceConnectionFailed)
 				   ||(state == webrtc::PeerConnectionInterface::kIceConnectionClosed) )
 				{ 				
-			
-					jsonobj.Put("playerID", m_peerid);
-					jsonobj.Put("eventID", PlayEvenID::MEDIA_END);		
-					m_peerConnectionManager->m_callback(jsonobj.ToString(false).c_str(), NULL);
+					if (state == webrtc::PeerConnectionInterface::kIceConnectionClosed)
+					{
+						jsonobj.Put("playerID", m_peerid);
+						jsonobj.Put("eventID", PlayEvenID::MEDIA_END);
+						jsonobj.Put("media", "video");
+						jsonobj.Put("stream", VideoCaptureManager::getInstance().getStream(m_videourl));
+						m_peerConnectionManager->m_callback(jsonobj.ToString(false).c_str(), NULL);
+					}
+					else
+					{
+						jsonobj.Put("playerID", m_peerid);
+						jsonobj.Put("eventID", PlayEvenID::MEDIA_ERROR);
+						jsonobj.Put("media", "video");
+						jsonobj.Put("stream", VideoCaptureManager::getInstance().getStream(m_videourl));
+						m_peerConnectionManager->m_callback(jsonobj.ToString(false).c_str(), NULL);
+					}				
 					m_iceCandidateList.clear();
 					if (!m_deleting) {
 						std::thread([this]() {
@@ -311,10 +326,13 @@ class PeerConnectionManager
 				}
 				if ((state == webrtc::PeerConnectionInterface::kIceConnectionCompleted)
 					|| (state == webrtc::PeerConnectionInterface::kIceConnectionConnected))
-				{					
+				{	
+				
 					ABL::NSJsonObject jsonobj;
 					jsonobj.Put("playerID", m_peerid);
-					jsonobj.Put("eventID", PlayEvenID::MEDIA_PLAY);	
+					jsonobj.Put("eventID", PlayEvenID::MEDIA_PLAY);
+					jsonobj.Put("media", "video");
+					jsonobj.Put("stream", VideoCaptureManager::getInstance().getStream(m_videourl));
 					m_peerConnectionManager->m_callback(jsonobj.ToString(false).c_str(), NULL);
 				}
 			
@@ -329,6 +347,8 @@ class PeerConnectionManager
 			std::string getPeerId() { return m_peerid; }
 			webrtc::PeerConnectionInterface::IceGatheringState getGatheringState() { return m_gatheringState; }
 
+			public:
+				std::string                                              m_videourl;
 		private:
 			PeerConnectionManager*                                   m_peerConnectionManager;
 			const std::string                                        m_peerid;
@@ -342,6 +362,7 @@ class PeerConnectionManager
 			bool                                                     m_deleting;
 			uint64_t                                                 m_creationTime;
 			webrtc::PeerConnectionInterface::IceGatheringState       m_gatheringState;
+
 	};
 
 	public:
@@ -410,6 +431,7 @@ class PeerConnectionManager
 		bool                                                                      m_useNullCodec;
 		bool                                                                      m_usePlanB;
 		int                                                                       m_maxpc;
+	
 public:
 		std::function<void(const char* callbackJson, void* pUserHandle)>  m_callback;
 

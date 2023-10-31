@@ -8,36 +8,6 @@
 #include "VideoCaptureImpl.h"
 
 
-bool isURLWithProtocol(const std::string& str) {
-	// 判断字符串是否以协议开头，比如 "rtsp://"
-	return (str.substr(0, 7) == "rtsp://" || str.substr(0, 7) == "http://" || str.substr(0, 7) == "rtmp://");
-}
-
-std::string extractPathFromURL(const std::string& url) {
-	size_t pos = url.find("://");
-	if (pos != std::string::npos) {
-		// 如果字符串包含协议，提取协议后的路径部分
-		return url.substr(pos + 3);
-	}
-	else {
-		// 如果没有协议，直接返回原始字符串
-		return url;
-	}
-}
-
-std::string getPortionAfterPort(const std::string& str) {
-	size_t startPos = str.find(':', 6); // 从第6个字符开始查找冒号，跳过协议部分
-	if (startPos == std::string::npos) {
-		return ""; // 找不到冒号，返回空字符串
-	}
-
-	size_t endPos = str.find('/', startPos); // 从冒号后面查找第一个斜杠
-	if (endPos == std::string::npos) {
-		return ""; // 找不到斜杠，返回空字符串
-	}
-
-	return str.substr(endPos); // 提取斜杠后面的部分
-}
 VideoCapture* VideoCapture::CreateVideoCapture(std::string videourl)
 {
 	std::map<std::string, std::string> opts;
@@ -71,7 +41,7 @@ VideoCapture* VideoCapture::CreateVideoCapture(std::string videourl)
 
 
 // 添加输入流
-void VideoCaptureManager::AddInput(const std::string& videoUrl)
+VideoCapture* VideoCaptureManager::AddInput(const std::string& videoUrl)
 {
 	std::lock_guard<std::mutex> lock(m_mutex);
 
@@ -82,6 +52,7 @@ void VideoCaptureManager::AddInput(const std::string& videoUrl)
 		{
 			m_inputMap[videoUrl] = input;
 		}
+		return input;
 	}
 
 }
@@ -90,42 +61,22 @@ void VideoCaptureManager::AddInput(const std::string& videoUrl)
 void VideoCaptureManager::RemoveInput(const std::string& videoUrl)
 {
 	std::lock_guard<std::mutex> lock(m_mutex);
-	std::string path = "";
-	if (isURLWithProtocol(videoUrl)) {
-		//std::cout << "Input string is a URL with protocol." << std::endl;
-		path = getPortionAfterPort(videoUrl);
-		//	std::cout << "Extracted path: " << path << std::endl;
-	}
-	else {
-		//std::cout << "Input string is a simple path." << std::endl;
-		path = videoUrl;
-	}
-
-
+	std::string path = getStream(videoUrl);
 	auto it = m_inputMap.find(path);
 	if (it != m_inputMap.end())
 	{
 		delete it->second;
+		it->second = NULL;
 		m_inputMap.erase(it);
 	}
+
 }
 
 // 获取输入流对象
 VideoCapture* VideoCaptureManager::GetInput(const std::string& videoUrl)
 {
 	std::lock_guard<std::mutex> lock(m_mutex);
-	std::string path="";
-	if (isURLWithProtocol(videoUrl)) {
-		//std::cout << "Input string is a URL with protocol." << std::endl;
-		path = getPortionAfterPort(videoUrl);
-	//	std::cout << "Extracted path: " << path << std::endl;
-	}
-	else {
-		//std::cout << "Input string is a simple path." << std::endl;
-		path = videoUrl;
-	}
-
-
+	std::string path= getStream(videoUrl);
 	auto it = m_inputMap.find(path);
 	if (it != m_inputMap.end())
 	{
@@ -140,6 +91,23 @@ VideoCapture* VideoCaptureManager::GetInput(const std::string& videoUrl)
 		}
 		return input;
 	}
+}
+
+std::string VideoCaptureManager::getStream(const std::string& videoUrl)
+{
+
+
+	std::string path = "";
+	if (VideoCaptureManager::getInstance().isURLWithProtocol(videoUrl)) {
+		//std::cout << "Input string is a URL with protocol." << std::endl;
+		path = VideoCaptureManager::getInstance().getPortionAfterPort(videoUrl);
+		//	std::cout << "Extracted path: " << path << std::endl;
+	}
+	else {
+		//std::cout << "Input string is a simple path." << std::endl;
+		path = videoUrl;
+	}
+	return videoUrl;
 }
 
 VideoCaptureManager& VideoCaptureManager::getInstance()

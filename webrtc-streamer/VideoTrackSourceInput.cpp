@@ -42,13 +42,14 @@ VideoTrackSourceInput* VideoTrackSourceInput::Create(const std::string& videourl
 
 VideoTrackSourceInput::~VideoTrackSourceInput()
 {
+	m_vCapture->RegisterH264Callback(nullptr);
 	m_bStop.store(true);
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
 	if (m_vCapture)
 	{
 		VideoCaptureManager::getInstance().RemoveInput(m_videourl);
-		//m_vCapture->Destroy();
-		//delete m_vCapture;;
-		//m_vCapture = nullptr;
+		m_vCapture = nullptr;
 	}
 }
 bool VideoTrackSourceInput::Init(size_t width, size_t height, size_t target_fps, const std::string& videourl)

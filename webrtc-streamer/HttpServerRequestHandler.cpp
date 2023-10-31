@@ -18,9 +18,7 @@
 #include <iterator>
 #include <vector>
 
-#include "prometheus/counter.h"
-#include "prometheus/gauge.h"
-#include "prometheus/text_serializer.h"
+
 
 #include "rtc_base/logging.h"
 
@@ -48,13 +46,12 @@ const struct CivetCallbacks * getCivetCallbacks()
 class RequestHandler : public CivetHandler
 {
   public:
-	RequestHandler(HttpServerRequestHandler::httpFunction & func, prometheus::Counter & counter): m_func(func), m_counter(counter) {
+	RequestHandler(HttpServerRequestHandler::httpFunction & func): m_func(func) {
 	}	  
 	
     bool handle(CivetServer *server, struct mg_connection *conn)
     {
-        // increment metrics
-        m_counter.Increment();
+  
 
         const struct mg_request_info *req_info = mg_get_request_info(conn);
         
@@ -118,8 +115,6 @@ class RequestHandler : public CivetHandler
     HttpServerRequestHandler::httpFunction      m_func;	
     Json::StreamWriterBuilder                   m_writerBuilder;
     Json::CharReaderBuilder                     m_readerBuilder;
-    prometheus::Counter&                        m_counter;
-
   
     Json::Value getInputMessage(const struct mg_request_info *req_info, struct mg_connection *conn) {
         Json::Value  jmessage;
@@ -143,103 +138,7 @@ class RequestHandler : public CivetHandler
     }	
 };
 
-/* ---------------------------------------------------------------------------
-**  Civet HTTP callback 
-** -------------------------------------------------------------------------*/
-class PrometheusHandler : public CivetHandler
-{
-  public:
-    PrometheusHandler(prometheus::Registry& registry) : 
-        m_registry(registry),
-        m_fds(prometheus::BuildGauge().Name("process_open_fds").Register(m_registry).Add({})),
-        m_threads(prometheus::BuildGauge().Name("process_threads_total").Register(m_registry).Add({})),
-        m_virtual_memory(prometheus::BuildGauge().Name("process_virtual_memory_bytes").Register(m_registry).Add({})),
-        m_resident_memory(prometheus::BuildGauge().Name("process_resident_memory_bytes").Register(m_registry).Add({})),
-        m_cpu(prometheus::BuildGauge().Name("process_cpu_seconds_total").Register(m_registry).Add({}))  {        
-    }
 
-    bool handleGet(CivetServer *server, struct mg_connection *conn)
-    {
-#ifndef WIN32
-        updateMetrics();
-#endif        
-
-        auto collected = m_registry.Collect();
-
-        // format body
-	    prometheus::TextSerializer textSerializer;
-        std::ostringstream os;
-	    textSerializer.Serialize(os,collected);  
-        std::string answer(os.str());      
-
-        // format http answer
-        mg_printf(conn,"HTTP/1.1 200 OK\r\n");
-        mg_printf(conn,"Access-Control-Allow-Origin: *\r\n");
-        mg_printf(conn,"Content-Type: text/plain\r\n");
-        mg_printf(conn,"Content-Length: %zd\r\n", answer.size());
-        mg_printf(conn,"\r\n");
-        mg_write(conn,answer.c_str(),answer.size());
-			
-	    return true;
-    }
-
-  private:
-  #ifndef WIN32
-    void updateMetrics() {
-        long fds = get_fds_total();
-        m_fds.Set(fds);
-        std::vector<std::string> stat = read_proc_stat();
-        long threads_total =  std::stoul(stat[19]);
-        m_threads.Set(threads_total);
-        long vm_bytes =  std::stoul(stat[22]);
-        m_virtual_memory.Set(vm_bytes);
-        long rm_bytes = std::stoul(stat[23]) * sysconf(_SC_PAGESIZE);
-        m_resident_memory.Set(rm_bytes);
-        long cpu = (std::stoul(stat[13]) + std::stoul(stat[14]))/sysconf(_SC_CLK_TCK);
-        m_cpu.Set(cpu);
-    }
-
-    static std::vector<std::string> read_proc_stat() {
-        char stat_path[32];
-        std::snprintf(stat_path, sizeof(stat_path),"/proc/%d/stat", getpid());
-        std::ifstream file(stat_path);
-        std::string line;
-        std::getline(file, line);
-        std::istringstream is(line);
-        return std::vector<std::string>{std::istream_iterator<std::string>{is},
-                                        std::istream_iterator<std::string>{}};
-    }
-
-    static long get_fds_total() {
-        char fd_path[32];
-        std::snprintf(fd_path, sizeof(fd_path), "/proc/%d/fd", getpid());
-
-        long file_total = 0;
-        DIR *dirp = opendir(fd_path);
-        if (dirp != NULL)
-        {
-            struct dirent *entry;
-            while ((entry = readdir(dirp)) != NULL)
-            {
-                if (entry->d_type == DT_LNK)
-                {
-                    file_total++;
-                }
-            }
-            closedir(dirp);
-        }
-        return file_total;
-    }
-  #endif    
-
-  private:
-    prometheus::Registry& m_registry; 
-    prometheus::Gauge&     m_fds; 
-    prometheus::Gauge&     m_threads; 
-    prometheus::Gauge&     m_virtual_memory;
-    prometheus::Gauge&     m_resident_memory; 
-    prometheus::Gauge&     m_cpu; 
-};
 
 class WebsocketHandler: public CivetWebSocketHandler {	
 	public:
@@ -313,20 +212,14 @@ class WebsocketHandler: public CivetWebSocketHandler {
 HttpServerRequestHandler::HttpServerRequestHandler(std::map<std::string,httpFunction>& func, const std::vector<std::string>& options) 
     : CivetServer(options, getCivetCallbacks())
 {
-    auto& family = prometheus::BuildCounter()
-            .Name("http_requests")
-            .Register(m_registry);
 
     // register handlers
-    for (auto it : func) {
-        auto & counter = family.Add({{"uri", it.first}});
-        CivetHandler* handler = new RequestHandler(it.second, counter);
+    for (auto it : func) { 
+        CivetHandler* handler = new RequestHandler(it.second);
         this->addHandler(it.first, handler);
         m_handlers.push_back(handler);
     } 	
-    CivetHandler* handler = new PrometheusHandler(m_registry);
-    this->addHandler("/metrics", handler);
-    m_handlers.push_back(handler);
+
 
     this->addWebSocketHandler("/ws", new WebsocketHandler(func));    
 }	

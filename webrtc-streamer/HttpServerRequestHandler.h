@@ -13,7 +13,7 @@
 #include <map>
 #include <functional>
 
-#include "prometheus/registry.h"
+
 #include "rtc_base/strings/json.h"
 #include "../civetweb/include/CivetServer.h"
 
@@ -31,7 +31,7 @@ class HttpServerRequestHandler : public CivetServer
 		virtual ~HttpServerRequestHandler();
 
 	private:
-		prometheus::Registry       m_registry;
+	
 		std::vector<CivetHandler*> m_handlers;
 };
 
@@ -60,13 +60,15 @@ public:
 	FileLog(const std::string& LogPath)
 		:logfile_(NULL),
 		log_path_(LogPath) {
-		if (access(LogPath.c_str(), 0) == -1)			
-		{
+		
 #ifdef WEBRTC_LINUX
+		if (access(LogPath.c_str(), F_OK) == -1)
+		{
 			int isCreate = mkdir(LogPath.c_str(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
 #else
-
-			int isCreate = mkdir(LogPath.c_str());
+		if (_access(LogPath.c_str(), 0) == -1)
+		{
+			int isCreate = _mkdir(LogPath.c_str());
 #endif
 			if (!isCreate)
 				printf("create path:%s\n", LogPath.c_str());
@@ -103,7 +105,7 @@ public:
 			return fileStat.st_size;
 #else
 
-			size = filelength(fileno(logfile_));
+			size = _filelength(_fileno(logfile_));
 #endif
 		
 

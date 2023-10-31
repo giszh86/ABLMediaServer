@@ -623,7 +623,7 @@ const Json::Value PeerConnectionManager::createOffer(const std::string &peerid, 
 	else
 	{
 		rtc::scoped_refptr<webrtc::PeerConnectionInterface> peerConnection = peerConnectionObserver->getPeerConnection();
-
+		
 		if (!this->AddStreams(peerConnection.get(), videourl, audiourl, options))
 		{
 			RTC_LOG(LS_WARNING) << "Can't add stream";
@@ -776,6 +776,28 @@ std::unique_ptr<webrtc::SessionDescriptionInterface> PeerConnectionManager::getA
 		{
 			RTC_LOG(LS_WARNING) << "Can't add stream";
 		}
+		peerConnectionObserver->setVideoUrl(videourl);
+
+		ABL::NSJsonObject jsonobj;
+		jsonobj.Put("playerID", peerid);
+		jsonobj.Put("eventID", PlayEvenID::MEDIA_START);
+		if (audiourl.empty())
+		{
+			jsonobj.Put("media", "video");
+			jsonobj.Put("stream", VideoCaptureManager::getInstance().getStream(videourl));
+		}
+		if (videourl.empty())
+		{
+			jsonobj.Put("media", "audio");
+			jsonobj.Put("stream", VideoCaptureManager::getInstance().getStream(audiourl));
+		}
+		if (!videourl.empty() && !audiourl.empty())
+		{
+			jsonobj.Put("media", "play");
+			jsonobj.Put("stream", VideoCaptureManager::getInstance().getStream(videourl));
+		}
+		m_callback(jsonobj.ToString(false).c_str(), NULL);
+
 
 		// set remote offer
 		std::promise<const webrtc::SessionDescriptionInterface *> remotepromise;
@@ -837,28 +859,7 @@ std::unique_ptr<webrtc::SessionDescriptionInterface> PeerConnectionManager::getA
 ** -------------------------------------------------------------------------*/
 const Json::Value PeerConnectionManager::call(const std::string &peerid, const std::string &videourl, const std::string &audiourl, const std::string &options, const Json::Value &jmessage)
 {
-	ABL::NSJsonObject jsonobj;
-	jsonobj.Put("playerID", peerid);
-	jsonobj.Put("eventID", PlayEvenID::MEDIA_START);
-	if (audiourl.empty())
-	{
-		jsonobj.Put("media", "video");
-		jsonobj.Put("stream", videourl);
-	}
-	if (videourl.empty())
-	{
-		jsonobj.Put("media", "audio");
-		jsonobj.Put("stream", audiourl);
-	}
-	if (!videourl.empty()&&  !audiourl.empty())
-	{
-		jsonobj.Put("media", "play");
-		jsonobj.Put("stream", videourl);
-	}	
-	m_callback(jsonobj.ToString(false).c_str(), NULL);
-
-
-
+	
 	RTC_LOG(LS_INFO) << __FUNCTION__ << " video:" << videourl << " audio:" << audiourl << " options:" << options;
 
 	Json::Value answer;
@@ -886,6 +887,7 @@ const Json::Value PeerConnectionManager::call(const std::string &peerid, const s
 			RTC_LOG(LS_ERROR) << "Failed to create answer - no SDP";
 		}
 	}
+
 	return answer;
 }
 
@@ -916,9 +918,11 @@ bool PeerConnectionManager::streamStillUsed(const std::string &streamLabel)
 ** -------------------------------------------------------------------------*/
 const Json::Value PeerConnectionManager::hangUp(const std::string &peerid)
 {
+	std::string pid = peerid;
+	std::string  videourl = "";
 	bool result = false;
-	RTC_LOG(LS_INFO) << __FUNCTION__ << " " << peerid;
-
+	RTC_LOG(LS_ERROR) << __FUNCTION__ << " " << peerid;
+	bool bSend = false;
 	PeerConnectionObserver *pcObserver = NULL;
 	{
 		std::lock_guard<std::mutex> peerlock(m_peerMapMutex);
@@ -927,7 +931,7 @@ const Json::Value PeerConnectionManager::hangUp(const std::string &peerid)
 		{
 			pcObserver = it->second;
 			RTC_LOG(LS_ERROR) << "Remove PeerConnection peerid:" << peerid;
-			m_peer_connectionobs_map.erase(it);
+			m_peer_connectionobs_map.erase(it);		
 		}
 
 		if (pcObserver)
@@ -940,6 +944,7 @@ const Json::Value PeerConnectionManager::hangUp(const std::string &peerid)
 				std::vector<std::string> streamVector = stream->stream_ids();
 				if (streamVector.size() > 0) {
 					std::string streamLabel = streamVector[0];
+
 					bool stillUsed = this->streamStillUsed(streamLabel);
 					if (!stillUsed)
 					{
@@ -949,8 +954,9 @@ const Json::Value PeerConnectionManager::hangUp(const std::string &peerid)
 						if (it != m_stream_map.end())
 						{
 							m_stream_map.erase(it);
-						}
-
+						}				
+						bSend = true;
+						videourl = pcObserver->m_videourl;
 						RTC_LOG(LS_ERROR) << "hangUp stream closed " << streamLabel;
 					}
 
@@ -966,9 +972,22 @@ const Json::Value PeerConnectionManager::hangUp(const std::string &peerid)
 	if (result)
 	{
 		answer = result;
+		if (bSend && !pid.empty())
+		{
+			ABL::NSJsonObject jsonobj;
+			jsonobj.Put("playerID", pid);
+			jsonobj.Put("eventID", PlayEvenID::MEDIA_REMOVE);
+			jsonobj.Put("media", "video");
+			jsonobj.Put("stream", VideoCaptureManager::getInstance().getStream(videourl));
+			if (m_callback)
+			{
+				m_callback(jsonobj.ToString(false).c_str(), NULL);
+			}		
+		}
 
 	}
-	RTC_LOG(LS_INFO) << __FUNCTION__ << " " << peerid << " result:" << result;
+
+	//RTC_LOG(LS_INFO) << __FUNCTION__ << " " << peerid << " result:" << result;
 	return answer;
 }
 
@@ -1132,6 +1151,7 @@ PeerConnectionManager::PeerConnectionObserver *PeerConnectionManager::CreatePeer
 	} else {
 		config.sdp_semantics = webrtc::SdpSemantics::kUnifiedPlan;
 	}
+	config.disable_ipv6 = true;
 	for (auto iceServer : m_iceServerList)
 	{
 		webrtc::PeerConnectionInterface::IceServer server;
@@ -1249,6 +1269,7 @@ bool PeerConnectionManager::AddStreams(webrtc::PeerConnectionInterface *peer_con
 	}
 
 	std::string video = videourl;
+
 	if (m_config.isMember(video)) {
 		video = m_config[video]["video"].asString();
 	}

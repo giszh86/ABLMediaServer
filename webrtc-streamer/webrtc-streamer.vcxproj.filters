@@ -34,21 +34,6 @@
     <Filter Include="timer">
       <UniqueIdentifier>{72391a86-c5dc-42a2-bdce-d3928cc3178c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="prometheus">
-      <UniqueIdentifier>{d87ef32d-f522-4f94-834a-71777814f2ea}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="prometheus\include">
-      <UniqueIdentifier>{3d021ca4-77d7-4b1b-ae70-05d5fbfe0de2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="prometheus\include\detail">
-      <UniqueIdentifier>{8b6cd4d1-d976-4f49-83f2-5902fcaf1d3b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="prometheus\src">
-      <UniqueIdentifier>{2cd075e4-7544-4c16-8bc5-00bf9b0965b4}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="prometheus\src\detail">
-      <UniqueIdentifier>{fa6a9108-16f0-4bca-b1f3-2c3ddd20d734}</UniqueIdentifier>
-    </Filter>
     <Filter Include="dump">
       <UniqueIdentifier>{c4a6d1a5-27df-43a5-8864-976b0acc889f}</UniqueIdentifier>
     </Filter>
@@ -68,72 +53,6 @@
     </ClInclude>
     <ClInclude Include="capture\VideoCaptureImpl.h">
       <Filter>capture</Filter>
-    </ClInclude>
-    <ClInclude Include="prometheus-cpp\include\prometheus\detail\builder.h">
-      <Filter>prometheus\include\detail</Filter>
-    </ClInclude>
-    <ClInclude Include="prometheus-cpp\include\prometheus\detail\ckms_quantiles.h">
-      <Filter>prometheus\include\detail</Filter>
-    </ClInclude>
-    <ClInclude Include="prometheus-cpp\include\prometheus\detail\core_export.h">
-      <Filter>prometheus\include\detail</Filter>
-    </ClInclude>
-    <ClInclude Include="prometheus-cpp\include\prometheus\detail\future_std.h">
-      <Filter>prometheus\include\detail</Filter>
-    </ClInclude>
-    <ClInclude Include="prometheus-cpp\include\prometheus\detail\time_window_quantiles.h">
-      <Filter>prometheus\include\detail</Filter>
-    </ClInclude>
-    <ClInclude Include="prometheus-cpp\include\prometheus\detail\utils.h">
-      <Filter>prometheus\include\detail</Filter>
-    </ClInclude>
-    <ClInclude Include="prometheus-cpp\include\prometheus\check_names.h">
-      <Filter>prometheus\include</Filter>
-    </ClInclude>
-    <ClInclude Include="prometheus-cpp\include\prometheus\client_metric.h">
-      <Filter>prometheus\include</Filter>
-    </ClInclude>
-    <ClInclude Include="prometheus-cpp\include\prometheus\collectable.h">
-      <Filter>prometheus\include</Filter>
-    </ClInclude>
-    <ClInclude Include="prometheus-cpp\include\prometheus\counter.h">
-      <Filter>prometheus\include</Filter>
-    </ClInclude>
-    <ClInclude Include="prometheus-cpp\include\prometheus\family.h">
-      <Filter>prometheus\include</Filter>
-    </ClInclude>
-    <ClInclude Include="prometheus-cpp\include\prometheus\gauge.h">
-      <Filter>prometheus\include</Filter>
-    </ClInclude>
-    <ClInclude Include="prometheus-cpp\include\prometheus\histogram.h">
-      <Filter>prometheus\include</Filter>
-    </ClInclude>
-    <ClInclude Include="prometheus-cpp\include\prometheus\info.h">
-      <Filter>prometheus\include</Filter>
-    </ClInclude>
-    <ClInclude Include="prometheus-cpp\include\prometheus\labels.h">
-      <Filter>prometheus\include</Filter>
-    </ClInclude>
-    <ClInclude Include="prometheus-cpp\include\prometheus\metric_family.h">
-      <Filter>prometheus\include</Filter>
-    </ClInclude>
-    <ClInclude Include="prometheus-cpp\include\prometheus\metric_type.h">
-      <Filter>prometheus\include</Filter>
-    </ClInclude>
-    <ClInclude Include="prometheus-cpp\include\prometheus\registry.h">
-      <Filter>prometheus\include</Filter>
-    </ClInclude>
-    <ClInclude Include="prometheus-cpp\include\prometheus\serializer.h">
-      <Filter>prometheus\include</Filter>
-    </ClInclude>
-    <ClInclude Include="prometheus-cpp\include\prometheus\summary.h">
-      <Filter>prometheus\include</Filter>
-    </ClInclude>
-    <ClInclude Include="prometheus-cpp\include\prometheus\text_serializer.h">
-      <Filter>prometheus\include</Filter>
-    </ClInclude>
-    <ClInclude Include="prometheus-cpp\src\detail\hash.h">
-      <Filter>prometheus\src\detail</Filter>
     </ClInclude>
     <ClInclude Include="AudioTrackSourceInput.h">
       <Filter>inc</Filter>
@@ -199,48 +118,6 @@
     </ClCompile>
     <ClCompile Include="capture\VideoCaptureImpl.cpp">
       <Filter>capture</Filter>
-    </ClCompile>
-    <ClCompile Include="prometheus-cpp\src\check_names.cc">
-      <Filter>prometheus\src</Filter>
-    </ClCompile>
-    <ClCompile Include="prometheus-cpp\src\counter.cc">
-      <Filter>prometheus\src</Filter>
-    </ClCompile>
-    <ClCompile Include="prometheus-cpp\src\family.cc">
-      <Filter>prometheus\src</Filter>
-    </ClCompile>
-    <ClCompile Include="prometheus-cpp\src\gauge.cc">
-      <Filter>prometheus\src</Filter>
-    </ClCompile>
-    <ClCompile Include="prometheus-cpp\src\histogram.cc">
-      <Filter>prometheus\src</Filter>
-    </ClCompile>
-    <ClCompile Include="prometheus-cpp\src\info.cc">
-      <Filter>prometheus\src</Filter>
-    </ClCompile>
-    <ClCompile Include="prometheus-cpp\src\registry.cc">
-      <Filter>prometheus\src</Filter>
-    </ClCompile>
-    <ClCompile Include="prometheus-cpp\src\serializer.cc">
-      <Filter>prometheus\src</Filter>
-    </ClCompile>
-    <ClCompile Include="prometheus-cpp\src\summary.cc">
-      <Filter>prometheus\src</Filter>
-    </ClCompile>
-    <ClCompile Include="prometheus-cpp\src\text_serializer.cc">
-      <Filter>prometheus\src</Filter>
-    </ClCompile>
-    <ClCompile Include="prometheus-cpp\src\detail\builder.cc">
-      <Filter>prometheus\src\detail</Filter>
-    </ClCompile>
-    <ClCompile Include="prometheus-cpp\src\detail\ckms_quantiles.cc">
-      <Filter>prometheus\src\detail</Filter>
-    </ClCompile>
-    <ClCompile Include="prometheus-cpp\src\detail\time_window_quantiles.cc">
-      <Filter>prometheus\src\detail</Filter>
-    </ClCompile>
-    <ClCompile Include="prometheus-cpp\src\detail\utils.cc">
-      <Filter>prometheus\src\detail</Filter>
     </ClCompile>
     <ClCompile Include="PeerConnectionManager.cpp">
       <Filter>src</Filter>
