@@ -20,13 +20,22 @@ extern bool                                  DeleteClientMediaStreamSource(uint6
 extern CMediaSendThreadPool*                 pMediaSendThreadPool;
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
 extern char                                  ABL_MediaSeverRunPath[256]; //当前路径
-extern CMediaFifo                            pWebRtcDisconnectFifo;          //webrtc删除对象 
 
 extern boost::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
 #include "../webrtc-streamer/rtc_obj_sdk.h"
 
 CNetClientWebrtcPlayer::CNetClientWebrtcPlayer(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort,char* szShareMediaURL)
 {
+#ifdef WebRtcVideoFileFlag
+	nWriteFileCount = 0;
+	char szFileName[256] = { 0 };
+	sprintf(szFileName,"%s%X.264", ABL_MediaSeverRunPath, this);
+	fWriteVideoFile = fopen(szFileName, "wb");
+
+	sprintf(szFileName, "%s%X_Length.txt", ABL_MediaSeverRunPath, this);
+ 	fWriteFrameLengthFile = fopen(szFileName, "wb");;
+#endif
+	nSpsPositionPos = 0;
 	strcpy(m_szShareMediaURL,szShareMediaURL);
  	netBaseNetType = NetBaseNetType_NetClientWebrtcPlayer;
 	nMediaClient = 0;
@@ -41,28 +50,75 @@ CNetClientWebrtcPlayer::CNetClientWebrtcPlayer(NETHANDLE hServer, NETHANDLE hCli
 		pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
 		return;
 	}
-	VideoCaptureManager::getInstance().GetInput(m_szShareMediaURL)->Init("H264", pMediaSource->m_mediaCodecInfo.nWidth, pMediaSource->m_mediaCodecInfo.nHeight, pMediaSource->m_mediaCodecInfo.nVideoFrameRate);
+	if(pMediaSource->bCreateWebRtcPlaySourceFlag.load() == false )
+	{
+		if (VideoCaptureManager::getInstance().GetInput(m_szShareMediaURL) != NULL)
+		{
+	      VideoCaptureManager::getInstance().GetInput(m_szShareMediaURL)->Init("H264", pMediaSource->m_mediaCodecInfo.nWidth, pMediaSource->m_mediaCodecInfo.nHeight, pMediaSource->m_mediaCodecInfo.nVideoFrameRate);
+	      pMediaSource->bCreateWebRtcPlaySourceFlag.exchange(true);
+ 	    }
+	}
 	pMediaSource->AddClientToMap(nClient);
+	pMediaSource->nWebRtcPushStreamID = nClient;
 	WriteLog(Log_Debug, "CNetClientWebrtcPlayer 构造 = %X  nClient = %llu ", this, nClient);
 }
 
 CNetClientWebrtcPlayer::~CNetClientWebrtcPlayer()
 {
+	bRunFlag = false;
+	std::lock_guard<std::mutex> lock(businessProcMutex);
+
+	if (pMediaSource != NULL)
+	{
+		if (pMediaSource->bCreateWebRtcPlaySourceFlag.load() == true)
+			pMediaSource->bCreateWebRtcPlaySourceFlag.exchange(false);
+ 	}
+#ifdef WebRtcVideoFileFlag
+	if(fWriteVideoFile)
+	  fclose(fWriteVideoFile);
+	if(fWriteFrameLengthFile)
+	  fclose(fWriteFrameLengthFile);
+#endif
   	WriteLog(Log_Debug, "CNetClientWebrtcPlayer 析构 = %X  nClient = %llu ,nMediaClient = %llu\r\n", this, nClient, nMediaClient);
 	malloc_trim(0);
-	pWebRtcDisconnectFifo.push((unsigned char*)webRtcCallStruct.playerID, strlen(webRtcCallStruct.playerID));
 }
 
 int CNetClientWebrtcPlayer::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, char* szVideoCodec)
 {
+	std::lock_guard<std::mutex> lock(businessProcMutex);
+	if (!bRunFlag)
+		return -1;
+
 	nRecvDataTimerBySecond = 0 ;
 
-	if(strcmp(szVideoCodec,"H264") != 0)
+	if(strcmp(szVideoCodec,"H264") != 0  )
 		return -1 ;
 
-	if (VideoCaptureManager::getInstance().GetInput(m_szShareMediaURL))
+#ifdef WebRtcVideoFileFlag
+	if (fWriteVideoFile && nDataLength >= 1000 * 100 * 200 )
 	{
-	   VideoCaptureManager::getInstance().GetInput(m_szShareMediaURL)->onData("H264", pVideoData, nDataLength, 1);
+		nWriteFileCount += nDataLength ;
+		if (nWriteFileCount < 1024 * 1024 * 50)
+		{
+		  fwrite(pVideoData,1, nDataLength,fWriteVideoFile);
+		  fflush(fWriteVideoFile);
+ 		}
+ 	}
+
+	if (fWriteFrameLengthFile)
+	{
+		if (nWriteFileCount < 1024 * 1024 * 50)
+		{
+		   fprintf(fWriteFrameLengthFile, "frame = %d  , %02x %02x %02x %02x %02x \r\n", nDataLength, pVideoData[0], pVideoData[1], pVideoData[2], pVideoData[3], pVideoData[4]);
+		   fflush(fWriteFrameLengthFile);
+		}
+	}
+#endif
+	nSpsPositionPos = FindSPSPositionPos("H264", pVideoData, nDataLength);
+
+	if (VideoCaptureManager::getInstance().GetInput(m_szShareMediaURL) && nSpsPositionPos >= 0 )
+	{
+	   VideoCaptureManager::getInstance().GetInput(m_szShareMediaURL)->onData("H264", pVideoData + nSpsPositionPos , nDataLength - nSpsPositionPos, 1);
  	}
  
 	return 0;
@@ -70,6 +126,10 @@ int CNetClientWebrtcPlayer::PushVideo(uint8_t* pVideoData, uint32_t nDataLength,
 
 int CNetClientWebrtcPlayer::PushAudio(uint8_t* pVideoData, uint32_t nDataLength, char* szAudioCodec, int nChannels, int SampleRate)
 {
+	std::lock_guard<std::mutex> lock(businessProcMutex);
+	if (!bRunFlag)
+		return -1;
+
 	nRecvDataTimerBySecond = 0;
 
 	return 0;

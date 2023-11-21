@@ -26,6 +26,8 @@ public:
    virtual int   SendFirstRequst() = 0;//发送第一个请求
    virtual bool  RequestM3u8File() = 0 ;
 
+   int                    FindSPSPositionPos(char* szVideoName, unsigned char* pVideo, int nLength);
+
    WebRtcCallStruct       webRtcCallStruct;
 
    void                   GetAACAudioInfo(unsigned char* nAudioData, int nLength);

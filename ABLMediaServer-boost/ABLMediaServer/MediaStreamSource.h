@@ -70,6 +70,9 @@ public:
 #ifdef WriteInputVideoFileFlag
    FILE*   fWriteInputVideoFile;
 #endif
+   int                nWebRtcPlayerCount;//webRtc播放次数统计 
+   uint64_t           nWebRtcPushStreamID;//给webRTC推流提供者 
+   boost::atomic_bool bCreateWebRtcPlaySourceFlag;//创建webrtc源标志 
 
    char            szSnapPicturePath[string_length_512];
    uint64_t        iFrameArriveNoticCount;

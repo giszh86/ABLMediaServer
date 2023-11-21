@@ -9,6 +9,8 @@
 
 using namespace boost;
 
+//#define  WebRtcVideoFileFlag     1 //写入webrtc视频数据
+
 class CNetClientWebrtcPlayer : public CNetRevcBase
 {
 public:
@@ -26,6 +28,13 @@ public:
    virtual bool RequestM3u8File();//请求m3u8文件
 
    boost::shared_ptr<CMediaStreamSource> pMediaSource;
+   int                                   nSpsPositionPos;
+
+#ifdef WebRtcVideoFileFlag
+   FILE*     fWriteVideoFile;
+   int64_t   nWriteFileCount;
+   FILE*     fWriteFrameLengthFile;
+#endif
 };
 
 #endif

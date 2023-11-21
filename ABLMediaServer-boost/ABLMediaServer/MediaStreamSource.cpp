@@ -27,7 +27,6 @@ extern bool 	                       ABL_bCudaFlag ;
 extern int                             ABL_nCudaCount ;
 extern CMediaFifo                      pMessageNoticeFifo;          //消息通知FIFO
 extern char                            ABL_szLocalIP[128];
-extern CMediaFifo                      pWebRtcSourceFifo;          //webrtc媒体源对象列表  
 
 #ifdef OS_System_Windows
 extern ABL_cudaDecode_Init  cudaEncode_Init ;
@@ -57,7 +56,10 @@ extern ABL_cudaEncode_UnInit cudaEncode_UnInit ;
 
 CMediaStreamSource::CMediaStreamSource(char* szURL, uint64_t nClientTemp, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct)
 {
-	memset(szSnapPicturePath, 0x00, sizeof(szSnapPicturePath));
+	nWebRtcPlayerCount = 0;
+	nWebRtcPushStreamID = 0;
+	bCreateWebRtcPlaySourceFlag = false ;//创建webrtc源标志 
+ 	memset(szSnapPicturePath, 0x00, sizeof(szSnapPicturePath));
 	iFrameArriveNoticCount = 0;
 	m_bNoticeOnPublish = false;
 	m_mediaCodecInfo.nVideoFrameRate = 25;
@@ -472,7 +474,6 @@ CMediaStreamSource::~CMediaStreamSource()
       fclose(fWriteInputVideoFile);
 #endif
 
-	pWebRtcSourceFifo.push((unsigned char*)m_szURL,strlen(m_szURL));
 	WriteLog(Log_Debug, "CMediaStreamSource 析构 %X 完成 nClient = %llu \r\n", this , nClient);
 }
 

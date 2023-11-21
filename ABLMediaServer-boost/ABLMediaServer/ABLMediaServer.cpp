@@ -63,8 +63,6 @@ volatile bool                                                    ABL_bExitMediaS
 CMediaFifo                                                       pDisconnectBaseNetFifo;             //清理断裂的链接 
 CMediaFifo                                                       pReConnectStreamProxyFifo;          //需要重新连接代理ID 
 CMediaFifo                                                       pMessageNoticeFifo;          //消息通知FIFO
-CMediaFifo                                                       pWebRtcDisconnectFifo;      //webrtc删除对象 
-CMediaFifo                                                       pWebRtcSourceFifo;          //webrtc媒体源对象列表  
 char                                                             ABL_MediaSeverRunPath[256] = { 0 }; //当前路径
 char                                                             ABL_wwwMediaPath[256] = { 0 }; //www 子路径
 uint64_t                                                         ABL_nBaseCookieNumber = 100; //Cookie 序号 
@@ -1751,27 +1749,6 @@ bool  CheckSSRCAlreadyUsed(int nSSRC, bool bLockFlag)
 	return bRet;
 }
 
-bool  DeleteNetRevcBaseClientByPlayerID(char* szPlayerID )
-{
- 	std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
-
-	CNetRevcBase_ptrMap::iterator iterator1;
-	bool                 bRet = false;
-	CNetRevcBase_ptr     pClient = NULL;
-
-	for (iterator1 = xh_ABLNetRevcBaseMap.begin(); iterator1 != xh_ABLNetRevcBaseMap.end(); iterator1++)
-	{
-		pClient = (*iterator1).second;
-		if (pClient && strlen(szPlayerID) > 0 && strcmp(pClient->webRtcCallStruct.playerID, szPlayerID) == 0)
-		{
-			bRet = true;
-			pDisconnectBaseNetFifo.push((unsigned char*)&pClient->nClient, sizeof(pClient->nClient));
-			WriteLog(Log_Debug, "DeleteNetRevcBaseClientByPlayerID() szPlayerID = %s  ", szPlayerID);
-		}
-	}
-	return bRet;
-}
-
 //查找某一个网络类型的对象总数
 int  GetNetRevcBaseClientCountByNetType(NetBaseNetType netType,bool bLockFlag)
 {
@@ -2312,35 +2289,6 @@ void*  ABLMedisServerProcessThread(void* lpVoid)
  			}
  		}
 
-		if (nDeleteWebRtcPlayerTimer >= 10 * 2)
-		{
-			nDeleteWebRtcPlayerTimer = 0;
-			while ((pData = pWebRtcDisconnectFifo.pop(&nLength)) != NULL)
-			{
-				if (nLength > 0)
-				{
-					char szPlayerID[256] = { 0 };
-					memcpy(szPlayerID, pData, nLength);
-					WriteLog(Log_Debug, "删除webrtc 对象 szPlayerID = %s ", szPlayerID);
- 					WebRtcEndpoint::getInstance().stopWebRtcPlay(szPlayerID);
-				}
-				pWebRtcDisconnectFifo.pop_front();
-			}
- 		}
-
-		//删除webrtc 媒体源
-		while ((pData = pWebRtcSourceFifo.pop(&nLength)) != NULL)
-		{
-			if (pData != NULL && nLength > 0)
-			{
-				memset(szWebRtcURL, 0x00, sizeof(szWebRtcURL));
-				memcpy(szWebRtcURL, pData, nLength);
-				WriteLog(Log_Debug, "删除webrtc 媒体源szWebRtcURL  = %s ", szWebRtcURL);
- 				WebRtcEndpoint::getInstance().deleteWebRtcSource(szWebRtcURL);
-			}
-			pWebRtcSourceFifo.pop_front();
-		}
-
 		nDeleteWebRtcPlayerTimer ++;
 		nDeleteBreakTimer ++;
 		nCheckNetRevcBaseClientDisconnectTime ++;
@@ -2799,7 +2747,7 @@ void FindHistoryPictureFile(char* szPicturePath)
 
 void WebRtcCallBack(const char* callbackJson, void* pUserHandle)
 {
- 	WriteLog(Log_Debug, "WebRtcCallBack ：%s ", callbackJson);
+ 	WriteLog(Log_Debug, " ----- WebRtcCallBack ----- ：\r\n%s ", callbackJson);
 	if (strlen(callbackJson) > 0 /* && callbackJson[0] == '{' && callbackJson[strlen(callbackJson) - 1] == '}' */ )
 	 {
 		WebRtcCallStruct callbackStruct;
@@ -2818,29 +2766,54 @@ void WebRtcCallBack(const char* callbackJson, void* pUserHandle)
 				strcpy(callbackStruct.stream, doc["stream"].GetString());
 		}
 
-		if (callbackStruct.eventID == 1)
+		if (callbackStruct.eventID == 2)
 		{//创建webrtc播放
 			CMediaStreamSource_ptr pMediaSource = GetMediaStreamSource(callbackStruct.stream, false);
 			if (pMediaSource == NULL)
 				WriteLog(Log_Debug, "不存在流 %s ", callbackStruct.stream);
 			else
 			{
-				if (strcmp(pMediaSource->m_mediaCodecInfo.szVideoName, "H264") == 0)
+				if (strcmp(pMediaSource->m_mediaCodecInfo.szVideoName, "H264") == 0 && pMediaSource->bCreateWebRtcPlaySourceFlag.load() == false )
 				{
 					CNetRevcBase_ptr pClient = CreateNetRevcBaseClient(NetBaseNetType_NetClientWebrtcPlayer, 0, 0, "", 0, callbackStruct.stream);
 					if (pClient != NULL)
 					{
-						WriteLog(Log_Debug, "创建webrtc播放  %s ", callbackStruct.stream);
+ 						WriteLog(Log_Debug, "创建webrtc播放  %s ", callbackStruct.stream);
 						memcpy((char*)&pClient->webRtcCallStruct, (char*)&callbackStruct, sizeof(WebRtcCallStruct));
 					}
-				}else
-					WriteLog(Log_Debug, "媒体源 %s 的视频格式为 %s ,不支持WebRTC播放，必须为H264 ", callbackStruct.stream, pMediaSource->m_mediaCodecInfo.szVideoName);
+					pMediaSource->nWebRtcPlayerCount ++;
+				}
+				else
+				{
+					if (strcmp(pMediaSource->m_mediaCodecInfo.szVideoName, "H264") == 0 && pMediaSource->bCreateWebRtcPlaySourceFlag.load() == true)
+					{
+						pMediaSource->nWebRtcPlayerCount ++ ; 
+ 						WriteLog(Log_Debug, "媒体源 %s 的视频格式为 %s ,已经创建了webrtc 播放媒体源 ", callbackStruct.stream, pMediaSource->m_mediaCodecInfo.szVideoName);
+					}
+					else
+					    WriteLog(Log_Debug, "媒体源 %s 的视频格式为 %s ,不支持WebRTC播放，必须为H264 ", callbackStruct.stream, pMediaSource->m_mediaCodecInfo.szVideoName);
+				}
 			}
 		}
-		else if (callbackStruct.eventID == 5 || callbackStruct.eventID == 3)
+		else if (callbackStruct.eventID == 5 )
 		{//删除webrtc播放
- 			DeleteNetRevcBaseClientByPlayerID(callbackStruct.playerID);
-			pWebRtcDisconnectFifo.push((unsigned char*)callbackStruct.playerID, strlen(callbackStruct.playerID));
+			CMediaStreamSource_ptr pMediaSource = GetMediaStreamSource(callbackStruct.stream, false);
+			if (pMediaSource != NULL)
+			{
+				pMediaSource->nWebRtcPlayerCount --;
+				if (pMediaSource->nWebRtcPlayerCount <= 0)
+				{//统计出无人观看时
+					pMediaSource->nWebRtcPlayerCount = 0;
+					pMediaSource->DeleteClientFromMap(pMediaSource->nWebRtcPushStreamID);
+					pMediaSource->bCreateWebRtcPlaySourceFlag.exchange(false);
+					DeleteNetRevcBaseClient(pMediaSource->nWebRtcPushStreamID);
+					WriteLog(Log_Debug, "媒体源 %s , pMediaSource->nWebRtcPlayerCount = %d  已经无人观看，把 nClient = %llu 从 发送线程池移除  ", callbackStruct.stream, pMediaSource->nWebRtcPlayerCount, pMediaSource->nWebRtcPushStreamID);
+				}
+			}
+  		}
+		else if (callbackStruct.eventID == 7)
+		{//删除webrtc媒体源
+
 		}
 	} 
  };
@@ -3466,8 +3439,6 @@ ABL_Restart:
 	pDisconnectBaseNetFifo.InitFifo(1024 * 1024 * 4);
 	pReConnectStreamProxyFifo.InitFifo(1024 * 1024 * 4);
 	pMessageNoticeFifo.InitFifo(1024 * 1024 * 4);
-	pWebRtcDisconnectFifo.InitFifo(1024 * 1024 * 2);
-	pWebRtcSourceFifo.InitFifo(1024 * 1024 * 1);
 
 	//创建www子路径 
 #ifdef OS_System_Windows

@@ -1068,6 +1068,7 @@ void malloc_trim(int n);
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/uuid_generators.hpp>
+#include <boost/atomic.hpp>
 
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
