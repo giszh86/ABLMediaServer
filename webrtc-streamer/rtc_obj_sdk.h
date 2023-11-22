@@ -70,8 +70,10 @@ class PeerConnectionManager;
 class HttpServerRequestHandler;
 class WEBRTCSDK_EXPORTSIMPL WebRtcEndpoint {
 public:
-
+	//初始化
 	void init(const char* webrtcConfig, std::function<void(const char* callbackJson, void* pUserHandle)> callback);
+	//释放
+	void Uninit();
 	//主动关闭某一路播放
 	bool stopWebRtcPlay(const char* peerid);
 	// 主动关闭某一个媒体源 
@@ -81,7 +83,7 @@ public:
 public:
 	static WebRtcEndpoint& getInstance();
 private:
-	WebRtcEndpoint() = default;
+	WebRtcEndpoint(); 
 
 	~WebRtcEndpoint() = default;
 
@@ -93,7 +95,7 @@ private:
 	PeerConnectionManager* webRtcServer;
 	HttpServerRequestHandler* httpServer;
 	std::function<void(const char* callbackJson, void* pUserHandle)>  m_callback;
-
+	std::atomic<bool> bInit;
 
 };
 

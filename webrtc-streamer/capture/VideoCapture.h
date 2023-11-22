@@ -64,7 +64,7 @@ public:
 	}
 	virtual bool Start() = 0;
 
-	virtual void Init(const char* devicename, int nWidth = 1920, int nHeight = 1080, int nFrameRate = 30) = 0;
+	virtual void Init(const char* devicename, int nWidth , int nHeight , int nFrameRate = 30) = 0;
 	
 	virtual void Init(const char* strJson) = 0;
 

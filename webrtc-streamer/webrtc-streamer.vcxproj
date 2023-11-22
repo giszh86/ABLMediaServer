@@ -184,6 +184,7 @@
     <ClInclude Include="EncodedVideoFrameBuffer.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="HttpServerRequestHandler.h" />
+    <ClInclude Include="MediaFifo.h" />
     <ClInclude Include="NSJson.h" />
     <ClInclude Include="NullDecoder.h" />
     <ClInclude Include="NullEncoder.h" />
@@ -203,6 +204,7 @@
     <ClCompile Include="civetweb\src\civetweb.c" />
     <ClCompile Include="Dump\Crash_Dumper.cpp" />
     <ClCompile Include="HttpServerRequestHandler.cpp" />
+    <ClCompile Include="MediaFifo.cpp" />
     <ClCompile Include="NSJson.cpp" />
     <ClCompile Include="PeerConnectionManager.cpp" />
     <ClCompile Include="rtc_obj_sdk.cpp" />

@@ -50,28 +50,63 @@ bool ignoreInLabel(char c)
 ** -------------------------------------------------------------------------*/
 
 #ifdef WIN32
-std::string getServerIpFromClientIp(int clientip)
-{
-	return "127.0.0.1";
-}
+#include <winsock2.h>
+#include <iphlpapi.h>
+#include <stdio.h>
+#include <stdlib.h>
+#pragma comment(lib, "IPHLPAPI.lib")
+#pragma comment(lib, "ws2_32.lib")
 #else
 #include <net/if.h>
 #include <ifaddrs.h>
-std::string getServerIpFromClientIp(int clientip)
+#endif
+std::string getServerIpFromClientIp(long clientip)
 {
-	std::string serverAddress;
-	char host[NI_MAXHOST];
-	struct ifaddrs *ifaddr = NULL;
+	std::string serverAddress("127.0.0.1");
+#ifdef WIN32
+	ULONG outBufLen = 0;
+	DWORD dwRetVal = GetAdaptersAddresses(AF_INET, GAA_FLAG_INCLUDE_PREFIX, NULL, NULL, &outBufLen);
+	if (dwRetVal == ERROR_BUFFER_OVERFLOW) {
+		PIP_ADAPTER_ADDRESSES pAddresses = (IP_ADAPTER_ADDRESSES*)malloc(outBufLen);
+		if (pAddresses != NULL) {
+			if (GetAdaptersAddresses(AF_INET, GAA_FLAG_INCLUDE_PREFIX, NULL, pAddresses, &outBufLen) == NO_ERROR) {
+
+				for (PIP_ADAPTER_ADDRESSES pCurrAddresses = pAddresses; pCurrAddresses != NULL; pCurrAddresses = pCurrAddresses->Next) {
+
+					for (PIP_ADAPTER_UNICAST_ADDRESS pUnicast = pCurrAddresses->FirstUnicastAddress; pUnicast != NULL; pUnicast = pUnicast->Next) {
+						sockaddr* sa = pUnicast->Address.lpSockaddr;
+
+						if (sa->sa_family == AF_INET) {
+							struct sockaddr_in* ipv4 = (struct sockaddr_in*)sa;
+							struct in_addr addr = ipv4->sin_addr;
+
+							struct in_addr mask;
+							mask.s_addr = htonl((0xFFFFFFFFU << (32 - pUnicast->OnLinkPrefixLength)) & 0xFFFFFFFFU);
+
+							if ((addr.s_addr & mask.s_addr) == (clientip & mask.s_addr)) {
+								serverAddress = inet_ntoa(addr);
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+		free(pAddresses);
+	}
+#else
+	struct ifaddrs* ifaddr = NULL;
 	if (getifaddrs(&ifaddr) == 0)
 	{
-		for (struct ifaddrs *ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next)
+		for (struct ifaddrs* ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next)
 		{
 			if ((ifa->ifa_netmask != NULL) && (ifa->ifa_netmask->sa_family == AF_INET) && (ifa->ifa_addr != NULL) && (ifa->ifa_addr->sa_family == AF_INET))
 			{
-				struct sockaddr_in *addr = (struct sockaddr_in *)ifa->ifa_addr;
-				struct sockaddr_in *mask = (struct sockaddr_in *)ifa->ifa_netmask;
+				struct sockaddr_in* addr = (struct sockaddr_in*)ifa->ifa_addr;
+				struct sockaddr_in* mask = (struct sockaddr_in*)ifa->ifa_netmask;
 				if ((addr->sin_addr.s_addr & mask->sin_addr.s_addr) == (clientip & mask->sin_addr.s_addr))
 				{
+					char host[NI_MAXHOST];
 					if (getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in), host, sizeof(host), NULL, 0, NI_NUMERICHOST) == 0)
 					{
 						serverAddress = host;
@@ -82,9 +117,9 @@ std::string getServerIpFromClientIp(int clientip)
 		}
 	}
 	freeifaddrs(ifaddr);
+#endif
 	return serverAddress;
 }
-#endif
 
 struct IceServer
 {
@@ -328,9 +363,14 @@ PeerConnectionManager::PeerConnectionManager(const std::list<std::string> &iceSe
 **  Destructor
 ** -------------------------------------------------------------------------*/
 PeerConnectionManager::~PeerConnectionManager() {
-	m_workerThread->Invoke<void>(RTC_FROM_HERE, [this] {
-		m_audioDeviceModule->Release();
-    });	
+	//m_workerThread->Invoke<void>(RTC_FROM_HERE, [this] {
+	//	if (m_audioDeviceModule)
+	//	{
+	//		m_audioDeviceModule->Release();
+	//	}
+
+	//	});
+
 }
 
 // from https://stackoverflow.com/a/12468109/3102264
@@ -1282,30 +1322,21 @@ bool PeerConnectionManager::AddStreams(webrtc::PeerConnectionInterface *peer_con
 	}
 
 	// set bandwidth
+	int bitrate = 4096 * 1024;
 	if (opts.find("bitrate") != opts.end())
 	{
 		int bitrate = std::stoi(opts.at("bitrate"));
 		if (bitrate == 0)
 		{
-			bitrate = 4096 * 1000;
+			bitrate = 4096 * 1024;
 		}
-		webrtc::BitrateSettings bitrateParam;
-		bitrateParam.min_bitrate_bps = absl::optional<int>(bitrate / 2);
-		bitrateParam.start_bitrate_bps = absl::optional<int>(bitrate);
-		bitrateParam.max_bitrate_bps = absl::optional<int>(bitrate * 2);
-		peer_connection->SetBitrate(bitrateParam);
+	}
 
-		RTC_LOG(LS_WARNING) << "set bitrate:" << bitrate;
-	}
-	else
-	{
-		int bitrate = 4096*1000;
-		webrtc::BitrateSettings bitrateParam;
-		bitrateParam.min_bitrate_bps = absl::optional<int>(bitrate *0.8);
-		bitrateParam.start_bitrate_bps = absl::optional<int>(bitrate);
-		bitrateParam.max_bitrate_bps = absl::optional<int>(bitrate * 2);
-		peer_connection->SetBitrate(bitrateParam);
-	}
+	webrtc::BitrateSettings bitrateParam;
+	bitrateParam.min_bitrate_bps = absl::optional<int>(bitrate * 0.5);
+	bitrateParam.start_bitrate_bps = absl::optional<int>(bitrate);
+	bitrateParam.max_bitrate_bps = absl::optional<int>(bitrate * 2);
+	peer_connection->SetBitrate(bitrateParam);
 	// keep capturer options (to improve!!!)
 	std::string optcapturer;
 	if ((video.find("rtsp://") == 0) || (audio.find("rtsp://") == 0))

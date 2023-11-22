@@ -51,6 +51,7 @@ class NullEncoder : public webrtc::VideoEncoder {
 		// compute frametype
 		EncodedVideoI420Buffer* encodedBuffer = (EncodedVideoI420Buffer*)buffer->GetI420();
 		const uint8_t* data = encodedBuffer->DataY();
+
 		size_t dataSize = encodedBuffer->StrideY();
 		webrtc::VideoFrameType frameType = encodedBuffer->getFrameType();
 
@@ -63,14 +64,21 @@ class NullEncoder : public webrtc::VideoEncoder {
 
 		RTC_LOG(LS_VERBOSE) << "EncodedImage " << frame.id() << " " << encoded_image._frameType << " " <<  buffer->width() << "x" <<  buffer->height() << " " <<  buffer->GetI420()->StrideY();
 
+		encoded_image._encodedWidth = 1920;
+		encoded_image._encodedHeight = 1080;
+		
+	
 		// forward to callback
 		webrtc::CodecSpecificInfo codec_specific;
 		if (m_format.name == "H264") {
 			codec_specific.codecType = webrtc::VideoCodecType::kVideoCodecH264;
 		} 
         webrtc::EncodedImageCallback::Result result = m_encoded_image_callback->OnEncodedImage(encoded_image, &codec_specific);
-        if (result.error == webrtc::EncodedImageCallback::Result::ERROR_SEND_FAILED) {
+		RTC_LOG(LS_VERBOSE) << "EncodedImage ";
+		
+		if (result.error == webrtc::EncodedImageCallback::Result::ERROR_SEND_FAILED) {
             RTC_LOG(LS_ERROR) << "Error in parsing EncodedImage" << encoded_image._frameType;
+			return WEBRTC_VIDEO_CODEC_ERROR;
 		}
 		return WEBRTC_VIDEO_CODEC_OK;
 	}

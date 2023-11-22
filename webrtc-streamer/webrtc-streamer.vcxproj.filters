@@ -105,6 +105,9 @@
     <ClInclude Include="Dump\Crash_Dumper.h">
       <Filter>dump</Filter>
     </ClInclude>
+    <ClInclude Include="MediaFifo.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="civetweb\src\CivetServer.cpp">
@@ -136,6 +139,9 @@
     </ClCompile>
     <ClCompile Include="Dump\Crash_Dumper.cpp">
       <Filter>dump</Filter>
+    </ClCompile>
+    <ClCompile Include="MediaFifo.cpp">
+      <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

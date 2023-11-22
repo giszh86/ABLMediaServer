@@ -18,7 +18,7 @@
 #include "modules/video_capture/video_capture_factory.h"
 
 
-
+#include "MediaFifo.h"
 class VideoTrackSourceInput : public rtc::AdaptedVideoTrackSource
 {
 public:
@@ -58,6 +58,8 @@ public:
 
 	//	//直接发送h264的数据
 	bool InputVideoFrame(const char* id, unsigned char* buffer, size_t size, int nWidth, int nHeigh, int64_t ts);
+
+	void Run();
 private:
 	VideoCapture* m_vCapture = nullptr;
 	std::string m_videourl;
@@ -66,4 +68,9 @@ private:
 	int64_t next_timestamp_us_ = rtc::kNumMicrosecsPerMillisec;
 	int64_t                               m_prevts = 0;
 	std::atomic<bool>m_bStop;
+	CMediaFifo videoFifo;
+	std::condition_variable m_condition;              // 条件变量，用于线程等待
+	std::shared_ptr<std::thread>  m_thread;
+	int m_nWidth,  m_nHeigh,  m_fps;
+
 };

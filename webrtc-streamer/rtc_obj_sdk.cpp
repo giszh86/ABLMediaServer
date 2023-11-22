@@ -33,20 +33,11 @@ public:
 
 void WebRtcEndpoint::init(const char* webrtcConfig, std::function<void(const char* callbackJson, void* pUserHandle)> callback)
 {
-
-	static bool bInit = false;
-	if (!bInit)
+	if (!bInit.load())
 	{
-		bInit = true;
+		bInit.store(true);
 		m_callback = callback;
-		rtc::WinsockInitializer winsock_init;
-		rtc::PhysicalSocketServer ss;
-		rtc::AutoSocketServerThread main_thread(&ss);
-		rtc::LogMessage::LogTimestamps();
-		rtc::LogMessage::LogThreads();
-		rtc::LogMessage::AddLogToStream(new RtcLogSink(), rtc::LS_ERROR);
 
-		rtc::InitializeSSL();
 		//auto thread = rtc::Thread::Current();	
 	//	rtc::ThreadManager::Instance()->SetCurrentThread(thread);
 		std::string webrtcTrialsFields = "WebRTC-FrameDropper/Disabled/";
@@ -73,7 +64,7 @@ void WebRtcEndpoint::init(const char* webrtcConfig, std::function<void(const cha
 		const char* webroot = "./html";
 
 		std::string httpAddress("0.0.0.0:");
-		std::string httpPort =ABL::NSJson::ParseStr(webrtcConfig).GetString("webrtcPort");
+		std::string httpPort =std::to_string(ABL::NSJson::ParseStr(webrtcConfig).GetInt("webrtcPort"));
 
 		if (httpPort.size()<1)
 		{
@@ -103,6 +94,22 @@ void WebRtcEndpoint::init(const char* webrtcConfig, std::function<void(const cha
 	}
 }
 
+void WebRtcEndpoint::Uninit()
+{
+	if (httpServer)
+	{
+		delete httpServer;
+		httpServer = nullptr;
+	}
+	if (webRtcServer)
+	{
+		delete webRtcServer;
+		webRtcServer = nullptr;
+	}
+	bInit.store(false);
+
+}
+
 bool WebRtcEndpoint::stopWebRtcPlay(const char* peerid)
 {
 	if (webRtcServer)
@@ -124,6 +131,21 @@ WebRtcEndpoint& WebRtcEndpoint::getInstance()
 {
 	static WebRtcEndpoint instance;
 	return instance;
+}
+
+WebRtcEndpoint::WebRtcEndpoint()
+{
+
+	rtc::WinsockInitializer winsock_init;
+	rtc::PhysicalSocketServer ss;
+	rtc::AutoSocketServerThread main_thread(&ss);
+	rtc::LogMessage::LogTimestamps();
+	rtc::LogMessage::LogThreads();
+	rtc::LogMessage::AddLogToStream(new RtcLogSink(), rtc::LS_ERROR);
+
+	rtc::InitializeSSL();
+	bInit.store(false);
+
 }
 
 
