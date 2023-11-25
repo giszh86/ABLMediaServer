@@ -66,7 +66,7 @@ private:
 	std::map<std::string, std::string> m_opts;
 	std::mutex m_mutex;                                        //互斥锁	
 	int64_t next_timestamp_us_ = rtc::kNumMicrosecsPerMillisec;
-	int64_t                               m_prevts = 0;
+	int64_t                              m_prevts=0 ;//上一帧的时间
 	std::atomic<bool>m_bStop;
 	CMediaFifo videoFifo;
 	std::condition_variable m_condition;              // 条件变量，用于线程等待
