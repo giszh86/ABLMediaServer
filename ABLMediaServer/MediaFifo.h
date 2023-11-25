@@ -14,9 +14,8 @@ struct MediaNode
 	}
 };
 
-using namespace std;
 
-typedef list<MediaNode> MediaFifoLengthList; 
+typedef std::list<MediaNode> MediaFifoLengthList;
 
 class CMediaFifo
 {

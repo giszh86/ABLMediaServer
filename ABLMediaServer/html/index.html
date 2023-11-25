@@ -1,91 +1,259 @@
-<!doctype html><html lang="en"><head><meta charset="UTF-8"><title>Title</title><style>body{
-            width:100%;
-            position: absolute;
-            height:100%;
-            margin:0;
-        }
+<html>
+<head>
+<title>WebRTC Streamer</title>
+<link rel="icon" type="image/png" href="webrtc.png" />
+<link rel="stylesheet" type="text/css" href="styles.css">
+<script src="libs/adapter.min.js" ></script>
+<script src="webrtcconfig.js" ></script>
+<script src="webrtcstreamer.js" ></script>
+<script>
+	// ------------------------------------------
+	// WebRTC connections
+	// ------------------------------------------	
+	var webRtcServerList = {};
 
-        #app {
-            width:100%;
-            height:100%;
+	// ------------------------------------------
+	// decode URL arguments
+	// ------------------------------------------	
+	var argurl = { video:location.search.slice(1) };
+	var argoptions = null;
+	var layout = null;
+	if (typeof URLSearchParams != 'undefined') {
+		var params = new URLSearchParams(location.search);
+		argurl = { video:params.get("video"), audio:params.get("audio") };
+		argoptions = params.get("options");
+		if (!argoptions) {
+			argoptions = webrtcConfig.options; 
+		}
+		layout = params.get("layout");
+	} else {
+		console.log("URLSearchParams not supported then no argument could be used");
+	}
+		
+	// ------------------------------------------
+	// get text from url object (video,audio)
+	// ------------------------------------------	
+	function getText(url) {
+		var text;
+		if (url.video) {
+			text = url.video + " ";
+		}
+		if (url.audio && (url.audio != url.video)) {
+			text += url.audio + " ";
+		}
+		return text;
+	}
+	
+	// ------------------------------------------
+	// get the div where to insert a video
+	// ------------------------------------------	
+	function getContentDiv() {
+		var contentDiv = null;
+		if (document.getElementById("layout")) {
+			var divList = document.getElementsByTagName("div");
+			for (var i=0; i<divList.length; i++) {
+				if (divList[i].childNodes.length == 0) {
+					contentDiv = divList[i];
+					break;
+				}
+			}
+		} else {
+			contentDiv = document.getElementById("content");
+		}
+		return contentDiv;
+	}
+	
+	// ------------------------------------------
+	// init device list 
+	// ------------------------------------------	
+	function onGetDeviceList(remoteDeviceList) {
+		var deviceList = [];
+                if (argurl.video || argurl.audio) {
+			deviceList.push( argurl );
+		}
+		if (remoteDeviceList) {
+			deviceList.push.apply( deviceList, remoteDeviceList );
+		}
 
-        }
-        .header-top {
-            padding-left:15px;
-            padding-top:10px;
-        }
-        #input {
-            width:300px;
-        }
-        .container {
-            display: grid;
-            grid-gap: 10px;
-            grid-template-columns: 1fr 1fr;
-            grid-template-rows: 1fr 1fr;
-            margin: 10px;
-            height: 87%;
-        }
+		// create navigation menu
+		var urllist = document.getElementById("menu");
+		for (var dev in deviceList) {
+			var url = deviceList[dev];
+			var option = document.createElement("a");
+			var videoTag = "video_" + JSON.stringify(url);
+			option.url = url;
+			option.text = getText(url);
+			option.id   = "nav_" + videoTag;
+			option.onclick = function () { 
+				if (this.className === "active") {
+					del(this.url); 
+				} else {
+					add(this.url); 
+				}
+			}
+			urllist.appendChild(option);
+		}
+		
+                if (argurl.video || argurl.audio) {
+			add(argurl);
+                } else {
+		var nbVideos = 1;
+		if (layout) {
+			var splitLayout = layout.split("x");
+			var nbrow = parseInt(splitLayout[0]);
+			var nbcol = parseInt(splitLayout[1]);
+			nbVideos = nbrow*nbcol;
+		}
+		var random = deviceList.sort(() => .5 - Math.random()).slice(0,nbVideos);
+		random.forEach((stream) => {
+			add(stream);
+		});
+                }
+	}
+	
+	// ------------------------------------------
+	// Fill version
+	// ------------------------------------------	
+	function onVersion(version) {
+		document.getElementById("footer").innerHTML = "<p><a href='https://github.com/mpromonet/webrtc-streamer'>WebRTC-Streamer</a>"
+							+ " " + version.split(" ")[0] + "</p>";
+	}
+		
+	// ------------------------------------------
+	// add a webrtc client connection
+	// ------------------------------------------	
+	function del(url) {
+		var videoTag = "video_" + JSON.stringify(url);
+		
+		// disconnect webrtc connection
+		var webrtcServer = webRtcServerList[videoTag];
+		if (webrtcServer) {
+			webrtcServer.disconnect();		
+			webRtcServerList[videoTag] = undefined;
+		}
+		
+		// remove the video element and its tile
+		var divElt = 	document.getElementById ("div_" + videoTag);
+		divElt.parentElement.removeChild(divElt);
+				
+		// unhighlight the navigation
+		var navElt = 	document.getElementById ("nav_" + videoTag);
+		navElt.className = "";		
+	}
+		
+	// ------------------------------------------
+	// add a webrtc client connection
+	// ------------------------------------------	
+	function add(url) {
+		var videoTag = "video_" + JSON.stringify(url);
+		
+		// add a video element to display webrtc stream
+		if (document.getElementById (videoTag) === null) {
+			var contentDiv = getContentDiv();
+			if (contentDiv) {
+				let webstreamurl = webrtcConfig.url + "/webrtcstreamer.html?";
+				if (url.video) {
+					webstreamurl += "video=" + encodeURIComponent(url.video) + "&";
+				}
+				if (url.audio) {
+					webstreamurl += "audio=" + encodeURIComponent(url.audio) + "&";
+				}
+				if (argoptions) {
+					webstreamurl += "options=" + encodeURIComponent(argoptions) + "&";
+				}				
+				var divelt = document.createElement("div");
+				divelt.id = "div_" + videoTag
+				var nameelt = document.createElement("h2");
+				nameelt.id = "title_" + videoTag
+				nameelt.innerHTML = "<a href='" + webstreamurl +"' >"+getText(url)+"</a>";
+				divelt.appendChild(nameelt);
+				var videoelt = document.createElement("video");
+				videoelt.id = videoTag;
+				videoelt.title = getText(url);
+				videoelt.muted = true;
+				videoelt.controls = true;
+				videoelt.playsinline = true;
+				if (layout) {
+					var splitLayout = layout.split("x");
+					var nbrow = parseInt(splitLayout[0]);
+					var nbcol = parseInt(splitLayout[1]);
+					videoelt.width =  window.innerWidth / (nbcol+1)
+					videoelt.height =  window.innerHeight / (nbrow+1) 
+				}
+				divelt.appendChild(videoelt);
+				contentDiv.appendChild(divelt);
+			}			
+		}
+		
+		var videoelt = 	document.getElementById (videoTag);		
+		if (videoelt) {		
+			// connect video element to webrtc stream
+			var webRtcServer = new WebRtcStreamer(videoTag, webrtcConfig.url);
 
-        .active-wrap {
-            border:1px solid #2c89e6;
-        }
+			var options = argoptions;
+			if (layout) {
+				options += webrtcConfig.layoutextraoptions;
+			}
 
-        webrtc-video {
-            display:block;
-            height: 100%;
-            width: 100%;
-            border:1px solid #d5d5d5;
-        }</style><script defer="defer" src="WebrtcPlayer-min.js"></script></head><body><div id="app"><div class="header-top"><input id="input" value="http://118.89.76.229:2280/rtp/34020000001321000109_34020000001311000109/hls.m3u8" placeholder="请输入地址"/> <button onclick="testClick()">播放</button> <button onclick="testControl()">显示/隐藏抓拍控件</button></div><div class="container"><webrtc-video snap="true" onclick="getIndex(0)" class="active-wrap" id="webrtc1" url="" options="rtptransport=tcp&timeout=60&width=0&height=0&bitrate=0&rotation=0"></webrtc-video><webrtc-video onclick="getIndex(1)" auto="true" url="http://118.89.76.229:2280/rtp/34020000001321000109_34020000001311000109/hls.m3u8" onclick="getIndex(1)" id="webrtc2" url="" options="rtptransport=tcp&timeout=60&width=0&height=0&bitrate=0&rotation=0"></webrtc-video><webrtc-video onclick="getIndex(2)" id="webrtc3" url="" options="rtptransport=tcp&timeout=60&width=0&height=0&bitrate=0&rotation=0"></webrtc-video><webrtc-video onclick="getIndex(3)" id="webrtc4" url="" options="rtptransport=tcp&timeout=60&width=0&height=0&bitrate=0&rotation=0"></webrtc-video></div></div></body><script>let index = 0
+			webRtcServer.connect(url.video, url.audio, options);
+				
+			// highlight the navigation 
+			var navElt = 	document.getElementById ("nav_" + videoTag);
+			navElt.className = "active";
 
+			// register webrtc streamer connection
+			webRtcServerList[videoTag] = webRtcServer;		
+		}
+	}
+	
+	// ------------------------------------------
+	// load/unload callbacks
+	// ------------------------------------------	
+	window.onload         = function() { 
+		if (layout) {
+			var splitLayout = layout.split("x");
+			var nbrow = parseInt(splitLayout[0]);
+			var nbcol = parseInt(splitLayout[1]);
+			const layoutElement = document.createElement("div")
+			layoutElement.id = "layout"
+			layoutElement.style.display= "grid"
+			layoutElement.style.gridTemplateColumns= `repeat(${nbcol}, 1fr)`
+			for (var irow=0; irow<nbrow; irow++) {
+				for (var icol=0; icol<nbcol; icol++) {
+					const divElement = document.createElement("div")
+					divElement.id = "cell_" + irow + "_" + icol
+					divElement.style.width = "1fr"
+					divElement.style.height = "1fr"
+					layoutElement.appendChild(divElement);
+				}
+			}			
+			let content = document.getElementById("content")
+			content.appendChild(layoutElement)			
+		}
+		
+		fetch(webrtcConfig.url + "/api/getMediaList")
+			.then( (response) => response.json() ) 
+			.then( (response) => onGetDeviceList( response ))
+		
+		fetch(webrtcConfig.url + "/api/version")
+			.then( (response) => response.text() ) 
+			.then( (response) => onVersion( response ))
 
-   const videos = document.getElementsByTagName('webrtc-video')
-
-
-   document.getElementById("webrtc1").addEventListener('init',(evt)=>{
-       console.log("----------->")
-       console.log(evt)
-       console.log("----------->")
-   })
-
-
-
-   for(let i=0; i<videos.length; i++){
-
-
-   }
-
-   // rtsp://36.133.103.122:17082/VIDEOLIVE/GB_VIDEO_VIDEOLIVE_cc9a1b8a-2e36-4b6d-bd25-121a66ad9d15_34020000001320000107_34020000001320010701_0_0_0
-
-   // navigator.mediaDevices.getUserMedia({ audio: true, video: true })
-
-   // const a =  navigator.mediaDevices.enumerateDevices()
-   //
-   //  a.then(res=>{
-   //      console.log(res)
-   //  })
-
-
-   function getIndex(n){
-       for(let i=0; i<videos.length; i++){
-           videos[i].removeAttribute("class")
-       }
-
-       if(n != index){
-           index = n
-       }
-       videos[index].setAttribute('class','active-wrap')
-   }
-
-
-   function testClick(){
-       let url = document.getElementById('input').value
-       videos[index].play(url)
-
-       console.log(videos[index].snap)
-       // document.getElementById("webrtc1").play('rtsp://111.229.117.103:554/rtp/34020000001320009997_34020000002010000017')
-   }
-
-
-   function testControl(){
-       videos[index].snap = !videos[index].snap
-   }</script></html>
+	} 
+	window.onbeforeunload = function() { 
+		for (var url in webRtcServerList) { 
+			webRtcServerList[url].disconnect() 
+		} 
+	};	
+</script>
+</head>
+<body>
+	<div id="container">
+		<header>
+			<nav id="menu"></nav>
+		</header>	
+		<div id="content"></div>
+		<footer id="footer"></footer>	
+	</div>
+</body>
+</html>

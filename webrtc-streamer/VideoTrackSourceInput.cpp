@@ -226,7 +226,7 @@ bool VideoTrackSourceInput::InputVideoFrame(unsigned char* data, size_t size, in
 	{
 		fps = 30;
 	}
-	int nsleeptime = 40;
+	int64_t nsleeptime = 40;
 	if (videosize <= 6)
 	{
 		nsleeptime = 1000 / fps - perio + 8;
@@ -251,11 +251,11 @@ bool VideoTrackSourceInput::InputVideoFrame(unsigned char* data, size_t size, in
 	else
 		nsleeptime = 2;
 
-	if (nsleeptime > 0)
+	if (nsleeptime > 0 && nsleeptime<100)
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(nsleeptime));
 	}
-	//printf("nsleeptime=[%d] perio=[%d] videosize=[%d] \r\n", nsleeptime, perio, videosize);
+	printf("nsleeptime=[%ld] perio=[%ld] videosize=[%d] \r\n", nsleeptime, perio, videosize);
 	if (m_bStop.load())
 	{
 		return false;

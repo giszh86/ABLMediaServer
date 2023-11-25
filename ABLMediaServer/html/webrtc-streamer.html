@@ -1,19 +1,20 @@
 <html>
 <head>
 	<link rel="icon" type="image/png" href="webrtc.png" />
-	<style>
-		h2 {
-			margin: 0 auto;
-			text-align: center; 
-		}
-	</style>
+	<link rel="stylesheet" type="text/css" href="styles.css">
 	<script type="module" src="webrtc-streamer-element.js"></script>
 	<script type="module" src="webrtc-streamer-footer-element.js"></script>
 </head>
 <body>
-	<h2 id="message"></h2>
-	<webrtc-streamer id="stream" options="rtptransport=tcp&timeout=60&width=0&height=0&bitrate=0&rotation=0" style="display:none"></webrtc-streamer>
-	<webrtc-streamer-footer></webrtc-streamer-footer>
+	<div id="container">
+		<header>
+			<h2 id="message"></h2>
+		</header>
+		<div id="content">
+			<webrtc-streamer id="stream" options="rtptransport=tcp&timeout=60&width=0&height=0&bitrate=0&rotation=0" style="display:none"></webrtc-streamer>
+		</div>
+		<webrtc-streamer-footer id="footer"></webrtc-streamer-footer>	
+	</div>
 	<script>     
 		let messageElement = document.getElementById("message"); 
         customElements.whenDefined('webrtc-streamer').then(() => {
@@ -28,7 +29,8 @@
 				streamElement.setAttribute('url', JSON.stringify(url));
 				streamElement.style.display = "block"
 			} else {
-				messageElement.innerHTML = "url should contains video or audio"
+				let url = prompt("WebRTC stream name to connect:")
+				window.location += (window.location.search ? "&" : "?") + `video=${encodeURI(url)}`;
 			}
 		}).catch( (e) => {
 			messageElement.innerText = "webrtc-streamer webcomponent fails to initialize error:" + e

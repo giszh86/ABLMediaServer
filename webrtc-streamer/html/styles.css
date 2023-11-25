@@ -10,24 +10,20 @@ footer {
     text-align: center; 
 }
 div {
-    margin: 0 auto;
     text-align: center; 
+  width: 100%;
+  max-width: 800px; /* Set a max width if needed */
+  margin: 0 auto; /* Center the container */
 }
 button {
     margin: 0 auto;
     display: block;
 }
 video {
-    margin: auto;
-    left: 0;
-    right: 0;            
+	  width: 100%; /* Make the video element take up 100% of its container's width */
+     height: auto; /* Maintain the aspect ratio */
+   display: block;
+    margin: auto;           
     position: relative;
     background: grey;
-}
-canvas {
-    position: absolute;
-    margin: auto;
-    left: 0;
-    right: 0;   
-    z-index:999;
 }

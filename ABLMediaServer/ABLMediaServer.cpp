@@ -98,7 +98,6 @@ volatile bool                                                    ABL_bExitMediaS
 CMediaFifo                                                       pDisconnectBaseNetFifo;             //清理断裂的链接 
 CMediaFifo                                                       pReConnectStreamProxyFifo;          //需要重新连接代理ID 
 CMediaFifo                                                       pMessageNoticeFifo;          //消息通知FIFO
-CMediaFifo                                                       pWebRtcDisconnectFifo;          //webrtc删除对象
 char                                                             ABL_MediaSeverRunPath[256] = { 0 }; //当前路径
 char                                                             ABL_wwwMediaPath[256] = { 0 }; //www 子路径
 uint64_t                                                         ABL_nBaseCookieNumber = 100; //Cookie 序号 
@@ -123,6 +122,8 @@ ABL_cudaCodec_CudaVideoDecode cudaCodec_CudaVideoDecode = NULL;
 ABL_cudaCodec_DeleteVideoDecode cudaCodec_DeleteVideoDecode = NULL;
 ABL_cudaCodec_GetCudaDecodeCount cudaCodec_GetCudaDecodeCount = NULL;
 ABL_cudaCodec_UnInit cudaCodec_UnInit = NULL;
+
+
 #else
 void*              pCudaDecodeHandle = NULL ;
 ABL_cudaCodec_Init cudaCodec_Init = NULL ;
@@ -220,23 +221,22 @@ int64_t                                                          nTestRtmpPushID
 unsigned short                                                   ABL_nGB28181Port = 10002 ;
 
 #ifndef OS_System_Windows
-#include <iostream>
-#include <chrono>
+
 int GB2312ToUTF8(char* szSrc, size_t iSrcLen, char* szDst, size_t iDstLen)
 {
-      iconv_t cd = iconv_open("utf-8//IGNORE", "gb2312//IGNORE");
-      if(0 == cd)
-         return -2;
-      memset(szDst, 0, iDstLen);
-      char **src = &szSrc;
-      char **dst = &szDst;
-      if(-1 == (int)iconv(cd, src, &iSrcLen, dst, &iDstLen))
-	  {
-	     iconv_close(cd);
-         return -1;
-	  }
-      iconv_close(cd);
-      return 0;
+	iconv_t cd = iconv_open("utf-8//IGNORE", "gb2312//IGNORE");
+	if (0 == cd)
+		return -2;
+	memset(szDst, 0, iDstLen);
+	char** src = &szSrc;
+	char** dst = &szDst;
+	if (-1 == (int)iconv(cd, src, &iSrcLen, dst, &iDstLen))
+	{
+		iconv_close(cd);
+		return -1;
+	}
+	iconv_close(cd);
+	return 0;
 }
 
 unsigned long GetTickCount()
@@ -251,92 +251,72 @@ unsigned long GetTickCount64()
 	gettimeofday(&tv, NULL);
 	return ((tv.tv_sec * 1000) + (tv.tv_usec / 1000));
 }
-#include <chrono>
-
-unsigned long GetTickCount641()
-{
-	auto now = std::chrono::high_resolution_clock::now();
-	auto duration = now.time_since_epoch();
-	return std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
-}
 
 uint64_t GetCurrentSecond()
 {
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
-	return (tv.tv_sec) ;
+	return (tv.tv_sec);
 }
 
 //延时
 void  Sleep(int mMicroSecond)
 {
-
-	//if (mMicroSecond > 0)
-	//	usleep(mMicroSecond * 1000);
-	//else
-	//	usleep(5 * 1000);
-
-
 	if (mMicroSecond > 0)
-	{
-		std::this_thread::sleep_for(std::chrono::milliseconds(mMicroSecond));
-	}
+		usleep(mMicroSecond * 1000);
 	else
-	{
-		std::this_thread::sleep_for(std::chrono::milliseconds(5));
-	}
+		usleep(5 * 1000);
 }
 
 bool GetLocalAdaptersInfo(string& strIPList)
 {
-	struct ifaddrs *ifaddr, *ifa;
+	struct ifaddrs* ifaddr, * ifa;
 
 	int family, s;
 
-	char szAllIPAddress[4096]={0};
-	char host[NI_MAXHOST] = {0};
+	char szAllIPAddress[4096] = { 0 };
+	char host[NI_MAXHOST] = { 0 };
 
-	if (getifaddrs(&ifaddr) == -1) 
+	if (getifaddrs(&ifaddr) == -1)
 	{ //通过getifaddrs函数得到所有网卡信息
-  		return false ;
- 	}
+		return false;
+	}
 
-	for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) 
+	for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next)
 	{ //做链表做循环
 
 		if (ifa->ifa_addr == NULL) //判断地址是否为空
- 			continue;
+			continue;
 
 		family = ifa->ifa_addr->sa_family; //得到IP地址的协议族
- 
-		if (family == AF_INET ) 
+
+		if (family == AF_INET)
 		{ //判断协议族是AF_INET还是AF_INET6
-	        memset(host,0x00, NI_MAXHOST);
-			 
- 		    //通过getnameinfo函数得到对应的IP地址。NI_MAXHOST为宏定义，值为1025. NI_NUMERICHOST宏定义，和NI_NUMERICSERV对应，都试一下就知道了。
- 			s = getnameinfo(ifa->ifa_addr,
- 				(family == AF_INET) ? sizeof(struct sockaddr_in) :
- 				sizeof(struct sockaddr_in6),
- 				host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
+			memset(host, 0x00, NI_MAXHOST);
 
-			 if( !(strcmp(host,"127.0.0.1") == 0 || strcmp(host, "0.0.0.0") == 0) )
-			 {
-			   strcat(szAllIPAddress,host);
-			   strcat(szAllIPAddress,",");
-			 }	
-			 
-			 if (s != 0) 
-			 {
+			//通过getnameinfo函数得到对应的IP地址。NI_MAXHOST为宏定义，值为1025. NI_NUMERICHOST宏定义，和NI_NUMERICSERV对应，都试一下就知道了。
+			s = getnameinfo(ifa->ifa_addr,
+				(family == AF_INET) ? sizeof(struct sockaddr_in) :
+				sizeof(struct sockaddr_in6),
+				host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
+
+			if (!(strcmp(host, "127.0.0.1") == 0 || strcmp(host, "0.0.0.0") == 0))
+			{
+				strcat(szAllIPAddress, host);
+				strcat(szAllIPAddress, ",");
+			}
+
+			if (s != 0)
+			{
 				printf("getnameinfo() failed: %s\n", gai_strerror(s));
-  			 }
-       	}
+			}
+		}
 	}
-	WriteLog(Log_Debug, "szAllIPAddress = %s ",szAllIPAddress);
+	WriteLog(Log_Debug, "szAllIPAddress = %s ", szAllIPAddress);
 	strIPList = szAllIPAddress;
-	
-    return true ;
-}
 
+	return true;
+}
 #endif
 
 //无锁查找，在外层已经有锁
@@ -401,14 +381,46 @@ CMediaStreamSource_ptr CreateMediaStreamSource(char* szURL, uint64_t nClient, Me
 	return pXHClient;
 }
 
+
+
+bool isURLWithProtocol(const std::string& str) {
+	// 判断字符串是否以协议开头，比如 "rtsp://"
+	return (str.substr(0, 7) == "rtsp://" || str.substr(0, 7) == "http://" || str.substr(0, 7) == "rtmp://");
+}
+
+
+std::string getPortionAfterPort(const std::string& str) {
+	size_t startPos = str.find(':', 6); // 从第6个字符开始查找冒号，跳过协议部分
+	if (startPos == std::string::npos) {
+		return ""; // 找不到冒号，返回空字符串
+	}
+
+	size_t endPos = str.find('/', startPos); // 从冒号后面查找第一个斜杠
+	if (endPos == std::string::npos) {
+		return ""; // 找不到斜杠，返回空字符串
+	}
+
+	return str.substr(endPos); // 提取斜杠后面的部分
+}
+
 CMediaStreamSource_ptr GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound = false)
 {
 	std::lock_guard<std::mutex> lock(ABL_CMediaStreamSourceMapLock);
+	std::string path = "";
+	if (isURLWithProtocol(szURL)) {
+		//std::cout << "Input string is a URL with protocol." << std::endl;
+		path = getPortionAfterPort(szURL);
+		//	std::cout << "Extracted path: " << path << std::endl;
+	}
+	else {
+		//std::cout << "Input string is a simple path." << std::endl;
+		path = szURL;
+	}
 
-	
+
 	CMediaStreamSource_ptr   pClient = NULL;
  
-	auto iterator1 = xh_ABLMediaStreamSourceMap.find(szURL);
+	auto iterator1 = xh_ABLMediaStreamSourceMap.find(path.c_str());
 	if (iterator1 != xh_ABLMediaStreamSourceMap.end())
 	{
 		pClient = (*iterator1).second;
@@ -2191,27 +2203,6 @@ bool  CheckSSRCAlreadyUsed(int nSSRC, bool bLockFlag)
 	return bRet;
 }
 
-bool  DeleteNetRevcBaseClientByPlayerID(char* szPlayerID)
-{
-	std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
-
-	CNetRevcBase_ptrMap::iterator iterator1;
-	bool                 bRet = false;
-	CNetRevcBase_ptr     pClient = NULL;
-
-	for (iterator1 = xh_ABLNetRevcBaseMap.begin(); iterator1 != xh_ABLNetRevcBaseMap.end(); iterator1++)
-	{
-		pClient = (*iterator1).second;
-		if (pClient && strlen(szPlayerID) > 0 && strcmp(pClient->webRtcCallStruct.playerID, szPlayerID) == 0)
-		{
-			bRet = true;
-			pDisconnectBaseNetFifo.push((unsigned char*)&pClient->nClient, sizeof(pClient->nClient));
-			WriteLog(Log_Debug, "DeleteNetRevcBaseClientByPlayerID() szPlayerID = %s  ", szPlayerID);
-		}
-	}
-	return bRet;
-}
-
 
 //查找某一个网络类型的对象总数
 int  GetNetRevcBaseClientCountByNetType(NetBaseNetType netType,bool bLockFlag)
@@ -2692,12 +2683,13 @@ void* ABLMedisServerProcessThread(void* lpVoid)
 	int nCheckNetRevcBaseClientDisconnectTime = 0;
 	int nReConnectStreamProxyTimer = 0;
 	int nCreateHttpClientTimer = 0;
-	int nDeleteWebRtcPlayerTimer = 0;
+
 	ABL_bExitMediaServerRunFlag = false;
 	unsigned char* pData = NULL;
 	char           szDeleteMediaSource[512] = { 0 };
 	int            nLength;
 	uint64_t       nClient;
+	char           szWebRtcURL[512] = { 0 };
 	MessageNoticeStruct msgNotice;
 
 	while (ABL_bMediaServerRunFlag)
@@ -2752,22 +2744,7 @@ void* ABLMedisServerProcessThread(void* lpVoid)
 			}
 		}
 
-		if (nDeleteWebRtcPlayerTimer >= 10 * 2)
-		{
-			nDeleteWebRtcPlayerTimer = 0;
-			while ((pData = pWebRtcDisconnectFifo.pop(&nLength)) != NULL)
-			{
-				if (nLength > 0)
-				{
-					char szPlayerID[256] = { 0 };
-					memcpy(szPlayerID, pData, nLength);
-					WriteLog(Log_Debug, "删除webrtc 对象 szPlayerID = %s ", szPlayerID);
-					WebRtcEndpoint::getInstance().stopWebRtcPlay(szPlayerID);
-				}
-			}
-		}
-
-		nDeleteWebRtcPlayerTimer++;
+	
 		nDeleteBreakTimer++;
 		nCheckNetRevcBaseClientDisconnectTime++;
 		nReConnectStreamProxyTimer++;
@@ -3228,8 +3205,7 @@ void FindHistoryPictureFile(char* szPicturePath)
 
 void WebRtcCallBack(const char* callbackJson, void* pUserHandle)
 {
-	WriteLog(Log_Debug, "WebRtcCallBack ：%s ", callbackJson);
-
+	WriteLog(Log_Debug, " ----- WebRtcCallBack ----- ：\r\n%s ", callbackJson);
 	if (strlen(callbackJson) > 0 /* && callbackJson[0] == '{' && callbackJson[strlen(callbackJson) - 1] == '}' */)
 	{
 		WebRtcCallStruct callbackStruct;
@@ -3248,14 +3224,14 @@ void WebRtcCallBack(const char* callbackJson, void* pUserHandle)
 				strcpy(callbackStruct.stream, doc["stream"].GetString());
 		}
 
-		if (callbackStruct.eventID == 1)
+		if (callbackStruct.eventID == 2)
 		{//创建webrtc播放
 			CMediaStreamSource_ptr pMediaSource = GetMediaStreamSource(callbackStruct.stream, false);
 			if (pMediaSource == NULL)
 				WriteLog(Log_Debug, "不存在流 %s ", callbackStruct.stream);
 			else
 			{
-				if (strcmp(pMediaSource->m_mediaCodecInfo.szVideoName, "H264") == 0)
+				if (strcmp(pMediaSource->m_mediaCodecInfo.szVideoName, "H264") == 0 && pMediaSource->bCreateWebRtcPlaySourceFlag.load() == false)
 				{
 					CNetRevcBase_ptr pClient = CreateNetRevcBaseClient(NetBaseNetType_NetClientWebrtcPlayer, 0, 0, "", 0, callbackStruct.stream);
 					if (pClient != NULL)
@@ -3263,18 +3239,42 @@ void WebRtcCallBack(const char* callbackJson, void* pUserHandle)
 						WriteLog(Log_Debug, "创建webrtc播放  %s ", callbackStruct.stream);
 						memcpy((char*)&pClient->webRtcCallStruct, (char*)&callbackStruct, sizeof(WebRtcCallStruct));
 					}
+					pMediaSource->nWebRtcPlayerCount++;
 				}
 				else
-					WriteLog(Log_Debug, "媒体源 %s 的视频格式为 %s ,不支持WebRTC播放，必须为H264 ", callbackStruct.stream, pMediaSource->m_mediaCodecInfo.szVideoName);
+				{
+					if (strcmp(pMediaSource->m_mediaCodecInfo.szVideoName, "H264") == 0 && pMediaSource->bCreateWebRtcPlaySourceFlag.load() == true)
+					{
+						pMediaSource->nWebRtcPlayerCount++;
+						WriteLog(Log_Debug, "媒体源 %s 的视频格式为 %s ,已经创建了webrtc 播放媒体源 ", callbackStruct.stream, pMediaSource->m_mediaCodecInfo.szVideoName);
+					}
+					else
+						WriteLog(Log_Debug, "媒体源 %s 的视频格式为 %s ,不支持WebRTC播放，必须为H264 ", callbackStruct.stream, pMediaSource->m_mediaCodecInfo.szVideoName);
+				}
 			}
 		}
-		else if (callbackStruct.eventID == 5 || callbackStruct.eventID == 3)
+		else if (callbackStruct.eventID == 5)
 		{//删除webrtc播放
-			DeleteNetRevcBaseClientByPlayerID(callbackStruct.playerID);
-			pWebRtcDisconnectFifo.push((unsigned char*)callbackStruct.playerID, strlen(callbackStruct.playerID));
+			CMediaStreamSource_ptr pMediaSource = GetMediaStreamSource(callbackStruct.stream, false);
+			if (pMediaSource != NULL)
+			{
+				pMediaSource->nWebRtcPlayerCount--;
+				if (pMediaSource->nWebRtcPlayerCount <= 0)
+				{//统计出无人观看时
+					pMediaSource->nWebRtcPlayerCount = 0;
+					pMediaSource->DeleteClientFromMap(pMediaSource->nWebRtcPushStreamID);
+					pMediaSource->bCreateWebRtcPlaySourceFlag.exchange(false);
+					DeleteNetRevcBaseClient(pMediaSource->nWebRtcPushStreamID);
+					WriteLog(Log_Debug, "媒体源 %s , pMediaSource->nWebRtcPlayerCount = %d  已经无人观看，把 nClient = %llu 从 发送线程池移除  ", callbackStruct.stream, pMediaSource->nWebRtcPlayerCount, pMediaSource->nWebRtcPushStreamID);
+				}
+			}
 		}
+		else if (callbackStruct.eventID == 7)
+		{//删除webrtc媒体源
+
 	}
-};
+}
+ };
 
 #ifdef OS_System_Windows
 int _tmain(int argc, _TCHAR* argv[])
@@ -3291,9 +3291,12 @@ ABL_Restart:
 	
 #ifdef OS_System_Windows
 
-	WebRtcEndpoint::getInstance().init(R"({"webrtcPort":8000})", [=](const char* callbackJson, void* pUserHandle) {
+
+
+	WebRtcEndpoint::getInstance().init(R"({"webrtcPort":8100})", [=](const char* callbackJson, void* pUserHandle) {
 		WebRtcCallBack(callbackJson, pUserHandle);
 		});
+
 	//鼠标点击控制台窗口，不会再卡住 
 	DWORD mode;
 	HANDLE hstdin = GetStdHandle(STD_INPUT_HANDLE);

@@ -48,6 +48,8 @@ class NullEncoder : public webrtc::VideoEncoder {
 			return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;		
 		}
 
+		
+
 		// compute frametype
 		EncodedVideoI420Buffer* encodedBuffer = (EncodedVideoI420Buffer*)buffer->GetI420();
 		const uint8_t* data = encodedBuffer->DataY();

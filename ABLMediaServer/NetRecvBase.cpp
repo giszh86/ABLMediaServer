@@ -989,3 +989,42 @@ bool  CNetRevcBase::GetH265VPSSPSPPS(char* szSDPString, int  nVideoPayload)
 	}
 	return m_bHaveSPSPPSFlag;
 }
+
+//检查SPS的位置 
+int  CNetRevcBase::FindSPSPositionPos(char* szVideoName, unsigned char* pVideo, int nLength)
+{
+	int nPos = 0;
+	bool bVideoIsSPSFlag = false;
+	unsigned char  nFrameType = 0x00;
+
+	for (int i = 0; i < nLength; i++)
+	{
+		if (memcmp(pVideo + i, szVideoFrameHead, 4) == 0)
+		{//找到帧片段
+			if (strcmp(szVideoName, "H264") == 0)
+			{
+				nFrameType = (pVideo[i + 4] & 0x1F);
+				if (nFrameType == 7)
+				{//SPS 
+					nPos = i;
+					continue;
+				}
+			}
+			else if (strcmp(szVideoName, "H265") == 0)
+			{
+				nFrameType = (pVideo[i + 4] & 0x7E) >> 1;
+				if (nFrameType == 33)
+				{//SPS   PPS   IDR 
+					nPos = i;
+					continue;
+				}
+			}
+		}
+
+		//不需要全部检查完毕，就可以判断一帧类型
+		if (i >= 256)
+			break;
+	}
+
+	return nPos;
+}
