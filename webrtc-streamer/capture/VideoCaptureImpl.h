@@ -7,6 +7,7 @@
 #include <memory>
 #include <mutex>
 #include <atomic>
+#include <thread>
 
 #include "libyuv.h"
 #include "rtc_base/thread.h"

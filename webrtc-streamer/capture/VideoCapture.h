@@ -5,11 +5,16 @@
 #include <string>
 #include <mutex>
 
+#if (defined _WIN32 || defined _WIN64)
 
 #ifdef   WEBRTCSDK_EXPORTS
 #define WEBRTCSDK_EXPORTSIMPL __declspec(dllexport)
 #else
 #define WEBRTCSDK_EXPORTSIMPL __declspec(dllimport)
+#endif
+#else
+
+#define WEBRTCSDK_EXPORTSIMPL __attribute__((visibility("default")))
 #endif
 
 

@@ -1,261 +1,155 @@
-cmake_minimum_required (VERSION 3.0.0)
-project (webrtc-streamer)
+# 设置CMake的最低版本要求
+cmake_minimum_required(VERSION 3.0.0)
 
-set (WEBRTCROOT "/home/server/docker-compose/webrtc2021/webrtc-checkout" CACHE STRING "WEBRTC root directory")
-set (WEBRTCDESKTOPCAPTURE "OFF" CACHE STRING "WEBRTC Desktop capture")
-if(NOT CMAKE_BUILD_TYPE)
-set (CMAKE_BUILD_TYPE "Release")
+# 设置项目的名称
+project(webrtc-streamer)
+
+# 设置编译器选项
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++17 -fPIC")
+set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-fPIC")
+
+# 设置默认构建类型
+set(default_build_type "Release")
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  message(STATUS "未指定构建类型，设置为 '${default_build_type}'。")
+  set(CMAKE_BUILD_TYPE "${default_build_type}" CACHE
+      STRING "选择构建类型." FORCE)
+  # 设置CMake-GUI中可选的构建类型
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
+    "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
-MESSAGE("CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}\nWEBRTCROOT = ${WEBRTCROOT}\nWEBRTCDESKTOPCAPTURE= ${WEBRTCDESKTOPCAPTURE}\nCMAKE_CXX_COMPILER_ID=${CMAKE_CXX_COMPILER_ID}")
 
-set (CMAKE_POSITION_INDEPENDENT_CODE ON)
-set (CMAKE_CXX_STANDARD 20)
-set (CMAKE_CXX_EXTENSIONS OFF)
-set (ALSA_FOUND FALSE)
-# build version identifier
-find_package(Git)
-if(GIT_FOUND)
-    EXECUTE_PROCESS(COMMAND ${GIT_EXECUTABLE} submodule update --init)
-    EXECUTE_PROCESS(COMMAND ${GIT_EXECUTABLE} describe --tags --always --dirty OUTPUT_VARIABLE PROJECTVERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
-    set (VERSION "${PROJECTVERSION}/${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
-    
-    EXECUTE_PROCESS(COMMAND ${GIT_EXECUTABLE} -C civetweb describe --tags --always --dirty OUTPUT_VARIABLE CIVETVERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
-    set (VERSION "${VERSION} civetweb@${CIVETVERSION}")
-
-    EXECUTE_PROCESS(COMMAND ${GIT_EXECUTABLE} -C ${WEBRTCROOT}/src describe --tags --always --dirty OUTPUT_VARIABLE WEBRTCVERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
-    set (VERSION "${VERSION} webrtc@${WEBRTCVERSION}")
-
-    EXECUTE_PROCESS(COMMAND ${GIT_EXECUTABLE} -C live555helper describe --tags --always --dirty OUTPUT_VARIABLE LIVEVERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
-    set (VERSION "${VERSION} live555helper@${LIVEVERSION}")
-endif()
-add_definitions(-DVERSION=\"${VERSION}\")
-
-# set CMAKE_FIND_ROOT_PATH to search package in WebRTC sysroot
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "armv.*")
-  set (CMAKE_FIND_ROOT_PATH ${WEBRTCROOT}/src/build/linux/debian_bullseye_arm-sysroot)
-elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64")
-  set (CMAKE_FIND_ROOT_PATH ${WEBRTCROOT}/src/build/linux/debian_bullseye_arm64-sysroot)
-endif()
-MESSAGE("CMAKE_FIND_ROOT_PATH = ${CMAKE_FIND_ROOT_PATH}")
-
-# alsa ?
-
-MESSAGE("ALSA_FOUND = ${ALSA_FOUND}")
-
-# pulse ?
-find_package(PulseAudio QUIET)
-MESSAGE("PulseAudio_FOUND = ${PulseAudio_FOUND}")
-
-# webrtc build
-if (NOT EXISTS ${WEBRTCROOT}/src/out/${CMAKE_BUILD_TYPE}/args.gn)
-  set (WEBRTCARGS rtc_include_tests=false\nrtc_enable_protobuf=false\nrtc_build_examples=false\nrtc_build_tools=false\ntreat_warnings_as_errors=false\nrtc_enable_libevent=false\nrtc_build_libevent=false\n)
-  set (WEBRTCARGS use_custom_libcxx=false\n${WEBRTCARGS})
-  # debug/release
-  if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    set (WEBRTCARGS is_debug=false\n${WEBRTCARGS})
-  else()
-    set (WEBRTCARGS is_debug=true\n${WEBRTCARGS})
-  endif()
-
-  # enable H264 support
-  set (WEBRTCARGS is_chrome_branded=true\n${WEBRTCARGS})
-  if (CMAKE_SYSTEM_PROCESSOR MATCHES "armv6.*")
-    set(ENV{PATH} "${WEBRTCROOT}/src/third_party/llvm-build/Release+Asserts/bin:$ENV{PATH}")
-    file(READ ${WEBRTCROOT}/src/third_party/ffmpeg/chromium/scripts/build_ffmpeg.py filecontent)
-    string(REPLACE "--enable-armv6t2" "--disable-armv6t2" filecontent "${filecontent}")
-    string(REPLACE "--enable-thumb" "--disable-thumb" filecontent "${filecontent}")
-    string(REPLACE "--extra-cflags=-march=armv7-a" "--extra-cflags=-march=armv6" filecontent "${filecontent}")
-    string(REPLACE "debian_sid_arm-sysroot" "debian_bullseye_arm-sysroot" filecontent "${filecontent}")
-    file(WRITE ${WEBRTCROOT}/src/third_party/ffmpeg/chromium/scripts/build_ffmpeg.py "${filecontent}")
-    EXECUTE_PROCESS(WORKING_DIRECTORY ${WEBRTCROOT}/src/third_party/ffmpeg COMMAND python3 chromium/scripts/build_ffmpeg.py linux arm --config-only)
-    EXECUTE_PROCESS(WORKING_DIRECTORY ${WEBRTCROOT}/src/third_party/ffmpeg COMMAND chromium/scripts/copy_config.sh)
-  endif()
-
-  # sound support
-  if (APPLE)
-    set (WEBRTCARGS rtc_include_internal_audio_device=true\n${WEBRTCARGS})
-    set (WEBRTCARGS rtc_include_pulse_audio=true\n${WEBRTCARGS})
-  elseif (NOT WIN32)
-    if (NOT PulseAudio_FOUND)
-      set (WEBRTCARGS rtc_include_pulse_audio=false\n${WEBRTCARGS})
-    endif()
-   
-     set (WEBRTCARGS rtc_include_internal_audio_device=false\n${WEBRTCARGS})
-
-  endif()
-
-  # compilation mode depending on target
-  if(CMAKE_SYSTEM_PROCESSOR MATCHES "armv6.*")
-    set (WEBRTCARGS target_cpu="arm"\narm_version=6\narm_float_abi="hard"\nenable_libaom=false\n${WEBRTCARGS})
-  elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "armv.*")
-    set (WEBRTCARGS target_cpu="arm"\n${WEBRTCARGS})
-  elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64")
-    set (WEBRTCARGS target_cpu="arm64"\n${WEBRTCARGS})
-  endif()
-  if (DEFINED CMAKE_FIND_ROOT_PATH)
-    set (WEBRTCARGS use_sysroot=true\n${WEBRTCARGS})
-  else()
-    set (WEBRTCARGS use_sysroot=false\n${WEBRTCARGS})
-  endif()
-  set (WEBRTCARGS is_clang=true\n${WEBRTCARGS})
-
-  # screen capture support
-  find_package(PkgConfig QUIET)
-  pkg_check_modules(GTK3 QUIET gtk+-3.0)
-  MESSAGE("GTK3_FOUND = ${GTK3_FOUND}")
-  if(NOT GTK3_FOUND OR (WEBRTCDESKTOPCAPTURE STREQUAL "OFF"))
-    set (WEBRTCARGS rtc_use_x11=false\nrtc_use_pipewire=false\n${WEBRTCARGS})
-  endif()
-
-  # write conf file
-  FILE(WRITE ${WEBRTCROOT}/src/out/${CMAKE_BUILD_TYPE}/args.gn ${WEBRTCARGS})
-endif() 
-
-set (WEBRTCOBJS ${WEBRTCROOT}/src/out/${CMAKE_BUILD_TYPE}/obj)
-
-if (NOT EXISTS ${WEBRTCOBJS}/${CMAKE_STATIC_LIBRARY_PREFIX}webrtc${CMAKE_STATIC_LIBRARY_SUFFIX})
-  if (WIN32)
-    SET (SHELLCOMMAND cmd /c )
-
-    # patch
-    file(READ ${WEBRTCROOT}/src/modules/desktop_capture/win/full_screen_win_application_handler.cc filecontent)
-    string(REPLACE "#include <vector>" "#include <vector>\n#include <cwctype>" filecontent "${filecontent}")
-    file(WRITE ${WEBRTCROOT}/src/modules/desktop_capture/win/full_screen_win_application_handler.cc "${filecontent}")
-  endif()
-  EXECUTE_PROCESS(WORKING_DIRECTORY ${WEBRTCROOT}/src/out/${CMAKE_BUILD_TYPE} COMMAND ${SHELLCOMMAND} gn gen .)
-  
-  SET(NINJA_TARGET webrtc rtc_json jsoncpp builtin_video_decoder_factory builtin_video_encoder_factory peerconnection p2p_server_utils task_queue default_task_queue_factory)
-  EXECUTE_PROCESS(WORKING_DIRECTORY ${WEBRTCROOT}/src/out/${CMAKE_BUILD_TYPE} COMMAND ninja -l10 ${NINJA_TARGET})
-endif() 
+# 设置WEBRTC的根目录
+set(WEBRTC_ROOT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/webrtc/ CACHE STRING "WEBRTC root directory")
 
 
+# 添加选项，用于选择生成动态库、静态库或可执行文件
+option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
+option(BUILD_STATIC_LIBS "Build using static libraries" OFF)
+option(BUILD_EXECUTABLE "Build executable" OFF)
+
+# 收集额外的对象文件
 FILE(GLOB_RECURSE WEBRTJSONCPPCOBJS ${WEBRTCOBJS}/third_party/jsoncpp/jsoncpp/*${CMAKE_C_OUTPUT_EXTENSION})
 FILE(GLOB_RECURSE WEBRTP2POBJ ${WEBRTCOBJS}/p2p/p2p_server_utils/*${CMAKE_C_OUTPUT_EXTENSION})
-SET (WEBRTCEXTRAOBJS ${WEBRTJSONCPPCOBJS} ${WEBRTP2POBJ} ${WEBRTTASK})	
+SET(WEBRTCEXTRAOBJS ${WEBRTJSONCPPCOBJS} ${WEBRTP2POBJ} ${WEBRTTASK})
 
-# project target
-FILE(GLOB SOURCE src/*.cpp)
-add_executable (${CMAKE_PROJECT_NAME} ${SOURCE} ${WEBRTCEXTRAOBJS})
-target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE inc) 
+# 设置项目的目标
+FILE(GLOB SOURCE 
+  ${CMAKE_CURRENT_SOURCE_DIR}/capture/*.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
+ ${CMAKE_CURRENT_SOURCE_DIR}/civetweb/src/*.*
+)
 
-# webrtc 
-set (WEBRTCINCLUDE ${WEBRTCROOT}/src ${WEBRTCROOT}/src/third_party/abseil-cpp ${WEBRTCROOT}/src/third_party/jsoncpp/source/include  ${WEBRTCROOT}/src/third_party/jsoncpp/generated ${WEBRTCROOT}/src/third_party/libyuv/include)
-target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${WEBRTCINCLUDE})
-target_link_libraries (${CMAKE_PROJECT_NAME} ${WEBRTCOBJS}/${CMAKE_STATIC_LIBRARY_PREFIX}webrtc${CMAKE_STATIC_LIBRARY_SUFFIX} ${WEBRTCOBJS}/rtc_base/${CMAKE_STATIC_LIBRARY_PREFIX}rtc_json${CMAKE_STATIC_LIBRARY_SUFFIX}) 
-add_definitions(-DHAVE_JPEG)
 
-# thread
-set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
-set(THREADS_PREFER_PTHREAD_FLAG TRUE)
-find_package (Threads)
-target_link_libraries (${CMAKE_PROJECT_NAME} Threads::Threads) 
 
-# civetweb
-add_library (civetweb STATIC civetweb/src/civetweb.c civetweb/src/CivetServer.cpp)	
-add_definitions(-DOPENSSL_API_1_1 -DUSE_WEBSOCKET)
-target_link_libraries (${CMAKE_PROJECT_NAME} civetweb) 
-target_include_directories(civetweb PUBLIC civetweb/include) 
-
-# rtmp ?
-find_package(PkgConfig QUIET)
-pkg_check_modules(RTMP QUIET librtmp)
-MESSAGE("RTMP_FOUND = ${RTMP_FOUND}")
-if (RTMP_FOUND)
-  add_definitions(-DHAVE_RTMP)
-  target_link_libraries (${CMAKE_PROJECT_NAME} ${RTMP_LIBRARIES}) 
+# 设置预处理定义
+if(WIN32)
+  add_definitions(
+    NDEBUG
+    _CONSOLE
+    _CRT_SECURE_NO_WARNINGS
+    CUDNN_HALF
+    CUDNN
+    GPU
+    _TIMESPEC_DEFINED
+    _SCL_SECURE_NO_WARNINGS
+    WIN32
+    WIN64
+    USE_WEBSOCKET
+  )
+   message("WIN32")
+elseif(UNIX AND NOT APPLE)
+  add_definitions(
+    -DLINUX
+    -DUSE_WEBSOCKET
+    -DWEBRTC_LINUX
+    -DWEBRTC_POSIX  
+    -DNO_SSL   
+  )
+  message("UNIX AND NOT APPLE")
 endif()
 
-# compiler specific
-if (WIN32)
-    # overide compilation flags
-    set(CompilerFlags CMAKE_CXX_FLAGS_DEBUG CMAKE_C_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE CMAKE_C_FLAGS_RELEASE)
-    foreach(CompilerFlag ${CompilerFlags})
-      string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")
-    endforeach()
 
-    # getopt
-    add_library (getopt getopt/getopt.c)
-    target_include_directories(getopt PUBLIC getopt) 
-    target_link_libraries (${CMAKE_PROJECT_NAME} getopt)
-
-    # webrtc
-    add_definitions(-DWEBRTC_LINUX-EHsc -DNOMINMAX -D__PRETTY_FUNCTION__=__FUNCTION__ -D_HAS_ITERATOR_DEBUGGING=0)
-    target_link_libraries (${CMAKE_PROJECT_NAME} secur32 dmoguids wmcodecdspuuid strmiids msdmo winmm dxgi d3d11 iphlpapi dwmapi)
-elseif (APPLE)
-    add_definitions(-DNEED_XLOCALE_H=1)
-    # webrtc
-    add_definitions(-DHAVE_SOUND)
-    add_definitions(-DWEBRTC_MAC -DWEBRTC_POSIX -fno-rtti)
-    # civetweb
-    add_definitions(-DCRYPTO_LIB="libcrypto.so.1.1" -DSSL_LIB="libssl.so.1.1")
-
-    find_library(CORE_FOUNDATION Foundation)
-    find_library(APPLICATION_SERVICES ApplicationServices)
-    find_library(CORE_SERVICES CoreServices)
-    find_library(CORE_AUDIO CoreAudio)
-    find_library(AUDIO_TOOLBOX AudioToolBox)
-    target_link_libraries (${CMAKE_PROJECT_NAME} ${CORE_FOUNDATION} ${APPLICATION_SERVICES} ${CORE_SERVICES}
-                           ${CORE_AUDIO} ${AUDIO_TOOLBOX})
+# 根据选项生成对应的目标
+if (BUILD_SHARED_LIBS)
+    add_library(${CMAKE_PROJECT_NAME} ${LIB_TYPE} ${SOURCE} ${WEBRTCEXTRAOBJS})
+    set(EXTRA_LIBS ${EXTRA_LIBS} ${CMAKE_DL_LIBS})
+elseif (BUILD_STATIC_LIBS)
+    add_library(${CMAKE_PROJECT_NAME} STATIC ${SOURCE} ${WEBRTCEXTRAOBJS})
 else()
-    # libv4l2cpp
-    add_definitions(-DHAVE_V4L2)
-    aux_source_directory(libv4l2cpp/src LIBSRC_FILES)
-    include_directories("libv4l2cpp/inc")
-    add_library(libv4l2cpp STATIC ${LIBSRC_FILES})
-    target_link_libraries (${PROJECT_NAME} libv4l2cpp) 
-
-    # webrtc
-    MESSAGE("webrtc -DWEBRTC_LINUX ")
-    add_definitions(-DWEBRTC_LINUX -DWEBRTC_POSIX -fno-rtti)
-    if (CMAKE_SYSTEM_PROCESSOR MATCHES "armv6.*")
-        add_definitions(-marm -march=armv6 -mfpu=vfp -mfloat-abi=hard)
-    endif()
-    target_link_libraries (${CMAKE_PROJECT_NAME} X11)
-    target_link_libraries (${CMAKE_PROJECT_NAME} glib-2.0)
-    # civetweb
-    add_definitions(-DCRYPTO_LIB="libcrypto.so.1.1" -DSSL_LIB="libssl.so.1.1")
-    target_link_libraries (${CMAKE_PROJECT_NAME} dl)
+    add_executable(${CMAKE_PROJECT_NAME} ${SOURCE} ${WEBRTCEXTRAOBJS})
 endif()
 
-# prometheus 
-include(GenerateExportHeader)
-include(GNUInstallDirs)
-set(PROJECT_NAME prometheus-cpp)
-add_subdirectory(prometheus-cpp/core EXCLUDE_FROM_ALL)
-target_link_libraries (${CMAKE_PROJECT_NAME} core)  
-target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE prometheus-cpp/core/include)
 
-# live555helper 
-include_directories(${WEBRTCROOT}/src/third_party/boringssl/src/include)
-add_subdirectory(live555helper EXCLUDE_FROM_ALL)
-target_link_libraries (${CMAKE_PROJECT_NAME} liblive555helper ${WEBRTCOBJS}/third_party/boringssl/${CMAKE_STATIC_LIBRARY_PREFIX}boringssl${CMAKE_STATIC_LIBRARY_SUFFIX}) 
-add_definitions(-DHAVE_LIVE555)
 
-# static link of libatomic on armv6l
-if (CMAKE_SYSTEM_PROCESSOR MATCHES "armv6.*")
-    target_link_libraries (${CMAKE_PROJECT_NAME} -Wl,-Bstatic -latomic -Wl,-Bdynamic)
-endif()
-# static link of stdc++ if available
+target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
+   ${CMAKE_CURRENT_SOURCE_DIR}/
+  ${CMAKE_CURRENT_SOURCE_DIR}/capture
+    ${CMAKE_CURRENT_SOURCE_DIR}/civetweb/include
+  ${WEBRTC_ROOT_PATH}/include
+  ${WEBRTC_ROOT_PATH}/include/third_party/abseil-cpp
+  ${WEBRTC_ROOT_PATH}/include/third_party/libyuv/include
+  ${WEBRTC_ROOT_PATH}/include/third_party/jsoncpp/source/include 
+ )
+
+
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE 
+${WEBRTC_ROOT_PATH}/lib/linux86/json.o
+${WEBRTC_ROOT_PATH}/lib/linux86/json_reader.o
+${WEBRTC_ROOT_PATH}/lib/linux86/json_value.o
+${WEBRTC_ROOT_PATH}/lib/linux86/json_writer.o
+${WEBRTC_ROOT_PATH}/lib/linux86/libwebrtc.a
+) # 手动指定要链接的 webrtc 库
+
+
+# 其他的链接库，比如Boost和线程库
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE 
+    dl
+    m
+    X11
+    pthread
+    rt
+    atomic
+    dl
+    glib-2.0
+    rt
+    z
+)
+
+# 如果可用，使用静态链接的stdc++
 if (NOT APPLE)
-include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-static-libgcc" CXX_SUPPORTS_STATIC_LIBGCC)
-if (CXX_SUPPORTS_STATIC_LIBGCC) 
-  target_link_libraries (${CMAKE_PROJECT_NAME} -static-libgcc)
-endif()    
-CHECK_CXX_COMPILER_FLAG("-static-libstdc++" CXX_SUPPORTS_STATIC_LIBSTDCPP)
-if (CXX_SUPPORTS_STATIC_LIBSTDCPP) 
-  target_link_libraries (${CMAKE_PROJECT_NAME} -static-libstdc++)
-endif()
+    include(CheckCXXCompilerFlag)
+    CHECK_CXX_COMPILER_FLAG("-static-libgcc" CXX_SUPPORTS_STATIC_LIBGCC)
+    if (CXX_SUPPORTS_STATIC_LIBGCC)
+        target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE -static-libgcc)
+    endif()
+    CHECK_CXX_COMPILER_FLAG("-static-libstdc++" CXX_SUPPORTS_STATIC_LIBSTDCPP)
+    if (CXX_SUPPORTS_STATIC_LIBSTDCPP)
+        target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE -static-libstdc++)
+    endif()
 endif()
 
-#cpack
-install (TARGETS ${CMAKE_PROJECT_NAME} RUNTIME DESTINATION .)
-install (DIRECTORY html DESTINATION .)
-install (FILES config.json DESTINATION .)
-install (FILES Procfile DESTINATION .)
-SET(CPACK_GENERATOR "TGZ")
+# 安装目标和相关文件
+# 设置安装路径
+set(INSTALL_BIN_DIR      "${CMAKE_CURRENT_LIST_DIR}" CACHE PATH "exe和dll的安装路径")
+set(INSTALL_LIB_DIR      "${CMAKE_CURRENT_LIST_DIR}" CACHE PATH "lib的安装路径")
+set(INSTALL_INCLUDE_DIR  "./"           CACHE PATH "头文件的安装路径")
+set(INSTALL_CMAKE_DIR    "./"             CACHE PATH "cmake配置的安装路径")
+
+
+install(TARGETS ${CMAKE_PROJECT_NAME} RUNTIME DESTINATION .)
+install(DIRECTORY html DESTINATION .)
+install(FILES config.json DESTINATION .)
+install(FILES Procfile DESTINATION .)
+
+#配置CPack，指定生成的包的格式、系统名称、联系方式等。
+SET(CPACK_GENERATOR "ZZC")
 SET(CPACK_SYSTEM_NAME ${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_BUILD_TYPE})
-SET(CPACK_PACKAGE_CONTACT "michel.promonet@free.fr") 
+SET(CPACK_PACKAGE_CONTACT "125388771@qq.com") 
 if(PROJECTVERSION)
     SET(CPACK_PACKAGE_VERSION "${PROJECTVERSION}")
 endif()
