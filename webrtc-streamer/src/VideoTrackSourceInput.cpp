@@ -205,7 +205,7 @@ void VideoTrackSourceInput::InputVideoFrame(uint8_t* y, int strideY, uint8_t* u,
 
 bool VideoTrackSourceInput::InputVideoFrame(unsigned char* data, size_t size, int nWidth, int nHeigh, int fps)
 {
-
+	
 	int videosize = videoFifo.GetSize();
 	int start_offset = 0;
 	webrtc::VideoFrameType frameType = webrtc::VideoFrameType::kVideoFrameDelta;
@@ -276,11 +276,15 @@ bool VideoTrackSourceInput::InputVideoFrame(unsigned char* data, size_t size, in
 	rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer = rtc::make_ref_counted<EncodedVideoFrameBuffer>(nWidth, nHeigh, imageframe, frameType);
 	//	webrtc::VideoFrame frame(buffer, webrtc::kVideoRotation_0, next_timestamp_us_);
 	//int64_t ts = rtc::TimeMillis();
+
+	
 	int64_t ts = std::chrono::high_resolution_clock::now().time_since_epoch().count() / 1000 / 1000;
 	webrtc::VideoFrame frame = webrtc::VideoFrame::Builder()
 		.set_video_frame_buffer(buffer)
 		.set_rotation(webrtc::kVideoRotation_0)
 		.set_timestamp_ms(ts)
+	    .set_ntp_time_ms(ts)
+		.set_id(ts)
 		.build();
 	OnFrame(frame);
 	return true;

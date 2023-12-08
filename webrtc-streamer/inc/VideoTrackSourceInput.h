@@ -73,5 +73,5 @@ private:
 	std::shared_ptr<std::thread>  m_thread;
 	int m_nWidth, m_nHeigh, m_fps;
 	size_t  m_fifosize = 0;
-
+	
 };

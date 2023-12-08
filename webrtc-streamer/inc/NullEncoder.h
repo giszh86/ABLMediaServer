@@ -66,7 +66,6 @@ class NullEncoder : public webrtc::VideoEncoder {
 
 		RTC_LOG(LS_VERBOSE) << "EncodedImage " << frame.id() << " " << encoded_image._frameType << " " <<  buffer->width() << "x" <<  buffer->height() << " " <<  buffer->GetI420()->StrideY();
 
-	
 
 	
 		// forward to callback
