@@ -54,7 +54,7 @@ void WebRtcEndpoint::init(const char* webrtcConfig, std::function<void(const cha
 		bool        usePlanB = false;
 		int         maxpc = 0;
 		std::string localWebrtcUdpPortRange = "0:65535";
-
+		iceServerList.push_back(std::string("turn:") + "admin:admin@175.178.213.69:3478");
 		webrtc::AudioDeviceModule::AudioLayer audioLayer = webrtc::AudioDeviceModule::kPlatformDefaultAudio;
 		webRtcServer = new PeerConnectionManager(iceServerList, config, audioLayer, publishFilter, localWebrtcUdpPortRange, useNullCodec, usePlanB, maxpc);
 		if (!webRtcServer->InitializePeerConnection())

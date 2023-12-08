@@ -32,7 +32,7 @@
 #define VERSION	 "10.0.101.1008"
 
 
-#include "./capture/VideoCapture.h"
+#include "../capture/VideoCapture.h"
 
 class PeerConnectionManager 
 {

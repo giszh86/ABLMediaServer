@@ -87,7 +87,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>./;./inc;./civetweb/include;./webrtc/include;./webrtc/include\third_party\abseil-cpp;./webrtc/include\third_party\libyuv\include;./webrtc/include\third_party\jsoncpp\source\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <IncludePath>./inc;./civetweb/include;./webrtc/include;./webrtc/include\third_party\abseil-cpp;./webrtc/include\third_party\libyuv\include;./webrtc/include\third_party\jsoncpp\source\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)bin\$(Platform)</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -173,29 +173,34 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="AudioTrackSourceInput.h" />
-    <ClInclude Include="CapturerFactory.h" />
+    <ClInclude Include="capture\FFmpegAudioCapturer.h" />
     <ClInclude Include="capture\VideoCapture.h" />
     <ClInclude Include="capture\VideoCaptureImpl.h" />
     <ClInclude Include="civetweb\include\CivetServer.h" />
     <ClInclude Include="civetweb\include\civetweb.h" />
     <ClInclude Include="civetweb\src\civetweb_private_lua.h" />
     <ClInclude Include="Dump\Crash_Dumper.h" />
-    <ClInclude Include="EncodedVideoFrameBuffer.h" />
-    <ClInclude Include="framework.h" />
-    <ClInclude Include="HttpServerRequestHandler.h" />
-    <ClInclude Include="MediaFifo.h" />
-    <ClInclude Include="NSJson.h" />
-    <ClInclude Include="NullDecoder.h" />
-    <ClInclude Include="NullEncoder.h" />
-    <ClInclude Include="PeerConnectionManager.h" />
-    <ClInclude Include="rtc_obj_sdk.h" />
-    <ClInclude Include="VcmCapturer.h" />
-    <ClInclude Include="VideoDecoderFactory.h" />
-    <ClInclude Include="VideoEncoderFactory.h" />
-    <ClInclude Include="VideoScaler.h" />
-    <ClInclude Include="VideoSource.h" />
-    <ClInclude Include="VideoTrackSourceInput.h" />
+    <ClInclude Include="inc\AudioTrackSourceInput.h" />
+    <ClInclude Include="inc\CapturerFactory.h" />
+    <ClInclude Include="inc\desktopcapturer.h" />
+    <ClInclude Include="inc\EncodedVideoFrameBuffer.h" />
+    <ClInclude Include="inc\fileaudiocapturer.h" />
+    <ClInclude Include="inc\filevideocapturer.h" />
+    <ClInclude Include="inc\framework.h" />
+    <ClInclude Include="inc\HttpServerRequestHandler.h" />
+    <ClInclude Include="inc\MediaFifo.h" />
+    <ClInclude Include="inc\NSJson.h" />
+    <ClInclude Include="inc\NullDecoder.h" />
+    <ClInclude Include="inc\NullEncoder.h" />
+    <ClInclude Include="inc\PeerConnectionManager.h" />
+    <ClInclude Include="inc\rtc_obj_sdk.h" />
+    <ClInclude Include="inc\VcmCapturer.h" />
+    <ClInclude Include="inc\VideoDecoder.h" />
+    <ClInclude Include="inc\VideoDecoderFactory.h" />
+    <ClInclude Include="inc\VideoEncoderFactory.h" />
+    <ClInclude Include="inc\VideoScaler.h" />
+    <ClInclude Include="inc\VideoSource.h" />
+    <ClInclude Include="inc\VideoTrackSourceInput.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="capture\VideoCapture.cpp" />
@@ -203,12 +208,13 @@
     <ClCompile Include="civetweb\src\CivetServer.cpp" />
     <ClCompile Include="civetweb\src\civetweb.c" />
     <ClCompile Include="Dump\Crash_Dumper.cpp" />
-    <ClCompile Include="HttpServerRequestHandler.cpp" />
-    <ClCompile Include="MediaFifo.cpp" />
-    <ClCompile Include="NSJson.cpp" />
-    <ClCompile Include="PeerConnectionManager.cpp" />
-    <ClCompile Include="rtc_obj_sdk.cpp" />
-    <ClCompile Include="VideoTrackSourceInput.cpp" />
+    <ClCompile Include="src\AudioTrackSourceInput.cpp" />
+    <ClCompile Include="src\HttpServerRequestHandler.cpp" />
+    <ClCompile Include="src\MediaFifo.cpp" />
+    <ClCompile Include="src\NSJson.cpp" />
+    <ClCompile Include="src\PeerConnectionManager.cpp" />
+    <ClCompile Include="src\rtc_obj_sdk.cpp" />
+    <ClCompile Include="src\VideoTrackSourceInput.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

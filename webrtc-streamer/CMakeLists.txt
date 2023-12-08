@@ -32,15 +32,11 @@ option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
 option(BUILD_STATIC_LIBS "Build using static libraries" OFF)
 option(BUILD_EXECUTABLE "Build executable" OFF)
 
-# 收集额外的对象文件
-FILE(GLOB_RECURSE WEBRTJSONCPPCOBJS ${WEBRTCOBJS}/third_party/jsoncpp/jsoncpp/*${CMAKE_C_OUTPUT_EXTENSION})
-FILE(GLOB_RECURSE WEBRTP2POBJ ${WEBRTCOBJS}/p2p/p2p_server_utils/*${CMAKE_C_OUTPUT_EXTENSION})
-SET(WEBRTCEXTRAOBJS ${WEBRTJSONCPPCOBJS} ${WEBRTP2POBJ} ${WEBRTTASK})
 
 # 设置项目的目标
 FILE(GLOB SOURCE 
   ${CMAKE_CURRENT_SOURCE_DIR}/capture/*.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
  ${CMAKE_CURRENT_SOURCE_DIR}/civetweb/src/*.*
 )
 
@@ -87,7 +83,7 @@ endif()
 
 
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
-   ${CMAKE_CURRENT_SOURCE_DIR}/
+   ${CMAKE_CURRENT_SOURCE_DIR}/inc
   ${CMAKE_CURRENT_SOURCE_DIR}/capture
     ${CMAKE_CURRENT_SOURCE_DIR}/civetweb/include
   ${WEBRTC_ROOT_PATH}/include

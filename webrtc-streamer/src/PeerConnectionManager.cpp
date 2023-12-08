@@ -679,6 +679,7 @@ const Json::Value PeerConnectionManager::createOffer(const std::string &peerid, 
 		webrtc::PeerConnectionInterface::RTCOfferAnswerOptions rtcoptions;
 		rtcoptions.offer_to_receive_video = 0;
 		rtcoptions.offer_to_receive_audio = 0;
+		rtcoptions.ice_restart = true;
 		std::promise<const webrtc::SessionDescriptionInterface *> localpromise;
 		rtc::scoped_refptr<CreateSessionDescriptionObserver> localSessionObserver(CreateSessionDescriptionObserver::Create(peerConnection, localpromise));
 		peerConnection->CreateOffer(localSessionObserver.get(), rtcoptions);

@@ -1,10 +1,6 @@
 #include "AudioTrackSourceInput.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/ref_counted_object.h"
-#include <modules/desktop_capture/desktop_capture_options.h>
-#include <third_party/libyuv/include/libyuv.h>
-#include "modules\desktop_capture\cropping_window_capturer.h"
-
 #include "rtc_base/thread.h"
 
 
@@ -87,26 +83,26 @@
 	 , m_previmagets(0)
 	 , m_prevts(0)
  {
-	 m_pAudioCapture = AudioCapture::CreateAudioCapture(uri, opts);
-	 if (m_pAudioCapture)
-	 {
-		 m_pAudioCapture->Init(0, 0, 0);
-		 m_pAudioCapture->RegisterPcmCallback([=](uint8_t* pcm, int datalen, int nSampleRate, int nChannel, int64_t nTimeStamp)
-			 {
-				  SendRecordedBuffer((int8_t*)pcm, (uint32_t)datalen, 16, nSampleRate, (size_t)nChannel, nTimeStamp);
-			 });
-		 m_pAudioCapture->Start();
-	 }
+	 //m_pAudioCapture = AudioCapture::CreateAudioCapture(uri, opts);
+	 //if (m_pAudioCapture)
+	 //{
+		// m_pAudioCapture->Init(0, 0, 0);
+		// m_pAudioCapture->RegisterPcmCallback([=](uint8_t* pcm, int datalen, int nSampleRate, int nChannel, int64_t nTimeStamp)
+		//	 {
+		//		  SendRecordedBuffer((int8_t*)pcm, (uint32_t)datalen, 16, nSampleRate, (size_t)nChannel, nTimeStamp);
+		//	 });
+		// m_pAudioCapture->Start();
+	 //}
 
 
  }
 
  AudioTrackSourceInput::~AudioTrackSourceInput()
  {
-	 if (m_pAudioCapture)
+	/* if (m_pAudioCapture)
 	 {
 		 m_pAudioCapture->Stop();
 
-	 }
+	 }*/
 
  }

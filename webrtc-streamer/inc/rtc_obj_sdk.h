@@ -18,7 +18,7 @@
 #include <string>
 #include <functional>
 #include <atomic>
-#include "./capture/VideoCapture.h"
+#include "../capture/VideoCapture.h"
 
 typedef std::function<void(uint8_t* y, int strideY, uint8_t* u, int strideU, uint8_t* v, int strideV, int nWidth, int nHeight)> LocalFrameCallBackFunc;
 
@@ -72,10 +72,13 @@ class WEBRTCSDK_EXPORTSIMPL WebRtcEndpoint {
 public:
 	//初始化
 	void init(const char* webrtcConfig, std::function<void(const char* callbackJson, void* pUserHandle)> callback);
+	
 	//释放
 	void Uninit();
+	
 	//主动关闭某一路播放
 	bool stopWebRtcPlay(const char* peerid);
+	
 	// 主动关闭某一个媒体源 
 	bool  deleteWebRtcSource(const char* szMediaSource);
 

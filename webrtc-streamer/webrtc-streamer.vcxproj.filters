@@ -54,59 +54,74 @@
     <ClInclude Include="capture\VideoCaptureImpl.h">
       <Filter>capture</Filter>
     </ClInclude>
-    <ClInclude Include="AudioTrackSourceInput.h">
-      <Filter>inc</Filter>
-    </ClInclude>
-    <ClInclude Include="CapturerFactory.h">
-      <Filter>inc</Filter>
-    </ClInclude>
-    <ClInclude Include="EncodedVideoFrameBuffer.h">
-      <Filter>inc</Filter>
-    </ClInclude>
-    <ClInclude Include="framework.h">
-      <Filter>inc</Filter>
-    </ClInclude>
-    <ClInclude Include="HttpServerRequestHandler.h">
-      <Filter>inc</Filter>
-    </ClInclude>
-    <ClInclude Include="NullDecoder.h">
-      <Filter>inc</Filter>
-    </ClInclude>
-    <ClInclude Include="NullEncoder.h">
-      <Filter>inc</Filter>
-    </ClInclude>
-    <ClInclude Include="PeerConnectionManager.h">
-      <Filter>inc</Filter>
-    </ClInclude>
-    <ClInclude Include="VcmCapturer.h">
-      <Filter>inc</Filter>
-    </ClInclude>
-    <ClInclude Include="VideoDecoderFactory.h">
-      <Filter>inc</Filter>
-    </ClInclude>
-    <ClInclude Include="VideoEncoderFactory.h">
-      <Filter>inc</Filter>
-    </ClInclude>
-    <ClInclude Include="VideoScaler.h">
-      <Filter>inc</Filter>
-    </ClInclude>
-    <ClInclude Include="VideoSource.h">
-      <Filter>inc</Filter>
-    </ClInclude>
-    <ClInclude Include="VideoTrackSourceInput.h">
-      <Filter>inc</Filter>
-    </ClInclude>
-    <ClInclude Include="rtc_obj_sdk.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="NSJson.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="Dump\Crash_Dumper.h">
       <Filter>dump</Filter>
     </ClInclude>
-    <ClInclude Include="MediaFifo.h">
-      <Filter>头文件</Filter>
+    <ClInclude Include="inc\AudioTrackSourceInput.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\CapturerFactory.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\desktopcapturer.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\EncodedVideoFrameBuffer.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\fileaudiocapturer.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\filevideocapturer.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\framework.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\HttpServerRequestHandler.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\MediaFifo.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\NSJson.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\NullDecoder.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\NullEncoder.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\PeerConnectionManager.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\rtc_obj_sdk.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\VcmCapturer.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\VideoDecoder.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\VideoDecoderFactory.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\VideoEncoderFactory.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\VideoScaler.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\VideoSource.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\VideoTrackSourceInput.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="capture\FFmpegAudioCapturer.h">
+      <Filter>capture</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -122,26 +137,29 @@
     <ClCompile Include="capture\VideoCaptureImpl.cpp">
       <Filter>capture</Filter>
     </ClCompile>
-    <ClCompile Include="PeerConnectionManager.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="VideoTrackSourceInput.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="HttpServerRequestHandler.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="rtc_obj_sdk.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="NSJson.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="Dump\Crash_Dumper.cpp">
       <Filter>dump</Filter>
     </ClCompile>
-    <ClCompile Include="MediaFifo.cpp">
-      <Filter>源文件</Filter>
+    <ClCompile Include="src\AudioTrackSourceInput.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\HttpServerRequestHandler.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MediaFifo.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\NSJson.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\PeerConnectionManager.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rtc_obj_sdk.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\VideoTrackSourceInput.cpp">
+      <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

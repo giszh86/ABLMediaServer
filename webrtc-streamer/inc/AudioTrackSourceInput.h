@@ -8,21 +8,17 @@
 
 #include <api/scoped_refptr.h>
 #include <api/video/i420_buffer.h>
-#include <modules/desktop_capture/desktop_capturer.h>
-#include <modules/desktop_capture/desktop_frame.h>
 #include "rtc_base/thread.h"
-#include "media/base/adapted_video_track_source.h"
 //#include "rtc_base/message_handler.h"
 
-#include "libyuv.h"
-#include "pc/video_track_source.h"
-#include "modules/desktop_capture/desktop_capture_options.h"
+
+
 #include "pc/local_audio_source.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/ref_counted_object.h"
 
-#include "AudioCapture.h"
+#include "../capture/AudioCapture.h"
 
 /*
 
@@ -66,7 +62,7 @@ protected:
 
 private:
 
-	AudioCapture* m_pAudioCapture = nullptr;
+	//AudioCapture* m_pAudioCapture = nullptr;
 
 	std::thread m_capturethread;
 	rtc::scoped_refptr<webrtc::AudioDecoderFactory> m_factory;
