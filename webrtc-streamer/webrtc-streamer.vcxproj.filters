@@ -123,6 +123,9 @@
     <ClInclude Include="capture\FFmpegAudioCapturer.h">
       <Filter>capture</Filter>
     </ClInclude>
+    <ClInclude Include="capture\AudioCapture.h">
+      <Filter>capture</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="civetweb\src\CivetServer.cpp">
@@ -159,6 +162,12 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\VideoTrackSourceInput.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="capture\AudioCapture.cpp">
+      <Filter>capture</Filter>
+    </ClCompile>
+    <ClCompile Include="src\json.cc">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

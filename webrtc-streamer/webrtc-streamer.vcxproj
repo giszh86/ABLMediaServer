@@ -168,11 +168,12 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>./webrtc/lib/$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>field_trial.obj;json.obj;json_reader.obj;json_value.obj;json_writer.obj;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>field_trial.obj;json_reader.obj;json_value.obj;json_writer.obj;%(AdditionalDependencies)</AdditionalDependencies>
       <ImportLibrary>$(SolutionDir)lib\$(Platform)\$(Configuration)\$(TargetName).lib</ImportLibrary>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="capture\AudioCapture.h" />
     <ClInclude Include="capture\FFmpegAudioCapturer.h" />
     <ClInclude Include="capture\VideoCapture.h" />
     <ClInclude Include="capture\VideoCaptureImpl.h" />
@@ -203,6 +204,7 @@
     <ClInclude Include="inc\VideoTrackSourceInput.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="capture\AudioCapture.cpp" />
     <ClCompile Include="capture\VideoCapture.cpp" />
     <ClCompile Include="capture\VideoCaptureImpl.cpp" />
     <ClCompile Include="civetweb\src\CivetServer.cpp" />
@@ -210,6 +212,7 @@
     <ClCompile Include="Dump\Crash_Dumper.cpp" />
     <ClCompile Include="src\AudioTrackSourceInput.cpp" />
     <ClCompile Include="src\HttpServerRequestHandler.cpp" />
+    <ClCompile Include="src\json.cc" />
     <ClCompile Include="src\MediaFifo.cpp" />
     <ClCompile Include="src\NSJson.cpp" />
     <ClCompile Include="src\PeerConnectionManager.cpp" />
