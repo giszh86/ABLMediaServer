@@ -265,11 +265,11 @@ int CNetClientRecvFLV::InputNetData(NETHANDLE nServerHandle, NETHANDLE nClientHa
  		if (nPos > 0)
 		{
 			bRecvHttp200OKFlag = true;
-			if (nDataLength - (nPos + 4) > 0)
+ 			if (nDataLength - (nPos + 4) > 0)
 			{
-				memcpy(netDataCache + nNetEnd, pData + (nPos + 4), nDataLength - (nPos + 4));
-				netDataCacheLength += nDataLength - (nPos + 4);
-				nNetEnd += nDataLength - (nPos + 4);
+				memcpy(netDataCache + nNetEnd, pData+(nPos + 4), nDataLength - (nPos + 4));
+				netDataCacheLength  += nDataLength - (nPos + 4);
+				nNetEnd            += nDataLength - (nPos + 4);
 			}
 			else
 				return 0;
