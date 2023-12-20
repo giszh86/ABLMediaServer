@@ -250,6 +250,8 @@
     <ClInclude Include="MediaStreamSource.h" />
     <ClInclude Include="MyWriteLogFile.h" />
     <ClInclude Include="NetClientHttp.h" />
+    <ClInclude Include="NetClientReadLocalMediaFile.h" />
+    <ClInclude Include="NetClientRecvJTT1078.h" />
     <ClInclude Include="NetClientSnap.h" />
     <ClInclude Include="NetClientWebrtcPlayer.h" />
     <ClInclude Include="NetGB28181Listen.h" />
@@ -271,6 +273,7 @@
     <ClInclude Include="NetRtspServer.h" />
     <ClInclude Include="NetBaseThreadPool.h" />
     <ClInclude Include="NetServerHTTP_MP4.h" />
+    <ClInclude Include="NetServerRecvAudio.h" />
     <ClInclude Include="NetServerRecvRtpTS_PS.h" />
     <ClInclude Include="NetServerWS_FLV.h" />
     <ClInclude Include="PictureFileSource.h" />
@@ -380,6 +383,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='boost_release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="NetClientReadLocalMediaFile.cpp" />
     <ClCompile Include="NetClientSnap.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
@@ -481,6 +485,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='boost_release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="NetServerRecvAudio.cpp" />
     <ClCompile Include="NetServerRecvRtpTS_PS.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>

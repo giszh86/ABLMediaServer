@@ -536,7 +536,7 @@ bool   CNetClientRecvRtsp::ReadRtspEnd()
 {
 	unsigned int nReadLength = 1;
 	unsigned int nRet;
-	bool     bRet = false;
+	bool     bRet = true;
 	bExitProcessFlagArray[1] = false;
 	while (!bIsInvalidConnectFlag && bRunFlag)
 	{
@@ -1211,23 +1211,36 @@ bool   CNetClientRecvRtsp::GetMediaInfoFromRtspSDP()
    }
 }
 
+
 //查找rtp包标志 
 bool CNetClientRecvRtsp::FindRtpPacketFlag()
 {
 	bool bFindFlag = false;
 
-	unsigned char szRtpFlag[2] = { 0x24, 0x00 };
+	unsigned char szRtpFlag1[2] = { 0x24, 0x00 };
+	unsigned char szRtpFlag2[2] = { 0x24, 0x01 };
+	unsigned char szRtpFlag3[2] = { 0x24, 0x02 };
+	unsigned char szRtpFlag4[2] = { 0x24, 0x03 };
 	int  nPos = 0;
+	unsigned short nFindLength;
 
 	if (netDataCacheLength > 2)
 	{
 		for (int i = nNetStart; i < nNetEnd; i++)
 		{
-			if (memcmp(netDataCache + i, szRtpFlag, 2) == 0)
+			if ((memcmp(netDataCache + i, szRtpFlag1, 2) == 0) ||
+				(memcmp(netDataCache + i, szRtpFlag2, 2) == 0) ||
+				(memcmp(netDataCache + i, szRtpFlag3, 2) == 0) ||
+				(memcmp(netDataCache + i, szRtpFlag4, 2) == 0))
 			{
-				nPos = i;
-				bFindFlag = true;
-				break;
+				memcpy((char*)&nFindLength, netDataCache + i + 2, sizeof(nFindLength));
+				nFindLength = ntohs(nFindLength);
+				if (nFindLength > 0 && nFindLength <= 1500)
+				{//需要判断rtp包数据长度 
+					nPos = i;
+					bFindFlag = true;
+					break;
+				}
 			}
 		}
 	}
@@ -1378,40 +1391,44 @@ int CNetClientRecvRtsp::ProcessNetData()
 				}
 				else
 				{
-					//填充rtsp头
-					if (FindHttpHeadEndFlag() > 0)
-						FillHttpHeadToStruct();
+					if (rtpDecoder[0] == NULL || memcmp(data_, "ANNOUNCE", 8) == 0 || memcmp(data_, "RTSP/1.0 200", 12) == 0)
+					{//rtsp尚未交互完毕、或者 华为发送结束通知 
+					  //填充rtsp头
+						if (FindHttpHeadEndFlag() > 0)
+							FillHttpHeadToStruct();
 
-					if (nContentLength > 0)
-					{
-						nReadLength = nContentLength;
+						if (nContentLength > 0)
+						{
+							nReadLength = nContentLength;
 
-						//如果有ContentLength ，需要积累了ContentLength的内容再进行读取 
-						if (netDataCacheLength < nContentLength)
-						{//剩下的数据不够 ContentLength ,需要重新移动已经读取的字节数 data_Length  
-							nNetStart -= data_Length;
-							netDataCacheLength += data_Length;
-							bExitProcessFlagArray[2] = true;
-							WriteLog(Log_Debug, "ReadDataFunc (), RTSP 的 Content-Length 的数据尚未接收完整  nClient = %llu", nClient);
-							return 0;
+							//如果有ContentLength ，需要积累了ContentLength的内容再进行读取 
+							if (netDataCacheLength < nContentLength)
+							{//剩下的数据不够 ContentLength ,需要重新移动已经读取的字节数 data_Length  
+								nNetStart -= data_Length;
+								netDataCacheLength += data_Length;
+								bExitProcessFlagArray[2] = true;
+								WriteLog(Log_Debug, "ReadDataFunc (), RTSP 的 Content-Length 的数据尚未接收完整  nClient = %llu", nClient);
+								return 0;
+							}
+
+							nRet = XHNetSDKRead(nClient, data_ + data_Length, &nReadLength, true, true);
+							if (nRet != 0 || nReadLength != nContentLength)
+							{
+								WriteLog(Log_Debug, "ReadDataFunc() ,尚未读取到rtsp (2)数据 ! nClient = %llu", nClient);
+								bExitProcessFlagArray[2] = true;
+								DeleteNetRevcBaseClient(nClient);
+								return -1;
+							}
+							else
+							{
+								data_Length += nContentLength;
+							}
 						}
- 
-						nRet = XHNetSDKRead(nClient, data_ + data_Length, &nReadLength, true, true);
-						if (nRet != 0 || nReadLength != nContentLength)
-						{
-							WriteLog(Log_Debug, "ReadDataFunc() ,尚未读取到rtsp (2)数据 ! nClient = %llu", nClient);
-							bExitProcessFlagArray[2] = true;
-							DeleteNetRevcBaseClient(nClient);
-							return -1;
-						}
-						else
-						{
-							data_Length += nContentLength;
-						}
+
+						data_[data_Length] = 0x00;
+						InputRtspData(data_, data_Length);
 					}
-
-					data_[data_Length] = 0x00;
-					InputRtspData(data_, data_Length);
+					break; //rtsp 都是一 一交互的，执行完毕立即退出 
 				}
 			}
 		}

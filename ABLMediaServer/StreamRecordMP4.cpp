@@ -387,24 +387,26 @@ bool CStreamRecordMP4::AddVideo(char* szVideoName, unsigned char* pVideoData, in
 		if (ctx.track < 0)
 			return false;
 	}
-
 	//增加音频轨道
-	if (-1 == ctx.trackAudio && ascLength > 0 && strcmp(mediaCodecInfo.szAudioName, "AAC") == 0)
-		ctx.trackAudio = mov_writer_add_audio(ctx.mov, MOV_OBJECT_AAC, ctx.aac.channels, 16, ctx.aac.sampling_frequency, asc, ascLength);
-	else if (-1 == ctx.trackAudio && strcmp(mediaCodecInfo.szAudioName, "G711_A") == 0)
-		ctx.trackAudio = mov_writer_add_audio(ctx.mov, MOV_OBJECT_G711a, 1, 16, 8000, NULL, 0);
-	else if (-1 == ctx.trackAudio && strcmp(mediaCodecInfo.szAudioName, "G711_U") == 0)
-		ctx.trackAudio = mov_writer_add_audio(ctx.mov, MOV_OBJECT_G711u, 1, 16, 8000, NULL, 0);
+	if (ABL_MediaServerPort.nEnableAudio == 1)
+	{
+		if (-1 == ctx.trackAudio && ascLength > 0 && strcmp(mediaCodecInfo.szAudioName, "AAC") == 0)
+			ctx.trackAudio = mov_writer_add_audio(ctx.mov, MOV_OBJECT_AAC, ctx.aac.channels, 16, ctx.aac.sampling_frequency, asc, ascLength);
+		else if (-1 == ctx.trackAudio && strcmp(mediaCodecInfo.szAudioName, "G711_A") == 0)
+			ctx.trackAudio = mov_writer_add_audio(ctx.mov, MOV_OBJECT_G711a, 1, 16, 8000, NULL, 0);
+		else if (-1 == ctx.trackAudio && strcmp(mediaCodecInfo.szAudioName, "G711_U") == 0)
+			ctx.trackAudio = mov_writer_add_audio(ctx.mov, MOV_OBJECT_G711u, 1, 16, 8000, NULL, 0);
+	}
 
 	//如果没有音频，直接开始写视频，如果有音频则需要等待音频句柄有效
-	if (nSize > 0 && (strcmp(mediaCodecInfo.szAudioName, "AAC") != 0 || (strcmp(mediaCodecInfo.szAudioName, "AAC") == 0 && ctx.trackAudio >= 0)))
+	if (nSize > 0 && (ABL_MediaServerPort.nEnableAudio == 0 || strcmp(mediaCodecInfo.szAudioName, "AAC") != 0 || (strcmp(mediaCodecInfo.szAudioName, "AAC") == 0 && ctx.trackAudio >= 0)))
 	{
 		mov_writer_write(ctx.mov, ctx.track, s_buffer, nSize, ctx.pts, ctx.pts, 1 == vcl ? MOV_AV_FLAG_KEYFREAME : 0);
 
 		//计算真实的时间戳，不能固定25帧每秒
-  		ctx.pts += (1000 / mediaCodecInfo.nVideoFrameRate);
+		ctx.pts += (1000 / mediaCodecInfo.nVideoFrameRate);
 		ctx.dts += (1000 / mediaCodecInfo.nVideoFrameRate);
- 	}
+	}
 
 	return true;
 }

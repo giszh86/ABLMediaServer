@@ -84,10 +84,18 @@
 #define  string_length_2048   2048  
 #define  string_length_4096   4096 
 #define  string_length_8192   8192 
-
+#define  string_length_512K   1024*512 
 uint64_t GetCurrentSecond();
 uint64_t GetCurrentSecondByTime(char* szDateTime);
 bool     QureyRecordFileFromRecordSource(char* szShareURL, char* szFileName);
+//ws_socket 同学状态 
+enum WebSocketCommStatus
+{
+	WebSocketCommStatus_NoConnect = 0, //没有连接
+	WebSocketCommStatus_Connect = 1,//已经连接
+	WebSocketCommStatus_ShakeHands = 2,//开始握手
+	WebSocketCommStatus_HandsSuccess = 3 //websocket 链接成功
+};
 
 //rtsp 播放类型
 enum ABLRtspPlayerType
@@ -128,6 +136,7 @@ struct MediaCodecInfo
 	};
 };
 
+
 //媒体服务器运行端口结构
 struct MediaServerPort
 {
@@ -140,7 +149,9 @@ struct MediaServerPort
 	int  nHttpFlvPort;  //http-flv
 	int  nWSFlvPort;    //ws-flv
 	int  nHttpMp4Port;  //http-mp4
+	int  nWebRtcPort;  //webrtc 
 	int  ps_tsRecvPort; //国标单端口
+	int  WsRecvPcmPort;//私有协议接收pcm音频
 
 	int  nHlsPort;     //Hls 端口 
 	int  nHlsEnable;   //HLS 是否开启 
@@ -165,6 +176,7 @@ struct MediaServerPort
 	int  fileSecond;//fmp4切割时长
 	int  videoFileFormat;//录像文件格式 1 为 fmp4, 2 为 mp4 
 	int  fileKeepMaxTime;//录像文件最大保留时长，单位小时
+	int  enable_GetFileDuration;//查询录像列表是否获取录像文件真正时长
 	int  httpDownloadSpeed;//http录像下载速度设定
 	int  fileRepeat;//MP4点播(rtsp/rtmp/http-flv/ws-flv)是否循环播放文件
 
@@ -240,7 +252,8 @@ struct MediaServerPort
 	int        gb28181LibraryUse;//国标打包、解包库的选择, 1 使用自研库国标打包解包库，2 使用北京老陈国标打包解包库 
 	uint64_t   iframeArriveNoticCount;//I帧通知数量
 	int        httqRequstClose;//是否为短链接操作 
- 	MediaServerPort()
+	int        keepaliveDuration; //发送心跳时间间隔
+	MediaServerPort()
 	{
 		memset(wwwPath, 0x00, sizeof(wwwPath));
 		nServerStartTime = 0;
@@ -249,15 +262,16 @@ struct MediaServerPort
 		memset(on_server_keepalive, 0x00, sizeof(on_server_keepalive));
 		memset(on_delete_record_mp4, 0x00, sizeof(on_delete_record_mp4));
 		memset(secret, 0x00, sizeof(secret));
-		nRtspPort    = 554;
-		nRtmpPort    = 1935;
+		nRtspPort = 554;
+		nRtmpPort = 1935;
 		nHttpFlvPort = 8088;
 		nHttpMp4Port = 8089;
+		WsRecvPcmPort = 9298;
 		ps_tsRecvPort = 10000;
 
-		nHlsPort     = 9088;
-		nHlsEnable   = 0;
-		nHLSCutType  = 1;
+		nHlsPort = 9088;
+		nHlsEnable = 0;
+		nHLSCutType = 1;
 		nH265CutType = 1;
 		hlsCutTime = 3;
 		nMaxTsFileCount = 20;
@@ -266,7 +280,7 @@ struct MediaServerPort
 		nSendThreadCount = 64;
 		nRecordReplayThread = 64;
 		nGBRtpTCPHeadType = 1;
-		nEnableAudio = 0 ;
+		nEnableAudio = 0;
 
 		nIOContentNumber = 16;
 		nThreadCountOfIOContent = 16;
@@ -297,13 +311,13 @@ struct MediaServerPort
 		memset(on_record_progress, 0x00, sizeof(on_record_progress));
 		memset(on_stream_arrive, 0x00, sizeof(on_stream_arrive));
 		memset(on_stream_not_arrive, 0x00, sizeof(on_stream_not_arrive));
- 		memset(on_record_ts, 0x00, sizeof(on_record_ts));
+		memset(on_record_ts, 0x00, sizeof(on_record_ts));
 		memset(on_stream_disconnect, 0x00, sizeof(on_stream_disconnect));
 		memset(on_play, 0x00, sizeof(on_play));
 		memset(on_publish, 0x00, sizeof(on_publish));
 		memset(on_stream_iframe_arrive, 0x00, sizeof(on_stream_iframe_arrive));
- 
-		nClientNoneReader = 0 ;
+
+		nClientNoneReader = 0;
 		nClientNotFound = 0;
 		nClientRecordMp4 = 0;
 		nClientDeleteRecordMp4 = 0;
@@ -314,13 +328,13 @@ struct MediaServerPort
 		nClientRecordTS = 0;
 		nServerStarted = 0;
 		nServerKeepalive = 0;
-		nPlay=0;//播放
-	    nPublish=0;//接入
+		nPlay = 0;//播放
+		nPublish = 0;//接入
 		nFrameArrive = 0;
 
 		maxSameTimeSnap = 16;
-		snapOutPictureWidth; 
-		snapOutPictureHeight; 
+		snapOutPictureWidth;
+		snapOutPictureHeight;
 
 		H265ConvertH264_enable = 0;
 		H265DecodeCpuGpuType = 0;
@@ -328,26 +342,30 @@ struct MediaServerPort
 		convertOutHeight = 576;
 		convertMaxObject = 24;
 		convertOutBitrate = 512;
-		H264DecodeEncode_enable=0;
-		filterVideo_enable=0;
-		memset(filterVideoText,0x00,sizeof(filterVideoText));
-		nFilterFontSize=12;
-		memset(nFilterFontColor,0x00,sizeof(nFilterFontColor));
+		H264DecodeEncode_enable = 0;
+		filterVideo_enable = 0;
+		memset(filterVideoText, 0x00, sizeof(filterVideoText));
+		nFilterFontSize = 12;
+		memset(nFilterFontColor, 0x00, sizeof(nFilterFontColor));
 		nFilterFontAlpha = 0.6;//透明度
 		nFilterFontLeft = 10;//x坐标
-		nFilterFontTop = 10 ;//y坐标
+		nFilterFontTop = 10;//y坐标
 		MaxDiconnectTimeoutSecond = 16;
 		ForceSendingIFrame = 0;
 
-		nSaveProxyRtspRtp = 0; 
-		nSaveGB28181Rtp = 0 ; 
+		nSaveProxyRtspRtp = 0;
+		nSaveGB28181Rtp = 0;
 		memset(debugPath, 0x00, sizeof(debugPath));
 
 		gb28181LibraryUse = 1;
 		iframeArriveNoticCount = 30;
 		httqRequstClose = 0;
- 	}
+		enable_GetFileDuration = 0;
+		keepaliveDuration = 20;
+		nWebRtcPort = 8000;
+	}
 };
+
 
 //真对单独某一路视频转码结构
 struct H265ConvertH264Struct
@@ -371,84 +389,88 @@ struct H265ConvertH264Struct
 //网络基本类型
 enum NetBaseNetType
 {
-	NetBaseNetType_Unknown                 = 20 ,  //未定义的网络类型
-	NetBaseNetType_RtmpServerRecvPush      = 21,//RTMP 服务器，接收客户端的推流 
-	NetBaseNetType_RtmpServerSendPush      = 22,//RTMP 服务器，转发客户端的推上来的码流
-	NetBaseNetType_RtspServerRecvPush      = 23,//RTSP 服务器，接收客户端的推流 
-	NetBaseNetType_RtspServerSendPush      = 24,//RTSP 服务器，转发客户端的推上来的码流
-	NetBaseNetType_HttpFLVServerSendPush   = 25,//Http-FLV 服务器，转发 rtsp 、rtmp 、GB28181等等推流上来的码流
-	NetBaseNetType_HttpHLSServerSendPush   = 26,//Http-HLS 服务器，转发 rtsp 、rtmp 、GB28181等等推流上来的码流
-	NetBaseNetType_WsFLVServerSendPush     = 27,//WS-FLV 服务器，转发 rtsp 、rtmp 、GB28181等等推流上来的码流
-	NetBaseNetType_HttpMP4ServerSendPush   = 28,//http-mp4 服务器，转发 rtsp 、rtmp 、GB28181等等推流上来的码流以mp4发送出去
-	NetBaseNetType_WebRtcServerSendPush    = 29,//WebRtc 服务器，转发 rtsp 、rtmp 、GB28181等等推流上来的码流
+	NetBaseNetType_Unknown = 20,  //未定义的网络类型
+	NetBaseNetType_WebSocektRecvAudio = 19,//通过websocet 接收音频
+	NetBaseNetType_RtmpServerRecvPush = 21,//RTMP 服务器，接收客户端的推流 
+	NetBaseNetType_RtmpServerSendPush = 22,//RTMP 服务器，转发客户端的推上来的码流
+	NetBaseNetType_RtspServerRecvPush = 23,//RTSP 服务器，接收客户端的推流 
+	NetBaseNetType_RtspServerSendPush = 24,//RTSP 服务器，转发客户端的推上来的码流
+	NetBaseNetType_HttpFLVServerSendPush = 25,//Http-FLV 服务器，转发 rtsp 、rtmp 、GB28181等等推流上来的码流
+	NetBaseNetType_HttpHLSServerSendPush = 26,//Http-HLS 服务器，转发 rtsp 、rtmp 、GB28181等等推流上来的码流
+	NetBaseNetType_WsFLVServerSendPush = 27,//WS-FLV 服务器，转发 rtsp 、rtmp 、GB28181等等推流上来的码流
+	NetBaseNetType_HttpMP4ServerSendPush = 28,//http-mp4 服务器，转发 rtsp 、rtmp 、GB28181等等推流上来的码流以mp4发送出去
+	NetBaseNetType_WebRtcServerSendPush = 29,//WebRtc 服务器，转发 rtsp 、rtmp 、GB28181等等推流上来的码流
 
 	//主动拉流对象
-	NetBaseNetType_RtspClientRecv          = 30 ,//rtsp主动拉流对象 
-	NetBaseNetType_RtmpClientRecv          = 31 ,//rtmp主动拉流对象 
-	NetBaseNetType_HttpFlvClientRecv       = 32 ,//http-flv主动拉流对象 
-	NetBaseNetType_HttpHLSClientRecv       = 33 ,//http-hls主动拉流对象 
-	NetBaseNetType_HttClientRecvJTT1078    = 34, //接收交通部JTT1078 
+	NetBaseNetType_RtspClientRecv = 30,//rtsp主动拉流对象 
+	NetBaseNetType_RtmpClientRecv = 31,//rtmp主动拉流对象 
+	NetBaseNetType_HttpFlvClientRecv = 32,//http-flv主动拉流对象 
+	NetBaseNetType_HttpHLSClientRecv = 33,//http-hls主动拉流对象 
+	NetBaseNetType_HttClientRecvJTT1078 = 34, //接收交通部JTT1078 
+	NetBaseNetType_ReadLocalMediaFile = 35, //代理读取本地媒体文件主要包括mp4文件
 
 	//主动推流对象
-	NetBaseNetType_RtspClientPush          = 40,//rtsp主动推流对象 
-	NetBaseNetType_RtmpClientPush          = 41,//rtmp主动推流对象 
- 	NetBaseNetType_GB28181ClientPushTCP    = 42,//GB28181主动推流对象 
-	NetBaseNetType_GB28181ClientPushUDP    = 43,//GB28181主动推流对象 
+	NetBaseNetType_RtspClientPush = 40,//rtsp主动推流对象 
+	NetBaseNetType_RtmpClientPush = 41,//rtmp主动推流对象 
+	NetBaseNetType_GB28181ClientPushTCP = 42,//GB28181主动推流对象 
+	NetBaseNetType_GB28181ClientPushUDP = 43,//GB28181主动推流对象 
 
-	NetBaseNetType_addStreamProxyControl   = 50,//控制代理rtsp\rtmp\flv\hsl 拉流
-	NetBaseNetType_addPushProxyControl     = 51,//控制代理rtsp\rtmp  推流 代理
+	NetBaseNetType_addStreamProxyControl = 50,//控制代理rtsp\rtmp\flv\hsl 拉流
+	NetBaseNetType_addPushProxyControl = 51,//控制代理rtsp\rtmp  推流 代理
 
-	NetBaseNetType_NetGB28181RtpServerListen      = 56,//国标TCP方式接收Listen类
-	NetBaseNetType_NetGB28181RtpSendListen        = 57,//国标TCP方式发送Listen类
-	NetBaseNetType_NetGB28181RtpServerTCP_Active  = 58,//国标28181 TCP方式 接收码流,主动连接方式 
-	NetBaseNetType_NetGB28181SendRtpTCP_Passive   = 59, //国标28181 TCP方式 发送码流,被动方式推送码流
+	NetBaseNetType_NetGB28181RtpServerListen = 56,//国标TCP方式接收Listen类
+	NetBaseNetType_NetGB28181RtpSendListen = 57,//国标TCP方式发送Listen类
+	NetBaseNetType_NetGB28181RtpServerTCP_Active = 58,//国标28181 TCP方式 接收码流,主动连接方式 
+	NetBaseNetType_NetGB28181SendRtpTCP_Passive = 59, //国标28181 TCP方式 发送码流,被动方式推送码流
 
-	NetBaseNetType_NetGB28181RtpServerUDP         = 60,//国标28181 UDP方式 接收码流
-	NetBaseNetType_NetGB28181RtpServerTCP_Server  = 61,//国标28181 TCP方式 接收码流,被动连接方式 
-	NetBaseNetType_NetGB28181RtpServerTCP_Client  = 62,//国标28181 TCP方式 接收码流,主动连接方式 
-	NetBaseNetType_NetGB28181RtpServerRTCP        = 63,//国标28181 UDP方式 接收码流 中的 rtcp 包
-	NetBaseNetType_NetGB28181UDPPSStreamInput     = 64,//PS推流接入国标单端口推流接入
-	NetBaseNetType_NetGB28181SendRtpUDP           = 65,//国标28181 UDP方式 推送码流
-	NetBaseNetType_NetGB28181SendRtpTCP_Connect   = 66,//国标28181 TCP方式 接收码流,主动连接方式 推送码流
-	NetBaseNetType_NetGB28181SendRtpTCP_Server    = 67,//国标28181 TCP方式 接收码流,被动连接方式 推送码流
-	NetBaseNetType_NetGB28181RecvRtpPS_TS         = 68,//国标28181 单端口接收PS、TS码流
-	NetBaseNetType_NetGB28181UDPTSStreamInput     = 69,//TS推流接入
+	NetBaseNetType_NetGB28181RtpServerUDP = 60,//国标28181 UDP方式 接收码流
+	NetBaseNetType_NetGB28181RtpServerTCP_Server = 61,//国标28181 TCP方式 接收码流,被动连接方式 
+	NetBaseNetType_NetGB28181RtpServerTCP_Client = 62,//国标28181 TCP方式 接收码流,主动连接方式 
+	NetBaseNetType_NetGB28181RtpServerRTCP = 63,//国标28181 UDP方式 接收码流 中的 rtcp 包
+	NetBaseNetType_NetGB28181UDPPSStreamInput = 64,//PS推流接入国标单端口推流接入
+	NetBaseNetType_NetGB28181SendRtpUDP = 65,//国标28181 UDP方式 推送码流
+	NetBaseNetType_NetGB28181SendRtpTCP_Connect = 66,//国标28181 TCP方式 接收码流,主动连接方式 推送码流
+	NetBaseNetType_NetGB28181SendRtpTCP_Server = 67,//国标28181 TCP方式 接收码流,被动连接方式 推送码流
+	NetBaseNetType_NetGB28181RecvRtpPS_TS = 68,//国标28181 单端口接收PS、TS码流
+	NetBaseNetType_NetGB28181UDPTSStreamInput = 69,//TS推流接入
 
-	NetBaseNetType_RecordFile_FMP4                = 70,//录像存储为fmp4格式
-	NetBaseNetType_RecordFile_TS                  = 71,//录像存储为TS格式
-	NetBaseNetType_RecordFile_PS                  = 72,//录像存储为PS格式
-	NetBaseNetType_RecordFile_FLV                 = 73,//录像存储为flv格式
-	NetBaseNetType_RecordFile_MP4                 = 74,//录像存储为mp4格式
+	NetBaseNetType_RecordFile_FMP4 = 70,//录像存储为fmp4格式
+	NetBaseNetType_RecordFile_TS = 71,//录像存储为TS格式
+	NetBaseNetType_RecordFile_PS = 72,//录像存储为PS格式
+	NetBaseNetType_RecordFile_FLV = 73,//录像存储为flv格式
+	NetBaseNetType_RecordFile_MP4 = 74,//录像存储为mp4格式
 
- 	ReadRecordFileInput_ReadFMP4File              = 80,//以读取fmp4文件格式 
-	ReadRecordFileInput_ReadTSFile                = 81,//以读取TS文件格式 
-	ReadRecordFileInput_ReadPSFile                = 82,//以读取PS文件格式 
-	ReadRecordFileInput_ReadFLVFile               = 83,//以读取FLV文件格式 
+	ReadRecordFileInput_ReadFMP4File = 80,//以读取fmp4文件格式 
+	ReadRecordFileInput_ReadTSFile = 81,//以读取TS文件格式 
+	ReadRecordFileInput_ReadPSFile = 82,//以读取PS文件格式 
+	ReadRecordFileInput_ReadFLVFile = 83,//以读取FLV文件格式 
 
-	NetBaseNetType_HttpClient_None_reader           = 90,//无人观看
-	NetBaseNetType_HttpClient_Not_found             = 91,//流没有找到
-	NetBaseNetType_HttpClient_Record_mp4            = 92,//完成一段录像
-	NetBaseNetType_HttpClient_on_stream_arrive      = 93,//码流到达
-	NetBaseNetType_HttpClient_on_stream_disconnect  = 94,//连接已断开
-	NetBaseNetType_HttpClient_on_record_ts          = 95,//TS切片完成
-	NetBaseNetType_HttpClient_on_stream_not_arrive  = 96,//码流没有到达
-	NetBaseNetType_HttpClient_Record_Progress       = 97,//录像下载进度
- 
-	NetBaseNetType_SnapPicture_JPEG               =100,//抓拍为JPG 
-	NetBaseNetType_SnapPicture_PNG                =101,//抓拍为PNG
+	NetBaseNetType_HttpClient_None_reader = 90,//无人观看
+	NetBaseNetType_HttpClient_Not_found = 91,//流没有找到
+	NetBaseNetType_HttpClient_Record_mp4 = 92,//完成一段录像
+	NetBaseNetType_HttpClient_on_stream_arrive = 93,//码流到达
+	NetBaseNetType_HttpClient_on_stream_disconnect = 94,//连接已断开
+	NetBaseNetType_HttpClient_on_record_ts = 95,//TS切片完成
+	NetBaseNetType_HttpClient_on_stream_not_arrive = 96,//码流没有到达
+	NetBaseNetType_HttpClient_Record_Progress = 97,//录像下载进度
 
-	NetBaseNetType_NetServerHTTP                  =110,//http 操作请求 
+	NetBaseNetType_SnapPicture_JPEG = 100,//抓拍为JPG 
+	NetBaseNetType_SnapPicture_PNG = 101,//抓拍为PNG
 
-	NetBaseNetType_HttpClient_ServerStarted       = 120,//服务器启动
-	NetBaseNetType_HttpClient_ServerKeepalive     = 121,//服务器心跳
-	NetBaseNetType_HttpClient_DeleteRecordMp4     = 122,//覆盖录像文件
-	NetBaseNetType_HttpClient_on_play              = 123,//播放视频事件通知
-	NetBaseNetType_HttpClient_on_publish           = 124,//码流接入通知 
-	NetBaseNetType_HttpClient_on_iframe_arrive     = 125,//i帧到达事件
+	NetBaseNetType_NetServerHTTP = 110,//http 操作请求 
+
+	NetBaseNetType_HttpClient_ServerStarted = 120,//服务器启动
+	NetBaseNetType_HttpClient_ServerKeepalive = 121,//服务器心跳
+	NetBaseNetType_HttpClient_DeleteRecordMp4 = 122,//覆盖录像文件
+	NetBaseNetType_HttpClient_on_play = 123,//播放视频事件通知
+	NetBaseNetType_HttpClient_on_publish = 124,//码流接入通知 
+	NetBaseNetType_HttpClient_on_iframe_arrive = 125,//i帧到达事件
+
 	NetBaseNetType_NetClientWebrtcPlayer = 130,//webrtc的播放 
 };
 
-#define   MediaServerVerson                 "ABLMediaServer-6.3.6(2023-10-19)"
+
+#define   MediaServerVerson                 "ABLMediaServer-6.3.6(2023-12-06)"
 #define   RtspServerPublic                  "DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE, OPTIONS, ANNOUNCE, RECORD，GET_PARAMETER"
 #define   RecordFileReplaySplitter          "__ReplayFMP4RecordFile__"  //实况、录像区分的标志字符串，用于区分实况，放置在url中。
 
@@ -1043,7 +1065,7 @@ struct MessageNoticeStruct
 
 #ifndef OS_System_Windows
 unsigned long  GetTickCount();
-unsigned long  GetTickCount64();
+int64_t  GetTickCount64();
 #ifdef USE_BOOST
 void          Sleep(int mMicroSecond);
 #endif
@@ -1096,6 +1118,7 @@ extern "C"
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libavutil/avutil.h>
+#include <libavcodec/bsf.h>
 #include <libswscale/swscale.h>
 #include <libavutil/base64.h>
 #include <libavfilter/buffersink.h>
@@ -1125,11 +1148,14 @@ typedef list<int> LogFileVector;
 #include "NetRtmpServerRecv.h"
 #include "NetServerHTTP_FLV.h"
 #include "NetServerWS_FLV.h"
+#include "NetServerRecvAudio.h"
 #include "NetServerHLS.h"
 #include "NetClientHttp.h"
 #include "NetClientSnap.h"
 #include "NetClientWebrtcPlayer.h"
 
+#include "ps_demux.h"
+#include "ps_mux.h"
 #include "MediaFifo.h"
 #include "NetBaseThreadPool.h"
 #include "FFVideoDecode.h"
@@ -1146,7 +1172,7 @@ typedef list<int> LogFileVector;
 #include "NetClientRecvRtmp.h"
 #include "NetClientRecvFLV.h"
 #include "NetClientRecvRtsp.h"
-//#include "NetClientRecvJTT1078.h"
+#include "NetClientRecvJTT1078.h"
 #include "NetClientSendRtsp.h"
 #include "NetClientSendRtmp.h"
 #include "NetClientAddStreamProxy.h"
@@ -1157,10 +1183,13 @@ typedef list<int> LogFileVector;
 #include "NetServerHTTP_MP4.h"
 #include "StreamRecordFMP4.h"
 #include "StreamRecordMP4.h"
+#include "StreamRecordTS.h"
 #include "RecordFileSource.h"
 #include "PictureFileSource.h"
 #include "ReadRecordFileInput.h"
 #include "LCbase64.h"
 #include "SHA1.h"
+#include "NetClientReadLocalMediaFile.h"
+
 
 #endif

@@ -1,6 +1,6 @@
 /*
 功能：
-       实现ws-flv服务器的媒体数据发送功能 
+	   实现ws-flv服务器的媒体数据发送功能
 日期    2021-11-05
 作者    罗家兄弟
 QQ      79941308
@@ -9,15 +9,14 @@ E-Mail  79941308@qq.com
 
 #include "stdafx.h"
 #include "NetServerWS_FLV.h"
-#ifdef USE_BOOST
+
 extern             bool                DeleteNetRevcBaseClient(NETHANDLE CltHandle);
+#ifdef USE_BOOST
 extern boost::shared_ptr<CMediaStreamSource>  GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound = false);
 #else
-extern             bool                DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 extern std::shared_ptr<CMediaStreamSource>  GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound = false);
 #endif
-
-extern CMediaSendThreadPool*           pMediaSendThreadPool;
+extern CMediaSendThreadPool* pMediaSendThreadPool;
 extern CMediaFifo                      pDisconnectBaseNetFifo; //清理断裂的链接 
 extern bool                            DeleteClientMediaStreamSource(uint64_t nClient);
 extern MediaServerPort                 ABL_MediaServerPort;
@@ -32,7 +31,7 @@ static int NetServerWS_FLV_MuxerCB(void* flv, int type, const void* data, size_t
 
 #ifdef WriteHttp_FlvFileFlag
 	if (pHttpFLV)
- 		return flv_writer_input(pHttpFLV->flvWrite, type, data, bytes, timestamp);
+		return flv_writer_input(pHttpFLV->flvWrite, type, data, bytes, timestamp);
 #else 
 	if (pHttpFLV)
 		return flv_writer_input(pHttpFLV->flvWrite, type, data, bytes, timestamp);
@@ -43,14 +42,14 @@ int  NetServerWS_FLV_OnWrite_CB(void* param, const struct flv_vec_t* vec, int n)
 {
 	CNetServerWS_FLV* pHttpFLV = (CNetServerWS_FLV*)param;
 
-	if (pHttpFLV != NULL && pHttpFLV->bRunFlag )
+	if (pHttpFLV != NULL && pHttpFLV->bRunFlag)
 	{
 		for (int i = 0; i < n; i++)
 		{
 			pHttpFLV->nWriteRet = pHttpFLV->WSSendFlvData((unsigned char*)vec[i].ptr, vec[i].len);// XHNetSDK_Write(pHttpFLV->nClient, (unsigned char*)vec[i].ptr, vec[i].len, true);
 			if (pHttpFLV->nWriteRet != 0)
 			{
-				pHttpFLV->nWriteErrorCount ++;//发送出错累计 
+				pHttpFLV->nWriteErrorCount++;//发送出错累计 
 				if (pHttpFLV->nWriteErrorCount >= 30)
 				{
 					pHttpFLV->bRunFlag = false;
@@ -60,12 +59,12 @@ int  NetServerWS_FLV_OnWrite_CB(void* param, const struct flv_vec_t* vec, int n)
 			}
 			else
 				pHttpFLV->nWriteErrorCount = 0;//复位 
-  		}
+		}
 	}
 	return 0;
 }
 
-CNetServerWS_FLV::CNetServerWS_FLV(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort,char* szShareMediaURL)
+CNetServerWS_FLV::CNetServerWS_FLV(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort, char* szShareMediaURL)
 {
 	nServer = hServer;
 	nClient = hClient;
@@ -83,7 +82,7 @@ CNetServerWS_FLV::CNetServerWS_FLV(NETHANDLE hServer, NETHANDLE hClient, char* s
 	flvMuxer = NULL;
 
 	flvPS = flvAACDts = 0;
-	flvWrite  = NULL ;
+	flvWrite = NULL;
 	nWriteRet = 0;
 	nWriteErrorCount = 0;
 
@@ -93,35 +92,35 @@ CNetServerWS_FLV::CNetServerWS_FLV(NETHANDLE hServer, NETHANDLE hClient, char* s
 	memset(szSec_WebSocket_Key, 0x00, sizeof(szSec_WebSocket_Key));
 	memset(szSec_WebSocket_Protocol, 0x00, sizeof(szSec_WebSocket_Protocol));
 	strcpy(szSec_WebSocket_Protocol, "Protocol1");
- 
-	WriteLog(Log_Debug, "CNetServerWS_FLV 构造 = %X,  nClient = %llu ",this, nClient);
+
+	WriteLog(Log_Debug, "CNetServerWS_FLV 构造 = %X,  nClient = %llu ", this, nClient);
 }
 
 CNetServerWS_FLV::~CNetServerWS_FLV()
 {
 	std::lock_guard<std::mutex> lock(NetServerWS_FLVLock);
 
-	WriteLog(Log_Debug, "CNetServerWS_FLV =%X Step 1 nClient = %llu ",this, nClient);
+	WriteLog(Log_Debug, "CNetServerWS_FLV =%X Step 1 nClient = %llu ", this, nClient);
 
-	WriteLog(Log_Debug, "CNetServerWS_FLV =%X Step 2 nClient = %llu ",this, nClient);
-	
+	WriteLog(Log_Debug, "CNetServerWS_FLV =%X Step 2 nClient = %llu ", this, nClient);
+
 	if (flvMuxer)
 	{
 		flv_muxer_destroy(flvMuxer);
 		flvMuxer = NULL;
 	}
-	WriteLog(Log_Debug, "CNetServerWS_FLV =%X Step 3 nClient = %llu ",this, nClient);
+	WriteLog(Log_Debug, "CNetServerWS_FLV =%X Step 3 nClient = %llu ", this, nClient);
 
 	if (flvWrite)
 	{
 		flv_writer_destroy(flvWrite);
 		flvWrite = NULL;
 	}
-	WriteLog(Log_Debug, "CNetServerWS_FLV =%X Step 4 nClient = %llu ",this, nClient);
+	WriteLog(Log_Debug, "CNetServerWS_FLV =%X Step 4 nClient = %llu ", this, nClient);
 
 	m_videoFifo.FreeFifo();
 	m_audioFifo.FreeFifo();
-	
+
 	WriteLog(Log_Debug, "CNetServerWS_FLV 析构 =%X szFlvName = %s, nClient = %llu \r\n", this, szFlvName, nClient);
 	malloc_trim(0);
 }
@@ -134,7 +133,7 @@ int CNetServerWS_FLV::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, char*
 		strcpy(mediaCodecInfo.szVideoName, szVideoCodec);
 
 	m_videoFifo.push(pVideoData, nDataLength);
-	return 0 ;
+	return 0;
 }
 
 int CNetServerWS_FLV::PushAudio(uint8_t* pAudioData, uint32_t nDataLength, char* szAudioCodec, int nChannels, int SampleRate)
@@ -146,8 +145,8 @@ int CNetServerWS_FLV::PushAudio(uint8_t* pAudioData, uint32_t nDataLength, char*
 		mediaCodecInfo.nChannels = nChannels;
 		mediaCodecInfo.nSampleRate = SampleRate;
 	}
-	if (strcmp(szAudioCodec, "AAC") != 0 || ABL_MediaServerPort.nEnableAudio == 0)
-		return 0;
+	if (ABL_MediaServerPort.nEnableAudio == 0 || !(strcmp(szAudioCodec, "AAC") == 0 || strcmp(szAudioCodec, "MP3") == 0))
+		return -1;
 
 	m_audioFifo.push(pAudioData, nDataLength);
 
@@ -176,26 +175,28 @@ void  CNetServerWS_FLV::MuxerVideoFlV(char* codeName, unsigned char* pVideo, int
 
 void  CNetServerWS_FLV::MuxerAudioFlV(char* codeName, unsigned char* pAudio, int nLength)
 {
-	if (strcmp(codeName, "AAC") == 0)
+	if (flvMuxer)
 	{
-		if (flvMuxer)
+		if (strcmp(mediaCodecInfo.szAudioName, "AAC") == 0)
 			flv_muxer_aac(flvMuxer, pAudio, nLength, flvAACDts, flvAACDts);
-
-		if (bUserNewAudioTimeStamp == false)
-			flvAACDts += mediaCodecInfo.nBaseAddAudioTimeStamp;
-		else
-		{
-			nUseNewAddAudioTimeStamp --;
-			flvAACDts += nNewAddAudioTimeStamp;
-			if (nUseNewAddAudioTimeStamp <= 0)
-			{
-				bUserNewAudioTimeStamp = false;
-			}
-		}
-
-		//AAC 的时间增量计算 ，以海康的16K采样为例，AAC每1024字节编码一次，那么(1024 / 16000 * 2) * 1000 = 32 毫秒 ，但是海康往往2帧发送一次 ，那么两帧递增 32 * 2 = 64 毫秒 ，64 就是海康摄像头 DTS ,PTS 的增量 
-		// 以大华的8K采样为例，AAC每1024字节编码一次，那么(1024 / 8000 * 2) * 1000 = 64 毫秒 ，但是大华往往2帧发送一次 ，那么两帧递增 64 * 2 = 128 毫秒 ，128 就是大华摄像头 DTS ,PTS 的增量 
+		else if (strcmp(mediaCodecInfo.szAudioName, "MP3") == 0)
+			flv_muxer_mp3(flvMuxer, pAudio, nLength, flvAACDts, flvAACDts);
 	}
+
+	if (bUserNewAudioTimeStamp == false)
+		flvAACDts += mediaCodecInfo.nBaseAddAudioTimeStamp;
+	else
+	{
+		nUseNewAddAudioTimeStamp--;
+		flvAACDts += nNewAddAudioTimeStamp;
+		if (nUseNewAddAudioTimeStamp <= 0)
+		{
+			bUserNewAudioTimeStamp = false;
+		}
+	}
+
+	//AAC 的时间增量计算 ，以海康的16K采样为例，AAC每1024字节编码一次，那么(1024 / 16000 * 2) * 1000 = 32 毫秒 ，但是海康往往2帧发送一次 ，那么两帧递增 32 * 2 = 64 毫秒 ，64 就是海康摄像头 DTS ,PTS 的增量 
+	// 以大华的8K采样为例，AAC每1024字节编码一次，那么(1024 / 8000 * 2) * 1000 = 64 毫秒 ，但是大华往往2帧发送一次 ，那么两帧递增 64 * 2 = 128 毫秒 ，128 就是大华摄像头 DTS ,PTS 的增量 
 
 	//同步音视频 
 	SyncVideoAudioTimestamp();
@@ -204,17 +205,17 @@ void  CNetServerWS_FLV::MuxerAudioFlV(char* codeName, unsigned char* pAudio, int
 int CNetServerWS_FLV::SendVideo()
 {
 	std::lock_guard<std::mutex> lock(NetServerWS_FLVLock);
-	
+
 	if (nWriteErrorCount >= 30)
 	{
-		WriteLog(Log_Debug, "发送flv 失败,nClient = %llu ",nClient);
+		WriteLog(Log_Debug, "发送flv 失败,nClient = %llu ", nClient);
 		DeleteNetRevcBaseClient(nClient);
- 		return -1;
+		return -1;
 	}
 
 	unsigned char* pData = NULL;
 	int            nLength = 0;
-	if((pData = m_videoFifo.pop(&nLength)) != NULL )
+	if ((pData = m_videoFifo.pop(&nLength)) != NULL)
 	{
 		if (nMediaSourceType == MediaSourceType_LiveMedia)
 			MuxerVideoFlV(mediaCodecInfo.szVideoName, pData, nLength);
@@ -236,7 +237,7 @@ int CNetServerWS_FLV::SendVideo()
 int CNetServerWS_FLV::SendAudio()
 {
 	std::lock_guard<std::mutex> lock(NetServerWS_FLVLock);
-	
+
 	if (nWriteErrorCount >= 30)
 	{
 		WriteLog(Log_Debug, "发送flv 失败,nClient = %llu ", nClient);
@@ -244,21 +245,21 @@ int CNetServerWS_FLV::SendAudio()
 		return -1;
 	}
 
-	//不是AAC
-	if (strcmp(mediaCodecInfo.szAudioName, "AAC") != 0 || ABL_MediaServerPort.nEnableAudio == 0)
+	//不是AAC,mp3
+	if (ABL_MediaServerPort.nEnableAudio == 0 || !(strcmp(mediaCodecInfo.szAudioName, "AAC") == 0 || strcmp(mediaCodecInfo.szAudioName, "MP3") == 0))
 		return -1;
 
 	unsigned char* pData = NULL;
 	int            nLength = 0;
-	if((pData = m_audioFifo.pop(&nLength)) != NULL)
+	if ((pData = m_audioFifo.pop(&nLength)) != NULL)
 	{
 		if (nMediaSourceType == MediaSourceType_LiveMedia)
 			MuxerAudioFlV(mediaCodecInfo.szAudioName, pData, nLength);
 		else
-			MuxerAudioFlV(mediaCodecInfo.szAudioName, pData+4, nLength - 4);
+			MuxerAudioFlV(mediaCodecInfo.szAudioName, pData + 4, nLength - 4);
 
 		m_audioFifo.pop_front();
-  	}
+	}
 	if (nWriteErrorCount >= 30)
 	{
 		DeleteNetRevcBaseClient(nClient);
@@ -270,7 +271,7 @@ int CNetServerWS_FLV::SendAudio()
 
 int CNetServerWS_FLV::InputNetData(NETHANDLE nServerHandle, NETHANDLE nClientHandle, uint8_t* pData, uint32_t nDataLength, void* address)
 {
-	WriteLog(Log_Debug, "CNetServerWS_FLV = %X nClient = %llu  收到数据,nDataLength = %d\r\n%s", this, nClient,nDataLength,pData);
+	WriteLog(Log_Debug, "CNetServerWS_FLV = %X nClient = %llu  收到数据,nDataLength = %d\r\n%s", this, nClient, nDataLength, pData);
 
 	if (MaxNetDataCacheCount - nNetEnd >= nDataLength)
 	{//剩余空间足够
@@ -293,13 +294,13 @@ int CNetServerWS_FLV::InputNetData(NETHANDLE nServerHandle, NETHANDLE nClientHan
 				DeleteNetRevcBaseClient(nClient);
 				return 0;
 			}
- 		}
+		}
 		else
 		{//没有剩余，那么 首，尾指针都要复位 
 			nNetStart = 0;
 			nNetEnd = 0;
 			netDataCacheLength = 0;
- 		}
+		}
 		memcpy(netDataCache + nNetEnd, pData, nDataLength);
 		netDataCacheLength += nDataLength;
 		nNetEnd += nDataLength;
@@ -316,12 +317,12 @@ int CNetServerWS_FLV::ProcessNetData()
 	char maskingKey[4] = { 0 };
 	char payloadData[4096] = { 0 };
 	unsigned short nLength;
-	unsigned char  nCommand = 0x00 ;
+	unsigned char  nCommand = 0x00;
 	unsigned char szPong[4] = { 0x8A,0x80,0x00,0x00 };
 
 	if (nWebSocketCommStatus == WebSocketCommStatus_Connect)
 	{//WebSocket协议握手，检查
-		Create_WS_FLV_Handle() ;
+		Create_WS_FLV_Handle();
 	}
 	else if (nWebSocketCommStatus == WebSocketCommStatus_ShakeHands)
 	{//把数据，通过掩码进行解码 
@@ -329,24 +330,24 @@ int CNetServerWS_FLV::ProcessNetData()
 		nCommand = 0x0F & netDataCache[0];
 		if (nCommand == 0x08)
 		{//关闭命令
-			WriteLog(Log_Debug, "CNetServerWS_FLV = %X ,nClient = %llu, 收到 websocket 关闭命令 ",this,nClient);
+			WriteLog(Log_Debug, "CNetServerWS_FLV = %X ,nClient = %llu, 收到 websocket 关闭命令 ", this, nClient);
 			DeleteNetRevcBaseClient(nClient);
 		}
 		else if (nCommand == 0x09)
 		{//客户端发送 ping 命令，需要回放 0x0A  {0x8A, 0x80} 
-			WriteLog(Log_Debug, "CNetServerWS_FLV = %X ,nClient = %llu, 收到 websocket 心跳 ",this,nClient);
+			WriteLog(Log_Debug, "CNetServerWS_FLV = %X ,nClient = %llu, 收到 websocket 心跳 ", this, nClient);
 			XHNetSDK_Write(nClient, szPong, 2, true);
 		}
 
 		nNetStart = nNetEnd = netDataCacheLength = 0;
- 
+
 #if  0
 		//接收 websocke 数据，并且解包 ，通过掩码解包
 		memcpy((char*)&nLength, netDataCache + 2, 2);
 		nLength = ntohs(nLength);
 		unsigned char bLength = netDataCache[1];
 		bLength = bLength & 0x7F;
-		memcpy(maskingKey, netDataCache + 2 + 2 , 4);
+		memcpy(maskingKey, netDataCache + 2 + 2, 4);
 		memcpy(payloadData, netDataCache + 2 + 2 + 4, nLength);
 		for (int i = 0; i < nLength; i++)
 		{
@@ -360,7 +361,7 @@ int CNetServerWS_FLV::ProcessNetData()
 		nLength = htons(nLength);
 		memcpy(szWebSocketHead + 2, (unsigned char*)&nLength, sizeof(nLength));
 		XHNetSDK_Write(nClient, szWebSocketHead, 4, true);
-		XHNetSDK_Write(nClient, (unsigned char*)payloadData,nTrueLength, true);
+		XHNetSDK_Write(nClient, (unsigned char*)payloadData, nTrueLength, true);
 #endif
 	}
 
@@ -458,7 +459,7 @@ bool  CNetServerWS_FLV::Create_WS_FLV_Handle()
 		}
 		else
 		{//录像点播
-		    //查询点播的录像是否存在
+			//查询点播的录像是否存在
 			if (QueryRecordFileIsExiting(szFlvName) == false)
 			{
 				WriteLog(Log_Debug, "CNetServerWS_FLV = %X, 没有点播的录像文件 %s nClient = %llu ", this, szFlvName, nClient);
@@ -492,7 +493,7 @@ bool  CNetServerWS_FLV::Create_WS_FLV_Handle()
 		wsParse.GetFieldValue("Upgrade", szWebSocket);
 		wsParse.GetFieldValue("Sec-WebSocket-Key", szSec_WebSocket_Key);
 		wsParse.GetFieldValue("Sec_WebSocket_Protocol", szSec_WebSocket_Protocol);
-		
+
 		wsParse.GetFieldValue("Origin", szOrigin);
 
 		if (strcmp(szConnect, "Upgrade") != 0 || strcmp(szWebSocket, "websocket") != 0 || strlen(szSec_WebSocket_Key) == 0)
@@ -544,7 +545,7 @@ bool  CNetServerWS_FLV::Create_WS_FLV_Handle()
 			flvWrite = flv_writer_create2(0, 1, NetServerWS_FLV_OnWrite_CB, (void*)this);
 			WriteLog(Log_Debug, "创建ws-flv 输出格式为： 视频 %s、音频：无音频  nClient = %llu ", pushClient->m_mediaCodecInfo.szVideoName, nClient);
 		}
-		else if (strlen(pushClient->m_mediaCodecInfo.szVideoName) == 0 && strcmp(pushClient->m_mediaCodecInfo.szAudioName, "AAC") == 0)
+		else if (strlen(pushClient->m_mediaCodecInfo.szVideoName) == 0 && (strcmp(pushClient->m_mediaCodecInfo.szAudioName, "AAC") == 0 || strcmp(pushClient->m_mediaCodecInfo.szAudioName, "MP3") == 0))
 		{//只创建音频
 			flvWrite = flv_writer_create2(1, 0, NetServerWS_FLV_OnWrite_CB, (void*)this);
 			WriteLog(Log_Debug, "创建ws-flv 输出格式为： 无视频 、只有音频 %s  nClient = %llu ", pushClient->m_mediaCodecInfo.szAudioName, nClient);
@@ -619,7 +620,7 @@ int  CNetServerWS_FLV::WSSendFlvData(unsigned char* pData, int nDataLength)
 
 		wsLenght64 = nDataLength;
 		wsLenght64 = htonl(wsLenght64);
-		memcpy(webSocketHead + 2+4, (unsigned char*)&wsLenght64, sizeof(wsLenght64));
+		memcpy(webSocketHead + 2 + 4, (unsigned char*)&wsLenght64, sizeof(wsLenght64));
 		XHNetSDK_Write(nClient, webSocketHead, 10, true);
 		XHNetSDK_Write(nClient, pData, nDataLength, true);
 	}

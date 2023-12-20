@@ -204,6 +204,15 @@
     <ClInclude Include="NetClientWebrtcPlayer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="NetClientReadLocalMediaFile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NetServerRecvAudio.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NetClientRecvJTT1078.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -378,6 +387,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="NetClientWebrtcPlayer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NetClientReadLocalMediaFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NetServerRecvAudio.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

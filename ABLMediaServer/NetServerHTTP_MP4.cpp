@@ -713,7 +713,7 @@ bool  CNetServerHTTP_MP4::VideoFrameToFMP4File(unsigned char* szVideoData, int n
 			return false;
 
 		//有音频轨道 ，或者 等待视频超过30帧时，还没产生音频轨道证明该码流没有音频 
-		if (nMp4BufferLength > 0 && (strcmp(mediaCodecInfo.szAudioName,"AAC") != 0 || (strcmp(mediaCodecInfo.szAudioName, "AAC") == 0  && track_aac >= 0 )))
+		if (nMp4BufferLength > 0 && (ABL_MediaServerPort.nEnableAudio == 0 || strcmp(mediaCodecInfo.szAudioName, "AAC") != 0 || (strcmp(mediaCodecInfo.szAudioName, "AAC") == 0 && track_aac >= 0)))
 		{
  			if (hls_init_segmentFlag == false)
 			{

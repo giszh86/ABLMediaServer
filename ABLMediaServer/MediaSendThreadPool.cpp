@@ -75,7 +75,7 @@ bool CMediaSendThreadPool::findClientAtArray(uint64_t nClient)
 		{
 			if (threadContainClient[i].nClients[j] == nClient)
 			{
- 				WriteLog(Log_Debug, "把客户端 nClient = %llu 已经存在媒体发送线程池中，不需要再加入 ,nThreadID = %d ", nClient, i);
+ 				//WriteLog(Log_Debug, "把客户端 nClient = %llu 已经存在媒体发送线程池中，不需要再加入 ,nThreadID = %d ", nClient, i);
 				return true;
 			}
 		}
@@ -212,7 +212,7 @@ bool  CMediaSendThreadPool::DeleteClientToThreadPool(uint64_t nClient)
 void CMediaSendThreadPool::MySleep(int nSleepTime)
 {
 	if (nSleepTime <= 0)
-		std::this_thread::sleep_for(std::chrono::milliseconds(50));
+		std::this_thread::sleep_for(std::chrono::milliseconds(2));
 		//Sleep(5);
 	else
 		std::this_thread::sleep_for(std::chrono::milliseconds(nSleepTime));
@@ -246,7 +246,7 @@ void CMediaSendThreadPool::ProcessFunc()
 					   {//用于HLS视频，音频均匀塞入媒体源、以后还可以支持别的没有视频、音频发送的类
 						   pClient->SendVideo();
 						   pClient->SendAudio();
-						   std::this_thread::sleep_for(std::chrono::milliseconds(5));
+						   std::this_thread::sleep_for(std::chrono::milliseconds(2));
 						  // Sleep(5);
  					   }
 					   else
@@ -257,14 +257,14 @@ void CMediaSendThreadPool::ProcessFunc()
 						   {
 							   if (threadContainClient[nCurrentThreadID].nTrueClientsCount == 1)
 							   {//如果该线程只有1个连接，可以等待5毫秒
-								   std::this_thread::sleep_for(std::chrono::milliseconds(5));
+								   std::this_thread::sleep_for(std::chrono::milliseconds(2));
 								 //  Sleep(5);
 								   continue;
 							   }
 							   else //如果该线程超过2个连接，本次循环不能等待时间 ，因为还需要发送下一个链接的数据 
 							   {
 								  // Sleep(5); //防止死循环
-								   std::this_thread::sleep_for(std::chrono::milliseconds(5));
+								   std::this_thread::sleep_for(std::chrono::milliseconds(2));
 								   continue;
 							   }
 						   }
