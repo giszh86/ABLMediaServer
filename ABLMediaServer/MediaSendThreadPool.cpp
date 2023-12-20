@@ -279,7 +279,7 @@ void CMediaSendThreadPool::ProcessFunc()
 				   else
 				   {//找不到客户端 
 
-					   WriteLog(Log_Debug, "把该客户端 nClient = %llu 从媒体发送线程池移除", threadContainClient[nCurrentThreadID].nClients[i]);
+					   WriteLog(Log_Debug, "把该客户端 nClient = %llu , nCurrentThreadID = %d 从媒体发送线程池移除", threadContainClient[nCurrentThreadID].nClients[i],nCurrentThreadID);
 
 					   threadContainClient[nCurrentThreadID].nClients[i] = 0; //把该通道设置为 0 ，
 					   threadContainClient[nCurrentThreadID].nTrueClientsCount -= 1;//链接数减少1 
