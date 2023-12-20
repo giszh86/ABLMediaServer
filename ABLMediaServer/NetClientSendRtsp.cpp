@@ -1135,7 +1135,6 @@ bool  CNetClientSendRtsp::RequestM3u8File()
 	return true;
 }
 
-
 //从 SDP中获取  SPS，PPS 信息
 bool  CNetClientSendRtsp::GetSPSPPSFromDescribeSDP()
 {

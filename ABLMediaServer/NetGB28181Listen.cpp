@@ -51,8 +51,9 @@ CNetGB28181Listen::CNetGB28181Listen(NETHANDLE hServer, NETHANDLE hClient, char*
 }
 
 CNetGB28181Listen::~CNetGB28181Listen()
-{
-  malloc_trim(0);
+{ 
+	WriteLog(Log_Debug, "CNetGB28181Listen Îö¹¹ = %X  nClient = %llu ,nMediaClient = %llu\r\n", this, nClient, nMediaClient);
+	malloc_trim(0);
 }
 
 int CNetGB28181Listen::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, char* szVideoCodec)

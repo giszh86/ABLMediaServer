@@ -169,7 +169,7 @@ static int NetRtmpClientRecvCallBackFLV(void* param, int codec, const void* data
 				sprintf(pClient->szResponseBody, "{\"code\":0,\"memo\":\"success\",\"key\":%llu}", pClient->hParent);
 				pClient->ResponseHttp(pClient->nClient_http, pClient->szResponseBody, false);
 
-				auto  pParentPtr =  GetNetRevcBaseClient(pClient->hParent);
+				boost::shared_ptr<CNetRevcBase>   pParentPtr =  GetNetRevcBaseClient(pClient->hParent);
 				if (pParentPtr && pParentPtr->bProxySuccessFlag == false)
 					pClient->bProxySuccessFlag = pParentPtr->bProxySuccessFlag = true;
 			}

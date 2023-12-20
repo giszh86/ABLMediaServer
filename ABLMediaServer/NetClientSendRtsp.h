@@ -69,7 +69,6 @@ public:
    unsigned char           s_extra_data[256];
    int                     extra_data_size;
    struct mpeg4_avc_t      avc;
-
 #ifdef WriteRtpDepacketFileFlag
    bool                     bStartWriteFlag ;
 #endif 
@@ -77,7 +76,6 @@ public:
    int                     nSendRtpFailCount;//累计发送rtp包失败次数 
 
    bool                    GetSPSPPSFromDescribeSDP();
-
 
    CRtcpPacketSR           rtcpSR;
    CRtcpPacketRR           rtcpRR;
