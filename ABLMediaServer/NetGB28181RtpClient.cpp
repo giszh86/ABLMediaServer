@@ -3,7 +3,9 @@
     负责发送 GB28181 Rtp 码流，包括UDP、TCP模式  
  	增加 国标接收  （即国标发送的同时也支持国标接收）    2023-05-19
 日期    2021-08-15
-作者    
+作者    罗家兄弟
+QQ      79941308
+E-Mail  79941308@qq.com
 */
 
 #include "stdafx.h"
@@ -391,7 +393,7 @@ void  CNetGB28181RtpClient::CreateRtpHandle()
 		memset((char*)&gbDstAddrRTCP, 0x00, sizeof(gbDstAddrRTCP));
 		gbDstAddrRTCP.sin_family = AF_INET;
 		gbDstAddrRTCP.sin_addr.s_addr = inet_addr(m_startSendRtpStruct.dst_url);
-		gbDstAddrRTCP.sin_port = htons(atoi(m_startSendRtpStruct.dst_port) + 1);//rtcp端口
+		gbDstAddrRTCP.sin_port = htons(atoi(m_startSendRtpStruct.dst_port)+1);//rtcp端口
 
 		//记下媒体源
 		SplitterAppStream(m_szShareMediaURL);
@@ -568,7 +570,7 @@ void  CNetGB28181RtpClient::SendGBRtpPacketUDP(unsigned char* pRtpData, int nLen
 {
 	XHNetSDK_Sendto(nClient, pRtpData, nLength, (void*)&gbDstAddr);
 
-	if (GetTickCount64() - nSendRtcpTime >= 5 * 1000)
+ 	if (GetTickCount64() - nSendRtcpTime >= 5 * 1000 ) 
 	{//主动发送rtcp包
 		nSendRtcpTime = GetTickCount64();
 
@@ -716,7 +718,7 @@ int CNetGB28181RtpClient::SendFirstRequst()
 		ResponseHttp(nClient_http, szResponseBody, false);
 	}
 
-	auto pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
+	boost::shared_ptr<CMediaStreamSource> pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
 	if (pMediaSource != NULL)
 	{
 		memcpy((char*)&mediaCodecInfo, (char*)&pMediaSource->m_mediaCodecInfo, sizeof(MediaCodecInfo));
@@ -729,7 +731,7 @@ int CNetGB28181RtpClient::SendFirstRequst()
 }
 
 //rtp解包回调
-void NetGB28181RtpClient_rtppacket_callback_recv(_rtp_depacket_cb* cb)
+void RTP_DEPACKET_CALL_METHOD NetGB28181RtpClient_rtppacket_callback_recv(_rtp_depacket_cb* cb)
 {
 	CNetGB28181RtpClient* pThis = (CNetGB28181RtpClient*)cb->userdata;
 	if (!pThis->bRunFlag)
