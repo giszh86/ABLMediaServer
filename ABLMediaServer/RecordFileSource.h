@@ -26,30 +26,30 @@ typedef std::unordered_map<string, m3u8FileList_ptr>     m3u8FileList_ptrMap;
 class CRecordFileSource
 {
 public:
-	CRecordFileSource(char* app, char* stream);
-	~CRecordFileSource();
+   CRecordFileSource(char* app,char* stream);
+   ~CRecordFileSource();
 
-	m3u8FileList_ptrMap     m_m3u8FileMap;
-	std::mutex              m3u8NameMutex;
-	bool                    AddM3u8FileToMap(char* szM3u8Name);
-	bool                    UpdateM3u8FileTime(char* szM3u8Name);
-	int                     DeleteM3u8ExpireFile();
+   m3u8FileList_ptrMap     m_m3u8FileMap;
+   std::mutex              m3u8NameMutex; 
+   bool                    AddM3u8FileToMap(char* szM3u8Name);
+   bool                    UpdateM3u8FileTime(char* szM3u8Name);
+   int                     DeleteM3u8ExpireFile();
 
-	bool          queryRecordFile(char* szRecordFileName);
-	void          Sort();
-	std::mutex    RecordFileLock;
-	char          szDeleteFile[512];
+   bool          queryRecordFile(char* szRecordFileName);
+   void          Sort();
+   std::mutex    RecordFileLock;
+   char          szDeleteFile[512];
 
-	char          m_app[string_length_256];
-	char          m_stream[string_length_512];
-	char          m_szShareURL[string_length_512];
-	char          szBuffer[string_length_4096];
-	char          szJson[string_length_4096];
+   char          m_app[string_length_256];
+   char          m_stream[string_length_512];
+   char          m_szShareURL[string_length_512];
+   char          szBuffer[string_length_4096];
+   char          szJson[string_length_4096];
 
-	bool   AddRecordFile(char* szFileName);
-	bool   UpdateExpireRecordFile(char* szNewFileName);
+   bool   AddRecordFile(char* szFileName);
+   bool   UpdateExpireRecordFile(char* szNewFileName);
 
-	list<uint64_t> fileList;
+   list<uint64_t> fileList;
 };
 
 #endif
