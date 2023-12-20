@@ -40,52 +40,52 @@ extern "C" {
 
 #pragma pack(push, 1)
 
-	typedef struct {
-		void* ptr;
-		char* name;
-	}
-	psymodellist_t;
+typedef struct {
+  void *ptr;
+  char *name;
+}
+psymodellist_t;
 
 #include <stdint.h>
 #include "faaccfg.h"
 
 
-	typedef void* faacEncHandle;
+typedef void *faacEncHandle;
 
-	/*
-		Allows an application to get FAAC version info. This is intended
-		purely for informative purposes.
+/*
+	Allows an application to get FAAC version info. This is intended
+	purely for informative purposes.
 
-		Returns FAAC_CFG_VERSION.
-	*/
-	int FAACAPI faacEncGetVersion(char** faac_id_string,
-		char** faac_copyright_string);
-
-
-	faacEncConfigurationPtr FAACAPI
-		faacEncGetCurrentConfiguration(faacEncHandle hEncoder);
+	Returns FAAC_CFG_VERSION.
+*/
+int FAACAPI faacEncGetVersion(char **faac_id_string,
+			      char **faac_copyright_string);
 
 
-	int FAACAPI faacEncSetConfiguration(faacEncHandle hEncoder,
-		faacEncConfigurationPtr config);
+faacEncConfigurationPtr FAACAPI
+  faacEncGetCurrentConfiguration(faacEncHandle hEncoder);
 
 
-	faacEncHandle FAACAPI faacEncOpen(unsigned long sampleRate,
-		unsigned int numChannels,
-		unsigned long* inputSamples,
-		unsigned long* maxOutputBytes
-	);
-
-	int FAACAPI faacEncGetDecoderSpecificInfo(faacEncHandle hEncoder, unsigned char** ppBuffer,
-		unsigned long* pSizeOfDecoderSpecificInfo);
+int FAACAPI faacEncSetConfiguration(faacEncHandle hEncoder,
+				    faacEncConfigurationPtr config);
 
 
-	int FAACAPI faacEncEncode(faacEncHandle hEncoder, int32_t* inputBuffer, unsigned int samplesInput,
-		unsigned char* outputBuffer,
-		unsigned int bufferSize);
+faacEncHandle FAACAPI faacEncOpen(unsigned long sampleRate,
+				  unsigned int numChannels,
+				  unsigned long *inputSamples,
+                                  unsigned long *maxOutputBytes
+                                 );
+
+int FAACAPI faacEncGetDecoderSpecificInfo(faacEncHandle hEncoder, unsigned char **ppBuffer,
+					  unsigned long *pSizeOfDecoderSpecificInfo);
 
 
-	int FAACAPI faacEncClose(faacEncHandle hEncoder);
+int FAACAPI faacEncEncode(faacEncHandle hEncoder, int32_t * inputBuffer, unsigned int samplesInput,
+			 unsigned char *outputBuffer,
+			 unsigned int bufferSize);
+
+
+int FAACAPI faacEncClose(faacEncHandle hEncoder);
 
 
 

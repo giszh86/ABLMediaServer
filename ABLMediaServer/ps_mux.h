@@ -69,7 +69,7 @@ enum e_psmux_media_type
 
 enum e_ps_mux_stream_type
 {
-	e_psmux_st_unknow = 0,
+	e_psmux_st_unknow = 0,			
 
 	e_psmux_st_mpeg1v = 0x01,		//mpeg1 video
 
@@ -180,7 +180,7 @@ extern "C"
 {
 #endif
 
-	typedef void (PS_MUX_CALL_METHOD* ps_mux_callback)(_ps_mux_cb* cb);
+	typedef void (PS_MUX_CALL_METHOD *ps_mux_callback)(_ps_mux_cb* cb);
 
 	PS_MUX_API int32_t ps_mux_start(_ps_mux_init* init);
 
@@ -193,3 +193,4 @@ extern "C"
 #endif
 
 
+#endif

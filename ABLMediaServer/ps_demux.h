@@ -84,7 +84,7 @@ extern "C"
 {
 #endif // __cplusplus
 
-	typedef void (PS_DEMUX_CALL_METHOD* ps_demux_callback)(_ps_demux_cb* cb);
+	typedef void (PS_DEMUX_CALL_METHOD *ps_demux_callback)(_ps_demux_cb* cb);
 
 	PS_DEMUX_API int32_t ps_demux_start(ps_demux_callback cb, void* userdata, int32_t mode, uint32_t* h);
 
