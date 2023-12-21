@@ -1,6 +1,6 @@
 #ifndef _NetClientWebrtcPlayer_H
 #define _NetClientWebrtcPlayer_H
-
+#ifdef USE_BOOST
 #include <boost/unordered/unordered_map.hpp>
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <boost/unordered/unordered_map.hpp>
@@ -8,6 +8,10 @@
 #include <boost/algorithm/string.hpp>
 
 using namespace boost;
+#else
+#include <memory>
+#endif
+
 
 //#define  WebRtcVideoFileFlag     1 //写入webrtc视频数据
 
@@ -26,8 +30,12 @@ public:
    virtual int SendAudio();//发送音频数据
    virtual int SendFirstRequst();//发送第一个请求
    virtual bool RequestM3u8File();//请求m3u8文件
-
+#ifdef USE_BOOST
    boost::shared_ptr<CMediaStreamSource> pMediaSource;
+#else
+   std::shared_ptr<CMediaStreamSource> pMediaSource;
+#endif
+
    int                                   nSpsPositionPos;
 
 #ifdef WebRtcVideoFileFlag

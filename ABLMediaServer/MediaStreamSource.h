@@ -26,7 +26,7 @@
 #include "AACEncode.h"
 #include "FFVideoDecode.h"
 #include "FFVideoEncode.h"
-#include <map>
+#include <unordered_map>
 //#define  WriteCudaDecodeYUVFlag    1
 //#define    WriteInputVdideoFlag      1
 //#define   WriteInputVideoFileFlag      1 
@@ -57,13 +57,10 @@ struct RtspSDPContentStruct
 	}
 };
 #ifdef USE_BOOST
-
 typedef  boost::unordered_map<NETHANDLE, NETHANDLE> MediaSendMap;//媒体发送列表
-
 #else
-typedef  std::map<NETHANDLE, NETHANDLE> MediaSendMap;//媒体发送列表
+typedef  std::unordered_map<NETHANDLE, NETHANDLE> MediaSendMap;//媒体发送列表
 #endif
-
 
 
 #define  OneFrame_MP4_Stream_BufferLength    1024*1024*2 
@@ -73,14 +70,19 @@ class CMediaStreamSource
 public:
    CMediaStreamSource(char* szURL,uint64_t nClientTemp, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct h265ConvertH264Struct);
    ~CMediaStreamSource();
+
 #ifdef WriteInputVideoFileFlag
-   FILE* fWriteInputVideoFile;
+   FILE*   fWriteInputVideoFile;
 #endif
    int                nWebRtcPlayerCount;//webRtc播放次数统计 
    uint64_t           nWebRtcPushStreamID;//给webRTC推流提供者 
-
+ 
+  
+#ifdef USE_BOOST
+   boost::atomic_bool bCreateWebRtcPlaySourceFlag;//创建webrtc源标志 
+#else
    std::atomic<bool> bCreateWebRtcPlaySourceFlag;//创建webrtc源标志 
-
+#endif
    char            szSnapPicturePath[string_length_512];
    uint64_t        iFrameArriveNoticCount;
    uint64_t        nCreateDateTime;
@@ -121,10 +123,11 @@ public:
    uint64_t               nCudaDecodeChan;//cuda解码通道
    int                    nCudaDecodeFrameCount;//解码成功后的帧数量
    int                    nEncodeBufferLengthCount;//转码后buffer的总长度
-
-
+#ifdef OS_System_Windows
+   unsigned char**        pCudaDecodeYUVFrame;//解码成功的帧数据
+#else
    unsigned char*         pCudaDecodeYUVFrame;//解码成功的帧数据	
-
+#endif
    int                    nCudeDecodeOutLength;//解码成功后的长度
 
    unsigned char*         pOutEncodeBuffer;
@@ -185,7 +188,7 @@ public:
    int64_t               nAudioOrder ;
    struct mpeg_ts_func_t tshandler;
    CMediaFifo            tsFileNameFifo;
-   unsigned long long               tsCreateTime;
+   int64_t               tsCreateTime;
    CMediaFifo            m3u8FileFifo;
    int64_t               m3u8FileOrder;
    void*                 tsPacketHandle ;

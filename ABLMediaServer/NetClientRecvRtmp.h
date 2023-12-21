@@ -17,7 +17,7 @@
 
 using namespace boost;
 #else
-
+#include <memory>
 #endif
 
 
@@ -54,8 +54,12 @@ public:
 
    flv_demuxer_t*               flvDemuxer;
    char                         szURL[512];
-
+#ifdef USE_BOOST
    boost::shared_ptr<CMediaStreamSource> pMediaSource;
+#else
+   std::shared_ptr<CMediaStreamSource> pMediaSource;
+#endif
+   
    volatile bool                         bDeleteRtmpPushH265Flag; //因为推rtmp265被删除标志 
 
 #ifdef  WriteFlvFileByDebug

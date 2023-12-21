@@ -437,7 +437,12 @@ bool  CNetServerWS_FLV::Create_WS_FLV_Handle()
 			szFlvName[strlen(szFlvName) - 4] = 0x00;
 
 		strcpy(szMediaSourceURL, szFlvName);
+#ifdef USE_BOOST
 		boost::shared_ptr<CMediaStreamSource> pushClient = NULL;
+#else
+		std::shared_ptr<CMediaStreamSource> pushClient = NULL;
+#endif
+
 		if (strstr(szFlvName, RecordFileReplaySplitter) == NULL)
 		{//Êµ¿öµã²¥
 			pushClient = GetMediaStreamSource(szFlvName, true);

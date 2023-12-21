@@ -28,21 +28,17 @@ E-Mail  79941308@qq.com
 
 #include "stdafx.h"
 #include "../webrtc-streamer/inc/rtc_obj_sdk.h"
-NETHANDLE srvhandle_8080, srvhandle_554, srvhandle_1935, srvhandle_6088, srvhandle_8088, srvhandle_8089, srvhandle_9088, srvhandle_9298;
 
+NETHANDLE srvhandle_8080,srvhandle_554, srvhandle_1935, srvhandle_6088, srvhandle_8088, srvhandle_8089, srvhandle_9088, srvhandle_9298;
 #ifdef USE_BOOST
-
-
 typedef boost::shared_ptr<CNetRevcBase> CNetRevcBase_ptr;
 typedef boost::unordered_map<NETHANDLE, CNetRevcBase_ptr>        CNetRevcBase_ptrMap;
 CNetRevcBase_ptrMap                                              xh_ABLNetRevcBaseMap;
-
-
 std::mutex                                                       ABL_CNetRevcBase_ptrMapLock;
-CNetBaseThreadPool* NetBaseThreadPool;
-CMediaSendThreadPool* pMediaSendThreadPool;
-CNetBaseThreadPool* RecordReplayThreadPool;//录像回放线程池
-CNetBaseThreadPool* MessageSendThreadPool;//消息发送线程池
+CNetBaseThreadPool*                                              NetBaseThreadPool;
+CMediaSendThreadPool*                                            pMediaSendThreadPool;
+CNetBaseThreadPool*                                              RecordReplayThreadPool;//录像回放线程池
+CNetBaseThreadPool*                                              MessageSendThreadPool;//消息发送线程池
 
 /* 媒体数据存储 -------------------------------------------------------------------------------------*/
 typedef boost::shared_ptr<CMediaStreamSource>                    CMediaStreamSource_ptr;
@@ -60,38 +56,6 @@ std::mutex                                                       ABL_CRecordFile
 typedef boost::shared_ptr<CPictureFileSource>                    CPictureFileSource_ptr;
 typedef boost::unordered_map<string, CPictureFileSource_ptr>     CPictureFileSource_ptrMap;
 CPictureFileSource_ptrMap                                        xh_ABLPictureFileSourceMap;
-
-#else
-
-typedef std::shared_ptr<CNetRevcBase> CNetRevcBase_ptr;
-typedef std::map<NETHANDLE, CNetRevcBase_ptr>        CNetRevcBase_ptrMap;
-CNetRevcBase_ptrMap                                              xh_ABLNetRevcBaseMap;
-
-
-std::mutex                                                       ABL_CNetRevcBase_ptrMapLock;
-CNetBaseThreadPool* NetBaseThreadPool;
-CMediaSendThreadPool* pMediaSendThreadPool;
-CNetBaseThreadPool* RecordReplayThreadPool;//录像回放线程池
-CNetBaseThreadPool* MessageSendThreadPool;//消息发送线程池
-
-/* 媒体数据存储 -------------------------------------------------------------------------------------*/
-typedef std::shared_ptr<CMediaStreamSource>                    CMediaStreamSource_ptr;
-typedef std::map<string, CMediaStreamSource_ptr>     CMediaStreamSource_ptrMap;
-CMediaStreamSource_ptrMap                                        xh_ABLMediaStreamSourceMap;
-std::mutex                                                       ABL_CMediaStreamSourceMapLock;
-
-/* 录像文件存储 -------------------------------------------------------------------------------------*/
-typedef std::shared_ptr<CRecordFileSource>                     CRecordFileSource_ptr;
-typedef std::map<string, CRecordFileSource_ptr>      CRecordFileSource_ptrMap;
-CRecordFileSource_ptrMap                                         xh_ABLRecordFileSourceMap;
-std::mutex                                                       ABL_CRecordFileSourceMapLock;
-
-/* 图片文件存储 -------------------------------------------------------------------------------------*/
-typedef std::shared_ptr<CPictureFileSource>                    CPictureFileSource_ptr;
-typedef std::map<string, CPictureFileSource_ptr>     CPictureFileSource_ptrMap;
-CPictureFileSource_ptrMap                                        xh_ABLPictureFileSourceMap;
-#endif
-
 std::mutex                                                       ABL_CPictureFileSourceMapLock;
 
 volatile bool                                                    ABL_bMediaServerRunFlag = true ;
@@ -110,32 +74,77 @@ int                                                              ABL_nCudaCount 
 volatile bool                                                    ABL_bRestartServerFlag = false;
 volatile bool                                                    ABL_bInitXHNetSDKFlag = false;
 volatile bool                                                    ABL_bInitCudaSDKFlag = false;
+#else
+
+typedef std::shared_ptr<CNetRevcBase> CNetRevcBase_ptr;
+typedef std::unordered_map<NETHANDLE, CNetRevcBase_ptr>        CNetRevcBase_ptrMap;
+CNetRevcBase_ptrMap                                              xh_ABLNetRevcBaseMap;
+std::mutex                                                       ABL_CNetRevcBase_ptrMapLock;
+CNetBaseThreadPool* NetBaseThreadPool;
+CMediaSendThreadPool* pMediaSendThreadPool;
+CNetBaseThreadPool* RecordReplayThreadPool;//录像回放线程池
+CNetBaseThreadPool* MessageSendThreadPool;//消息发送线程池
+
+/* 媒体数据存储 -------------------------------------------------------------------------------------*/
+typedef std::shared_ptr<CMediaStreamSource>                    CMediaStreamSource_ptr;
+typedef std::unordered_map<string, CMediaStreamSource_ptr>     CMediaStreamSource_ptrMap;
+CMediaStreamSource_ptrMap                                        xh_ABLMediaStreamSourceMap;
+std::mutex                                                       ABL_CMediaStreamSourceMapLock;
+
+/* 录像文件存储 -------------------------------------------------------------------------------------*/
+typedef std::shared_ptr<CRecordFileSource>                     CRecordFileSource_ptr;
+typedef std::unordered_map<string, CRecordFileSource_ptr>      CRecordFileSource_ptrMap;
+CRecordFileSource_ptrMap                                         xh_ABLRecordFileSourceMap;
+std::mutex                                                       ABL_CRecordFileSourceMapLock;
+
+/* 图片文件存储 -------------------------------------------------------------------------------------*/
+typedef std::shared_ptr<CPictureFileSource>                    CPictureFileSource_ptr;
+typedef std::unordered_map<string, CPictureFileSource_ptr>     CPictureFileSource_ptrMap;
+CPictureFileSource_ptrMap                                        xh_ABLPictureFileSourceMap;
+std::mutex                                                       ABL_CPictureFileSourceMapLock;
+
+volatile bool                                                    ABL_bMediaServerRunFlag = true;
+volatile bool                                                    ABL_bExitMediaServerRunFlag = false; //退出处理线程标志 
+CMediaFifo                                                       pDisconnectBaseNetFifo;             //清理断裂的链接 
+CMediaFifo                                                       pReConnectStreamProxyFifo;          //需要重新连接代理ID 
+CMediaFifo                                                       pMessageNoticeFifo;          //消息通知FIFO
+char                                                             ABL_MediaSeverRunPath[256] = { 0 }; //当前路径
+char                                                             ABL_wwwMediaPath[256] = { 0 }; //www 子路径
+uint64_t                                                         ABL_nBaseCookieNumber = 100; //Cookie 序号 
+char                                                             ABL_szLocalIP[128] = { 0 };
+uint64_t                                                         ABL_nPrintCheckNetRevcBaseClientDisconnect = 0;
+CNetRevcBase_ptr                                                 GetNetRevcBaseClient(NETHANDLE CltHandle);
+bool 	                                                         ABL_bCudaFlag = false;
+int                                                              ABL_nCudaCount = 0;
+volatile bool                                                    ABL_bRestartServerFlag = false;
+volatile bool                                                    ABL_bInitXHNetSDKFlag = false;
+volatile bool                                                    ABL_bInitCudaSDKFlag = false;
+#endif
 
 #ifdef OS_System_Windows
 //cuda 解码 
 HINSTANCE            hCudaDecodeInstance;
-ABL_cudaCodec_Init cudaCodec_Init = NULL;
-ABL_cudaCodec_GetDeviceGetCount  cudaCodec_GetDeviceGetCount = NULL;
-ABL_cudaCodec_GetDeviceName cudaCodec_GetDeviceName = NULL;
-ABL_cudaCodec_GetDeviceUse cudaCodec_GetDeviceUse = NULL;
-ABL_cudaCodec_CreateVideoDecode cudaCodec_CreateVideoDecode = NULL;
-ABL_cudaCodec_CudaVideoDecode cudaCodec_CudaVideoDecode = NULL;
-ABL_cudaCodec_DeleteVideoDecode cudaCodec_DeleteVideoDecode = NULL;
-ABL_cudaCodec_GetCudaDecodeCount cudaCodec_GetCudaDecodeCount = NULL;
-ABL_cudaCodec_UnInit cudaCodec_UnInit = NULL;
-
+ABL_cudaDecode_Init cudaCodec_Init = NULL;
+ABL_cudaDecode_GetDeviceGetCount  cudaCodec_GetDeviceGetCount = NULL;
+ABL_cudaDecode_GetDeviceName cudaCodec_GetDeviceName = NULL;
+ABL_cudaDecode_GetDeviceUse cudaCodec_GetDeviceUse = NULL;
+ABL_CreateVideoDecode cudaCodec_CreateVideoDecode = NULL;
+ABL_CudaVideoDecode cudaCodec_CudaVideoDecode = NULL;
+ABL_DeleteVideoDecode cudaCodec_DeleteVideoDecode = NULL;
+ABL_GetCudaDecodeCount cudaCodec_GetCudaDecodeCount = NULL;
+ABL_VideoDecodeUnInit cudaCodec_UnInit = NULL;
 
 #else
 void*              pCudaDecodeHandle = NULL ;
-ABL_cudaCodec_Init cudaCodec_Init = NULL ;
-ABL_cudaCodec_GetDeviceGetCount  cudaCodec_GetDeviceGetCount  = NULL ;
-ABL_cudaCodec_GetDeviceName cudaCodec_GetDeviceName = NULL ;
-ABL_cudaCodec_GetDeviceUse cudaCodec_GetDeviceUse = NULL ;
-ABL_cudaCodec_CreateVideoDecode cudaCodec_CreateVideoDecode = NULL ;
-ABL_cudaCodec_CudaVideoDecode cudaCodec_CudaVideoDecode  = NULL ;
-ABL_cudaCodec_DeleteVideoDecode cudaCodec_DeleteVideoDecode = NULL ;
-ABL_cudaCodec_GetCudaDecodeCount cudaCodec_GetCudaDecodeCount = NULL ;
-ABL_cudaCodec_UnInit cudaCodec_UnInit = NULL ;
+ABL_cudaDecode_Init cudaCodec_Init = NULL ;
+ABL_cudaDecode_GetDeviceGetCount  cudaCodec_GetDeviceGetCount  = NULL ;
+ABL_cudaDecode_GetDeviceName cudaCodec_GetDeviceName = NULL ;
+ABL_cudaDecode_GetDeviceUse cudaCodec_GetDeviceUse = NULL ;
+ABL_CreateVideoDecode cudaCodec_CreateVideoDecode = NULL ;
+ABL_CudaVideoDecode cudaCodec_CudaVideoDecode  = NULL ;
+ABL_DeleteVideoDecode cudaCodec_DeleteVideoDecode = NULL ;
+ABL_GetCudaDecodeCount cudaCodec_GetCudaDecodeCount = NULL ;
+ABL_VideoDecodeUnInit cudaCodec_UnInit = NULL ;
 
 void*              pCudaEncodeHandle = NULL ;
 ABL_cudaEncode_Init cudaEncode_Init = NULL ;
@@ -225,19 +234,19 @@ unsigned short                                                   ABL_nGB28181Por
 
 int GB2312ToUTF8(char* szSrc, size_t iSrcLen, char* szDst, size_t iDstLen)
 {
-	iconv_t cd = iconv_open("utf-8//IGNORE", "gb2312//IGNORE");
-	if (0 == cd)
-		return -2;
-	memset(szDst, 0, iDstLen);
-	char** src = &szSrc;
-	char** dst = &szDst;
-	if (-1 == (int)iconv(cd, src, &iSrcLen, dst, &iDstLen))
-	{
-		iconv_close(cd);
-		return -1;
-	}
-	iconv_close(cd);
-	return 0;
+      iconv_t cd = iconv_open("utf-8//IGNORE", "gb2312//IGNORE");
+      if(0 == cd)
+         return -2;
+      memset(szDst, 0, iDstLen);
+      char **src = &szSrc;
+      char **dst = &szDst;
+      if(-1 == (int)iconv(cd, src, &iSrcLen, dst, &iDstLen))
+	  {
+	     iconv_close(cd);
+         return -1;
+	  }
+      iconv_close(cd);
+      return 0;
 }
 
 unsigned long GetTickCount()
@@ -246,6 +255,7 @@ unsigned long GetTickCount()
 	gettimeofday(&tv, NULL);
 	return ((tv.tv_sec * 1000) + (tv.tv_usec / 1000));
 }
+
 int64_t GetTickCount64()
 {
 	struct timeval tv;
@@ -253,12 +263,11 @@ int64_t GetTickCount64()
 	return ((tv.tv_sec * 1000) + (tv.tv_usec / 1000));
 }
 
-
 uint64_t GetCurrentSecond()
 {
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
-	return (tv.tv_sec);
+	return (tv.tv_sec) ;
 }
 
 //延时
@@ -272,53 +281,54 @@ void  Sleep(int mMicroSecond)
 
 bool GetLocalAdaptersInfo(string& strIPList)
 {
-	struct ifaddrs* ifaddr, * ifa;
+	struct ifaddrs *ifaddr, *ifa;
 
 	int family, s;
 
-	char szAllIPAddress[4096] = { 0 };
-	char host[NI_MAXHOST] = { 0 };
+	char szAllIPAddress[4096]={0};
+	char host[NI_MAXHOST] = {0};
 
-	if (getifaddrs(&ifaddr) == -1)
+	if (getifaddrs(&ifaddr) == -1) 
 	{ //通过getifaddrs函数得到所有网卡信息
-		return false;
-	}
+  		return false ;
+ 	}
 
-	for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next)
+	for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) 
 	{ //做链表做循环
 
 		if (ifa->ifa_addr == NULL) //判断地址是否为空
-			continue;
+ 			continue;
 
 		family = ifa->ifa_addr->sa_family; //得到IP地址的协议族
-
-		if (family == AF_INET)
+ 
+		if (family == AF_INET ) 
 		{ //判断协议族是AF_INET还是AF_INET6
-			memset(host, 0x00, NI_MAXHOST);
+	        memset(host,0x00, NI_MAXHOST);
+			 
+ 		    //通过getnameinfo函数得到对应的IP地址。NI_MAXHOST为宏定义，值为1025. NI_NUMERICHOST宏定义，和NI_NUMERICSERV对应，都试一下就知道了。
+ 			s = getnameinfo(ifa->ifa_addr,
+ 				(family == AF_INET) ? sizeof(struct sockaddr_in) :
+ 				sizeof(struct sockaddr_in6),
+ 				host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
 
-			//通过getnameinfo函数得到对应的IP地址。NI_MAXHOST为宏定义，值为1025. NI_NUMERICHOST宏定义，和NI_NUMERICSERV对应，都试一下就知道了。
-			s = getnameinfo(ifa->ifa_addr,
-				(family == AF_INET) ? sizeof(struct sockaddr_in) :
-				sizeof(struct sockaddr_in6),
-				host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
-
-			if (!(strcmp(host, "127.0.0.1") == 0 || strcmp(host, "0.0.0.0") == 0))
-			{
-				strcat(szAllIPAddress, host);
-				strcat(szAllIPAddress, ",");
-			}
-
-			if (s != 0)
-			{
+			 if( !(strcmp(host,"127.0.0.1") == 0 || strcmp(host, "0.0.0.0") == 0) )
+			 {
+			   strcat(szAllIPAddress,host);
+			   strcat(szAllIPAddress,",");
+			 }	
+			 
+			 if (s != 0) 
+			 {
 				printf("getnameinfo() failed: %s\n", gai_strerror(s));
-			}
-		}
+  			 }
+       	}
 	}
-	WriteLog(Log_Debug, "szAllIPAddress = %s ", szAllIPAddress);
+	WriteLog(Log_Debug, "szAllIPAddress = %s ",szAllIPAddress);
 	strIPList = szAllIPAddress;
-
-	return true;
+	
+    return true ;
 }
+
 #endif
 
 //无锁查找，在外层已经有锁
@@ -376,53 +386,20 @@ CMediaStreamSource_ptr CreateMediaStreamSource(char* szURL, uint64_t nClient, Me
 	auto ret =xh_ABLMediaStreamSourceMap.insert(std::make_pair(strURL, pXHClient));
 	if (!ret.second)
 	{
-		//pXHClient.reset();
 		return NULL;
 	}
 
 	return pXHClient;
 }
 
-
-
-bool isURLWithProtocol(const std::string& str) {
-	// 判断字符串是否以协议开头，比如 "rtsp://"
-	return (str.substr(0, 7) == "rtsp://" || str.substr(0, 7) == "http://" || str.substr(0, 7) == "rtmp://");
-}
-
-
-std::string getPortionAfterPort(const std::string& str) {
-	size_t startPos = str.find(':', 6); // 从第6个字符开始查找冒号，跳过协议部分
-	if (startPos == std::string::npos) {
-		return ""; // 找不到冒号，返回空字符串
-	}
-
-	size_t endPos = str.find('/', startPos); // 从冒号后面查找第一个斜杠
-	if (endPos == std::string::npos) {
-		return ""; // 找不到斜杠，返回空字符串
-	}
-
-	return str.substr(endPos); // 提取斜杠后面的部分
-}
-
-CMediaStreamSource_ptr GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound = false)
+CMediaStreamSource_ptr GetMediaStreamSource(char* szURL,bool bNoticeStreamNoFound=false)
 {
 	std::lock_guard<std::mutex> lock(ABL_CMediaStreamSourceMapLock);
-	std::string path = "";
-	if (isURLWithProtocol(szURL)) {
-		//std::cout << "Input string is a URL with protocol." << std::endl;
-		path = getPortionAfterPort(szURL);
-		//	std::cout << "Extracted path: " << path << std::endl;
-	}
-	else {
-		//std::cout << "Input string is a simple path." << std::endl;
-		path = szURL;
-	}
 
-
+	
 	CMediaStreamSource_ptr   pClient = NULL;
  
-	auto iterator1 = xh_ABLMediaStreamSourceMap.find(path.c_str());
+	auto iterator1 = xh_ABLMediaStreamSourceMap.find(szURL);
 	if (iterator1 != xh_ABLMediaStreamSourceMap.end())
 	{
 		pClient = (*iterator1).second;
@@ -648,12 +625,12 @@ int GetAllMediaStreamSource(char* szMediaSourceInfo, getMediaListStruct mediaLis
 	{
 		CNetRevcBase_ptr pClient = (*iterator1).second;
 
-		//WriteLog(Log_Debug, "nClient = %llu , nType = %d  ", pClient->nClient, pClient->netBaseNetType);
+		//WriteLog(Log_Debug, "nClient = %llu , nType = %d  ", pClient->nClient, pClient->netBaseNetType); 
 
 		if (pClient->netBaseNetType == NetBaseNetType_WebSocektRecvAudio || pClient->netBaseNetType == NetBaseNetType_addStreamProxyControl || pClient->netBaseNetType == NetBaseNetType_RtspServerRecvPush || pClient->netBaseNetType == NetBaseNetType_RtmpServerRecvPush ||
 			pClient->netBaseNetType == NetBaseNetType_NetGB28181RtpServerUDP || pClient->netBaseNetType == NetBaseNetType_NetGB28181RtpServerTCP_Server || pClient->netBaseNetType == ReadRecordFileInput_ReadFMP4File || pClient->netBaseNetType == NetBaseNetType_NetGB28181UDPTSStreamInput || pClient->netBaseNetType == NetBaseNetType_NetGB28181RtpServerTCP_Active ||
-			pClient->netBaseNetType == NetBaseNetType_NetGB28181UDPPSStreamInput || (pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpUDP && strlen(pClient->m_startSendRtpStruct.recv_app) > 0 && strlen(pClient->m_startSendRtpStruct.recv_stream) > 0) || (pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Connect && strlen(pClient->m_startSendRtpStruct.recv_app) > 0 && strlen(pClient->m_startSendRtpStruct.recv_stream) > 0) ||
-			(pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Passive && strlen(pClient->m_startSendRtpStruct.recv_app) > 0 && strlen(pClient->m_startSendRtpStruct.recv_stream) > 0))
+			pClient->netBaseNetType == NetBaseNetType_NetGB28181UDPPSStreamInput || (pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpUDP && strlen(pClient->m_startSendRtpStruct.recv_app) > 0 && strlen(pClient->m_startSendRtpStruct.recv_stream) > 0)|| (pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Connect  && strlen(pClient->m_startSendRtpStruct.recv_app) > 0 && strlen(pClient->m_startSendRtpStruct.recv_stream) > 0) ||
+			(pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Passive && strlen(pClient->m_startSendRtpStruct.recv_app) > 0 && strlen(pClient->m_startSendRtpStruct.recv_stream) > 0)  )
 		{//代理拉流（rtsp,rtmp,flv,hls ）,rtsp推流，rtmp推流，gb28181，webrtc 
 
  			if (pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpUDP || pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Connect || pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Passive)
@@ -716,15 +693,15 @@ int GetAllMediaStreamSource(char* szMediaSourceInfo, getMediaListStruct mediaLis
 
 					if (tmpMediaSource->nMediaSourceType == MediaSourceType_LiveMedia)
 					{//实况播放
-						sprintf(szTemp2, "{\"key\":%llu,\"port\":%d,\"app\":\"%s\",\"stream\":\"%s\",\"status\":%s,\"enable_hls\":%s,\"transcodingStatus\":%s,\"sourceURL\":\"%s\",\"networkType\":%d,\"readerCount\":%d,\"noneReaderDuration\":%llu,\"videoCodec\":\"%s\",\"videoFrameSpeed\":%d,\"width\":%d,\"height\":%d,\"videoBitrate\":%d,\"audioCodec\":\"%s\",\"audioChannels\":%d,\"audioSampleRate\":%d,\"audioBitrate\":%d,\"url\":{\"rtsp\":\"rtsp://%s:%d/%s/%s\",\"rtmp\":\"rtmp://%s:%d/%s/%s\",\"http-flv\":\"http://%s:%d/%s/%s.flv\",\"ws-flv\":\"ws://%s:%d/%s/%s.flv\",\"http-mp4\":\"http://%s:%d/%s/%s.mp4\",\"http-hls\":\"http://%s:%d/%s/%s.m3u8\",\"webrtc\":\"http://%s:%d/webrtc-streamer.html?video=/%s/%s\"}},", tmpMediaSource->nClient, nClientPort, szApp, szStream, tmpMediaSource->enable_mp4 == true ? "true" : "false", tmpMediaSource->enable_hls == true ? "true" : "false", tmpMediaSource->H265ConvertH264_enable == true ? "true" : "false", pClient->m_addStreamProxyStruct.url, pClient->netBaseNetType, tmpMediaSource->mediaSendMap.size(), nNoneReadDuration,
+						sprintf(szTemp2, "{\"key\":%llu,\"port\":%d,\"app\":\"%s\",\"stream\":\"%s\",\"status\":%s,\"enable_hls\":%s,\"transcodingStatus\":%s,\"sourceURL\":\"%s\",\"networkType\":%d,\"readerCount\":%d,\"noneReaderDuration\":%llu,\"videoCodec\":\"%s\",\"videoFrameSpeed\":%d,\"width\":%d,\"height\":%d,\"videoBitrate\":%d,\"audioCodec\":\"%s\",\"audioChannels\":%d,\"audioSampleRate\":%d,\"audioBitrate\":%d,\"url\":{\"rtsp\":\"rtsp://%s:%d/%s/%s\",\"rtmp\":\"rtmp://%s:%d/%s/%s\",\"http-flv\":\"http://%s:%d/%s/%s.flv\",\"ws-flv\":\"ws://%s:%d/%s/%s.flv\",\"http-mp4\":\"http://%s:%d/%s/%s.mp4\",\"http-hls\":\"http://%s:%d/%s/%s.m3u8\",\"webrtc\":\"http://%s:%d/webrtc-streamer.html?video=/%s/%s\"}},", tmpMediaSource->nClient, nClientPort, szApp, szStream, tmpMediaSource->enable_mp4 == true ? "true" : "false",tmpMediaSource->enable_hls == true ? "true" : "false", tmpMediaSource->H265ConvertH264_enable == true ? "true" : "false", pClient->m_addStreamProxyStruct.url, pClient->netBaseNetType, tmpMediaSource->mediaSendMap.size(), nNoneReadDuration,
 							tmpMediaSource->m_mediaCodecInfo.szVideoName, tmpMediaSource->m_mediaCodecInfo.nVideoFrameRate, tmpMediaSource->m_mediaCodecInfo.nWidth, tmpMediaSource->m_mediaCodecInfo.nHeight, tmpMediaSource->m_mediaCodecInfo.nVideoBitrate, tmpMediaSource->m_mediaCodecInfo.szAudioName, tmpMediaSource->m_mediaCodecInfo.nChannels, tmpMediaSource->m_mediaCodecInfo.nSampleRate, tmpMediaSource->m_mediaCodecInfo.nAudioBitrate,
 							ABL_szLocalIP, ABL_MediaServerPort.nRtspPort, szApp, szStream,
 							ABL_szLocalIP, ABL_MediaServerPort.nRtmpPort, szApp, szStream,
 							ABL_szLocalIP, ABL_MediaServerPort.nHttpFlvPort, szApp, szStream,
 							ABL_szLocalIP, ABL_MediaServerPort.nWSFlvPort, szApp, szStream,
 							ABL_szLocalIP, ABL_MediaServerPort.nHttpMp4Port, szApp, szStream,
-							ABL_szLocalIP, ABL_MediaServerPort.nHlsPort, szApp, szStream,
-							ABL_szLocalIP, ABL_MediaServerPort.nWebRtcPort, szApp, szStream);
+							ABL_szLocalIP, ABL_MediaServerPort.nHlsPort, szApp, szStream, 
+						    ABL_szLocalIP, ABL_MediaServerPort.nWebRtcPort, szApp, szStream);
 					}
 					else
 					{//录像点播
@@ -935,12 +912,12 @@ int  DeleteExpireM3u8File()
 	CRecordFileSource_ptr   pRecord = NULL;
 	int                     nDeleteCount = 0;
 
-	for (it = xh_ABLRecordFileSourceMap.begin(); it != xh_ABLRecordFileSourceMap.end(); ++it)
+	for (it = xh_ABLRecordFileSourceMap.begin() ;it != xh_ABLRecordFileSourceMap.end(); ++it)
 	{
 		pRecord = (*it).second;
 		if (pRecord)
 			nDeleteCount += pRecord->DeleteM3u8ExpireFile();
-	}
+ 	}
 	return nDeleteCount;
 }
 
@@ -981,14 +958,12 @@ CRecordFileSource_ptr CreateRecordFileSource(char* app,char* stream)
 	{
 		do
 		{
-	
 #ifdef USE_BOOST
-					pRecord = boost::make_shared<CRecordFileSource>(app,stream);
+			pRecord = boost::make_shared<CRecordFileSource>(app, stream);
 #else
-					pRecord = std::make_shared<CRecordFileSource>(app,stream);
+			pRecord = std::make_shared<CRecordFileSource>(app, stream);
 #endif
-
-		
+	
 		} while (pRecord == NULL);
 	}
 	catch (const std::exception &e)
@@ -1000,7 +975,6 @@ CRecordFileSource_ptr CreateRecordFileSource(char* app,char* stream)
 		xh_ABLRecordFileSourceMap.insert(std::make_pair(pRecord->m_szShareURL, pRecord));
 	if (!ret.second)
 	{
-		//pRecord.reset();
 		return NULL;
 	}
 
@@ -1058,11 +1032,11 @@ int queryRecordListByTime(char* szMediaSourceInfo, queryRecordListStruct querySt
 	char  szTemp1[string_length_2048] = { 0 };
 	char  szShareMediaURL[string_length_2048] = { 0 };
 	bool  bAddFlag = false;
-	FILE* fp = NULL;
+	FILE*          fp=NULL;
 	char           szFileName[string_length_1024] = { 0 };
-	mov_reader_t* mov = NULL;
-	uint64_t       duration = 0;//录像回放时读取到录像文件长度
-	FILE* fileM3U8 = NULL;
+	mov_reader_t*  mov = NULL ;
+	uint64_t       duration = 0 ;//录像回放时读取到录像文件长度
+	FILE*          fileM3U8=NULL;
 	char           m3u8FileName[string_length_512] = { 0 };
 	char           mapm3u8FileName[string_length_512] = { 0 };
 	int            nFileOrder = 0;
@@ -1076,16 +1050,16 @@ int queryRecordListByTime(char* szMediaSourceInfo, queryRecordListStruct querySt
 			sprintf(mapm3u8FileName, "\\%s\\%s\\%s_%s.m3u8", queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime);
 #else
 			sprintf(m3u8FileName, "%s%s/%s/%s_%s.m3u8", ABL_MediaServerPort.recordPath, queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime);
-			sprintf(mapm3u8FileName, "/%s/%s/%s_%s.m3u8", queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime);
+			sprintf(mapm3u8FileName, "/%s/%s/%s_%s.m3u8",  queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime);
 #endif 
 			fileM3U8 = fopen(m3u8FileName, "wb");
 			sprintf(szTemp1, "\"http-hls\":\"http://%s:%d/%s/%s%s%s_%s.m3u8\"", ABL_szLocalIP, ABL_MediaServerPort.nHlsPort, queryStruct.app, queryStruct.stream, RecordFileReplaySplitter, queryStruct.starttime, queryStruct.endtime);
 		}
-
-		if (fileM3U8 != NULL)
+   
+		if(fileM3U8 != NULL)
 			sprintf(szMediaSourceInfo, "{\"code\":0,\"app\":\"%s\",\"stream\":\"%s\",\"starttime\":\"%s\",\"endtime\":\"%s\",%s,\"recordFileList\":[", queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime, szTemp1);
 		else
-			sprintf(szMediaSourceInfo, "{\"code\":0,\"app\":\"%s\",\"stream\":\"%s\",\"starttime\":\"%s\",\"endtime\":\"%s\",\"recordFileList\":[", queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime);
+		    sprintf(szMediaSourceInfo, "{\"code\":0,\"app\":\"%s\",\"stream\":\"%s\",\"starttime\":\"%s\",\"endtime\":\"%s\",\"recordFileList\":[",queryStruct.app,queryStruct.stream,queryStruct.starttime,queryStruct.endtime);
 	}
 
 	sprintf(szShareMediaURL, "/%s/%s", queryStruct.app, queryStruct.stream);
@@ -1093,11 +1067,11 @@ int queryRecordListByTime(char* szMediaSourceInfo, queryRecordListStruct querySt
 	if (iterator1 != xh_ABLRecordFileSourceMap.end())
 	{
 		pRecord = (*iterator1).second;
-
+		
 		if (ABL_MediaServerPort.videoFileFormat == 3 && strlen(mapm3u8FileName) > 0)
 			pRecord->AddM3u8FileToMap(mapm3u8FileName);
 
-		for (it2 = pRecord->fileList.begin(); it2 != pRecord->fileList.end(); it2++)
+		for(it2 = pRecord->fileList.begin() ;it2 != pRecord->fileList.end() ; it2++)
 		{
 			if (*it2 >= atoll(queryStruct.starttime) && *it2 <= atoll(queryStruct.endtime))
 			{
@@ -1113,7 +1087,7 @@ int queryRecordListByTime(char* szMediaSourceInfo, queryRecordListStruct querySt
 						fwrite(szTemp2, 1, strlen(szTemp2), fileM3U8);
 						memset(szTemp2, 0x00, sizeof(szTemp2));
 					}
-					sprintf(szTemp1, "#EXTINF:%d.000,\n/%s/%s%s%llu.mp4\n", ABL_MediaServerPort.fileSecond, queryStruct.app, queryStruct.stream, RecordFileReplaySplitter, *it2);
+				    sprintf(szTemp1, "#EXTINF:%d.000,\n/%s/%s%s%llu.mp4\n", ABL_MediaServerPort.fileSecond, queryStruct.app, queryStruct.stream, RecordFileReplaySplitter,*it2);
 					fwrite(szTemp1, 1, strlen(szTemp1), fileM3U8);
 					fflush(fileM3U8);
 				}
@@ -1135,8 +1109,8 @@ int queryRecordListByTime(char* szMediaSourceInfo, queryRecordListStruct querySt
 				}
 				else
 					duration = ABL_MediaServerPort.fileSecond * 1000;
-
-				sprintf(szTemp2, "{\"file\":\"%llu.mp4\",\"duration\":%llu,\"url\":{\"rtsp\":\"rtsp://%s:%d/%s/%s%s%llu\",\"rtmp\":\"rtmp://%s:%d/%s/%s%s%llu\",\"http-flv\":\"http://%s:%d/%s/%s%s%llu.flv\",\"ws-flv\":\"ws://%s:%d/%s/%s%s%llu.flv\",\"http-mp4\":\"http://%s:%d/%s/%s%s%llu.mp4\",\"download\":\"http://%s:%d/%s/%s%s%llu.mp4?download_speed=%d\"}},", *it2, duration / 1000,
+  
+				sprintf(szTemp2, "{\"file\":\"%llu.mp4\",\"duration\":%llu,\"url\":{\"rtsp\":\"rtsp://%s:%d/%s/%s%s%llu\",\"rtmp\":\"rtmp://%s:%d/%s/%s%s%llu\",\"http-flv\":\"http://%s:%d/%s/%s%s%llu.flv\",\"ws-flv\":\"ws://%s:%d/%s/%s%s%llu.flv\",\"http-mp4\":\"http://%s:%d/%s/%s%s%llu.mp4\",\"download\":\"http://%s:%d/%s/%s%s%llu.mp4?download_speed=%d\"}},", *it2, duration/1000,
 					ABL_szLocalIP, ABL_MediaServerPort.nRtspPort, queryStruct.app, queryStruct.stream, RecordFileReplaySplitter, *it2,
 					ABL_szLocalIP, ABL_MediaServerPort.nRtmpPort, queryStruct.app, queryStruct.stream, RecordFileReplaySplitter, *it2,
 					ABL_szLocalIP, ABL_MediaServerPort.nHttpFlvPort, queryStruct.app, queryStruct.stream, RecordFileReplaySplitter, *it2,
@@ -1163,8 +1137,8 @@ int queryRecordListByTime(char* szMediaSourceInfo, queryRecordListStruct querySt
 			fclose(fileM3U8);
 		return 0;
 	}
-
-	if (nMediaCount > 0)
+   	 
+  	if (nMediaCount > 0)
 	{
 		if (fileM3U8)
 		{
@@ -1172,9 +1146,9 @@ int queryRecordListByTime(char* szMediaSourceInfo, queryRecordListStruct querySt
 			fwrite(szTemp1, 1, strlen(szTemp1), fileM3U8);
 			fflush(fileM3U8);
 		}
-		szMediaSourceInfo[strlen(szMediaSourceInfo) - 1] = 0x00;
+ 		szMediaSourceInfo[strlen(szMediaSourceInfo) - 1] = 0x00;
 		strcat(szMediaSourceInfo, "]}");
-	}
+ 	}
 
 	if (nMediaCount == 0)
 	{
@@ -1185,7 +1159,6 @@ int queryRecordListByTime(char* szMediaSourceInfo, queryRecordListStruct querySt
 
 	return nMediaCount;
 }
-
 
 //查询一个录像文件是否存在
 bool QureyRecordFileFromRecordSource(char* szShareURL, char* szFileName)
@@ -1252,7 +1225,6 @@ CPictureFileSource_ptr CreatePictureFileSource(char* app, char* stream)
 #else
 			pPicture = std::make_shared<CPictureFileSource>(app, stream);
 #endif
-
 	
 		} while (pPicture == NULL);
 	}
@@ -1265,8 +1237,7 @@ CPictureFileSource_ptr CreatePictureFileSource(char* app, char* stream)
 		xh_ABLPictureFileSourceMap.insert(std::make_pair(pPicture->m_szShareURL, pPicture));
 	if (!ret.second)
 	{
-		//pPicture.reset();
-		return NULL;
+ 		return NULL;
 	}
 
 	return pPicture;
@@ -1584,7 +1555,7 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHand
 			}
 			else if (netClientType == NetBaseNetType_RecordFile_TS)
 			{//ts录像
-			pXHClient = boost::make_shared<CStreamRecordTS>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+				pXHClient = boost::make_shared<CStreamRecordTS>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 			}
 			else if (netClientType == ReadRecordFileInput_ReadFMP4File)
 			{//读取fmp4文件
@@ -1783,7 +1754,6 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHand
 }
 
 #else
-#include "NetClientWebrtcPlayer.h"
 CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL)
 {
 	std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
@@ -1967,7 +1937,7 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHand
 			}
 			else if (netClientType == NetBaseNetType_RecordFile_TS)
 			{//ts录像
-			  pXHClient = std::make_shared<CStreamRecordTS>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+				pXHClient = std::make_shared<CStreamRecordTS>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 			}
 			else if (netClientType == ReadRecordFileInput_ReadFMP4File)
 			{//读取fmp4文件
@@ -2166,6 +2136,7 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHand
 }
 
 #endif
+
 CNetRevcBase_ptr GetNetRevcBaseClient(NETHANDLE CltHandle)
 {
 	std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
@@ -2184,6 +2155,7 @@ CNetRevcBase_ptr GetNetRevcBaseClient(NETHANDLE CltHandle)
 		return NULL;
 	}
 }
+
 bool  DeleteNetRevcBaseClient(NETHANDLE CltHandle)
 {
 	std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
@@ -2194,14 +2166,14 @@ bool  DeleteNetRevcBaseClient(NETHANDLE CltHandle)
 	if (iterator1 != xh_ABLNetRevcBaseMap.end())
 	{
 		(*iterator1).second->bRunFlag = false;
-		if (((*iterator1).second->netBaseNetType == NetBaseNetType_RtspClientPush || (*iterator1).second->netBaseNetType == NetBaseNetType_RtmpClientPush ||
+ 		if ( ((*iterator1).second->netBaseNetType == NetBaseNetType_RtspClientPush || (*iterator1).second->netBaseNetType ==  NetBaseNetType_RtmpClientPush ||
 			(*iterator1).second->netBaseNetType == NetBaseNetType_RtspClientRecv || (*iterator1).second->netBaseNetType == NetBaseNetType_RtmpClientRecv)
 			&& (*iterator1).second->bProxySuccessFlag == false)
 		{//rtsp\rtmp 代理拉流，rtsp \ rtmp 代理推流
 			//如果没有成功过则需要删除父类 
 			auto  pParentPtr = GetNetRevcBaseClientNoLock((*iterator1).second->hParent);
 			if (pParentPtr && pParentPtr->bProxySuccessFlag == false || (*iterator1).second->m_nXHRtspURLType == XHRtspURLType_RecordPlay)
-				pDisconnectBaseNetFifo.push((unsigned char*)&(*iterator1).second->hParent, sizeof((*iterator1).second->hParent));
+ 			   pDisconnectBaseNetFifo.push((unsigned char*)&(*iterator1).second->hParent, sizeof((*iterator1).second->hParent));
 		}
 
 		//关闭国标监听 
@@ -2220,19 +2192,17 @@ bool  DeleteNetRevcBaseClient(NETHANDLE CltHandle)
 			}
 			if ((*iterator1).second->nMediaClient > 0)
 				pDisconnectBaseNetFifo.push((unsigned char*)&(*iterator1).second->nMediaClient, sizeof((*iterator1).second->nMediaClient));
-		}
-		else //在此处关闭，确保boost:asio 单线程状态下 close(pSocket) ;
-			XHNetSDK_Disconnect((*iterator1).second->nClient);
+		}else //在此处关闭，确保boost:asio 单线程状态下 close(pSocket) ;
+ 		  XHNetSDK_Disconnect((*iterator1).second->nClient);
 
-		xh_ABLNetRevcBaseMap.erase(iterator1);
-		return true;
+ 		xh_ABLNetRevcBaseMap.erase(iterator1);
+  		return true;
 	}
 	else
 	{
 		return false;
 	}
 }
-
 
 /*
  功能：
@@ -2306,7 +2276,6 @@ bool  CheckSSRCAlreadyUsed(int nSSRC, bool bLockFlag)
 	WriteLog(Log_Debug, "CheckSSRCAlreadyUsed() bRet = %d  ", bRet);
 	return bRet;
 }
-
 
 //查找某一个网络类型的对象总数
 int  GetNetRevcBaseClientCountByNetType(NetBaseNetType netType,bool bLockFlag)
@@ -2782,7 +2751,7 @@ void CreateHttpClientFunc()
 }
 
 //一些事务处理 
-void* ABLMedisServerProcessThread(void* lpVoid)
+void*  ABLMedisServerProcessThread(void* lpVoid)
 {
 	int nDeleteBreakTimer = 0;
 	int nCheckNetRevcBaseClientDisconnectTime = 0;
@@ -2799,7 +2768,7 @@ void* ABLMedisServerProcessThread(void* lpVoid)
 	while (ABL_bMediaServerRunFlag)
 	{
 		//检查消息通知 
-		if (ABL_MediaServerPort.hook_enable == 1 && (nCreateHttpClientTimer >= 30 || pMessageNoticeFifo.GetSize() > 0))
+		if (ABL_MediaServerPort.hook_enable == 1 && ( nCreateHttpClientTimer >= 30 || pMessageNoticeFifo.GetSize() > 0 ) )
 		{//5秒检查一下
 			nCreateHttpClientTimer = 0;
 			CreateHttpClientFunc();
@@ -2811,7 +2780,7 @@ void* ABLMedisServerProcessThread(void* lpVoid)
 			nCheckNetRevcBaseClientDisconnectTime = 0;
 			CheckNetRevcBaseClientDisconnect();
 		}
-
+		
 		//处理消息通知
 		while ((pData = pMessageNoticeFifo.pop(&nLength)) != NULL)
 		{
@@ -2822,9 +2791,9 @@ void* ABLMedisServerProcessThread(void* lpVoid)
 
 				auto pHttpClient = GetNetRevcBaseClient(msgNotice.nClient);
 				if (pHttpClient != NULL)
-					pHttpClient->PushVideo((unsigned char*)msgNotice.szMsg, strlen(msgNotice.szMsg), "JSON");
-			}
-			pMessageNoticeFifo.pop_front();
+  					pHttpClient->PushVideo((unsigned char*)msgNotice.szMsg, strlen(msgNotice.szMsg), "JSON");
+ 			}
+ 			pMessageNoticeFifo.pop_front();
 		}
 
 		//代理拉流重连
@@ -2841,30 +2810,30 @@ void* ABLMedisServerProcessThread(void* lpVoid)
 						CNetRevcBase_ptr pClient = GetNetRevcBaseClient(nClient);
 						if (pClient)
 							pClient->SendFirstRequst(); //执行重连
-					}
+ 					}
 				}
 
 				pReConnectStreamProxyFifo.pop_front();
-			}
-		}
-
+ 			}
+ 		}
+ 
 		//删除过期的M3u8文件 
-		if (DeleteExpireM3u8FileTimer >= 10 * 180)
+		if (DeleteExpireM3u8FileTimer >= 10 * 180 )
 		{
 			DeleteExpireM3u8FileTimer = 0;
 			DeleteExpireM3u8File();
 		}
 
-		nDeleteBreakTimer++;
-		nCheckNetRevcBaseClientDisconnectTime++;
-		nReConnectStreamProxyTimer++;
-		nCreateHttpClientTimer++;
-		DeleteExpireM3u8FileTimer++;
+		nDeleteBreakTimer ++;
+		nCheckNetRevcBaseClientDisconnectTime ++;
+		nReConnectStreamProxyTimer ++;
+		nCreateHttpClientTimer ++;
+		DeleteExpireM3u8FileTimer ++ ;
 
 		Sleep(100);
 	}
-
-	FillNetRevcBaseClientFifo();//把所有对象装入链表，准备删除
+ 
+  	FillNetRevcBaseClientFifo();//把所有对象装入链表，准备删除
 
 	while ((pData = pDisconnectBaseNetFifo.pop(&nLength)) != NULL)
 	{
@@ -2886,6 +2855,7 @@ void* ABLMedisServerProcessThread(void* lpVoid)
 	ABL_bExitMediaServerRunFlag = true;
 	return 0;
 }
+
 //快速删除资源线程
 void*  ABLMedisServerFastDeleteThread(void* lpVoid)
 {
@@ -3037,7 +3007,6 @@ bool GetLocalAdaptersInfo(string& strIPList)
  	return true;
 }
 
-
 //根据录像路径查找所有录像文件 - windows
 void FindHistoryRecordFile(char* szRecordPath)
 {
@@ -3045,7 +3014,7 @@ void FindHistoryRecordFile(char* szRecordPath)
 	WIN32_FIND_DATA fd = { 0 };
 	WIN32_FIND_DATA fd2 = { 0 };
 	WIN32_FIND_DATA fd3 = { 0 };
-	bool bFindFlag = true;
+	bool bFindFlag = true ;
 	char szApp[256] = { 0 }, szStream[string_length_512] = { 0 };//现在只支持2级路径
 	char szDeleteFile[string_length_512] = { 0 };
 
@@ -3056,15 +3025,15 @@ void FindHistoryRecordFile(char* szRecordPath)
 	if (INVALID_HANDLE_VALUE == hFind)
 	{
 		WriteLog(Log_Debug, "FindHistoryRecordFile ，配置的录像路径 %s ,没有找到任何文件！ ", szRecordPath);
-		return;
+		return ;
 	}
-
-	while (bFindFlag)
+ 
+ 	while (bFindFlag)
 	{
 		bFindFlag = FindNextFile(hFind, &fd);
-		if (bFindFlag && !(strcmp(fd.cFileName, ".") == 0 || strcmp(fd.cFileName, "..") == 0) && fd.dwFileAttributes == FILE_ATTRIBUTE_DIRECTORY)
+		if (bFindFlag && !(strcmp(fd.cFileName,"." ) == 0 || strcmp(fd.cFileName, "..") == 0) && fd.dwFileAttributes == FILE_ATTRIBUTE_DIRECTORY)
 		{
-			//WriteLog(Log_Debug, "FindHistoryRecordFile ，路径 %s%s  ", szRecordPath, fd.cFileName);
+ 			//WriteLog(Log_Debug, "FindHistoryRecordFile ，路径 %s%s  ", szRecordPath, fd.cFileName);
 
 			sprintf(tempFileFind, "%s%s\\%s", szRecordPath, fd.cFileName, "*.*");
 			HANDLE hFind2 = FindFirstFile(tempFileFind, &fd2);
@@ -3079,12 +3048,12 @@ void FindHistoryRecordFile(char* szRecordPath)
 
 						sprintf(tempFileFind, "%s%s\\%s\\%s", szRecordPath, fd.cFileName, fd2.cFileName, "*.*");
 						HANDLE hFind3 = FindFirstFile(tempFileFind, &fd3);
-						bool bFindFlag3 = true;
+ 						bool bFindFlag3 = true;
 
 						CRecordFileSource_ptr pRecord = CreateRecordFileSource(fd.cFileName, fd2.cFileName);
-						if (hFind3 && pRecord && strstr(fd3.cFileName, ".mp4") != NULL)
+						if (hFind3 && pRecord && strstr(fd3.cFileName,".mp4") != NULL )
 							pRecord->AddRecordFile(fd3.cFileName);
-
+						
 						//删除掉 .m3u8 文件
 						if (hFind3 && strstr(fd3.cFileName, ".m3u8") != NULL)
 						{
@@ -3094,8 +3063,8 @@ void FindHistoryRecordFile(char* szRecordPath)
 
 						while (bFindFlag3 && pRecord)
 						{
-							bFindFlag3 = FindNextFile(hFind3, &fd3);
-							if (bFindFlag3 && !(strcmp(fd3.cFileName, ".") == 0 || strcmp(fd3.cFileName, "..") == 0) && fd3.dwFileAttributes == FILE_ATTRIBUTE_ARCHIVE)
+ 							bFindFlag3 = FindNextFile(hFind3, &fd3);
+ 							if (bFindFlag3 && !(strcmp(fd3.cFileName, ".") == 0 || strcmp(fd3.cFileName, "..") == 0) && fd3.dwFileAttributes == FILE_ATTRIBUTE_ARCHIVE)
 							{
 								if (pRecord && strstr(fd3.cFileName, ".mp4") != NULL)
 								{
@@ -3109,12 +3078,12 @@ void FindHistoryRecordFile(char* szRecordPath)
 								}
 								//WriteLog(Log_Debug, "FindHistoryRecordFile ，文件 %s%s\\%s\\%s  ", szRecordPath, fd.cFileName, fd2.cFileName, fd3.cFileName);
 							}
-						}
+ 						}
 						FindClose(hFind3);
 
-						if (pRecord)
-							pRecord->Sort();
-					}
+						if(pRecord)
+						  pRecord->Sort();
+ 					}
 				}
 			}
 			FindClose(hFind2);
@@ -3203,49 +3172,49 @@ bool  ABLDeleteFile(char* szFileName)
 //根据录像路径查找所有录像文件 - linux 
 void FindHistoryRecordFile(char* szRecordPath)
 {
-	struct dirent* filename;    // return value for readdir()
-	DIR* dir;                   // return value for opendir()
+	struct dirent * filename;    // return value for readdir()
+	DIR * dir;                   // return value for opendir()
 	dir = opendir(szRecordPath);
 	char  szTempPath[512] = { 0 };
 	char  szDeleteFile[1024] = { 0 };
 
-	while ((filename = readdir(dir)) != NULL)
+ 	while ((filename = readdir(dir)) != NULL)
 	{
 		// get rid of "." and ".."
 		if (strcmp(filename->d_name, ".") == 0 ||
 			strcmp(filename->d_name, "..") == 0)
 			continue;
-
-		if (strlen(filename->d_name) > 0)
+			
+		if (strlen(filename->d_name) > 0 )
 		{
 			//WriteLog(Log_Debug, "FindHistoryRecordFile ，路径 %s ", filename->d_name);
 
-			struct dirent* filename2;
-			DIR* dir2;
+			struct dirent * filename2;     
+			DIR *           dir2;                   
 			memset(szTempPath, 0x00, sizeof(szTempPath));
-			sprintf(szTempPath, "%s%s", szRecordPath, filename->d_name);
+			sprintf(szTempPath,"%s%s", szRecordPath, filename->d_name);
 			dir2 = opendir(szTempPath);
-
+   
 			while ((filename2 = readdir(dir2)) != NULL)
 			{
 				if (!(strcmp(filename2->d_name, ".") == 0 || strcmp(filename2->d_name, "..") == 0))
 				{
 					//WriteLog(Log_Debug, "FindHistoryRecordFile ，第2级路径 %s ", filename2->d_name);
 
-					struct dirent* filename3;
-					DIR* dir3;
+					struct dirent * filename3;     
+					DIR *           dir3;                   
 					memset(szTempPath, 0x00, sizeof(szTempPath));
-					sprintf(szTempPath, "%s%s/%s", szRecordPath, filename->d_name, filename2->d_name);
+					sprintf(szTempPath,"%s%s/%s", szRecordPath, filename->d_name,filename2->d_name);
 					dir3 = opendir(szTempPath);
-
-					CRecordFileSource_ptr pRecord = CreateRecordFileSource(filename->d_name, filename2->d_name);
-
+					
+					CRecordFileSource_ptr pRecord = CreateRecordFileSource(filename->d_name,filename2->d_name);
+					
 					while ((filename3 = readdir(dir3)) != NULL && pRecord)
 					{
 						if (!(strcmp(filename3->d_name, ".") == 0 || strcmp(filename3->d_name, "..") == 0))
 						{
 							//WriteLog(Log_Debug, "FindHistoryRecordFile ,录像文件名字 %s ", filename3->d_name);
-							if (pRecord && strstr(filename3->d_name, ".mp4") != NULL)
+							if (pRecord && strstr(filename3->d_name,".mp4") != NULL )
 							{
 								pRecord->AddRecordFile(filename3->d_name);
 							}
@@ -3258,12 +3227,12 @@ void FindHistoryRecordFile(char* szRecordPath)
 					}
 					closedir(dir3);
 
-					if (pRecord)
-						pRecord->Sort();
+					if(pRecord)
+					pRecord->Sort();
 				}
 			}//while ((filename2 = readdir(dir2)) != NULL)
 			closedir(dir2);
-
+			
 		}
 	}//while ((filename = readdir(dir)) != NULL)
 	closedir(dir);
@@ -3332,21 +3301,19 @@ void FindHistoryPictureFile(char* szPicturePath)
 }
 
 #endif
-#include "../webrtc-streamer/inc/rtc_obj_sdk.h"
-
 
 void WebRtcCallBack(const char* callbackJson, void* pUserHandle)
 {
-	WriteLog(Log_Debug, " ----- WebRtcCallBack ----- ：\r\n%s ", callbackJson);
-	if (strlen(callbackJson) > 0 /* && callbackJson[0] == '{' && callbackJson[strlen(callbackJson) - 1] == '}' */)
-	{
+ 	WriteLog(Log_Debug, " ----- WebRtcCallBack ----- ：\r\n%s ", callbackJson);
+	if (strlen(callbackJson) > 0 /* && callbackJson[0] == '{' && callbackJson[strlen(callbackJson) - 1] == '}' */ )
+	 {
 		WebRtcCallStruct callbackStruct;
 		rapidjson::Document doc;
 		doc.Parse<0>((char*)callbackJson);
 		int listSize;
 		if (!doc.HasParseError())
 		{
-			if (strstr(callbackJson, "eventID") != NULL)
+			if(strstr(callbackJson, "eventID") != NULL )
 				callbackStruct.eventID = doc["eventID"].GetInt64();
 			if (strstr(callbackJson, "media") != NULL)
 				strcpy(callbackStruct.media, doc["media"].GetString());
@@ -3363,48 +3330,47 @@ void WebRtcCallBack(const char* callbackJson, void* pUserHandle)
 				WriteLog(Log_Debug, "不存在流 %s ", callbackStruct.stream);
 			else
 			{
-				if (strcmp(pMediaSource->m_mediaCodecInfo.szVideoName, "H264") == 0 && pMediaSource->bCreateWebRtcPlaySourceFlag.load() == false)
+				if (strcmp(pMediaSource->m_mediaCodecInfo.szVideoName, "H264") == 0 && pMediaSource->bCreateWebRtcPlaySourceFlag.load() == false )
 				{
 					CNetRevcBase_ptr pClient = CreateNetRevcBaseClient(NetBaseNetType_NetClientWebrtcPlayer, 0, 0, "", 0, callbackStruct.stream);
 					if (pClient != NULL)
 					{
-						WriteLog(Log_Debug, "创建webrtc播放  %s ", callbackStruct.stream);
+ 						WriteLog(Log_Debug, "创建webrtc播放  %s ", callbackStruct.stream);
 						memcpy((char*)&pClient->webRtcCallStruct, (char*)&callbackStruct, sizeof(WebRtcCallStruct));
 					}
-					pMediaSource->nWebRtcPlayerCount++;
+					pMediaSource->nWebRtcPlayerCount ++;
 				}
 				else
 				{
 					if (strcmp(pMediaSource->m_mediaCodecInfo.szVideoName, "H264") == 0 && pMediaSource->bCreateWebRtcPlaySourceFlag.load() == true)
 					{
-						pMediaSource->nWebRtcPlayerCount++;
-						WriteLog(Log_Debug, "媒体源 %s 的视频格式为 %s ,已经创建了webrtc 播放媒体源 ", callbackStruct.stream, pMediaSource->m_mediaCodecInfo.szVideoName);
+						pMediaSource->nWebRtcPlayerCount ++ ; 
+ 						WriteLog(Log_Debug, "媒体源 %s 的视频格式为 %s ,已经创建了webrtc 播放媒体源 ", callbackStruct.stream, pMediaSource->m_mediaCodecInfo.szVideoName);
 					}
 					else
-						WriteLog(Log_Debug, "媒体源 %s 的视频格式为 %s ,不支持WebRTC播放，必须为H264 ", callbackStruct.stream, pMediaSource->m_mediaCodecInfo.szVideoName);
+					    WriteLog(Log_Debug, "媒体源 %s 的视频格式为 %s ,不支持WebRTC播放，必须为H264 ", callbackStruct.stream, pMediaSource->m_mediaCodecInfo.szVideoName);
 				}
 			}
 		}
-		else if (callbackStruct.eventID == 5)
+		else if (callbackStruct.eventID == 5 )
 		{//删除webrtc播放
 			CMediaStreamSource_ptr pMediaSource = GetMediaStreamSource(callbackStruct.stream, false);
 			if (pMediaSource != NULL)
 			{
-				pMediaSource->nWebRtcPlayerCount--;
+				pMediaSource->nWebRtcPlayerCount --;
 				if (pMediaSource->nWebRtcPlayerCount <= 0)
 				{//统计出无人观看时
 					pMediaSource->nWebRtcPlayerCount = 0;
 					WriteLog(Log_Debug, "媒体源 %s , pMediaSource->nWebRtcPlayerCount = %d  已经无人观看，把 nClient = %llu 从 发送线程池移除  ", callbackStruct.stream, pMediaSource->nWebRtcPlayerCount, pMediaSource->nWebRtcPushStreamID);
 				}
 			}
-		}
+  		}
 		else if (callbackStruct.eventID == 7)
 		{//删除webrtc媒体源
 
 		}
-	}
-};
-
+	} 
+ };
 
 #ifdef OS_System_Windows
 int _tmain(int argc, _TCHAR* argv[])
@@ -3417,13 +3383,12 @@ int main(int argc, char* argv[])
 
 ABL_Restart:
 	unsigned char nGet;
-	int nBindHttp, nBindRtsp, nBindRtmp, nBindWsFlv, nBindHttpFlv, nBindHls, nBindMp4, nBindRecvAudio;
+	int nBindHttp, nBindRtsp, nBindRtmp,nBindWsFlv,nBindHttpFlv, nBindHls,nBindMp4,nBindRecvAudio;
 	char szConfigFileName[256] = { 0 };
 
 	memset(ABL_MediaSeverRunPath, 0x00, sizeof(ABL_MediaSeverRunPath));
 	memset(ABL_wwwMediaPath, 0x00, sizeof(ABL_wwwMediaPath));
 	memset(ABL_szLocalIP, 0x00, sizeof(ABL_szLocalIP));
-	
 #ifdef OS_System_Windows
 
 	//鼠标点击控制台窗口，不会再卡住 
@@ -3480,7 +3445,7 @@ ABL_Restart:
 	ABL_MediaServerPort.nWSFlvPort = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "wsFlvPort", "6088"));
 	ABL_MediaServerPort.nHttpMp4Port = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "httpMp4Port", "8089"));
 	ABL_MediaServerPort.ps_tsRecvPort = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "ps_tsRecvPort", "10000"));
-	ABL_MediaServerPort.nHlsPort = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "hlsPort", "9081"));
+ 	ABL_MediaServerPort.nHlsPort = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "hlsPort", "9081"));
 	ABL_MediaServerPort.WsRecvPcmPort = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "WsRecvPcmPort", "9298"));
 	ABL_MediaServerPort.nHlsEnable = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "hls_enable", "5"));
 	ABL_MediaServerPort.nHLSCutType = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "hlsCutType", "1"));
@@ -3504,7 +3469,7 @@ ABL_Restart:
 	ABL_MediaServerPort.videoFileFormat = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "videoFileFormat", "1"));
 	ABL_MediaServerPort.fileKeepMaxTime = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "fileKeepMaxTime", "12"));
 	ABL_MediaServerPort.enable_GetFileDuration = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "enable_GetFileDuration", "0"));
-	ABL_MediaServerPort.fileRepeat = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "fileRepeat", "0"));
+ 	ABL_MediaServerPort.fileRepeat = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "fileRepeat", "0"));
 	ABL_MediaServerPort.httpDownloadSpeed = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "httpDownloadSpeed", "6"));
 
 	ABL_MediaServerPort.maxTimeNoOneWatch = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "maxTimeNoOneWatch", "2"));
@@ -3515,12 +3480,12 @@ ABL_Restart:
 	ABL_MediaServerPort.captureReplayType = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "captureReplayType", "1"));
 	ABL_MediaServerPort.deleteSnapPicture = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "deleteSnapPicture", "0"));
 	ABL_MediaServerPort.iframeArriveNoticCount = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "iframeArriveNoticCount", "30"));
-	ABL_MediaServerPort.maxSameTimeSnap = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "maxSameTimeSnap", "16"));
+ 	ABL_MediaServerPort.maxSameTimeSnap = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "maxSameTimeSnap", "16"));
 	ABL_MediaServerPort.snapObjectDestroy = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "snapObjectDestroy", "1"));
 	ABL_MediaServerPort.snapObjectDuration = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "snapObjectDuration", "120"));
 	ABL_MediaServerPort.snapOutPictureWidth = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "snapOutPictureWidth", "0"));
 	ABL_MediaServerPort.snapOutPictureHeight = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "snapOutPictureHeight", "0"));
-
+	
 	ABL_MediaServerPort.H265ConvertH264_enable = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "H265ConvertH264_enable", "1"));
 	ABL_MediaServerPort.H265DecodeCpuGpuType = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "H265DecodeCpuGpuType", "0"));
 	ABL_MediaServerPort.convertOutWidth = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "convertOutWidth", "7210"));
@@ -3539,7 +3504,7 @@ ABL_Restart:
 	ABL_MediaServerPort.ForceSendingIFrame = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "ForceSendingIFrame", "0"));
 	ABL_MediaServerPort.gb28181LibraryUse = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "gb28181LibraryUse", "1"));
 	ABL_MediaServerPort.httqRequstClose = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "httqRequstClose", "0"));
-
+ 
 	//读取事件通知配置
 	ABL_MediaServerPort.hook_enable = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "hook_enable", "0"));
 	ABL_MediaServerPort.noneReaderDuration = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "noneReaderDuration", "32"));
@@ -3560,7 +3525,7 @@ ABL_Restart:
 	strcpy(ABL_MediaServerPort.on_stream_iframe_arrive, ABL_ConfigFile.ReadConfigString("ABLMediaServer", "on_stream_iframe_arrive", ""));
 	ABL_MediaServerPort.keepaliveDuration = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "keepaliveDuration", "20"));
 	ABL_MediaServerPort.nWebRtcPort = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "webrtcPort", "8000"));
-
+	
 	if (ABL_MediaServerPort.httpDownloadSpeed > 10)
 		ABL_MediaServerPort.httpDownloadSpeed = 10;
 	else if (ABL_MediaServerPort.httpDownloadSpeed <= 0)
@@ -3667,16 +3632,16 @@ ABL_Restart:
 			hCudaDecodeInstance = ::LoadLibrary("cudaCodecDLL.dll");
 			if (hCudaDecodeInstance != NULL)
 			{
-				cudaCodec_Init = (ABL_cudaCodec_Init)::GetProcAddress(hCudaDecodeInstance, "cudaCodec_Init");
-				cudaCodec_GetDeviceGetCount = (ABL_cudaCodec_GetDeviceGetCount) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_GetDeviceGetCount");
-				cudaCodec_GetDeviceName = (ABL_cudaCodec_GetDeviceName) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_GetDeviceName");
-				cudaCodec_GetDeviceUse = (ABL_cudaCodec_GetDeviceUse) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_GetDeviceUse");
-				cudaCodec_CreateVideoDecode = (ABL_cudaCodec_CreateVideoDecode) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_CreateVideoDecode");
-				cudaCodec_CudaVideoDecode = (ABL_cudaCodec_CudaVideoDecode) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_CudaVideoDecode");
+				cudaCodec_Init = (ABL_cudaDecode_Init)::GetProcAddress(hCudaDecodeInstance, "cudaCodec_Init");
+				cudaCodec_GetDeviceGetCount = (ABL_cudaDecode_GetDeviceGetCount) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_GetDeviceGetCount");
+				cudaCodec_GetDeviceName = (ABL_cudaDecode_GetDeviceName) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_GetDeviceName");
+				cudaCodec_GetDeviceUse = (ABL_cudaDecode_GetDeviceUse) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_GetDeviceUse");
+				cudaCodec_CreateVideoDecode = (ABL_CreateVideoDecode) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_CreateVideoDecode");
+				cudaCodec_CudaVideoDecode = (ABL_CudaVideoDecode) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_CudaVideoDecode");
 
-				cudaCodec_DeleteVideoDecode = (ABL_cudaCodec_DeleteVideoDecode) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_DeleteVideoDecode");
-				cudaCodec_GetCudaDecodeCount = (ABL_cudaCodec_GetCudaDecodeCount) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_GetCudaDecodeCount");
-				cudaCodec_UnInit = (ABL_cudaCodec_UnInit) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_UnInit");
+				cudaCodec_DeleteVideoDecode = (ABL_DeleteVideoDecode) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_DeleteVideoDecode");
+				cudaCodec_GetCudaDecodeCount = (ABL_GetCudaDecodeCount) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_GetCudaDecodeCount");
+				cudaCodec_UnInit = (ABL_VideoDecodeUnInit) ::GetProcAddress(hCudaDecodeInstance, "cudaCodec_UnInit");
 
 			}
 			if (cudaCodec_Init)
@@ -3779,7 +3744,7 @@ ABL_Restart:
 	ABL_MediaServerPort.httpDownloadSpeed = ABL_ConfigFile.GetInt("ABLMediaServer", "httpDownloadSpeed");
 
 	ABL_MediaServerPort.maxTimeNoOneWatch = ABL_ConfigFile.GetInt("ABLMediaServer", "maxTimeNoOneWatch");
-	ABL_MediaServerPort.nG711ConvertAAC = ABL_ConfigFile.GetInt("ABLMediaServer", "G711ConvertAAC");
+	ABL_MediaServerPort.nG711ConvertAAC = ABL_ConfigFile.GetInt("ABLMediaServer", "G711ConvertAAC"); 
 
 	strcpy(ABL_MediaServerPort.picturePath, ABL_ConfigFile.GetStr("ABLMediaServer", "picturePath"));
 	ABL_MediaServerPort.pictureMaxCount = ABL_ConfigFile.GetInt("ABLMediaServer", "pictureMaxCount");
@@ -3791,7 +3756,7 @@ ABL_Restart:
 	ABL_MediaServerPort.snapObjectDuration = ABL_ConfigFile.GetInt("ABLMediaServer", "snapObjectDuration");
 	ABL_MediaServerPort.snapOutPictureWidth = ABL_ConfigFile.GetInt("ABLMediaServer", "snapOutPictureWidth");
 	ABL_MediaServerPort.snapOutPictureHeight = ABL_ConfigFile.GetInt("ABLMediaServer", "snapOutPictureHeight");
-
+	
 	ABL_MediaServerPort.H265ConvertH264_enable = ABL_ConfigFile.GetInt("ABLMediaServer", "H265ConvertH264_enable");
 	ABL_MediaServerPort.H265DecodeCpuGpuType = ABL_ConfigFile.GetInt("ABLMediaServer", "H265DecodeCpuGpuType");
 	ABL_MediaServerPort.convertOutWidth = ABL_ConfigFile.GetInt("ABLMediaServer", "convertOutWidth");
@@ -3807,7 +3772,7 @@ ABL_Restart:
 	ABL_MediaServerPort.nFilterFontTop = ABL_ConfigFile.GetInt("ABLMediaServer", "FilterFontTop");
 	ABL_MediaServerPort.nFilterFontAlpha = atof(ABL_ConfigFile.GetStr("ABLMediaServer", "FilterFontAlpha"));
 	ABL_MediaServerPort.httqRequstClose = ABL_ConfigFile.GetInt("ABLMediaServer", "httqRequstClose");
-
+ 
 	//读取事件通知配置
 	ABL_MediaServerPort.hook_enable = ABL_ConfigFile.GetInt("ABLMediaServer", "hook_enable");
 	ABL_MediaServerPort.noneReaderDuration = ABL_ConfigFile.GetInt("ABLMediaServer", "noneReaderDuration");
@@ -3818,7 +3783,7 @@ ABL_Restart:
 	strcpy(ABL_MediaServerPort.on_stream_none_reader, ABL_ConfigFile.GetStr("ABLMediaServer", "on_stream_none_reader"));
 	strcpy(ABL_MediaServerPort.on_stream_disconnect, ABL_ConfigFile.GetStr("ABLMediaServer", "on_stream_disconnect"));
 	strcpy(ABL_MediaServerPort.on_stream_not_found, ABL_ConfigFile.GetStr("ABLMediaServer", "on_stream_not_found"));
-	strcpy(ABL_MediaServerPort.on_record_mp4, ABL_ConfigFile.GetStr("ABLMediaServer", "on_record_mp4"));
+	strcpy(ABL_MediaServerPort.on_record_mp4, ABL_ConfigFile.GetStr("ABLMediaServer", "on_record_mp4")); 
 	strcpy(ABL_MediaServerPort.on_record_progress, ABL_ConfigFile.GetStr("ABLMediaServer", "on_record_progress"));
 	strcpy(ABL_MediaServerPort.on_record_ts, ABL_ConfigFile.GetStr("ABLMediaServer", "on_record_ts"));
 	strcpy(ABL_MediaServerPort.on_delete_record_mp4, ABL_ConfigFile.GetStr("ABLMediaServer", "on_delete_record_mp4"));
@@ -3826,7 +3791,7 @@ ABL_Restart:
 	strcpy(ABL_MediaServerPort.on_play, ABL_ConfigFile.GetStr("ABLMediaServer", "on_play"));
 	strcpy(ABL_MediaServerPort.on_publish, ABL_ConfigFile.GetStr("ABLMediaServer", "on_publish"));
 	strcpy(ABL_MediaServerPort.on_stream_iframe_arrive, ABL_ConfigFile.GetStr("ABLMediaServer", "on_stream_iframe_arrive"));
-
+ 	
 	ABL_MediaServerPort.MaxDiconnectTimeoutSecond = ABL_ConfigFile.GetInt("ABLMediaServer", "MaxDiconnectTimeoutSecond");
 	ABL_MediaServerPort.ForceSendingIFrame = ABL_ConfigFile.GetInt("ABLMediaServer", "ForceSendingIFrame");
 	ABL_MediaServerPort.gb28181LibraryUse = ABL_ConfigFile.GetInt("ABLMediaServer", "gb28181LibraryUse");
@@ -4024,10 +3989,10 @@ ABL_Restart:
 		                     ABL_MediaServerPort.nRecvThreadCount, ABL_MediaServerPort.nSendThreadCount);
 
 	if (ABL_MediaServerPort.hlsCutTime <= 0)
-		ABL_MediaServerPort.hlsCutTime = 1;
+		ABL_MediaServerPort.hlsCutTime = 1 ;
 	else if (ABL_MediaServerPort.hlsCutTime > 120)
 		ABL_MediaServerPort.hlsCutTime = 120;
-
+	
 	//限制网络超时时长
 	if (ABL_MediaServerPort.MaxDiconnectTimeoutSecond < 5)
 		ABL_MediaServerPort.MaxDiconnectTimeoutSecond = 16;
@@ -4076,11 +4041,11 @@ ABL_Restart:
 	//消息发送线程池
 	MessageSendThreadPool = new CNetBaseThreadPool(6);
 
-	int nRet = -1;
+	int nRet = -1 ;
 	if (!ABL_bInitXHNetSDKFlag) //保证只初始化1次
 	{
 		nRet = XHNetSDK_Init(ABL_MediaServerPort.nIOContentNumber, ABL_MediaServerPort.nThreadCountOfIOContent);
-		ABL_bInitXHNetSDKFlag = true;
+ 	    ABL_bInitXHNetSDKFlag = true;
 		WriteLog(Log_Debug, "Network Init = %d  \r\n", nRet);
 	}
 
@@ -4092,8 +4057,8 @@ ABL_Restart:
 	nBindHls = XHNetSDK_Listen((int8_t*)("0.0.0.0"), ABL_MediaServerPort.nHlsPort, &srvhandle_9088, onaccept, onread, onclose, true);
 	nBindMp4 = XHNetSDK_Listen((int8_t*)("0.0.0.0"), ABL_MediaServerPort.nHttpMp4Port, &srvhandle_8089, onaccept, onread, onclose, true);
 	nBindRecvAudio = XHNetSDK_Listen((int8_t*)("0.0.0.0"), ABL_MediaServerPort.WsRecvPcmPort, &srvhandle_9298, onaccept, onread, onclose, true);
-
-	WriteLog(Log_Debug, (nBindHttp == 0) ? "绑定端口 %d 成功(success) " : "绑定端口 %d 失败(fail) ", ABL_MediaServerPort.nHttpServerPort);
+	
+	WriteLog(Log_Debug, (nBindHttp == 0) ? "绑定端口 %d 成功(success) ":"绑定端口 %d 失败(fail) ", ABL_MediaServerPort.nHttpServerPort);
 	WriteLog(Log_Debug, (nBindRtsp == 0) ? "绑定端口 %d 成功(success)  " : "绑定端口 %d 失败(fail) ", ABL_MediaServerPort.nRtspPort);
 	WriteLog(Log_Debug, (nBindRtmp == 0) ? "绑定端口 %d 成功(success)  " : "绑定端口 %d 失败(fail) ", ABL_MediaServerPort.nRtmpPort);
 	WriteLog(Log_Debug, (nBindWsFlv == 0) ? "绑定端口 %d 成功(success)  " : "绑定端口 %d 失败(fail) ", ABL_MediaServerPort.nWSFlvPort);
@@ -4101,7 +4066,7 @@ ABL_Restart:
 	WriteLog(Log_Debug, (nBindHls == 0) ? "绑定端口 %d 成功(success)  " : "绑定端口 %d 失败(fail) ", ABL_MediaServerPort.nHlsPort);
 	WriteLog(Log_Debug, (nBindMp4 == 0) ? "绑定端口 %d 成功(success)  " : "绑定端口 %d 失败(fail) ", ABL_MediaServerPort.nHttpMp4Port);
 	WriteLog(Log_Debug, (nBindRecvAudio == 0) ? "绑定端口 %d 成功(success)  " : "绑定端口 %d 失败(fail) ", ABL_MediaServerPort.WsRecvPcmPort);
-
+ 	
 	alaw_pcm16_tableinit();
 	ulaw_pcm16_tableinit();
 
@@ -4109,8 +4074,7 @@ ABL_Restart:
 	ABL_MediaServerPort.nServerKeepaliveTime = GetTickCount64();
 	//创建消息通知
 	if (ABL_MediaServerPort.hook_enable == 1)
-		CreateHttpClientFunc();
-
+	   CreateHttpClientFunc();
 
 
 #if  0 //测试 hls 客户端  http://190.168.24.112:8082/live/Camera_00001.m3u8  \   http://190.15.240.36:9088/Media/Camera_00001.m3u8 \ http://190.15.240.36:9088/Media/Camera_00001/hls.m3u8
@@ -4160,11 +4124,12 @@ ABL_Restart:
 	pthread_t  hMedisServerProcessThread2;
 	pthread_create(&hMedisServerProcessThread2, NULL, ABLMedisServerFastDeleteThread, (void*)NULL);
 #endif
+
 	char szWebrtcConfig[512] = { 0 };
 	sprintf(szWebrtcConfig, "{\"webrtcPort\":%d}", ABL_MediaServerPort.nWebRtcPort);
 	WebRtcEndpoint::getInstance().init(szWebrtcConfig, [=](const char* callbackJson, void* pUserHandle) {
 		WebRtcCallBack(callbackJson, pUserHandle);
-		});
+			});
 	WriteLog(Log_Debug, "初始化webrtc完毕 ，端口为 %d", ABL_MediaServerPort.nWebRtcPort);
 
 	while (ABL_bMediaServerRunFlag)
@@ -4208,6 +4173,7 @@ ABL_Restart:
 	XHNetSDK_Unlisten(srvhandle_8089);
 	XHNetSDK_Unlisten(srvhandle_9088);
 	XHNetSDK_Unlisten(srvhandle_9298);
+
 	delete NetBaseThreadPool;
 	NetBaseThreadPool = NULL;
 
@@ -4234,6 +4200,7 @@ ABL_Restart:
 	ExitLogFile();
 	ABL_ConfigFile.CloseFile();
 #endif
+
 	WebRtcEndpoint::getInstance().Uninit();
 
 	WriteLog(Log_Debug, "--------------------ABLMediaServer End .... --------------------");

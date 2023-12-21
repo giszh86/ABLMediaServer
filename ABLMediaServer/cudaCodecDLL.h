@@ -1,11 +1,13 @@
-#pragma once
-#include <stdint.h>
+#ifndef  _cudeCodecDLL_H
+#define  _cudeCodecDLL_H
 
-#ifdef _WIN32
+#include <stdint.h>
 #include <Windows.h>
-#define WINAPI      __stdcall
+
+#ifdef CUDACODECDLL_EXPORTS
+#define CUDACODECDLL_API __declspec(dllexport)
 #else
-#define WINAPI      
+#define CUDACODECDLL_API __declspec(dllimport)
 #endif
 
 //视频格式 
@@ -36,7 +38,7 @@ typedef enum cudaCodecVideo_enum {
 参数：
    无
 */
-typedef bool (WINAPI* ABL_cudaCodec_Init) ();
+typedef bool (WINAPI* ABL_cudaDecode_Init) ();
 
 /*
 功能：
@@ -47,7 +49,7 @@ typedef bool (WINAPI* ABL_cudaCodec_Init) ();
    0   没有英伟达显卡
    N   有N个英伟达显卡
 */
-typedef int (WINAPI* ABL_cudaCodec_GetDeviceGetCount) ();
+typedef int (WINAPI* ABL_cudaDecode_GetDeviceGetCount) ();
 
 /*
 功能:
@@ -59,7 +61,7 @@ typedef int (WINAPI* ABL_cudaCodec_GetDeviceGetCount) ();
    true            获取成功
    false           获取失败 
 */
-typedef bool (WINAPI* ABL_cudaCodec_GetDeviceName) (int nOrder, char* szName);
+typedef bool (WINAPI* ABL_cudaDecode_GetDeviceName) (int nOrder, char* szName);
 
 /*
 功能:
@@ -70,7 +72,7 @@ typedef bool (WINAPI* ABL_cudaCodec_GetDeviceName) (int nOrder, char* szName);
 返回值
    显卡使用率 
 */
-typedef int (WINAPI* ABL_cudaCodec_GetDeviceUse) (int nOrder);
+typedef int (WINAPI* ABL_cudaDecode_GetDeviceUse) (int nOrder);
 
 /*
 功能:
@@ -85,7 +87,7 @@ typedef int (WINAPI* ABL_cudaCodec_GetDeviceUse) (int nOrder);
 返回值
  
 */
-typedef bool (WINAPI* ABL_cudaCodec_CreateVideoDecode) (cudaCodecVideo_enum videoCodec, cudaCodecVideo_enum outYUVType, int nWidth, int nHeight, uint64_t& nCudaChan);
+typedef bool (WINAPI* ABL_CreateVideoDecode) (cudaCodecVideo_enum videoCodec, cudaCodecVideo_enum outYUVType, int nWidth, int nHeight, uint64_t& nCudaChan);
 
 /*
 功能：
@@ -97,8 +99,7 @@ typedef bool (WINAPI* ABL_cudaCodec_CreateVideoDecode) (cudaCodecVideo_enum vide
   int             nDecodeFrameCount   解码成功后返回多少帧， 1、4 等等 
   int&            nOutDecodeLength    解码返回一帧buffer长度 
 */
-
-typedef unsigned char* (WINAPI* ABL_cudaCodec_CudaVideoDecode) (uint64_t nCudaChan, unsigned char* pVideoData, int nVideoLength, int& nDecodeFrameCount, int& nOutDecodeLength);
+typedef unsigned char** (WINAPI* ABL_CudaVideoDecode) (uint64_t nCudaChan,unsigned char* pVideoData,int nVideoLength,int& nDecodeFrameCount,int& nOutDecodeLength);
 
 /*
 功能：
@@ -107,7 +108,7 @@ typedef unsigned char* (WINAPI* ABL_cudaCodec_CudaVideoDecode) (uint64_t nCudaCh
 uint64_t        nCudaChan           cuda通道号
  
 */
-typedef bool (WINAPI* ABL_cudaCodec_DeleteVideoDecode) (uint64_t nCudaChan);
+typedef bool (WINAPI* ABL_DeleteVideoDecode) (uint64_t nCudaChan);
 
 /*
 功能：
@@ -115,7 +116,7 @@ typedef bool (WINAPI* ABL_cudaCodec_DeleteVideoDecode) (uint64_t nCudaChan);
 参数：
 无
 */
-typedef int (WINAPI* ABL_cudaCodec_GetCudaDecodeCount) ();
+typedef int (WINAPI* ABL_GetCudaDecodeCount) ();
 
 /*
 功能：
@@ -123,5 +124,7 @@ typedef int (WINAPI* ABL_cudaCodec_GetCudaDecodeCount) ();
 参数：
   无
 */
-typedef bool (WINAPI* ABL_cudaCodec_UnInit) ();
+typedef bool (WINAPI* ABL_VideoDecodeUnInit) ();
+
+#endif
 

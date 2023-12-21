@@ -1,8 +1,8 @@
 /*
 功能：
-	   实现HLS服务器的媒体数据发送功能
+       实现HLS服务器的媒体数据发送功能 
 日期    2021-05-20   实况hls支持
-		2023-11-06   增加录像回放hls的支持
+        2023-11-06   增加录像回放hls的支持 
 
 作者    罗家兄弟
 QQ      79941308
@@ -25,11 +25,11 @@ extern CMediaFifo                      pDisconnectBaseNetFifo; //清理断裂的链接
 extern bool                            DeleteClientMediaStreamSource(uint64_t nClient);
 extern char                            ABL_wwwMediaPath[256]; //www 子路径
 extern MediaServerPort                 ABL_MediaServerPort;
-extern uint64_t                        ABL_nBaseCookieNumber; //Cookie 序号 
+extern uint64_t                        ABL_nBaseCookieNumber ; //Cookie 序号 
 extern uint64_t                        GetCurrentSecond();
 extern CMediaFifo                      pMessageNoticeFifo; //消息通知FIFO
 
-CNetServerHLS::CNetServerHLS(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort, char* szShareMediaURL)
+CNetServerHLS::CNetServerHLS(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort,char* szShareMediaURL)
 {
 	nServer = hServer;
 	nClient = hClient;
@@ -50,25 +50,25 @@ CNetServerHLS::CNetServerHLS(NETHANDLE hServer, NETHANDLE hClient, char* szIP, u
 
 	//首次分配内存 
 	pTsFileBuffer = NULL;
-	while (pTsFileBuffer == NULL)
+	while(pTsFileBuffer == NULL)
 	{
 		nCurrentTsFileBufferSize = MaxDefaultTsFmp4FileByteCount;
 		pTsFileBuffer = new unsigned char[nCurrentTsFileBufferSize];
 	}
-	WriteLog(Log_Debug, "CNetServerHLS 构造 = %X,  nClient = %llu ", this, nClient);
+	WriteLog(Log_Debug, "CNetServerHLS 构造 = %X,  nClient = %llu ",this, nClient);
 }
 
 CNetServerHLS::~CNetServerHLS()
 {
 	bRunFlag = false;
 	std::lock_guard<std::mutex> lock(netDataLock);
-
+	
 	if (pTsFileBuffer != NULL)
 	{
-		delete[] pTsFileBuffer;
-		pTsFileBuffer;
+	  delete [] pTsFileBuffer;
+	  pTsFileBuffer;
 	}
-
+ 
 	WriteLog(Log_Debug, "CNetServerHLS 析构 = %X  szRequestFileName = %s, nClient = %llu \r\n", this, szRequestFileName, nClient);
 	malloc_trim(0);
 }
@@ -78,7 +78,7 @@ int CNetServerHLS::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, char* sz
 	if (strlen(mediaCodecInfo.szVideoName) == 0)
 		strcpy(mediaCodecInfo.szVideoName, szVideoCodec);
 
-	return 0;
+	return 0 ;
 }
 
 int CNetServerHLS::PushAudio(uint8_t* pAudioData, uint32_t nDataLength, char* szAudioCodec, int nChannels, int SampleRate)
@@ -115,7 +115,7 @@ int CNetServerHLS::InputNetData(NETHANDLE nServerHandle, NETHANDLE nClientHandle
 	nRecvDataTimerBySecond = 0;
 
 	//WriteLog(Log_Debug, "CNetServerHLS= %X , nClient = %llu ,收到片段数据\r\n%s",this,nClient,pData);
-
+ 
 	if (MaxNetDataCacheCount - nNetEnd >= nDataLength)
 	{//剩余空间足够
 		memcpy(netDataCache + nNetEnd, pData, nDataLength);
@@ -124,7 +124,7 @@ int CNetServerHLS::InputNetData(NETHANDLE nServerHandle, NETHANDLE nClientHandle
 	}
 	else
 	{//剩余空间不够，需要把剩余的buffer往前移动
-		if (netDataCacheLength > 0 && netDataCacheLength == (nNetEnd - nNetStart))
+		if (netDataCacheLength > 0 && netDataCacheLength == (nNetEnd - nNetStart) )
 		{//如果有少量剩余
 			memmove(netDataCache, netDataCache + nNetStart, netDataCacheLength);
 			nNetStart = 0;
@@ -147,7 +147,7 @@ int CNetServerHLS::InputNetData(NETHANDLE nServerHandle, NETHANDLE nClientHandle
 			netDataCacheLength = 0;
 
 			//清空历史废旧数据
-			memset(netDataCache, 0x00, sizeof(netDataCache));
+			memset(netDataCache , 0x00, sizeof(netDataCache));
 		}
 		memcpy(netDataCache + nNetEnd, pData, nDataLength);
 		netDataCacheLength += nDataLength;
@@ -157,12 +157,12 @@ int CNetServerHLS::InputNetData(NETHANDLE nServerHandle, NETHANDLE nClientHandle
 }
 
 //从HTTP头中获取请求的文件名
-bool CNetServerHLS::GetHttpRequestFileName(char* szGetRequestFile, char* szHttpHeadData)
+bool CNetServerHLS::GetHttpRequestFileName(char* szGetRequestFile,char* szHttpHeadData)
 {
 	string  strHttpHead = (char*)szHttpHeadData;
 	int     nPos1, nPos2;
 	char    szFindHead[64] = { 0 };
-	int     nHeadLength = 4;
+ 	int     nHeadLength = 4 ;
 
 	strcpy(szFindHead, "HEAD ");
 	nPos1 = strHttpHead.find(szFindHead, 0);
@@ -183,7 +183,7 @@ bool CNetServerHLS::GetHttpRequestFileName(char* szGetRequestFile, char* szHttpH
 		if (nPos2 > 0)
 		{
 			memcpy(szGetRequestFile, szHttpHeadData + nPos1 + nHeadLength, nPos2 - nPos1 - nHeadLength);
-			//WriteLog(Log_Debug, "CNetServerHLS=%X ,nClient = %llu ,拷贝出HTTP 请求 文件名字 %s ", this, nClient, szGetRequestFile);
+ 			//WriteLog(Log_Debug, "CNetServerHLS=%X ,nClient = %llu ,拷贝出HTTP 请求 文件名字 %s ", this, nClient, szGetRequestFile);
 			return true;
 		}
 	}
@@ -195,57 +195,57 @@ bool  CNetServerHLS::ReadHttpRequest()
 {
 	std::lock_guard<std::mutex> lock(netDataLock);
 
-	if (netDataCacheLength <= 0 || nNetStart < 0)
-		return false;
-
-	string strNetData = (char*)netDataCache;
+	if (netDataCacheLength <= 0 || nNetStart <  0)
+  		return false;
+ 
+	string strNetData = (char*)netDataCache ;
 	int    nPos;
 	nPos = strNetData.find("\r\n\r\n", nNetStart);
 
 	if (nPos <= 0 || (nPos - nNetStart) + 4 > sizeof(szHttpRequestBuffer))
-		return false;
-
+ 		return false;
+ 
 	memset(szHttpRequestBuffer, 0x00, sizeof(szHttpRequestBuffer));
-	memcpy(szHttpRequestBuffer, netDataCache + nNetStart, (nPos - nNetStart) + 4);
+	memcpy(szHttpRequestBuffer, netDataCache + nNetStart , (nPos - nNetStart) + 4);
 
-	netDataCacheLength -= (nPos - nNetStart) + 4; //这个4 ，就是 "\r\n\r\n" , 已经拷贝走了。
-	nNetStart = nPos + 4; //这个4 ，就是 "\r\n\r\n"， 已经拷贝走了。
+	netDataCacheLength   -=   (nPos - nNetStart) + 4 ; //这个4 ，就是 "\r\n\r\n" , 已经拷贝走了。
+	nNetStart             =    nPos  + 4 ; //这个4 ，就是 "\r\n\r\n"， 已经拷贝走了。
 
-	return true;
+ 	return true;
 }
-
+ 
 int CNetServerHLS::ProcessNetData()
 {
 	if (!bRunFlag)
 		return -1;
 
-	if (ReadHttpRequest() == false)
+  	if (ReadHttpRequest() == false )
 	{
-		WriteLog(Log_Debug, "CNetServerHLS = %X ,nClient = %llu , 数据尚未接收完整 ", this, nClient);
+		WriteLog(Log_Debug, "CNetServerHLS = %X ,nClient = %llu , 数据尚未接收完整 ",this,nClient);
 		if (memcmp(netDataCache, "GET ", 4) != 0)
 		{
-			WriteLog(Log_Debug, "CNetServerHLS = %X , nClient = %llu , 接收的数据非法 ", this, nClient);
+			WriteLog(Log_Debug, "CNetServerHLS = %X , nClient = %llu , 接收的数据非法 ",this, nClient);
 			DeleteNetRevcBaseClient(nClient);
 		}
 		return -1;
-	}
+ 	}
 
 	memset(szDateTime1, 0x00, sizeof(szDateTime1));
 	memset(szDateTime2, 0x00, sizeof(szDateTime2));
-
+	
 #ifdef OS_System_Windows	
 	SYSTEMTIME st;
 	GetLocalTime(&st);//Tue, Jun 31 2021 06:19:02 GMT
-	sprintf(szDateTime1, "Tue, Jun %02d %04d %02d:%02d:%02d GMT", st.wDay, st.wYear, st.wHour - 8, st.wMinute, st.wSecond);
-	sprintf(szDateTime2, "Tue, Jun %02d %04d %02d:%02d:%02d GMT", st.wDay, st.wYear, st.wHour - 8, st.wMinute + 2, st.wSecond);
+	sprintf(szDateTime1,"Tue, Jun %02d %04d %02d:%02d:%02d GMT", st.wDay, st.wYear, st.wHour - 8,st.wMinute, st.wSecond);
+	sprintf(szDateTime2, "Tue, Jun %02d %04d %02d:%02d:%02d GMT", st.wDay, st.wYear, st.wHour - 8, st.wMinute+2, st.wSecond);
 #else
 	time_t now;
 	time(&now);
-	struct tm* local;
+	struct tm *local;
 	local = localtime(&now);
-
-	sprintf(szDateTime1, "Tue, Jun %02d %04d %02d:%02d:%02d GMT", local->tm_mday, local->tm_year + 1900, local->tm_hour - 8, local->tm_min, local->tm_sec);
-	sprintf(szDateTime2, "Tue, Jun %02d %04d %02d:%02d:%02d GMT", local->tm_mday, local->tm_year + 1900, local->tm_hour - 8, local->tm_min + 2, local->tm_sec);
+	
+	sprintf(szDateTime1,"Tue, Jun %02d %04d %02d:%02d:%02d GMT", local->tm_mday, local->tm_year+1900, local->tm_hour - 8,local->tm_min, local->tm_sec);
+	sprintf(szDateTime2, "Tue, Jun %02d %04d %02d:%02d:%02d GMT", local->tm_mday,local->tm_year+1900, local->tm_hour - 8, local->tm_min+2, local->tm_sec);
 #endif
 
 	//分析http头
@@ -258,44 +258,43 @@ int CNetServerHLS::ProcessNetData()
 		WriteLog(Log_Debug, "CNetServerHLS=%X, 获取http 请求文件失败！ nClient = %llu ", this, nClient);
 		pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
 		return -1;
-	}
+	}  
 
-	string strRequestFileName = szRequestFileName;
-	int    nPos = 0;
+ 	string strRequestFileName = szRequestFileName;
+	int    nPos = 0 ;
 
-	//拷贝鉴权参数
+    //拷贝鉴权参数
 	if (strlen(szPlayParams) == 0)
 	{
 		nPos = strRequestFileName.find("?", 0);
-		if (nPos > 0)
-			memcpy(szPlayParams, szRequestFileName + (nPos + 1), strlen(szRequestFileName) - nPos - 1);
-	}
+		if(nPos > 0 )
+		  memcpy(szPlayParams, szRequestFileName + (nPos + 1), strlen(szRequestFileName) - nPos - 1);
+ 	}
 
 	memset(szPushName, 0x00, sizeof(szPushName));
-	nPos = strRequestFileName.rfind(".m3u8", strlen(szRequestFileName));
+	nPos = strRequestFileName.rfind(".m3u8",strlen(szRequestFileName));
 	if (nPos > 0)
 	{
-		memcpy(szPushName, szRequestFileName, nPos);
-	}
-	else
+		memcpy(szPushName,szRequestFileName,nPos);
+ 	}else 
 	{
 		nPos = strRequestFileName.rfind("/", strlen(szRequestFileName));
-		if (nPos > 0)
-			memcpy(szPushName, szRequestFileName, nPos);
+		if(nPos > 0)
+		   memcpy(szPushName, szRequestFileName, nPos);
 	}
 	SplitterAppStream(szPushName);
 
 	//发送播放事件通知，用于播放鉴权
 	if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nPlay > 0 && bOn_playFlag == false)
 	{
-		bOn_playFlag = true;
+ 		bOn_playFlag = true;
 		MessageNoticeStruct msgNotice;
 		msgNotice.nClient = ABL_MediaServerPort.nPlay;
 		sprintf(msgNotice.szMsg, "{\"app\":\"%s\",\"stream\":\"%s\",\"mediaServerId\":\"%s\",\"networkType\":%d,\"key\":%llu,\"ip\":\"%s\" ,\"port\":%d,\"params\":\"%s\"}", m_addStreamProxyStruct.app, m_addStreamProxyStruct.stream, ABL_MediaServerPort.mediaServerID, netBaseNetType, nClient, szClientIP, nClientPort, szPlayParams);
 		pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
 	}
 
-	//WriteLog(Log_Debug, "CNetServerHLS=%X, 获取到HLS的推流源名字 szPushName = %s , nClient = %llu ", this, szPushName, nClient);
+  	//WriteLog(Log_Debug, "CNetServerHLS=%X, 获取到HLS的推流源名字 szPushName = %s , nClient = %llu ", this, szPushName, nClient);
 
 	//获取Connection 连接方式： Close ,Keep-Live  
 	memset(szConnectionType, 0x00, sizeof(szConnectionType));
@@ -303,15 +302,15 @@ int CNetServerHLS::ProcessNetData()
 		strcpy(szConnectionType, "Close");
 
 	//更新Cookie 
-	memset(szCookieNumber, 0x00, sizeof(szCookieNumber));
+ 	memset(szCookieNumber, 0x00, sizeof(szCookieNumber));
 #if  1 //采用自研的Cookie算法
 	sprintf(szCookieNumber, "ABLMediaServer%018llu", ABL_nBaseCookieNumber);
-	ABL_nBaseCookieNumber++;
+	ABL_nBaseCookieNumber ++;
 #else 
 	boost::uuids::uuid a_uuid = boost::uuids::random_generator()(); // 这里是两个() ，因为这里是调用的 () 的运算符重载
 	string tmp_uuid = boost::uuids::to_string(a_uuid);
 	boost::algorithm::erase_all(tmp_uuid, "-");
-	strcpy(szCookieNumber, tmp_uuid.c_str());
+	strcpy(szCookieNumber,tmp_uuid.c_str());
 #endif
 
 	//获取 szOrigin
@@ -319,19 +318,18 @@ int CNetServerHLS::ProcessNetData()
 	httpParse.GetFieldValue("Origin", szOrigin);
 	if (strlen(szOrigin) == 0)
 		strcpy(szOrigin, "*");
-
+ 	
 	//WriteLog(Log_Debug, "CNetServerHLS= %X, nClient = %llu , 获取的请求文件 szRequestFileName = %s ", this,  nClient, szRequestFileName);
 	if (strstr(szRequestFileName, RecordFileReplaySplitter) != NULL)
 	{//录像回放
 		SendRecordHLS();
-	}
-	else //实况播放 
-		SendLiveHLS();//发送实况的hls 
+	}else //实况播放 
+	    SendLiveHLS();//发送实况的hls 
 
 #if 0  //服务器不能主动断开，否则VLC播放不正常 ,ffplay 也经常播放不正常
 	  //发送完毕,如果是短连接，立即删除
-	if (strcmp(szConnectionType, "Close") == 0 || strcmp(szConnectionType, "close") == 0 || bRequestHeadFlag == true)
-		pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
+	  if(strcmp(szConnectionType,"Close") == 0 || strcmp(szConnectionType, "close") == 0 || bRequestHeadFlag == true)
+	      pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
 #endif
 
 
@@ -522,23 +520,21 @@ int CNetServerHLS::SendLiveHLS()
 
 int CNetServerHLS::SendRecordHLS()
 {
-	if (strstr(szRequestFileName, ".m3u8") != NULL)
+ 	if (strstr(szRequestFileName, ".m3u8") != NULL)
 	{//请求M3U8文件
 		string  strTemp = szRequestFileName;
-
+ 
 #ifdef USE_BOOST
 		replace_all(strTemp, RecordFileReplaySplitter, "/");
 #else
 		ABL::replace_all(strTemp, RecordFileReplaySplitter, "/");
 #endif
-
-	
-		sprintf(szRequestFileName, "%s%s", ABL_MediaServerPort.recordPath, strTemp.c_str() + 1);
-
+		sprintf(szRequestFileName, "%s%s", ABL_MediaServerPort.recordPath, strTemp.c_str()+1);
+ 
 		FILE* fReadM3u8 = NULL;
 		fReadM3u8 = fopen(szRequestFileName, "rb");
-
-		if (fReadM3u8 == NULL)
+		
+ 		if (fReadM3u8  == NULL)
 		{//不存在m3u8文件  
 			WriteLog(Log_Debug, "CNetServerHLS=%X, nClient = %llu , 不存在文件 %s  ", this, nClient, szRequestFileName);
 
@@ -574,10 +570,10 @@ int CNetServerHLS::SendRecordHLS()
 			WriteLog(Log_Debug, "CNetServerHLS=%X, 回复http失败 szRequestFileName = %s, nClient = %llu ", this, szRequestFileName, nClient);
 			pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
 			return -1;
-		}
+		} 
 
 		WriteLog(Log_Debug, "CNetServerHLS=%X, 发送完毕m3u8文件 szRequestFileName = %s, nClient = %llu , 文件字节大小 %d ", this, szRequestFileName, nClient, strlen(szM3u8Content));
-	}
+ 	}
 	else if (strstr(szRequestFileName, ".ts") != NULL || strstr(szRequestFileName, ".mp4") != NULL)
 	{//请求TS文件 
 		string  strTemp = szRequestFileName;
@@ -603,7 +599,7 @@ int CNetServerHLS::SendRecordHLS()
 			DeleteNetRevcBaseClient(nClient);
 			return -1;
 		}
-
+	
 		//获取文件大小 
 #ifdef OS_System_Windows 
 		struct _stat64 fileBuf;
@@ -633,28 +629,28 @@ int CNetServerHLS::SendRecordHLS()
 			if (nRead > 0)
 			{
 				nWriteRet2 = XHNetSDK_Write(nClient, (unsigned char*)pTsFileBuffer, nRead, 1);
-			}
+ 			}
 			else
 				break;
-
+ 
 			if (nWriteRet2 != 0)
 			{//发送出错
-				if (fReadMP4)
+		        if(fReadMP4)
 				{
-					fclose(fReadMP4);
-					fReadMP4 = NULL;
+				  fclose(fReadMP4);
+				  fReadMP4 = NULL ;
 				}
 				pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
 				break;
 			}
 		}
-		if (fReadMP4)
+		if(fReadMP4)
 		{
-			fclose(fReadMP4);
-			fReadMP4 = NULL;
+		   fclose(fReadMP4) ;
+		   fReadMP4 = NULL ;
 		}
 		WriteLog(Log_Debug, "CNetServerHLS=%X, 发送完毕TS、FMP4 文件 szRequestFileName = %s, nClient = %llu ,文件字节大小 %d", this, szRequestFileName, nClient, fFileByteCount);
-	}
+ 	}
 	else
 	{
 		WriteLog(Log_Debug, "CNetServerHLS=%X, 请求 http 文件类型有误 szRequestFileName = %s, nClient = %llu ", this, szRequestFileName, nClient);
@@ -662,7 +658,7 @@ int CNetServerHLS::SendRecordHLS()
 		return -1;
 	}
 }
-
+ 
 //根据TS文件名字 ，获取文件序号 
 int64_t  CNetServerHLS::GetTsFileNameOrder(char* szTsFileName)
 {
@@ -682,11 +678,11 @@ int64_t  CNetServerHLS::GetTsFileNameOrder(char* szTsFileName)
 		nPos2 = strTsFileName.find(".mp4", 0);
 		if (nPos1 > 0 && nPos2 > 0)
 		{
-			memcpy(szTemp, szTsFileName + nPos1 + 1, nPos2 - nPos1 - 1);
-			return atoi(szTemp);
-		}
+		  memcpy(szTemp, szTsFileName + nPos1 + 1, nPos2 - nPos1 - 1);
+		  return atoi(szTemp);
+ 		}
 	}
-	return  -1;
+	return  -1 ;
 }
 
 //发送第一个请求

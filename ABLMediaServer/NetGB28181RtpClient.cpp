@@ -718,7 +718,7 @@ int CNetGB28181RtpClient::SendFirstRequst()
 		ResponseHttp(nClient_http, szResponseBody, false);
 	}
 
-	boost::shared_ptr<CMediaStreamSource> pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
+	auto pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
 	if (pMediaSource != NULL)
 	{
 		memcpy((char*)&mediaCodecInfo, (char*)&pMediaSource->m_mediaCodecInfo, sizeof(MediaCodecInfo));

@@ -1,11 +1,27 @@
-#ifndef _NetClientRecvFLV_H
-#define _NetClientRecvFLV_H
+#ifndef _NetClientRecvJTT1078_H
+#define _NetClientRecvJTT1078_H
 
 #include "flv-reader.h"
 #include "flv-demuxer.h"
 #include "flv-muxer.h"
 
 #include "MediaStreamSource.h"
+
+#pragma pack(1)
+struct Head1708 {
+	unsigned char m_headFlag[4];
+	unsigned char m_vpFlag;
+	unsigned char m_mpFlag;
+	unsigned short m_sequence;
+	unsigned char m_sim[6];
+	char m_channel;
+	unsigned char m_type;
+	char m_timestamp[8];
+	unsigned short m_iFrameInterval;
+	unsigned short m_frameInterval;
+	unsigned short m_length;
+};
+#pragma pack()
 #ifdef USE_BOOST
 #include <boost/unordered/unordered_map.hpp>
 #include <boost/smart_ptr/shared_ptr.hpp>
@@ -15,20 +31,24 @@
 
 using namespace boost;
 #else
+#include <unordered_map>
 #include <memory>
 #endif
 
 
-//#define          SaveNetDataToFlvFile          1 
-//#define         WriteHTTPFlvToEsFileFlag       1 
+#define          SaveNetDataToJTT1078File          1 
 
 #define       HttpFlvReadPacketSize     1024*1024*2
 
-class CNetClientRecvFLV : public CNetRevcBase
+class CNetClientRecvJTT1078 : public CNetRevcBase
 {
 public:
-	CNetClientRecvFLV(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort, char* szShareMediaURL);
-   ~CNetClientRecvFLV() ;
+	CNetClientRecvJTT1078(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort, char* szShareMediaURL);
+   ~CNetClientRecvJTT1078() ;
+
+   int64_t  tPutVideoTime;
+   string _m3u8 ;
+   string m_es;
 
    std::mutex  NetClientRecvFLVLock;
    int         type ;
@@ -57,11 +77,9 @@ public:
    virtual bool RequestM3u8File();//请求m3u8文件
 
    volatile bool                bCheckRtspVersionFlag;
-   void*                        reader;
- 
-   flv_demuxer_t*               flvDemuxer;
    char                         szURL[512];
    char                         szRequestFLVFile[512];
+
 #ifdef USE_BOOST
    boost::shared_ptr<CMediaStreamSource> pMediaSource;
 #else
@@ -70,9 +88,8 @@ public:
 
    volatile bool                         bDeleteRtmpPushH265Flag; //因为推rtmp265被删除标志 
 
-#ifdef  SaveNetDataToFlvFile
-   FILE*                        fileFLV;
-   int64_t                      nNetPacketNumber;
+#ifdef  SaveNetDataToJTT1078File
+   FILE*                        fileJTT1078;
 #endif
 
 #ifdef  WriteHTTPFlvToEsFileFlag
