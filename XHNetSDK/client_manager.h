@@ -1,7 +1,6 @@
 #pragma once
-
-
 #ifdef USE_BOOST
+
 
 
 #include <boost/unordered_map.hpp>
@@ -50,11 +49,13 @@ private:
 #ifdef LIBNET_USE_CORE_SYNC_MUTEX
 	auto_lock::al_mutex m_climtx;
 #else
-	auto_lock::al_spin m_climtx;
+	std::mutex          m_climtx;
 #endif
 };
 
 typedef boost::serialization::singleton<client_manager> client_manager_singleton;
+
+
 
 #else
 #include <memory>

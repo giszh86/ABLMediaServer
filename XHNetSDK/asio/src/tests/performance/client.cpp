@@ -199,7 +199,7 @@ public:
       stats_()
   {
     stop_timer_.expires_after(asio::chrono::seconds(timeout));
-    stop_timer_.async_wait(boost::bind(&client::handle_timeout, this));
+    stop_timer_.async_wait(std::bind(&client::handle_timeout, this));
 
     for (size_t i = 0; i < session_count; ++i)
     {

@@ -10,7 +10,7 @@ struct client_deletor
 	{
 		if (cli)
 		{
-			client_manager::getInstance::get_mutable_instance().free_client(cli);
+			client_manager_singleton::get_mutable_instance().free_client(cli);
 		}
 	}
 };
@@ -59,7 +59,7 @@ bool client_manager::push_client(client_ptr& cli)
 #ifdef LIBNET_USE_CORE_SYNC_MUTEX
 	auto_lock::al_lock<auto_lock::al_mutex> al(m_climtx);
 #else
-	auto_lock::al_lock<auto_lock::al_spin> al(m_climtx);
+	std::lock_guard<std::mutex> lock(m_climtx);
 #endif
 
 	if (cli)
@@ -76,7 +76,7 @@ bool client_manager::pop_client(NETHANDLE id)
 #ifdef LIBNET_USE_CORE_SYNC_MUTEX
 	auto_lock::al_lock<auto_lock::al_mutex> al(m_climtx);
 #else
-	auto_lock::al_lock<auto_lock::al_spin> al(m_climtx);
+	std::lock_guard<std::mutex> lock(m_climtx);
 #endif
 
 	const_climapiter iter = m_clients.find(id);
@@ -100,7 +100,7 @@ void client_manager::pop_server_clients(NETHANDLE srvid)
 #ifdef LIBNET_USE_CORE_SYNC_MUTEX
 	auto_lock::al_lock<auto_lock::al_mutex> al(m_climtx);
 #else
-	auto_lock::al_lock<auto_lock::al_spin> al(m_climtx);
+	std::lock_guard<std::mutex> lock(m_climtx);
 #endif
 
 	for (const_climapiter iter = m_clients.begin(); m_clients.end() != iter;)
@@ -122,7 +122,7 @@ void client_manager::pop_all_clients()
 #ifdef LIBNET_USE_CORE_SYNC_MUTEX
 	auto_lock::al_lock<auto_lock::al_mutex> al(m_climtx);
 #else
-	auto_lock::al_lock<auto_lock::al_spin> al(m_climtx);
+	std::lock_guard<std::mutex> lock(m_climtx);
 #endif
 
 	for (const_climapiter iter = m_clients.begin(); iter != m_clients.end(); ++iter)
@@ -141,10 +141,10 @@ client_ptr client_manager::get_client(NETHANDLE id)
 #ifdef LIBNET_USE_CORE_SYNC_MUTEX
 	auto_lock::al_lock<auto_lock::al_mutex> al(m_climtx);
 #else
-	auto_lock::al_lock<auto_lock::al_spin> al(m_climtx);
+	std::lock_guard<std::mutex> lock(m_climtx);
 #endif
 
-	client_ptr cli;
+	client_ptr cli = nullptr;
 	const_climapiter iter = m_clients.find(id);
 	if (m_clients.end() != iter)
 	{
@@ -153,8 +153,6 @@ client_ptr client_manager::get_client(NETHANDLE id)
 
 	return cli;
 }
-
-
 
 #else
 #include <memory>

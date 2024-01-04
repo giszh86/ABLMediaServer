@@ -3,7 +3,6 @@
 #include "client_manager.h"
 #include "libnet_error.h"
 #include "identifier_generator.h"
-#include <malloc.h>
 
 client::client(boost::asio::io_context& ioc,
 	NETHANDLE srvid,
@@ -24,24 +23,22 @@ client::client(boost::asio::io_context& ioc,
 	, m_onwriting(false)
 	, m_currwriteaddr(NULL)
 	, m_currwritesize(0)
-	
+
 {
-	m_closeflag = false ;
+	m_closeflag = false;
 	m_readbuff = new uint8_t[CLIENT_MAX_RECV_BUFF_SIZE];
 }
 
 client::~client(void)
 {
-	m_closeflag = true ;
-
+	m_closeflag = true;
 	recycle_identifier(m_id);
-	if(m_readbuff != NULL)
+	if (m_readbuff != NULL)
 	{
-		delete [] m_readbuff;
-		m_readbuff = NULL ;
+		delete[] m_readbuff;
+		m_readbuff = NULL;
 	}
 	m_circularbuff.uninit();
-	malloc_trim(0);
 }
 
 int32_t client::run()
@@ -121,7 +118,7 @@ int32_t client::connect(int8_t* remoteip,
 		close();
 		return e_libnet_err_clisetsockopt;
 	}
-	
+
 	boost::asio::socket_base::send_buffer_size send_buffer_size_option(LISTEN_SEND_BUFF_SIZE);
 	m_socket.set_option(send_buffer_size_option, err);
 	if (err)
@@ -137,7 +134,7 @@ int32_t client::connect(int8_t* remoteip,
 		close();
 		return e_libnet_err_clisetsockopt;
 	}
-	
+
 	//设置接收，发送缓冲区
 	int  nRecvSize = 1024 * 1024 * 1;
 	boost::asio::socket_base::send_buffer_size    SendSize_option(nRecvSize); //定义发送缓冲区大小
@@ -190,7 +187,7 @@ void client::handle_write(const boost::system::error_code& ec, size_t transize)
 {
 	if (ec)
 	{
-		if (client_manager::getInstance::get_mutable_instance().pop_client(get_id()))
+		if (client_manager_singleton::get_mutable_instance().pop_client(get_id()))
 		{
 			if (m_fnclose)
 			{
@@ -200,7 +197,7 @@ void client::handle_write(const boost::system::error_code& ec, size_t transize)
 
 		return;
 	}
-	
+
 	m_circularbuff.read_commit(m_currwritesize);
 	m_currwriteaddr = NULL;
 	m_currwritesize = 0;
@@ -217,7 +214,7 @@ void client::handle_read(const boost::system::error_code& ec, size_t transize)
 {
 	if (ec)
 	{
-		if (client_manager::getInstance::get_mutable_instance().pop_client(get_id()))
+		if (client_manager_singleton::get_mutable_instance().pop_client(get_id()))
 		{
 			if (m_fnclose)
 			{
@@ -248,19 +245,19 @@ void client::handle_read(const boost::system::error_code& ec, size_t transize)
 		{
 			m_socket.async_read_some(boost::asio::buffer(m_readbuff, CLIENT_MAX_RECV_BUFF_SIZE),
 				boost::bind(&client::handle_read,
-				shared_from_this(),
-				boost::asio::placeholders::error,
-				boost::asio::placeholders::bytes_transferred));
-		}
-			else
-			{
-				m_socket.async_read_some(boost::asio::buffer(m_readbuff, CLIENT_MAX_RECV_BUFF_SIZE),
-					boost::bind(&client::handle_read,
 					shared_from_this(),
 					boost::asio::placeholders::error,
 					boost::asio::placeholders::bytes_transferred));
-				printf("close socket\n");
-			}
+		}
+		else
+		{
+			m_socket.async_read_some(boost::asio::buffer(m_readbuff, CLIENT_MAX_RECV_BUFF_SIZE),
+				boost::bind(&client::handle_read,
+					shared_from_this(),
+					boost::asio::placeholders::error,
+					boost::asio::placeholders::bytes_transferred));
+			printf("close socket\n");
+		}
 	}
 	else
 	{
@@ -280,11 +277,11 @@ void client::handle_connect(const boost::system::error_code& ec)
 
 	if (ec)
 	{
-		if (client_manager::getInstance::get_mutable_instance().pop_client(get_id()))
+		if (client_manager_singleton::get_mutable_instance().pop_client(get_id()))
 		{
 			if (m_fnconnect)
 			{
-				m_fnconnect(get_id(), 0,0);
+				m_fnconnect(get_id(), 0, 0);
 			}
 		}
 	}
@@ -292,10 +289,10 @@ void client::handle_connect(const boost::system::error_code& ec)
 	{
 		if (m_fnconnect)
 		{
-			m_fnconnect(get_id(), 1,htons(m_socket.local_endpoint().port()));
+			m_fnconnect(get_id(), 1, htons(m_socket.local_endpoint().port()));
 		}
 
-		run();	
+		run();
 	}
 }
 
@@ -311,8 +308,8 @@ int32_t client::read(uint8_t* buffer,
 	auto_lock::al_lock<auto_lock::al_spin> al(m_readmtx);
 #endif
 #endif
-	 if(m_closeflag)
-		 return e_libnet_err_clisocknotopen;
+	if (m_closeflag)
+		return e_libnet_err_clisocknotopen;
 
 	if (!buffer || !buffsize || (0 == *buffsize))
 	{
@@ -339,7 +336,7 @@ int32_t client::read(uint8_t* buffer,
 			if (err || (0 == readsize))
 			{
 				*buffsize = 0;
-				client_manager::getInstance::get_mutable_instance().pop_client(get_id());
+				client_manager_singleton::get_mutable_instance().pop_client(get_id());
 				return e_libnet_err_clireaddata;
 			}
 			else
@@ -353,7 +350,7 @@ int32_t client::read(uint8_t* buffer,
 			if (err || (0 == readsize))
 			{
 				*buffsize = 0;
-				client_manager::getInstance::get_mutable_instance().pop_client(get_id());
+				client_manager_singleton::get_mutable_instance().pop_client(get_id());
 				return e_libnet_err_clireaddata;
 			}
 			else
@@ -405,8 +402,8 @@ int32_t client::write(uint8_t* data,
 	auto_lock::al_lock<auto_lock::al_spin> al(m_writemtx);
 #endif
 #endif
-	 if(m_closeflag)
-		 return e_libnet_err_clisocknotopen;
+	if (m_closeflag)
+		return e_libnet_err_clisocknotopen;
 
 	int32_t ret = e_libnet_err_noerror;
 	int32_t datasize2 = datasize;
@@ -424,7 +421,7 @@ int32_t client::write(uint8_t* data,
 	if (blocked)
 	{
 		boost::system::error_code ec;
-		unsigned long nSendPos = 0, nSendRet = 0 ;
+		unsigned long nSendPos = 0, nSendRet = 0;
 
 		while (datasize2 > 0)
 		{//改成循环发送
@@ -432,9 +429,9 @@ int32_t client::write(uint8_t* data,
 
 			if (!ec)
 			{//发送没有出错
- 				if (nSendRet > 0)
+				if (nSendRet > 0)
 				{
-					nSendPos  += nSendRet;
+					nSendPos += nSendRet;
 					datasize2 -= nSendRet;
 				}
 			}
@@ -447,13 +444,13 @@ int32_t client::write(uint8_t* data,
 		}
 		else
 		{
-			client_manager::getInstance::get_mutable_instance().pop_client(get_id());
+			client_manager_singleton::get_mutable_instance().pop_client(get_id());
 			return e_libnet_err_cliwritedata;
 		}
 	}
 	else
 	{
-		if (!m_circularbuff.is_init() && 
+		if (!m_circularbuff.is_init() &&
 			!m_circularbuff.init(CLIENT_MAX_SEND_BUFF_SIZE))
 		{
 			return e_libnet_err_cliinitswritebuff;
@@ -488,16 +485,16 @@ bool client::write_packet()
 				shared_from_this(),
 				boost::asio::placeholders::error,
 				boost::asio::placeholders::bytes_transferred));
-		
+
 		return true;
 	}
-	
+
 	return false;
 }
 
 void client::close()
 {
-    auto_lock::al_lock<auto_lock::al_spin> al(m_climtx);
+	std::lock_guard<std::mutex> lock(m_climtx);
 	if (!m_closeflag.exchange(true))
 	{
 		//m_fnconnect = NULL; //注释掉，否则异步方式连接失败时，通知不了 

@@ -1,6 +1,7 @@
 #pragma  once
 #ifdef USE_BOOST
 
+
 #include <boost/atomic.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/shared_array.hpp>
@@ -19,8 +20,8 @@ public:
 		close_callback fnclose,
 		bool autoread);
 	~client();
-	
-	auto_lock::al_spin m_climtx;
+
+	std::mutex     m_climtx;
 	NETHANDLE get_id();
 	NETHANDLE get_server_id() const;
 	boost::asio::ip::tcp::socket& socket();

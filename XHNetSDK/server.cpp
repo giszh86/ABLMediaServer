@@ -39,7 +39,9 @@ server::server(boost::asio::io_context &ioc,
 server::~server(void)
 {
 	recycle_identifier(m_id);
+#ifndef _WIN32
 	malloc_trim(0);
+#endif
 }
 
 int32_t server::run()

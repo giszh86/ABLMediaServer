@@ -36,7 +36,9 @@ udp_session::~udp_session(void)
 		delete[] m_readbuff;
 		m_readbuff = NULL;
 	}
+#ifndef _WIN32
 	malloc_trim(0);
+#endif
 }
 
 int32_t udp_session::init(const int8_t* localip,
@@ -221,7 +223,11 @@ int32_t udp_session::send_to(uint8_t* data,
 	if (m_hasconnected)
 	{
 		m_socket.send(boost::asio::buffer(data, datasize), 0, ec);
-		usleep(10);
+#ifndef WIN32
+		std::this_thread::sleep_for(std::chrono::microseconds(10));
+#endif // !WIN32
+
+		
 	}
 	else
 	{
@@ -230,7 +236,9 @@ int32_t udp_session::send_to(uint8_t* data,
 		m_writeep.address(boost::asio::ip::address::from_string(inet_ntoa(addr->sin_addr)));
 		m_writeep.port(ntohs(addr->sin_port));
 		m_socket.send_to(boost::asio::buffer(data, datasize), m_writeep, 0, ec);
-		usleep(10);
+#ifndef WIN32
+		std::this_thread::sleep_for(std::chrono::microseconds(10));
+#endif // !WIN32
 	}
 
 	if (ec)
@@ -762,7 +770,9 @@ int32_t udp_session::send_to(uint8_t* data,
 	if (m_hasconnected)
 	{
 		m_socket.send(asio::buffer(data, datasize), 0, ec);
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+#ifndef WIN32
+		std::this_thread::sleep_for(std::chrono::microseconds(10));
+#endif // !WIN32
 
 	}
 	else
@@ -772,7 +782,9 @@ int32_t udp_session::send_to(uint8_t* data,
 		m_writeep.address(asio::ip::address::from_string(inet_ntoa(addr->sin_addr)));
 		m_writeep.port(ntohs(addr->sin_port));
 		m_socket.send_to(asio::buffer(data, datasize), m_writeep, 0, ec);
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+#ifndef WIN32
+		std::this_thread::sleep_for(std::chrono::microseconds(10));
+#endif // !WIN32
 	}
 
 	if (ec)
