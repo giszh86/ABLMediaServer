@@ -360,7 +360,7 @@ int CNetClientRecvFLV::SendFirstRequst()
 {
 	string  strHttpFlvURL = m_rtspStruct.szSrcRtspPullUrl;
 	int nPos1, nPos2;
-	char    szSubPath[256] = { 0 };
+	char    szSubPath[string_length_2048] = { 0 };
 	nPos1 = strHttpFlvURL.find("//", 0);
 	if (nPos1 > 0)
 	{

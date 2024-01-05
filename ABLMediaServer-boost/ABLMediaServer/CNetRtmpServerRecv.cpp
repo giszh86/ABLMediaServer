@@ -143,7 +143,7 @@ static int rtmp_server_onplay(void* param, const char* app, const char* stream, 
 
 	//去掉？后面参数字符串
 	string strMP4Name = stream;
-	char   szStream[string_length_512] = { 0 };
+	char   szStream[string_length_1024] = { 0 };
 	strcpy(szStream, stream);
 	int    nPos = strMP4Name.find("?", 0);
 	if (nPos > 0 && strlen(stream) > 0)
@@ -152,7 +152,7 @@ static int rtmp_server_onplay(void* param, const char* app, const char* stream, 
 		szStream[nPos] = 0x00;
 	}
 
-	char szTemp[512] = { 0 };
+	char szTemp[string_length_1024] = { 0 };
 	sprintf(szTemp, "/%s/%s", app, szStream);
 	strcpy(pClient->szMediaSourceURL, szTemp);
 	boost::shared_ptr<CMediaStreamSource> pushClient = NULL;

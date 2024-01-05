@@ -59,14 +59,14 @@ public:
 	int64_t         nOldPTS;
 	uint64_t        nCallBackVideoTime;
 	ts_demuxer_t *   ts;
-	char             szSourceURL[512];
+	char             szSourceURL[string_length_2048];
 	boost::shared_ptr<CMediaStreamSource> pMediaSource;
 
 	CMediaFifo       hlsVideoFifo;
 	CMediaFifo       hlsAudioFifo;
 
 	volatile bool    bExitCallbackThreadFlag ;
-	unsigned char    aacData[2048]; 
+	unsigned char    aacData[string_length_2048]; 
 #ifdef SaveAudioToAACFile
 	FILE*           fileSaveAAC;
 #endif
@@ -85,8 +85,8 @@ private :
 	bool                    AddM3u8ToFifo(char* szM3u8Data, int nDataLength);
 	CABLSipParse            httpParse;
 	std::mutex              netDataLock;
-	unsigned char           szResponseHead[1024];//http响应头
-	char                    szRequestFile[512];
+	unsigned char           szResponseHead[string_length_2048];//http响应头
+	char                    szRequestFile[string_length_2048];
 
 	int                     nContentLength; //实际长度
 	int                     nRecvContentLength;//已经收到的长度
@@ -99,9 +99,9 @@ private :
 	int                     nNetStart, nNetEnd; //网络数据起始位置\结束位置
 	int                     MaxNetDataCacheCount;
 
-	char                    szHttpURL[512];
-	char                    szRequestM3u8File[512];
-	char                    szRequestBuffer[512];
+	char                    szHttpURL[string_length_2048];
+	char                    szRequestM3u8File[string_length_2048];
+	char                    szRequestBuffer[string_length_2048];
 
 	CMediaFifo              requestFileFifo;
 	int64_t                 nOldRequestM3u8Number;

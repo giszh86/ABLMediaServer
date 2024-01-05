@@ -307,7 +307,7 @@ int CNetClientRecvHttpHLS::ProcessNetData()
 
 	nRecvDataTimerBySecond = 0;//ÍøÂç¶ÏÏß¼ì²â
 	int   nPos, i;
-	char  szContentValue[64] = { 0 };
+	char  szContentValue[string_length_1024] = { 0 };
 	unsigned char  szReturnFlag[4] = { 0x0d,0x0a,0x0d,0x0a };
 	unsigned char* pData = NULL;
 	int            nDataLength = 0;
@@ -568,11 +568,11 @@ bool   CNetClientRecvHttpHLS::AddM3u8ToFifo(char* szM3u8Data, int nDataLength)
 	string strM3u8Data = szM3u8Data;
 	int    nStart = 0;
 	int    nPos,nPos2,nPos3;
-	char   szLine[256];
+	char   szLine[string_length_1024];
 	string strLine;
 	bool   bEndFlag = false;
-	char   szTemp[256] = { 0 };
-	char   szSubPath[256] = { 0 };
+	char   szTemp[string_length_1024] = { 0 };
+	char   szSubPath[string_length_1024] = { 0 };
 	int64_t  nNumberTemp;
 
 	//WriteLog(Log_Debug, "CNetClientRecvHttpHLS=%X ,nClient =%llu ,szM3u8Data = %s ", this,nClient, szM3u8Data);

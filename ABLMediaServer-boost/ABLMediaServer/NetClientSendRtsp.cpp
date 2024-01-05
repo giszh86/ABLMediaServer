@@ -355,7 +355,7 @@ void CNetClientSendRtsp::GetHttpModemHttpURL(char* szMedomHttpURL)
 
 	int nPos1, nPos2, nPos3, nPos4;
 	string strHttpURL = szMedomHttpURL;
-	char   szTempRtsp[512] = { 0 };
+	char   szTempRtsp[string_length_2048] = { 0 };
 	string strTempRtsp;
 
 	strcpy(RtspProtectArray[RtspProtectArrayOrder].szRtspCmdString, szMedomHttpURL);
@@ -1126,7 +1126,7 @@ bool  CNetClientSendRtsp::GetSPSPPSFromDescribeSDP()
 {
 	m_bHaveSPSPPSFlag = false;
 	int  nPos1, nPos2;
-	char  szSprop_Parameter_Sets[512] = { 0 };
+	char  szSprop_Parameter_Sets[string_length_2048] = { 0 };
 
 	m_nSpsPPSLength = 0;
 	string strSDPTemp = szRtspContentSDP;
@@ -1164,7 +1164,7 @@ bool  CNetClientSendRtsp::GetSPSPPSFromDescribeSDP()
 
 void  CNetClientSendRtsp::UserPasswordBase64(char* szUserPwdBase64)
 {
-	char szTemp[128] = { 0 };
+	char szTemp[string_length_2048] = { 0 };
 	sprintf(szTemp, "%s:%s", m_rtspStruct.szUser, m_rtspStruct.szPwd);
 	Base64Encode((unsigned char*)szUserPwdBase64, (unsigned char*)szTemp, strlen(szTemp));
 }
@@ -1172,7 +1172,7 @@ void  CNetClientSendRtsp::UserPasswordBase64(char* szUserPwdBase64)
 //确定SDP里面视频，音频的总媒体数量, 从Describe中找到 trackID，大华的从0开始，海康，华为的从1开始
 void  CNetClientSendRtsp::FindVideoAudioInSDP()
 {
-	char szTemp[1280] = { 0 };
+	char szTemp[string_length_2048] = { 0 };
 
 	nMediaCount = 0;
 	if (strlen(szRtspContentSDP) <= 0)

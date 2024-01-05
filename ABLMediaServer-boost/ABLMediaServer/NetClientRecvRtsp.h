@@ -52,6 +52,11 @@ public:
    virtual int SendFirstRequst();//发送第一个请求
    virtual bool RequestM3u8File();//请求m3u8文件
 
+   int            nRecvRtpPacketCount;
+   unsigned short nMaxRtpLength;
+   uint64_t       nSendOptionsHeartbeatTimer;
+   void           SendOptionsHeartbeat();
+
    uint32_t     cbVideoTimestamp;//回调时间戳
    uint32_t     cbVideoLength;//回调视频累计
    bool         RtspPause();
@@ -80,8 +85,8 @@ public:
    unsigned int               nSendSetupCount;
    char                       szWww_authenticate[384];//摘要认证参数，由服务器发送过来的
    WWW_AuthenticateType       AuthenticateType;//rtsp是什么类型验证
-   char                       szBasic[512];//用于rtsp基础验证
-   char                       szSessionID[512];//sessionID 
+   char                       szBasic[string_length_2048];//用于rtsp基础验证
+   char                       szSessionID[string_length_2048];//sessionID 
    char                       szTrackIDArray[16][string_length_1024];
 
    bool  GetWWW_Authenticate();
@@ -93,7 +98,7 @@ public:
    void  UserPasswordBase64(char* szUserPwdBase64);
    bool  FindVideoAudioInSDP();
 
-   unsigned char           s_extra_data[512];
+   unsigned char           s_extra_data[string_length_2048];
    int                     extra_data_size;
    struct mpeg4_avc_t      avc;
    bool                     bStartWriteFlag ;
@@ -108,9 +113,9 @@ public:
    int                     audioSSRC;
    CRtcpPacketSR           rtcpSR;
    CRtcpPacketRR           rtcpRR;
-   unsigned char           szRtcpSRBuffer[512];
+   unsigned char           szRtcpSRBuffer[string_length_2048];
    unsigned int            rtcpSRBufferLength;
-   unsigned char           szRtcpDataOverTCP[1500];
+   unsigned char           szRtcpDataOverTCP[string_length_2048];
    void                    SendRtcpReportData();//发送rtcp 报告包,发送端
    void                    SendRtcpReportDataRR(unsigned int nSSRC, int nChan);//发送rtcp 报告包,接收端
    void                    ProcessRtcpData(char* szRtpData, int nDataLength, int nChan);
@@ -122,8 +127,8 @@ public:
    std::mutex              MediaSumRtpMutex;
    unsigned short          nVideoRtpLen, nAudioRtpLen;
 
-   unsigned char            szRtpDataOverTCP[1500];
-   unsigned char            szAudioRtpDataOverTCP[1500];
+   unsigned char            szRtpDataOverTCP[string_length_2048];
+   unsigned char            szAudioRtpDataOverTCP[string_length_2048];
 
    uint32_t                hRtpVideo, hRtpAudio;
    uint32_t                nVideoSSRC;
@@ -166,15 +171,15 @@ public:
    int             nRecvLength;           //已经读取完毕的长度
    unsigned char   szHttpHeadEndFlag[8];  //Http头结束标志
    int             nHttpHeadEndLength;    //Http头结束标志点的长度 
-   char            szResponseHttpHead[512];
-   char            szCSeq[128];
-   char            szTransport[256];
+   char            szResponseHttpHead[string_length_2048];
+   char            szCSeq[string_length_2048];
+   char            szTransport[string_length_2048];
 
    char            szResponseBuffer[string_length_4096];
    int             nSendRet;
   static   uint64_t Session ;
   uint64_t         currentSession;
-  char             szCurRtspURL[512];
+  char             szCurRtspURL[string_length_2048];
   int64_t           nPrintCount;
 
    //只处理rtsp命令，比如 OPTIONS,DESCRIBE,SETUP,PALY 
@@ -185,9 +190,9 @@ public:
    int            timeValue;
    struct rtp_payload_t   hRtpHandle[MaxRtpHandleCount];
    void*                  rtpDecoder[MaxRtpHandleCount];
-   char           szSdpAudioName[64];
-   char           szVideoName[64];
-   char           szAudioName[64];
+   char           szSdpAudioName[string_length_1024];
+   char           szVideoName[string_length_1024];
+   char           szAudioName[string_length_1024];
    int            nVideoPayload;
    int            nAudioPayload;
    int            sample_index;//采样频率所对应的序号 

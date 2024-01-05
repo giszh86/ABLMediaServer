@@ -390,7 +390,7 @@ bool   CNetClientRecvRtmp::GetAppStreamByURL(char* app, char* stream)
 //发送第一个请求
 int CNetClientRecvRtmp::SendFirstRequst()
 {
-	char szApp[string_length_256] = { 0 }, szStream[string_length_512] = { 0 };
+	char szApp[string_length_1024] = { 0 }, szStream[string_length_2048] = { 0 };
 	if (!GetAppStreamByURL(szApp, szStream))
 	{
 		WriteLog(Log_Debug, "CNetClientRecvRtmp = %X 获取rtmp中的app、stream 有误 ,url = %s, nClient = %llu \r\n", this,szClientIP, nClient);

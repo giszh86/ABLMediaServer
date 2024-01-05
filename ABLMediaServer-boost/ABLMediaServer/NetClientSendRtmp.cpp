@@ -344,9 +344,9 @@ int CNetClientSendRtmp::SendFirstRequst()
 {
 	int nPos1, nPos2,nPos3;
 	string strURL = szClientIP;
-	char   szApp[string_length_256] = { 0 };
-	char   szStream[string_length_512] = { 0 };
-	char   tcurl[string_length_512];
+	char   szApp[string_length_1024] = { 0 };
+	char   szStream[string_length_1024] = { 0 };
+	char   tcurl[string_length_2048];
 	nPos1 = strURL.find("/", 10);
 	if (nPos1 > 10)
 		nPos2 = strURL.find("/", nPos1 + 1);

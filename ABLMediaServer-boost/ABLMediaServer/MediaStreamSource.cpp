@@ -55,6 +55,7 @@ extern ABL_cudaEncode_UnInit cudaEncode_UnInit ;
 
 CMediaStreamSource::CMediaStreamSource(char* szURL, uint64_t nClientTemp, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct)
 {
+	memset(sim, 0x00, sizeof(sim));
 	memset(szM3u8Name, 0x00, sizeof(szM3u8Name));
 	memset(szHLSPath, 0x00, sizeof(szHLSPath));
 	nWebRtcPlayerCount = 0;
@@ -1895,24 +1896,27 @@ bool CMediaStreamSource::PushAudio(unsigned char* szAudio, int nLength, char* sz
 				}
 				else
 				{
-					if ((strcmp(szAudioCodec, "G711_A") == 0 || strcmp(szAudioCodec, "G711_U") == 0 ) && nLength >= 320)
+					if ((strcmp(szAudioCodec, "G711_A") == 0 || strcmp(szAudioCodec, "G711_U") == 0 ) && nLength == 320)
 				         pClient->PushAudio(szAudio, nLength, m_mediaCodecInfo.szAudioName, nChannels, SampleRate);
 					else
 					{//nLength 不是 320 的需要拼接为320长度，因为rtp打包时固定为320字节的时间戳
 						memcpy(g711CacheBuffer + nG711CacheLength, szAudio, nLength);
 						nG711CacheLength += nLength;
-						if (nG711CacheLength >= 320)
+					    nG711CacheProcessLength = nG711CacheLength ;//切割前总长度 
+						nG711SplittePos = 0; //切割移动位置 
+ 						while (nG711CacheLength >= 320)
 						{
-							pClient->PushAudio(g711CacheBuffer, 320, m_mediaCodecInfo.szAudioName, nChannels, SampleRate);
-							if (nG711CacheLength - 320 > 0)
-							{//把多余的g711a\g711u 往前移动 
-								memmove(g711CacheBuffer, g711CacheBuffer + 320, nG711CacheLength - 320);
-								nG711CacheLength -= 320;
-							}
-							else
-								nG711CacheLength = 0;
+							pClient->PushAudio(g711CacheBuffer + nG711SplittePos, 320, m_mediaCodecInfo.szAudioName, nChannels, SampleRate);
+							nG711SplittePos  += 320;
+							nG711CacheLength -= 320;
+ 						}
+
+						if (nG711SplittePos > 0 && (nG711CacheProcessLength - nG711SplittePos) > 0)
+						{//把多余的g711a\g711u 往前移动 
+							memmove(g711CacheBuffer, g711CacheBuffer + nG711SplittePos, nG711CacheProcessLength - nG711SplittePos);
+							nG711CacheLength = nG711CacheProcessLength - nG711SplittePos ;
 						}
-					}
+ 					}
 				}
 			}
 			it++;

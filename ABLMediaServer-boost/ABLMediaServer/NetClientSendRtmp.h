@@ -31,7 +31,7 @@ public:
    uint32_t       nAudioDTS;
    uint32_t       nWriteRet;
    volatile  int  nWriteErrorCount;
-   char           szRtmpName[256];
+   char           szRtmpName[string_length_1024];
 
    virtual int InputNetData(NETHANDLE nServerHandle, NETHANDLE nClientHandle, uint8_t* pData, uint32_t nDataLength, void* address) ;
    virtual int ProcessNetData();
@@ -50,7 +50,7 @@ public:
    int                          nAsyncAudioStamp;
 
    flv_muxer_t*                 flvMuxer;
-   char                         szURL[512];
+   char                         szURL[string_length_2048];
 
    volatile bool                bDeleteRtmpPushH265Flag; //因为推rtmp265被删除标志 
 

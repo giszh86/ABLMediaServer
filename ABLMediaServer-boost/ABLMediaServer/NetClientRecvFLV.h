@@ -36,7 +36,7 @@ public:
    uint32_t       nAudioDTS;
    uint32_t       nWriteRet;
    volatile  int  nWriteErrorCount;
-   char           szRtmpName[512];
+   char           szRtmpName[string_length_2048];
    unsigned char  packet[MaxNetDataCacheBufferLength];
    unsigned char           netDataCache[HttpFlvReadPacketSize]; //网络数据缓存
    int                     netDataCacheLength;//网络数据缓存大小
@@ -56,8 +56,8 @@ public:
    void*                        reader;
  
    flv_demuxer_t*               flvDemuxer;
-   char                         szURL[512];
-   char                         szRequestFLVFile[512];
+   char                         szURL[string_length_2048];
+   char                         szRequestFLVFile[string_length_2048];
 
    boost::shared_ptr<CMediaStreamSource> pMediaSource;
    volatile bool                         bDeleteRtmpPushH265Flag; //因为推rtmp265被删除标志 

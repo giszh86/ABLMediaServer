@@ -141,12 +141,14 @@ public:
    unsigned char          pOutAACData[2048];
    int                    nOutAACDataLength;
    char                   g711ToPCMCache[1024 * 16];
-   unsigned char          g711CacheBuffer[2048];
+   unsigned char          g711CacheBuffer[8192];
    int                    nG711CacheLength;
+   int                    nG711CacheProcessLength;//切割前总长度 
+   int                    nG711SplittePos; //切割移动位置 
    int                    nG711ToPCMCacheLength;
    int                    nAACEncodeLength;
    int                    nRetunEncodeLength;
-   char                   g711toPCM[1024];
+   char                   g711toPCM[string_length_2048];
    char                   g711toPCMResample[2048];
 
    MediaSourceType        nMediaSourceType;//媒体源类型，实况播放，录像点播
@@ -188,7 +190,7 @@ public:
    char                  szOutputName[string_length_2048];
    char                  szHookTSFileName[string_length_2048];
    char                  szH264TempBuffer[string_length_2048];
-   char                  szM3u8Buffer[1024];
+   char                  szM3u8Buffer[string_length_2048];
    int                   avtype;
    int                   flags;
    int64_t               ptsVideo;
@@ -235,7 +237,7 @@ public:
    int                  track_265 ;
    struct mpeg4_aac_t   aacHandle;
    int                  track_aac ;
-   unsigned char        szExtenAudioData[1024];
+   unsigned char        szExtenAudioData[string_length_2048];
    int                  nExtenAudioDataLength;
    int                  nAACLength;
    int64_t              nFmp4AudioDTS;
@@ -246,9 +248,9 @@ public:
    int64_t              videoDts;
    int64_t              audioDts;
    char                 szDataM3U8[48 * 1024];
-   char                 szTsName[1024] ;
-   char                 szM3u8Name[1024];
-   char                 szTempName[1024];
+   char                 szTsName[string_length_2048] ;
+   char                 szM3u8Name[string_length_2048];
+   char                 szTempName[string_length_2048];
 
    bool                 PushVideo(unsigned char* szVideo, int nLength, char* szVideoCodec);
    bool                 PushAudio(unsigned char* szAudio, int nLength, char* szAudioCodec, int nChannels, int SampleRate);
@@ -256,10 +258,11 @@ public:
    bool                 AddClientToMap(NETHANDLE nClient);
    bool                 DeleteClientFromMap(NETHANDLE nClient);
 
-   char                 m_szURL[1024]; //比如  /Media/Camera_00001     /Live/Camera_00001 ,  url 建议至少有2级 
-   char                 app[512];
-   char                 stream[512];
+   char                 m_szURL[string_length_2048]; //比如  /Media/Camera_00001     /Live/Camera_00001 ,  url 建议至少有2级 
+   char                 app[string_length_1024];
+   char                 stream[string_length_1024];
    MediaCodecInfo       m_mediaCodecInfo;
+   char                 sim[string_length_256];
 
    std::mutex           mediaSendMapLock;
    MediaSendMap         mediaSendMap;//本数据 需要 发送、拷贝的链接列表  

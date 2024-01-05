@@ -49,7 +49,7 @@ public:
    volatile bool                bCheckRtspVersionFlag;
 
    flv_demuxer_t*               flvDemuxer;
-   char                         szURL[512];
+   char                         szURL[string_length_2048];
 
    boost::shared_ptr<CMediaStreamSource> pMediaSource;
    volatile bool                         bDeleteRtmpPushH265Flag; //因为推rtmp265被删除标志 

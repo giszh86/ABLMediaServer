@@ -32,7 +32,7 @@ public:
    virtual bool RequestM3u8File();//请求m3u8文件
 
    char                    szResponseData[8192];
-   char                    szResponseURL[512];//支持用户自定义的url 
+   char                    szResponseURL[string_length_2048];//支持用户自定义的url 
    void                    HttpRequest(char* szUrl, char* szBody, int nLength);
 
    RequestKeyValueMap      requestKeyValueMap;
@@ -43,10 +43,10 @@ public:
    int                     nNetStart, nNetEnd; //网络数据起始位置\结束位置
    char                    szHttpHead[1024 * 64];
    char                    szHttpBody[1024 * 64];
-   char                    szContentLength[string_length_1024];
+   char                    szContentLength[string_length_2048];
    int                     nContent_Length = 0;
    char                    szHttpPath[1024 * 64];
-   char                    szConnection[512];
+   char                    szConnection[string_length_2048];
 };
 
 #endif

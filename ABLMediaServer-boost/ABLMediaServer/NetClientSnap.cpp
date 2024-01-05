@@ -107,7 +107,7 @@ int CNetClientSnap::SendVideo()
 
 	unsigned char* pData = NULL;
 	int            nLength = 0;
-	char           szDownLoadImage[256] = { 0 };
+	char           szDownLoadImage[string_length_2048] = { 0 };
 
 	if (!bSnapSuccessFlag && (pData = m_videoFifo.pop(&nLength)) != NULL)
 	{

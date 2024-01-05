@@ -32,9 +32,9 @@ public:
    std::mutex      NetClientSnapLock;
    CVideoDecode    videoDecode;
    char            szFileNameOrder[64];
-   char            szFileName[512];
+   char            szFileName[string_length_2048];
    bool            bUpdateFlag;
-   char            szPictureFileName[512];
+   char            szPictureFileName[string_length_2048];
 };
 
 #endif
