@@ -1,7 +1,7 @@
 /*
 功能：
-    实现rtmp客户端的接收模块 ， 
-	 
+	实现rtmp客户端的接收模块 ，
+
 日期    2021-07-18
 作者    罗家兄弟
 QQ      79941308
@@ -10,7 +10,7 @@ E-Mail  79941308@qq.com
 
 #include "stdafx.h"
 #include "NetClientRecvRtmp.h"
-#ifdef USE_BOOST
+
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
 extern boost::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
@@ -19,20 +19,9 @@ extern bool                                  DeleteMediaStreamSource(char* szURL
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 extern MediaServerPort                       ABL_MediaServerPort;
 
-#else
-extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
-extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
-extern std::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
-extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound = false);
-extern bool                                  DeleteMediaStreamSource(char* szURL);
-extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
-extern MediaServerPort                       ABL_MediaServerPort;
-
-#endif
-
-extern CMediaSendThreadPool*                 pMediaSendThreadPool;
+extern CMediaSendThreadPool* pMediaSendThreadPool;
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
-extern int                                   SampleRateArray[] ;
+extern int                                   SampleRateArray[];
 extern CMediaFifo                            pMessageNoticeFifo;          //消息通知FIFO
 
 extern void LIBNET_CALLMETHOD	onconnect(NETHANDLE clihandle,
@@ -69,8 +58,8 @@ static int rtmp_client_send(void* param, const void* header, size_t len, const v
 			pClient->nWriteRet = XHNetSDK_Write(pClient->nClient, (uint8_t*)data, bytes, true);
 			if (pClient->nWriteRet != 0)
 			{
-				pClient->nWriteErrorCount ++;
-				WriteLog(Log_Debug,"rtmp_client_send 发送失败，次数 nWriteErrorCount = %d ", pClient->nWriteErrorCount);
+				pClient->nWriteErrorCount++;
+				WriteLog(Log_Debug, "rtmp_client_send 发送失败，次数 nWriteErrorCount = %d ", pClient->nWriteErrorCount);
 			}
 			else
 				pClient->nWriteErrorCount = 0;
@@ -81,7 +70,7 @@ static int rtmp_client_send(void* param, const void* header, size_t len, const v
 
 static int rtmp_client_onaudio(void* param, const void* data, size_t bytes, uint32_t timestamp)
 {
-	CNetClientRecvRtmp* pNetClientRtmp = (CNetClientRecvRtmp*)param ;
+	CNetClientRecvRtmp* pNetClientRtmp = (CNetClientRecvRtmp*)param;
 	if (pNetClientRtmp == NULL || !pNetClientRtmp->bRunFlag)
 		return 0;
 
@@ -95,7 +84,7 @@ static int rtmp_client_onvideo(void* param, const void* data, size_t bytes, uint
 	if (pNetClientRtmp == NULL || !pNetClientRtmp->bRunFlag)
 		return 0;
 	flv_demuxer_input(pNetClientRtmp->flvDemuxer, FLV_TYPE_VIDEO, data, bytes, timestamp);
-	return 0; 
+	return 0;
 }
 
 static int rtmp_client_onscript(void* param, const void* data, size_t bytes, uint32_t timestamp)
@@ -149,7 +138,7 @@ static int NetRtmpClientRecvCallBackFLV(void* param, int codec, const void* data
 			fflush(pClient->fWriteAudio);
 		}
 #endif
-		
+
 	}
 	else if (FLV_VIDEO_H264 == codec || FLV_VIDEO_H265 == codec)
 	{
@@ -159,7 +148,7 @@ static int NetRtmpClientRecvCallBackFLV(void* param, int codec, const void* data
 
 		if (!pClient->bUpdateVideoFrameSpeedFlag)
 		{//更新视频源的帧速度
-			int nVideoSpeed = pClient->CalcFlvVideoFrameSpeed(pts,1000);
+			int nVideoSpeed = pClient->CalcFlvVideoFrameSpeed(pts, 1000);
 			if (nVideoSpeed > 0 && pClient->pMediaSource != NULL)
 			{
 				pClient->bUpdateVideoFrameSpeedFlag = true;
@@ -169,13 +158,13 @@ static int NetRtmpClientRecvCallBackFLV(void* param, int codec, const void* data
 				sprintf(pClient->szResponseBody, "{\"code\":0,\"memo\":\"success\",\"key\":%llu}", pClient->hParent);
 				pClient->ResponseHttp(pClient->nClient_http, pClient->szResponseBody, false);
 
-				auto  pParentPtr =  GetNetRevcBaseClient(pClient->hParent);
+				boost::shared_ptr<CNetRevcBase>   pParentPtr = GetNetRevcBaseClient(pClient->hParent);
 				if (pParentPtr && pParentPtr->bProxySuccessFlag == false)
 					pClient->bProxySuccessFlag = pParentPtr->bProxySuccessFlag = true;
 			}
 		}
 
-		if (pClient->pMediaSource && pClient->m_addStreamProxyStruct.disableVideo[0] == 0x30 )
+		if (pClient->pMediaSource && pClient->m_addStreamProxyStruct.disableVideo[0] == 0x30)
 		{//支持过滤掉视频帧
 			if (FLV_VIDEO_H264 == codec)
 				pClient->pMediaSource->PushVideo((unsigned char*)data, bytes, "H264");
@@ -193,7 +182,7 @@ static int NetRtmpClientRecvCallBackFLV(void* param, int codec, const void* data
 			fflush(pClient->fWriteVideo);
 		}
 #endif
-		 
+
 	}
 	else if (FLV_AUDIO_MP3 == codec)
 	{
@@ -214,9 +203,9 @@ static int NetRtmpClientRecvCallBackFLV(void* param, int codec, const void* data
 	return 0;
 }
 
-CNetClientRecvRtmp::CNetClientRecvRtmp(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort,char* szShareMediaURL)
+CNetClientRecvRtmp::CNetClientRecvRtmp(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort, char* szShareMediaURL)
 {
-	rtmp = NULL ;
+	rtmp = NULL;
 	bCheckRtspVersionFlag = false;
 	bDeleteRtmpPushH265Flag = false;
 	nServer = hServer;
@@ -235,7 +224,7 @@ CNetClientRecvRtmp::CNetClientRecvRtmp(NETHANDLE hServer, NETHANDLE hClient, cha
 
 #ifdef  WriteFlvFileByDebug
 	char  szFlvFile[256] = { 0 };
-	sprintf(szFlvFile,".\\%X_%d.flv", this, rand());
+	sprintf(szFlvFile, ".\\%X_%d.flv", this, rand());
 	s_flv = flv_writer_create(szFlvFile);
 #endif
 #ifdef  WriteFlvToEsFileFlag
@@ -253,60 +242,60 @@ CNetClientRecvRtmp::CNetClientRecvRtmp(NETHANDLE hServer, NETHANDLE hClient, cha
 	handler.onscript = rtmp_client_onscript;
 
 	if (ParseRtspRtmpHttpURL(szIP) == true)
-	 uint32_t ret = XHNetSDK_Connect((int8_t*)m_rtspStruct.szIP, atoi(m_rtspStruct.szPort), (int8_t*)(NULL), 0, (uint64_t*)&nClient, onread, onclose, onconnect, 0, MaxClientConnectTimerout, 1);
+		uint32_t ret = XHNetSDK_Connect((int8_t*)m_rtspStruct.szIP, atoi(m_rtspStruct.szPort), (int8_t*)(NULL), 0, (uint64_t*)&nClient, onread, onclose, onconnect, 0, MaxClientConnectTimerout, 1);
 
-	nVideoDTS = 0 ;
-	nAudioDTS = 0 ;
+	nVideoDTS = 0;
+	nAudioDTS = 0;
 	memset(szRtmpName, 0x00, sizeof(szRtmpName));
 	netBaseNetType = NetBaseNetType_RtmpClientRecv;
 
-	WriteLog(Log_Debug, "CNetClientRecvRtmp 构造 = %X  nClient = %llu ",this, nClient);
+	WriteLog(Log_Debug, "CNetClientRecvRtmp 构造 = %X  nClient = %llu ", this, nClient);
 }
 
 CNetClientRecvRtmp::~CNetClientRecvRtmp()
 {
-    WriteLog(Log_Debug, "CNetClientRecvRtmp 析构 = %X  nClient = %llu step 1 ",this, nClient);
+	WriteLog(Log_Debug, "CNetClientRecvRtmp 析构 = %X  nClient = %llu step 1 ", this, nClient);
 	bRunFlag = false;
 	std::lock_guard<std::mutex> lock(businessProcMutex);
 
-    WriteLog(Log_Debug, "CNetClientRecvRtmp 析构 = %X  nClient = %llu step 2 ",this, nClient);
-	 
+	WriteLog(Log_Debug, "CNetClientRecvRtmp 析构 = %X  nClient = %llu step 2 ", this, nClient);
+
 	//服务器异常断开
 	if (bUpdateVideoFrameSpeedFlag == false)
 	{
-	  sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"faied. Abnormal didconnection \",\"key\":%llu}", IndexApiCode_RecvRtmpFailed, 0);
-	  ResponseHttp2(nClient_http,szResponseBody, false);
- 	}
-     WriteLog(Log_Debug, "CNetClientRecvRtmp 析构 = %X  nClient = %llu step 3 ",this, nClient);
+		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"faied. Abnormal didconnection \",\"key\":%llu}", IndexApiCode_RecvRtmpFailed, 0);
+		ResponseHttp2(nClient_http, szResponseBody, false);
+	}
+	WriteLog(Log_Debug, "CNetClientRecvRtmp 析构 = %X  nClient = %llu step 3 ", this, nClient);
 
-    WriteLog(Log_Debug, "CNetClientRecvRtmp 析构 = %X  nClient = %llu step 4 ",this, nClient);
+	WriteLog(Log_Debug, "CNetClientRecvRtmp 析构 = %X  nClient = %llu step 4 ", this, nClient);
 
 	int rtmpState = 0;
 	if (rtmp != NULL)
 	{
 		rtmpState = rtmp_client_getstate(rtmp);
-		if(rtmpState >= 3)
-		  rtmp_client_stop(rtmp);
+		if (rtmpState >= 3)
+			rtmp_client_stop(rtmp);
 
 		rtmp_client_destroy(rtmp);
 	}
-    WriteLog(Log_Debug, "CNetClientRecvRtmp 析构 = %X  nClient = %llu step 5 ",this, nClient);
+	WriteLog(Log_Debug, "CNetClientRecvRtmp 析构 = %X  nClient = %llu step 5 ", this, nClient);
 
-	if(flvDemuxer)
-	  flv_demuxer_destroy(flvDemuxer);
+	if (flvDemuxer)
+		flv_demuxer_destroy(flvDemuxer);
 
-    WriteLog(Log_Debug, "CNetClientRecvRtmp 析构 = %X  nClient = %llu step 6 ",this, nClient);
+	WriteLog(Log_Debug, "CNetClientRecvRtmp 析构 = %X  nClient = %llu step 6 ", this, nClient);
 
 #ifdef  WriteFlvFileByDebug
 	flv_writer_destroy(s_flv);
 #endif
 #ifdef  WriteFlvToEsFileFlag
- 	fclose(fWriteVideo);
+	fclose(fWriteVideo);
 	fclose(fWriteAudio);
 #endif
 
 	NetDataFifo.FreeFifo();
-  	
+
 	//码流没有达到通知
 	if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nClientNotArrive > 0 && bUpdateVideoFrameSpeedFlag == false)
 	{
@@ -315,16 +304,16 @@ CNetClientRecvRtmp::~CNetClientRecvRtmp()
 		sprintf(msgNotice.szMsg, "{\"app\":\"%s\",\"stream\":\"%s\",\"mediaServerId\":\"%s\",\"networkType\":%d,\"key\":%llu}", m_addStreamProxyStruct.app, m_addStreamProxyStruct.stream, ABL_MediaServerPort.mediaServerID, netBaseNetType, hParent);
 		pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
 	}
-    WriteLog(Log_Debug, "CNetClientRecvRtmp 析构 = %X  nClient = %llu step 7 ",this, nClient);
+	WriteLog(Log_Debug, "CNetClientRecvRtmp 析构 = %X  nClient = %llu step 7 ", this, nClient);
 
 	malloc_trim(0);
-	
-    WriteLog(Log_Debug, "CNetClientRecvRtmp 析构 = %X  nClient = %llu step 8 ",this, nClient);
+
+	WriteLog(Log_Debug, "CNetClientRecvRtmp 析构 = %X  nClient = %llu step 8 ", this, nClient);
 
 	//如果是接收推流，并且成功接收推流的，则需要删除媒体数据源 szURL ，比如 /Media/Camera_00001 
-	if(strlen(m_szShareMediaURL) > 0 && pMediaSource != NULL)
-	   DeleteMediaStreamSource(m_szShareMediaURL);
-   
+	if (strlen(m_szShareMediaURL) > 0 && pMediaSource != NULL)
+		DeleteMediaStreamSource(m_szShareMediaURL);
+
 	WriteLog(Log_Debug, "CNetClientRecvRtmp 析构 = %X  nClient = %llu app = %s ,stream = %s ,bUpdateVideoFrameSpeedFlag = %d", this, nClient, m_addStreamProxyStruct.app, m_addStreamProxyStruct.stream, bUpdateVideoFrameSpeedFlag);
 }
 
@@ -361,16 +350,16 @@ int CNetClientRecvRtmp::InputNetData(NETHANDLE nServerHandle, NETHANDLE nClientH
 
 int CNetClientRecvRtmp::ProcessNetData()
 {
- 	unsigned char* pData = NULL;
+	unsigned char* pData = NULL;
 	int            nLength;
 
 	pData = NetDataFifo.pop(&nLength);
-	if(pData != NULL && rtmp != NULL )
+	if (pData != NULL && rtmp != NULL)
 	{
 		if (nLength > 0)
 			rtmp_client_input(rtmp, pData, nLength);
- 
- 		NetDataFifo.pop_front();
+
+		NetDataFifo.pop_front();
 	}
 	return 0;
 }
@@ -394,19 +383,20 @@ bool   CNetClientRecvRtmp::GetAppStreamByURL(char* app, char* stream)
 		}
 		else
 			return false;
-	}else 
-	  return true;
+	}
+	else
+		return true;
 }
 
 //发送第一个请求
 int CNetClientRecvRtmp::SendFirstRequst()
 {
-	char szApp[string_length_256] = { 0 }, szStream[string_length_512] = { 0 };
+	char szApp[string_length_1024] = { 0 }, szStream[string_length_2048] = { 0 };
 	if (!GetAppStreamByURL(szApp, szStream))
 	{
-		WriteLog(Log_Debug, "CNetClientRecvRtmp = %X 获取rtmp中的app、stream 有误 ,url = %s, nClient = %llu \r\n", this,szClientIP, nClient);
+		WriteLog(Log_Debug, "CNetClientRecvRtmp = %X 获取rtmp中的app、stream 有误 ,url = %s, nClient = %llu \r\n", this, szClientIP, nClient);
 
-		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"%s\",\"key\":%llu}", IndexApiCode_ConnectFail," [app、stream] Error", hParent);
+		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"%s\",\"key\":%llu}", IndexApiCode_ConnectFail, " [app、stream] Error", hParent);
 		ResponseHttp(nClient_http, szResponseBody, false);
 
 		pDisconnectBaseNetFifo.push((unsigned char*)&hParent, sizeof(hParent));
@@ -415,7 +405,7 @@ int CNetClientRecvRtmp::SendFirstRequst()
 		return -1;
 	}
 
-	if (strlen(m_szShareMediaURL) > 0 )
+	if (strlen(m_szShareMediaURL) > 0)
 	{
 		pMediaSource = CreateMediaStreamSource(m_szShareMediaURL, hParent, MediaSourceType_LiveMedia, 0, m_h265ConvertH264Struct);
 		if (pMediaSource)
@@ -423,14 +413,14 @@ int CNetClientRecvRtmp::SendFirstRequst()
 			pMediaSource->enable_mp4 = (strcmp(m_addStreamProxyStruct.enable_mp4, "1") == 0) ? true : false;
 			pMediaSource->enable_hls = (strcmp(m_addStreamProxyStruct.enable_hls, "1") == 0) ? true : false;
 		}
-		else 
+		else
 		{
 			DeleteNetRevcBaseClient(nClient);
 			return -1;
 		}
- 	}
+	}
 	flvDemuxer = flv_demuxer_create(NetRtmpClientRecvCallBackFLV, this);
-	
+
 	//rtmp客户端连接，需要去掉第2级路径 
 	string strRtmpURL = szClientIP;
 	int nPos = strRtmpURL.rfind("/", strlen(szClientIP));
@@ -441,10 +431,10 @@ int CNetClientRecvRtmp::SendFirstRequst()
 
 		DeleteNetRevcBaseClient(nClient);
 		return -1;
- 	}
+	}
 	szClientIP[nPos] = 0x00;
 
-	rtmp = rtmp_client_create(szApp, szStream,szClientIP, this, &handler);
+	rtmp = rtmp_client_create(szApp, szStream, szClientIP, this, &handler);
 	if (rtmp == NULL)
 	{
 		WriteLog(Log_Debug, "CNetClientRecvRtmp = %X rtmp连接失败 ,url = %s, nClient = %llu \r\n", this, szClientIP, nClient);
