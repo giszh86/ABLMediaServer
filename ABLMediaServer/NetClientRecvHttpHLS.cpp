@@ -60,9 +60,9 @@ static int on_hls_ts_packet(void* param, int program, int stream, int avtype, in
 	CNetClientRecvHttpHLS* pClient = (CNetClientRecvHttpHLS*)param;
 	if (pClient == NULL)
 		return 0;
- 
+
 	if (pClient->pMediaSource == NULL || !pClient->bRunFlag)
-		return -1 ;
+		return -1;
 
 	if (PSI_STREAM_AAC == avtype || PSI_STREAM_AUDIO_OPUS == avtype)
 	{
@@ -73,15 +73,15 @@ static int on_hls_ts_packet(void* param, int program, int stream, int avtype, in
 		//printf("[A][%d:%d] pts: %s(%lld), dts: %s(%lld), diff: %03d/%03d, bytes: %u\n", program, stream, ftimestamp(pts, s_pts), pts, ftimestamp(dts, s_dts), dts, (int)(pts - a_pts) / 90, (int)(dts - a_dts) / 90, (unsigned int)bytes);
 		a_pts = pts;
 		a_dts = dts;
-        
+
 		//pClient->hlsAudioFifo.push((unsigned char*)data, bytes);
 
 #ifdef SaveAudioToAACFile
-		 if (pClient->fileSaveAAC)
-		 {
-			 fwrite((unsigned char*)data, 1, bytes , pClient->fileSaveAAC);
-			 fflush(pClient->fileSaveAAC);
-		 }
+		if (pClient->fileSaveAAC)
+		{
+			fwrite((unsigned char*)data, 1, bytes, pClient->fileSaveAAC);
+			fflush(pClient->fileSaveAAC);
+		}
 #endif
 	}
 	else if (PSI_STREAM_H264 == avtype || PSI_STREAM_H265 == avtype)
@@ -90,19 +90,19 @@ static int on_hls_ts_packet(void* param, int program, int stream, int avtype, in
 		{
 			if (strlen(pClient->mediaCodecInfo.szVideoName) == 0)
 				strcpy(pClient->mediaCodecInfo.szVideoName, "H264");
-  		}
+		}
 		else if (PSI_STREAM_H265 == avtype)
 		{
 			if (strlen(pClient->mediaCodecInfo.szVideoName) == 0)
 				strcpy(pClient->mediaCodecInfo.szVideoName, "H265");
 		}
- 		pClient->hlsVideoFifo.push((unsigned char*)data, bytes);
+		pClient->hlsVideoFifo.push((unsigned char*)data, bytes);
 
 		if (!pClient->bUpdateVideoFrameSpeedFlag && pClient->nOldPTS != 0)
 		{//更新视频源的帧速度
 			int nVideoSpeed = 25;
-			if((pts - pClient->nOldPTS) != 0)
-			  nVideoSpeed =  90000 / (pts - pClient->nOldPTS );
+			if ((pts - pClient->nOldPTS) != 0)
+				nVideoSpeed = 90000 / (pts - pClient->nOldPTS);
 
 			if (nVideoSpeed > 0 && pClient->pMediaSource != NULL)
 			{
@@ -159,8 +159,8 @@ CNetClientRecvHttpHLS::CNetClientRecvHttpHLS(NETHANDLE hServer, NETHANDLE hClien
 {
 #ifdef SaveAudioToAACFile
 	char szAACFile[256] = { 0 };
-	sprintf(szAACFile, "D:\\%X_%d.aac", this,rand());
-	fileSaveAAC = fopen(szAACFile,"wb");
+	sprintf(szAACFile, "D:\\%X_%d.aac", this, rand());
+	fileSaveAAC = fopen(szAACFile, "wb");
 #endif
 	strcpy(mediaCodecInfo.szAudioName, "AAC");
 	nOldPTS = 0;
@@ -171,7 +171,7 @@ CNetClientRecvHttpHLS::CNetClientRecvHttpHLS(NETHANDLE hServer, NETHANDLE hClien
 
 	MaxNetDataCacheCount = MaxHttp_HLSCNetCacheBufferLength + 4;
 	memset(netDataCache, 0x00, sizeof(netDataCache));
-	netDataCacheLength =  nNetStart = nNetEnd = 0;
+	netDataCacheLength = nNetStart = nNetEnd = 0;
 
 	strcpy(szHttpURL, szIP);
 	memset(szRequestM3u8File, 0x00, sizeof(szRequestM3u8File));
@@ -180,21 +180,21 @@ CNetClientRecvHttpHLS::CNetClientRecvHttpHLS(NETHANDLE hServer, NETHANDLE hClien
 	nPos = strRequestUrl.find("/", 8);
 	if (nPos > 0)
 	{
-		memcpy(szRequestM3u8File, szIP + nPos , strlen(szIP) - nPos );
-		requestFileFifo.push((unsigned char*)szRequestM3u8File,strlen(szRequestM3u8File));
+		memcpy(szRequestM3u8File, szIP + nPos, strlen(szIP) - nPos);
+		requestFileFifo.push((unsigned char*)szRequestM3u8File, strlen(szRequestM3u8File));
 	}
 
 	int ret;
 	if (ParseRtspRtmpHttpURL(szHttpURL))
 	{
-	   ret = XHNetSDK_Connect((int8_t*)(m_rtspStruct.szIP), atoi(m_rtspStruct.szPort), (int8_t*)(NULL), 0, (uint64_t*)&nClient, onread, onclose, onconnect, 0, 8000, 1);
+		ret = XHNetSDK_Connect((int8_t*)(m_rtspStruct.szIP), atoi(m_rtspStruct.szPort), (int8_t*)(NULL), 0, (uint64_t*)&nClient, onread, onclose, onconnect, 0, 8000, 1);
 	}
 
 	nContentBodyLength = MaxDefaultContentBodyLength;
 	pContentBody = new unsigned  char[nContentBodyLength];//内容 
 	nContentLength = 0; //实际长度
 	nRecvContentLength = 0;//已经收到的长度
-	bRecvHttpHeadFlag = false ;//尚未接收完毕Http 头
+	bRecvHttpHeadFlag = false;//尚未接收完毕Http 头
 	nSendTsFileTime = ::GetTickCount();
 	netBaseNetType = NetBaseNetType_HttpHLSClientRecv;//HLS 主动拉流
 	nHLSRequestFileStatus = HLSRequestFileStatus_NoRequsetFile;
@@ -204,11 +204,11 @@ CNetClientRecvHttpHLS::CNetClientRecvHttpHLS(NETHANDLE hServer, NETHANDLE hClien
 	ts_demuxer_set_notify(ts, &hls_notify, this);
 
 	memset(szSourceURL, 0x00, sizeof(szSourceURL));
-	NetDataFifo.InitFifo(1024*1024*2);
+	NetDataFifo.InitFifo(1024 * 1024 * 2);
 	pMediaSource = NULL;
 	hlsVideoFifo.InitFifo(MaxDefaultMediaFifoLength);
 	hlsAudioFifo.InitFifo(1024 * 512);
-	bRunFlag = bExitCallbackThreadFlag = true  ;
+	bRunFlag = bExitCallbackThreadFlag = true;
 
 	pMediaSendThreadPool->AddClientToThreadPool(nClient);
 #if  0
@@ -216,9 +216,9 @@ CNetClientRecvHttpHLS::CNetClientRecvHttpHLS(NETHANDLE hServer, NETHANDLE hClien
 #endif
 
 #ifdef  SaveTSBufferToFile
-	 nTsFileOrder = 1 ;
+	nTsFileOrder = 1;
 #endif
-	WriteLog(Log_Debug, "CNetClientRecvHttpHLS= %X, 构造  ,nClient = %llu ，szRUL = %s ", this,nClient,szIP);
+	WriteLog(Log_Debug, "CNetClientRecvHttpHLS= %X, 构造  ,nClient = %llu ，szRUL = %s ", this, nClient, szIP);
 }
 
 CNetClientRecvHttpHLS::~CNetClientRecvHttpHLS()
@@ -227,12 +227,12 @@ CNetClientRecvHttpHLS::~CNetClientRecvHttpHLS()
 	bRunFlag = false;
 	WriteLog(Log_Debug, "CNetClientRecvHttpHLS= %X, 开始销毁HLS nClient = %llu ", this, nClient);
 	requestFileFifo.FreeFifo();
- 
+
 	if (ts != NULL)
 	{
-	  ts_demuxer_flush(ts);
-	  ts_demuxer_destroy(ts);
-	  ts = NULL;
+		ts_demuxer_flush(ts);
+		ts_demuxer_destroy(ts);
+		ts = NULL;
 	}
 
 	NetDataFifo.FreeFifo();
@@ -245,7 +245,7 @@ CNetClientRecvHttpHLS::~CNetClientRecvHttpHLS()
 	{
 		fclose(fileSaveAAC);
 		fileSaveAAC = NULL;
-	 }
+	}
 #endif
 	if (pMediaSource && strlen(m_szShareMediaURL) > 0)
 	{
@@ -278,21 +278,21 @@ bool  CNetClientRecvHttpHLS::RequestM3u8File()
 
 	//如果文件FIFO为空，证明TS文件全部请求完毕，需要增加m3u8文件到FIFO 
 	if (requestFileFifo.GetSize() == 0 && //fifo 为空
-		nHLSRequestFileStatus     == HLSRequestFileStatus_RequestSuccess  //TS文件接收完毕
-		)	
+		nHLSRequestFileStatus == HLSRequestFileStatus_RequestSuccess  //TS文件接收完毕
+		)
 	{
 		//不允许请求m3u8文件
-		if (!bCanRequestM3u8File || GetTickCount() - nRequestM3u8Time < 2000 )
+		if (!bCanRequestM3u8File || GetTickCount() - nRequestM3u8Time < 2000)
 			return false;
 
- 		requestFileFifo.push((unsigned char*)szRequestM3u8File, strlen(szRequestM3u8File));
-		SendFirstRequst(); 
+		requestFileFifo.push((unsigned char*)szRequestM3u8File, strlen(szRequestM3u8File));
+		SendFirstRequst();
 		return true;
 	}
 	else
 	{
-		if ( (GetTickCount() - nSendTsFileTime) > 1000 * 6  &&
-			nHLSRequestFileStatus !=  HLSRequestFileStatus_RequestSuccess )
+		if ((GetTickCount() - nSendTsFileTime) > 1000 * 6 &&
+			nHLSRequestFileStatus != HLSRequestFileStatus_RequestSuccess)
 		{//接收TS，mp4文件超时，重新请求
 			requestFileFifo.pop_front(); //删除当前请求文件 
 			bCanRequestM3u8File = true;
@@ -317,7 +317,7 @@ int CNetClientRecvHttpHLS::ProcessNetData()
 
 	nRecvDataTimerBySecond = 0;//网络断线检测
 	int   nPos, i;
-	char  szContentValue[64] = { 0 };
+	char  szContentValue[string_length_1024] = { 0 };
 	unsigned char  szReturnFlag[4] = { 0x0d,0x0a,0x0d,0x0a };
 	unsigned char* pData = NULL;
 	int            nDataLength = 0;
@@ -419,13 +419,13 @@ int CNetClientRecvHttpHLS::ProcessNetData()
 			}
 			else
 			{//TS 
- 			   nPos = 0 ;
-			   while (nRecvContentLength > TsStreamBlockBufferLength)
-			   {
-			 	   ts_demuxer_input(ts, pContentBody + nPos , TsStreamBlockBufferLength);
-			 	   nPos                +=    TsStreamBlockBufferLength;
-			       nRecvContentLength  -=    TsStreamBlockBufferLength;
-			   }
+				nPos = 0;
+				while (nRecvContentLength > TsStreamBlockBufferLength)
+				{
+					ts_demuxer_input(ts, pContentBody + nPos, TsStreamBlockBufferLength);
+					nPos += TsStreamBlockBufferLength;
+					nRecvContentLength -= TsStreamBlockBufferLength;
+				}
 
 #ifdef  SaveTSBufferToFile
 				char szTsFile[256] = { 0 };
@@ -460,40 +460,40 @@ int CNetClientRecvHttpHLS::ProcessNetData()
 				nRequestM3u8Time = GetTickCount();
 				bCanRequestM3u8File = true;
 			}
- 		}
+		}
 	}
 	return 0;
 }
 
 int CNetClientRecvHttpHLS::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, char* szVideoCodec)
 {
-	return 0 ;
+	return 0;
 }
 
 int CNetClientRecvHttpHLS::PushAudio(uint8_t* pAudioData, uint32_t nDataLength, char* szAudioCodec, int nChannels, int SampleRate)
 {
-	return 0 ;
+	return 0;
 }
 
 int CNetClientRecvHttpHLS::SendVideo()
 {
- 	int nSize;
+	int nSize;
 	int nLength;
 	unsigned char* pData;
- 
-	nSize = hlsVideoFifo.GetSize();
-	if(nSize > 3 && (GetTickCount64() - nCallBackVideoTime) >= 20)
-	{
- 	     pData = hlsVideoFifo.pop(&nLength);
 
-		if(pMediaSource && pData != NULL && nLength > 0)
-		   pMediaSource->PushVideo(pData, nLength, mediaCodecInfo.szVideoName);
+	nSize = hlsVideoFifo.GetSize();
+	if (nSize > 3 && (GetTickCount64() - nCallBackVideoTime) >= 20)
+	{
+		pData = hlsVideoFifo.pop(&nLength);
+
+		if (pMediaSource && pData != NULL && nLength > 0)
+			pMediaSource->PushVideo(pData, nLength, mediaCodecInfo.szVideoName);
 
 		hlsVideoFifo.pop_front();
 		nCallBackVideoTime = GetTickCount();
 	}
 
-	return 0 ;
+	return 0;
 }
 
 int CNetClientRecvHttpHLS::SendAudio()
@@ -510,14 +510,14 @@ int CNetClientRecvHttpHLS::SendAudio()
 		{
 			pData = hlsAudioFifo.pop(&nLength);
 
-			if(pMediaSource)
-			  pMediaSource->PushAudio((unsigned char*)pData, nLength, "AAC", 1, 16000);
+			if (pMediaSource)
+				pMediaSource->PushAudio((unsigned char*)pData, nLength, "AAC", 1, 16000);
 
 			hlsAudioFifo.pop_front();
 		}
 	}
-	return 0 ;
-}	
+	return 0;
+}
 
 //发送第一个请求
 int CNetClientRecvHttpHLS::SendFirstRequst()
@@ -530,17 +530,17 @@ int CNetClientRecvHttpHLS::SendFirstRequst()
 	nSendTsFileTime = ::GetTickCount();
 	nContentLength = 0; //实际长度
 	nRecvContentLength = 0;//已经收到的长度
- 	nNetStart = nNetEnd = netDataCacheLength = nRecvContentLength = 0;
+	nNetStart = nNetEnd = netDataCacheLength = nRecvContentLength = 0;
 	memset(netDataCache, 0x00, sizeof(netDataCache));
- 
+
 	pData = requestFileFifo.pop(&nLength);
 	if (pData != NULL && nLength > 0)
 	{
 		//创建媒体分发源
-		if (strlen(m_szShareMediaURL) > 0 && pMediaSource == NULL )
+		if (strlen(m_szShareMediaURL) > 0 && pMediaSource == NULL)
 		{
 			pMediaSource = CreateMediaStreamSource(m_szShareMediaURL, nClient, MediaSourceType_LiveMedia, 0, m_h265ConvertH264Struct);
-			if(pMediaSource == NULL)
+			if (pMediaSource == NULL)
 			{
 				DeleteNetRevcBaseClient(nClient);
 				return -1;
@@ -549,14 +549,14 @@ int CNetClientRecvHttpHLS::SendFirstRequst()
 			pMediaSource->enable_hls = (strcmp(m_addStreamProxyStruct.enable_hls, "1") == 0) ? true : false;
 		}
 		bRecvHttpHeadFlag = false;//尚未接收完毕http头
-	    memset(szRequestFile, 0x00, sizeof(szRequestFile));
+		memset(szRequestFile, 0x00, sizeof(szRequestFile));
 		memcpy(szRequestFile, (char*)pData, nLength);
 		sprintf(szRequestBuffer, "GET %s HTTP/1.1\r\nHost: 10.0.0.239:9088\r\nAccept: */*\r\nConnection: keep-alive\r\nAccept-Language: zh_CN\r\nUser-Agent: %s\r\nRange: bytes=0-\r\n\r\n",
 			szRequestFile,
 			MediaServerVerson);
 
 		nWriteRet = XHNetSDK_Write(nClient, (unsigned char*)szRequestBuffer, strlen(szRequestBuffer), 1);
-		if (nWriteRet != 0 )
+		if (nWriteRet != 0)
 		{
 			WriteLog(Log_Debug, "CNetClientRecvHttpHLS=%X, 发送请求文件失败 szRequestFileName = %s, nClient = %llu ", this, szRequestFile, nClient);
 			pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
@@ -565,7 +565,7 @@ int CNetClientRecvHttpHLS::SendFirstRequst()
 
 		nHLSRequestFileStatus = HLSRequestFileStatus_SendRequest;
 
- 	    nSendTsFileTime = GetTickCount();
+		nSendTsFileTime = GetTickCount();
 
 		WriteLog(Log_Debug, "CNetClientRecvHttpHLS=%X, 发送文件请求 szRequestFileName = %s, nClient = %llu ", this, szRequestFile, nClient);
 	}
@@ -577,12 +577,12 @@ bool   CNetClientRecvHttpHLS::AddM3u8ToFifo(char* szM3u8Data, int nDataLength)
 {
 	string strM3u8Data = szM3u8Data;
 	int    nStart = 0;
-	int    nPos,nPos2,nPos3;
-	char   szLine[256];
+	int    nPos, nPos2, nPos3;
+	char   szLine[string_length_1024];
 	string strLine;
 	bool   bEndFlag = false;
-	char   szTemp[256] = { 0 };
-	char   szSubPath[256] = { 0 };
+	char   szTemp[string_length_1024] = { 0 };
+	char   szSubPath[string_length_1024] = { 0 };
 	int64_t  nNumberTemp;
 
 	//WriteLog(Log_Debug, "CNetClientRecvHttpHLS=%X ,nClient =%llu ,szM3u8Data = %s ", this,nClient, szM3u8Data);
@@ -617,24 +617,24 @@ bool   CNetClientRecvHttpHLS::AddM3u8ToFifo(char* szM3u8Data, int nDataLength)
 				nPos2 = strLine.find("#EXT", 0);
 				if (nPos2 < 0)
 				{
- 					if (nOldRequestM3u8Number != nNumberTemp)
+					if (nOldRequestM3u8Number != nNumberTemp)
 					{
-					 // WriteLog(Log_Debug, "CNetClientRecvHttpHLS=%X, 序号比较 nOldRequestM3u8Number = %d, nNumberTemp = %llu ", this, nOldRequestM3u8Number, nNumberTemp);
+						// WriteLog(Log_Debug, "CNetClientRecvHttpHLS=%X, 序号比较 nOldRequestM3u8Number = %d, nNumberTemp = %llu ", this, nOldRequestM3u8Number, nNumberTemp);
 
-					  string strOldPath = szRequestM3u8File;
-					  nPos3 = strOldPath.rfind("/", strlen(szRequestM3u8File));
-					  if (nPos3 > 0 && strlen(szSubPath) == 0)
-					  {
-						  memset(szSubPath, 0x00, sizeof(szSubPath));
-						  memcpy(szSubPath, szRequestM3u8File, nPos3);
-					  }
-					  sprintf(szTemp, "%s/%s", szSubPath, szLine);
-					  if (FindTsFileAtHistoryList(szLine) == false)
-					  {//请求的文件不能重复
-						  bCanRequestM3u8File = false; //不允许请求m3u8 
-						  requestFileFifo.push((unsigned char*)szTemp, strlen(szTemp));
-						  WriteLog(Log_Debug, "CNetClientRecvHttpHLS=%X, 加入请求TS文件 szLine = %s, nClient = %llu ", this, szTemp, nClient);
-					  }
+						string strOldPath = szRequestM3u8File;
+						nPos3 = strOldPath.rfind("/", strlen(szRequestM3u8File));
+						if (nPos3 > 0 && strlen(szSubPath) == 0)
+						{
+							memset(szSubPath, 0x00, sizeof(szSubPath));
+							memcpy(szSubPath, szRequestM3u8File, nPos3);
+						}
+						sprintf(szTemp, "%s/%s", szSubPath, szLine);
+						if (FindTsFileAtHistoryList(szLine) == false)
+						{//请求的文件不能重复
+							bCanRequestM3u8File = false; //不允许请求m3u8 
+							requestFileFifo.push((unsigned char*)szTemp, strlen(szTemp));
+							WriteLog(Log_Debug, "CNetClientRecvHttpHLS=%X, 加入请求TS文件 szLine = %s, nClient = %llu ", this, szTemp, nClient);
+						}
 					}
 				}
 			}
@@ -643,7 +643,7 @@ bool   CNetClientRecvHttpHLS::AddM3u8ToFifo(char* szM3u8Data, int nDataLength)
 
 	//更新m3u8序号
 	if (nOldRequestM3u8Number != nNumberTemp)
- 	  nOldRequestM3u8Number = nNumberTemp;
+		nOldRequestM3u8Number = nNumberTemp;
 
 	HistoryM3u8 hisM3u8;
 	hisM3u8.nRecvTime = GetTickCount();
@@ -671,7 +671,8 @@ bool   CNetClientRecvHttpHLS::FindTsFileAtHistoryList(char* szTsFile)
 			if (GetTickCount() - (*it).nRecvTime > 1000 * 30)
 			{
 				historyM3u8List.erase(it++);
-			}else
+			}
+			else
 				++it;
 		}
 	}
