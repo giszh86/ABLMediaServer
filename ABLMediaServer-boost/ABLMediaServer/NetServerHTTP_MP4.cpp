@@ -337,6 +337,12 @@ int CNetServerHTTP_MP4::ProcessNetData()
 			nPos2 = strHttpHead.find(" HTTP/", 0);
 			if (nPos2 > 0)
 			{
+				if ((nPos2 - nPos1 - 4) > string_length_2048)
+				{
+					WriteLog(Log_Debug, "CNetServerHTTP_MP4 = %X,请求文件名称长度非法 nClient = %llu ", this, nClient);
+					DeleteNetRevcBaseClient(nClient);
+					return -1;
+				}
 				bFindMP4NameFlag = true;
 				memset(szMP4Name, 0x00, sizeof(szMP4Name));
 				memcpy(szMP4Name, netDataCache + nPos1 + 4, nPos2 - nPos1 - 4);
@@ -395,7 +401,7 @@ int CNetServerHTTP_MP4::ProcessNetData()
 			}
 
 			//去掉 ?后面 
-			char szDownLoadSpeed[2048] = { 0 };
+			char szDownLoadSpeed[string_length_4096] = { 0 };
 			memcpy(szDownLoadSpeed ,szMP4Name  + nPos + strlen("?download_speed="),strlen(szMP4Name) - nPos - strlen("?download_speed="));
 			szMP4Name[nPos] = 0x00;
 			nHttpDownloadSpeed = atoi(szDownLoadSpeed);
@@ -405,7 +411,7 @@ int CNetServerHTTP_MP4::ProcessNetData()
 		//根据mp4文件，进行简单判断是否合法
 		if (!(strstr(szMP4Name, ".mp4") != NULL || strstr(szMP4Name, ".MP4") != NULL))
 		{
-			WriteLog(Log_Debug, "CNetServerHTTP_MP4 = %X,  nClient = %llu , 请求的名字非法 %s ", this, nClient, szMP4Name);
+			WriteLog(Log_Debug, "CNetServerHTTP_MP4 = %X,  nClient = %llu ", this, nClient);
 			DeleteNetRevcBaseClient(nClient);
 			return -1;
 		}

@@ -56,7 +56,7 @@ private :
 	int                     nNetStart, nNetEnd; //网络数据起始位置\结束位置
 	int                     MaxNetDataCacheCount;
  	int                     data_Length;
-	char                    szFlvName[512];
+	char                    szFlvName[string_length_2048];
 	volatile bool           bFindFlvNameFlag;
 };
 

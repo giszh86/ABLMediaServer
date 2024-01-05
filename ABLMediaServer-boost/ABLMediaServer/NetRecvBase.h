@@ -25,6 +25,10 @@ public:
 
    virtual int   SendFirstRequst() = 0;//发送第一个请求
    virtual bool  RequestM3u8File() = 0 ;
+   muteAACBufferStruct    muteAACBuffer[8];
+   uint64_t               nAddMuteAACBufferOrder;//增加静音的包数量
+   void                   AddMuteAACBuffer(); //增加aac静音
+   bool                   bAddMuteFlag;//是否增加静音
 
    int                    FindSPSPositionPos(char* szVideoName, unsigned char* pVideo, int nLength);
 
@@ -217,8 +221,8 @@ public:
    char                  szReponseTemp[string_length_1024];
 
    bool                    m_bHaveSPSPPSFlag;
-   char                    m_szSPSPPSBuffer[512];
-   char                    m_pSpsPPSBuffer[512];
+   char                    m_szSPSPPSBuffer[string_length_2048];
+   char                    m_pSpsPPSBuffer[string_length_2048];
    unsigned int            m_nSpsPPSLength;
    int                     sdp_h264_load(uint8_t* data, int bytes, const char* config);
    int                     GetSubFromString(char* szString, char* szStringFlag1, char* szStringFlag2,char* szOutString);

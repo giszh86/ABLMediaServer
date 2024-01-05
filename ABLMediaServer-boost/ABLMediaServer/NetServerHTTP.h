@@ -83,7 +83,7 @@ public:
    char                    szContentLength[128];
    int                     nContent_Length = 0;
    char                    szHttpPath[1024 * 64];
-   char                    szConnection[512];
+   char                    szConnection[string_length_2048];
    char                    szMediaSourceInfoBuffer[MaxMediaSourceInfoLength];
    int64_t                 nDelKey;
 };

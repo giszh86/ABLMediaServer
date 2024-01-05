@@ -242,6 +242,13 @@ int CNetServerHTTP::ProcessNetData()
 		if (nPos > 0)
 			szHttpPath[nPos] = 0x00;
 
+		if (nContent_Length > 1024 * 64)
+		{
+			WriteLog(Log_Debug, "CNetServerHTTP = %X  nClient = %llu , nContent_Length = %d 长度超过 64K  ", this, nClient, nContent_Length);
+			DeleteNetRevcBaseClient(nClient);
+			return -4;
+		}
+
 		memset(szHttpBody, 0x00, sizeof(szHttpBody));
 		memcpy(szHttpBody, netDataCache + nHttpHeadEndPos + 4, nContent_Length);
 
@@ -412,7 +419,7 @@ bool CNetServerHTTP::SplitterJsonParam(char* szJsonParam)
 	if (szJsonParam == NULL || strlen(szJsonParam) == 0)
 		return false;
 
-	char  szValue[512] = { 0 };
+	char  szValue[string_length_2048] = { 0 };
 	rapidjson::Type nType;
 
 	DeleteAllHttpKeyValue();
@@ -778,13 +785,14 @@ bool CNetServerHTTP::ResponseHttpRequest(char* szModem, char* httpURL, char* req
 //执行请求拉流
 bool  CNetServerHTTP::index_api_addStreamProxy()
 {
-	char szShareMediaURL[512] = { 0 };
+	char szShareMediaURL[string_length_2048] = { 0 };
 	
 	memset(szRtspURLTemp,0x00,sizeof(szRtspURLTemp));
 	memset((char*)&m_addStreamProxyStruct, 0x00, sizeof(m_addStreamProxyStruct));
 	strcpy(m_addStreamProxyStruct.enable_mp4, "0");
 	strcpy(m_addStreamProxyStruct.disableVideo, "0");
 	strcpy(m_addStreamProxyStruct.disableAudio, "0");
+	strcpy(m_addStreamProxyStruct.optionsHeartbeat, "0");
 	GetKeyValue("secret", m_addStreamProxyStruct.secret);
 	GetKeyValue("vhost", m_addStreamProxyStruct.vhost);
 	GetKeyValue("app", m_addStreamProxyStruct.app);
@@ -799,6 +807,7 @@ bool  CNetServerHTTP::index_api_addStreamProxy()
 	GetKeyValue("H264DecodeEncode_enable", m_addStreamProxyStruct.H264DecodeEncode_enable);
 	GetKeyValue("disableVideo", m_addStreamProxyStruct.disableVideo);
 	GetKeyValue("disableAudio", m_addStreamProxyStruct.disableAudio);
+	GetKeyValue("optionsHeartbeat", m_addStreamProxyStruct.optionsHeartbeat);
 	//GetKeyValue("url", m_addStreamProxyStruct.url);
 	GetKeyValue("url",szRtspURLTemp);
 	DecodeUrl(szRtspURLTemp, m_addStreamProxyStruct.url, sizeof(szRtspURLTemp)) ;
@@ -1131,6 +1140,7 @@ bool  CNetServerHTTP::index_api_openRtpServer()
 	GetKeyValue("send_disableAudio", m_openRtpServerStruct.send_disableAudio);
 	GetKeyValue("dst_url", m_openRtpServerStruct.dst_url);
 	GetKeyValue("dst_port", m_openRtpServerStruct.dst_port);
+	GetKeyValue("jtt1078_version", m_openRtpServerStruct.jtt1078_version);
 
 	if (strlen(m_openRtpServerStruct.secret) == 0 || strlen(m_openRtpServerStruct.app) == 0 || strlen(m_openRtpServerStruct.stream_id) == 0 || strlen(m_openRtpServerStruct.port) == 0 ||
 		strlen(m_openRtpServerStruct.enable_tcp) == 0 || strlen(m_openRtpServerStruct.payload) == 0 )
@@ -1260,6 +1270,22 @@ bool  CNetServerHTTP::index_api_openRtpServer()
 			ResponseSuccess(szResponseBody);
 			return false;
 		}
+	}
+
+	//检测 RtpPayloadDataType 的取值范围 
+ 	if (!(atoi(m_openRtpServerStruct.RtpPayloadDataType) >= 1 && atoi(m_openRtpServerStruct.RtpPayloadDataType) <= 4) )
+	{
+ 		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"Param RtpPayloadDataType  must at [1  2  3  4] \"}", IndexApiCode_ParamError);
+		ResponseSuccess(szResponseBody);
+		return false;
+ 	}
+
+	//如果 RtpPayloadDataType == 4 需要指定版本号
+	if (atoi(m_openRtpServerStruct.RtpPayloadDataType) == 4 && !(strcmp(m_openRtpServerStruct.jtt1078_version,"2013") == 0 || strcmp(m_openRtpServerStruct.jtt1078_version, "2016") == 0 || strcmp(m_openRtpServerStruct.jtt1078_version, "2019") == 0))
+	{
+		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"It is necessary to set jtt1078_version equals 2013, 2016, 2019 \"}", IndexApiCode_ParamError);
+		ResponseSuccess(szResponseBody);
+		return false;
 	}
 
 	if (strlen(m_openRtpServerStruct.app) > 0 && strlen(m_openRtpServerStruct.stream_id) > 0 )
@@ -1524,6 +1550,7 @@ bool  CNetServerHTTP::index_api_startSendRtp()
 	GetKeyValue("recv_stream", m_startSendRtpStruct.recv_stream);
 	GetKeyValue("recv_disableAudio", m_startSendRtpStruct.recv_disableAudio);
 	GetKeyValue("recv_disableVideo", m_startSendRtpStruct.recv_disableVideo);
+	GetKeyValue("jtt1078_version", m_startSendRtpStruct.jtt1078_version);
 
 	is_udp = atoi(m_startSendRtpStruct.is_udp);
 	if (strlen(m_startSendRtpStruct.secret) == 0 || strlen(m_startSendRtpStruct.app) == 0 || strlen(m_startSendRtpStruct.stream) == 0 || strlen(m_startSendRtpStruct.ssrc) == 0 ||
@@ -1645,6 +1672,14 @@ bool  CNetServerHTTP::index_api_startSendRtp()
 		}
 	}
 
+	//如果 RtpPayloadDataType == 4 需要指定版本号
+	if (atoi(m_startSendRtpStruct.RtpPayloadDataType) == 4 && !(strcmp(m_startSendRtpStruct.jtt1078_version, "2013") == 0 || strcmp(m_startSendRtpStruct.jtt1078_version, "2016") == 0 || strcmp(m_startSendRtpStruct.jtt1078_version, "2019") == 0))
+	{
+		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"It is necessary to set jtt1078_version equals 2013, 2016, 2019 \"}", IndexApiCode_ParamError);
+		ResponseSuccess(szResponseBody);
+		return false;
+	}
+
 	if (strlen(m_startSendRtpStruct.app) > 0 && strlen(m_startSendRtpStruct.stream) > 0)
 	{
 		//检查端口是否使用
@@ -1754,7 +1789,7 @@ bool  CNetServerHTTP::index_api_startSendRtp()
 		else if (is_udp == 2)
 		{//tcp 被动连接 
 			nRet = XHNetSDK_Listen((int8_t*)("0.0.0.0"), atoi(m_startSendRtpStruct.src_port), &nMediaClient, onaccept, onread, onclose, true);
-
+			WriteLog(Log_Debug, "XHNetSDK_Listen()  nMediaClient = %llu", nMediaClient);
 			if (nRet == 0 && nMediaClient > 0)
 			{
 				pClient = CreateNetRevcBaseClient(NetBaseNetType_NetGB28181RtpSendListen, 0, nMediaClient, "", atoi(m_startSendRtpStruct.src_port), szShareMediaURL);
@@ -1960,6 +1995,10 @@ bool CNetServerHTTP::index_api_getServerConfig()
 	strcat(szMediaSourceInfoBuffer, szTempBuffer);
 	sprintf(szTempBuffer, ",{\"WsRecvPcmPort\":%d,\"memo\":\"the port for recv audio by Websocket .\"}", ABL_MediaServerPort.WsRecvPcmPort);
 	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"flvPlayAddMute\":%d,\"memo\":\"When playing HTTP FLV and WS FLV, do you want to turn on mute when there is no audio in the source stream .\"}", ABL_MediaServerPort.flvPlayAddMute);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"gb28181LibraryUse\":%d,\"memo\":\"Link Library for GB28181 PS Standard Packaging .\"}", ABL_MediaServerPort.gb28181LibraryUse);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
 
 	strcat(szMediaSourceInfoBuffer, "]}");
 #ifdef OS_System_Windows
@@ -1976,7 +2015,7 @@ bool CNetServerHTTP::index_api_getServerConfig()
 //根据app,stream 来关闭指定媒体源
 bool  CNetServerHTTP::index_api_close_streams()
 {
-	char  szTemp2[256] = { 0 };
+	char  szTemp2[string_length_2048] = { 0 };
  	memset((char*)&m_closeStreamsStruct, 0x00, sizeof(m_closeStreamsStruct));
 	int   nDeleteCount = 0;
 
@@ -2021,7 +2060,7 @@ bool  CNetServerHTTP::index_api_close_streams()
 //开始、停止录像
 bool  CNetServerHTTP::index_api_startStopRecord(bool bFlag)
 {
-	char szShareMediaURL[string_length_512] = { 0 };
+	char szShareMediaURL[string_length_2048] = { 0 };
 
 	memset((char*)&m_startStopRecordStruct, 0x00, sizeof(m_startStopRecordStruct));
  	GetKeyValue("secret", m_startStopRecordStruct.secret);
@@ -2109,7 +2148,7 @@ bool  CNetServerHTTP::index_api_startStopRecord(bool bFlag)
 //查询录像列表
 bool  CNetServerHTTP::index_api_queryRecordList()
 {
-	char szShareMediaURL[string_length_512] = { 0 };
+	char szShareMediaURL[string_length_2048] = { 0 };
 
 	memset((char*)&m_queryRecordListStruct, 0x00, sizeof(m_queryRecordListStruct));
 	GetKeyValue("secret", m_queryRecordListStruct.secret);
@@ -2208,7 +2247,7 @@ bool  CNetServerHTTP::index_api_queryRecordList()
 //请求抓拍
 bool  CNetServerHTTP::index_api_getSnap()
 {
-	char szShareMediaURL[string_length_512] = { 0 };
+	char szShareMediaURL[string_length_2048] = { 0 };
 
 	memset((char*)&m_getSnapStruct, 0x00, sizeof(m_getSnapStruct));
 	GetKeyValue("secret", m_getSnapStruct.secret);
@@ -2306,7 +2345,7 @@ bool  CNetServerHTTP::index_api_getSnap()
 //查询图片列表
 bool  CNetServerHTTP::index_api_queryPictureList()
 {
-	char szShareMediaURL[string_length_512] = { 0 };
+	char szShareMediaURL[string_length_2048] = { 0 };
 
 	memset((char*)&m_queryPictureListStruct, 0x00, sizeof(m_queryPictureListStruct));
 	GetKeyValue("secret", m_queryPictureListStruct.secret);
@@ -2401,10 +2440,10 @@ bool  CNetServerHTTP::index_api_queryPictureList()
 bool  CNetServerHTTP::index_api_downloadImage(char* szHttpURL)
 {  
 	string strImageFile = szHttpURL;
-	char   szMediaURL[256] = { 0 };
-	char   szFileNumber[128] = { 0 };
+	char   szMediaURL[string_length_1024] = { 0 };
+	char   szFileNumber[string_length_1024] = { 0 };
 	int    nPos = 0;
-	char   szImageFileName[256] = { 0 };
+	char   szImageFileName[string_length_2048] = { 0 };
 	int    nImageFileSize = 0;
 	bool   bSuccessFlag = false;
 	string strHttpURL;
@@ -2486,16 +2525,16 @@ parm:
 */
 bool CNetServerHTTP::index_api_setTransFilter()
 {
-	char secret[128] = { 0 };
+	char secret[string_length_256] = { 0 };
 	char app[string_length_256] = { 0 };
 	char stream[string_length_512] = { 0 };
-	char text[1280] = { 0 };
-	char size[32] = { 0 };
-	char color[32] = { 0 };
-	char alpha[32] = { 0 };
-	char left[32] = { 0 };
-	char top[32] = { 0 };
-	char trans[32] = { 0 };
+	char text[string_length_2048] = { 0 };
+	char size[string_length_256] = { 0 };
+	char color[string_length_256] = { 0 };
+	char alpha[string_length_256] = { 0 };
+	char left[string_length_256] = { 0 };
+	char top[string_length_256] = { 0 };
+	char trans[string_length_256] = { 0 };
 
 	GetKeyValue("secret", secret);
 	GetKeyValue("app", app);
@@ -2937,6 +2976,8 @@ bool CNetServerHTTP::WriteParamValue(char* szSection, char* szKey, char* szValue
 	   ABL_MediaServerPort.nWebRtcPort = atoi(szValue);
 	else if (strcmp("WsRecvPcmPort", szKey) == 0)
 		ABL_MediaServerPort.WsRecvPcmPort = atoi(szValue);
+	else if (strcmp("flvPlayAddMute", szKey) == 0)
+		ABL_MediaServerPort.flvPlayAddMute = atoi(szValue);
 	else if (strcmp("wwwPath", szKey) == 0)
 	{
  		if(strlen(szValue) == 0)
@@ -3005,7 +3046,7 @@ bool   CNetServerHTTP::index_api_shutdownServer()
 //重启流媒体服务器
 bool   CNetServerHTTP::index_api_restartServer()
 {
-	char  szSecret[256] = { 0 };
+	char  szSecret[string_length_256] = { 0 };
 	GetKeyValue("secret", szSecret);
 
 	if (strlen(szSecret) == 0)
@@ -3036,7 +3077,7 @@ bool   CNetServerHTTP::index_api_restartServer()
 //获取当前转码数量
 bool  CNetServerHTTP::index_api_getTranscodingCount()
 {
-	char  szSecret[256] = { 0 };
+	char  szSecret[string_length_512] = { 0 };
 	GetKeyValue("secret", szSecret);
 
 	if (strlen(szSecret) == 0)

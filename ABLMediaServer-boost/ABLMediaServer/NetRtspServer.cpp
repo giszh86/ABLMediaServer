@@ -242,6 +242,7 @@ void  CNetRtspServer::AddADTSHeadToAAC(unsigned char* szData, int nAACLength)
 
 CNetRtspServer::CNetRtspServer(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort,char* szShareMediaURL)
 {
+	nRecvRtpPacketCount = nMaxRtpLength = 0;
 	memset(szAudioName,0x00,sizeof(szAudioName));
 	currentSession = Session;
 	Session ++;
@@ -637,7 +638,7 @@ void CNetRtspServer::GetHttpModemHttpURL(char* szMedomHttpURL)
 
 	int nPos1, nPos2, nPos3, nPos4;
 	string strHttpURL = szMedomHttpURL;
-	char   szTempRtsp[512] = { 0 };
+	char   szTempRtsp[string_length_2048] = { 0 };
 	string strTempRtsp;
 
 	strcpy(RtspProtectArray[RtspProtectArrayOrder].szRtspCmdString, szMedomHttpURL);
@@ -1494,7 +1495,7 @@ void  CNetRtspServer::InputRtspData(unsigned char* pRecvData, int nDataLength)
 				nRtspPlayCount++;
 
 				//更新点播速度			 
-				char szScale[256] = { 0 };
+				char szScale[string_length_512] = { 0 };
 				GetFieldValue("Scale", szScale);
 				if (strlen(szScale) > 0)
 				{
@@ -1508,10 +1509,10 @@ void  CNetRtspServer::InputRtspData(unsigned char* pRecvData, int nDataLength)
 				}
 
 				//实现拖动播放
-				char   szRange[256] = { 0 };
+				char   szRange[string_length_512] = { 0 };
 				string strRange;
 				int    nPos1 = 0, nPos2 = 0;
-				char   szRangeValue[256] = { 0 };
+				char   szRangeValue[string_length_512] = { 0 };
 				GetFieldValue("Range", szRange);
 				if (strlen(szRange) > 0)
 				{
@@ -1581,7 +1582,7 @@ bool   CNetRtspServer::GetMediaInfoFromRtspSDP()
 {
 	//把sdp装入分析器
 	string strSDPTemp = szRtspContentSDP;
-	char   szTemp[128] = { 0 };
+	char   szTemp[string_length_2048] = { 0 };
 	int    nPos1 = strSDPTemp.find("m=video", 0);
 	int    nPos2 = strSDPTemp.find("m=audio", 0);
 	int    nPos3;
@@ -1612,8 +1613,8 @@ bool   CNetRtspServer::GetMediaInfoFromRtspSDP()
 
 	//获取视频编码名称
 	string strVideoName;
-	char   szTemp2[64] = { 0 };
-	char   szTemp3[64] = { 0 };
+	char   szTemp2[string_length_512] = { 0 };
+	char   szTemp3[string_length_512] = { 0 };
 	if (sipParseV.GetSize() > 0)
 	{
 		if (sipParseV.GetFieldValue("a=rtpmap", szTemp))
@@ -1815,10 +1816,30 @@ int CNetRtspServer::ProcessNetData()
 				{
 					if (rtspHead.chan == 0x00)
 					{
-						if(hRtpHandle[0] != 0 )//有视频
- 						  rtp_depacket_input(hRtpHandle[0], netDataCache + nNetStart, nRtpLength);
-						else //只有音频
-						  rtp_depacket_input(hRtpHandle[1], netDataCache + nNetStart, nRtpLength);
+						//统计rtp最大包长
+						if (nRecvRtpPacketCount < 1000)
+						{
+							nRecvRtpPacketCount++;
+							if (nRtpLength > nMaxRtpLength)
+							{//记录rtp 包最大长度 
+								nMaxRtpLength = nRtpLength;
+								WriteLog(Log_Debug, "CNetRtspServer = %X  nClient = %llu , 获取到rtp最大长度 , nMaxRtpLength = %d ", this, nClient, nMaxRtpLength);
+							}
+						}
+						//rtp 包长度正常才进行解包
+						if (nRtpLength <= nMaxRtpLength || nRtpLength < 1500)
+						{
+							if (hRtpHandle[0] != 0)//有视频
+								rtp_depacket_input(hRtpHandle[0], netDataCache + nNetStart, nRtpLength);
+							else //只有音频
+								rtp_depacket_input(hRtpHandle[1], netDataCache + nNetStart, nRtpLength);
+ 						}
+						else
+						{//rtp 包长度异常
+							WriteLog(Log_Debug, "CNetRtspServer = %X rtp包头长度有误  nClient = %llu ,nRtpLength = %llu , nMaxRtpLength = %d ", this, nClient, nRtpLength, nMaxRtpLength);
+							DeleteNetRevcBaseClient(nClient);
+							return -1;
+						}
 
 						if(!bUpdateVideoFrameSpeedFlag)
 						 {//更新视频源的帧速度
@@ -1844,7 +1865,25 @@ int CNetRtspServer::ProcessNetData()
 					}
 					else if (rtspHead.chan == 0x02)
 					{
-						rtp_depacket_input(hRtpHandle[1], netDataCache + nNetStart , nRtpLength);
+						//统计rtp最大包长
+						if (nRecvRtpPacketCount < 1000)
+						{
+							nRecvRtpPacketCount++;
+							if (nRtpLength > nMaxRtpLength)
+							{//记录rtp 包最大长度 
+								nMaxRtpLength = nRtpLength;
+								WriteLog(Log_Debug, "CNetRtspServer = %X  nClient = %llu , 获取到rtp最大长度 , nMaxRtpLength = %d ", this, nClient, nMaxRtpLength);
+							}
+						}
+						//rtp 包长度正常才进行解包
+						if (( nRtpLength <= nMaxRtpLength || nRtpLength < 1500 ) && hRtpHandle[0] != NULL)
+							rtp_depacket_input(hRtpHandle[1], netDataCache + nNetStart, nRtpLength);
+						else
+						{//rtp 包长度异常
+							WriteLog(Log_Debug, "CNetClientRecvRtsp = %X rtp包头长度有误  nClient = %llu ,nRtpLength = %llu , nMaxRtpLength = %d ", this, nClient, nRtpLength, nMaxRtpLength);
+							DeleteNetRevcBaseClient(nClient);
+							return -1;
+						}
 
 						//if(nPrintCount % 100 == 0 )
 						//	WriteLog(Log_Debug, "this =%X ,Audio Length = %d ",this,nReadLength);
@@ -2037,8 +2076,8 @@ bool  CNetRtspServer::GetAVClientPortByTranspot(char* szTransport)
 {
 	int nPos1 = 0, nPos2 = 0;
 	string strTransport = szTransport;
-	char   szPort1[64] = { 0 };
-	char   szPort2[64] = { 0 };
+	char   szPort1[string_length_512] = { 0 };
+	char   szPort2[string_length_512] = { 0 };
 	nPos1 = strTransport.find("client_port=", 0);
 	if (nPos1 > 0)
 	{

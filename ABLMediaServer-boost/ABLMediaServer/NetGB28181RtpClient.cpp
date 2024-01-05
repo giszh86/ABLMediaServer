@@ -2,7 +2,8 @@
 功能：
     负责发送 GB28181 Rtp 码流，包括UDP、TCP模式  
  	增加 国标接收  （即国标发送的同时也支持国标接收）    2023-05-19
-日期    2021-08-15
+	增加支持1078码流以 2016\2019版本发送                 2023-12-23
+	日期    2021-08-15
 作者    罗家兄弟
 QQ      79941308
 E-Mail  79941308@qq.com
@@ -153,6 +154,30 @@ void  CNetGB28181RtpClient::GB28181SentRtpVideoData(unsigned char* pRtpVideo, in
 
 CNetGB28181RtpClient::CNetGB28181RtpClient(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort,char* szShareMediaURL)
 {
+	nPFrameCount = 0;
+	memset((char*)&gbDstAddr, 0x00, sizeof(gbDstAddr));
+	memset((char*)&jt1078VideoHead, 0x00, sizeof(jt1078VideoHead));
+	memset((char*)&jt1078AudioHead, 0x00, sizeof(jt1078AudioHead));
+	memset((char*)&jt1078OtherHead, 0x00, sizeof(jt1078OtherHead));
+	memset((char*)&jt1078VideoHead2019, 0x00, sizeof(jt1078VideoHead2019));
+	memset((char*)&jt1078AudioHead2019, 0x00, sizeof(jt1078AudioHead2019));
+	memset((char*)&jt1078OtherHead2019, 0x00, sizeof(jt1078OtherHead2019));
+	jt1078VideoHead.head[0] = 0x30;
+	jt1078VideoHead.head[1] = 0x31;
+	jt1078VideoHead.head[2] = 0x63;
+	jt1078VideoHead.head[3] = 0x64;
+	memcpy(jt1078AudioHead.head, jt1078VideoHead.head,4);
+	memcpy(jt1078OtherHead.head, jt1078VideoHead.head, 4);
+
+ 	memcpy(jt1078VideoHead2019.head, jt1078VideoHead.head, 4);
+	memcpy(jt1078AudioHead2019.head, jt1078VideoHead.head, 4);
+	memcpy(jt1078OtherHead2019.head, jt1078VideoHead.head, 4);
+
+	jt1078VideoHead.v = jt1078AudioHead.v = jt1078OtherHead.v = jt1078VideoHead2019.v = jt1078AudioHead2019.v = jt1078OtherHead2019.v = 2;
+	jt1078VideoHead.cc = jt1078AudioHead.cc = jt1078OtherHead.cc = jt1078VideoHead2019.cc = jt1078AudioHead2019.cc = jt1078OtherHead2019.cc = 1;
+	jt1078VideoHead.m = jt1078AudioHead.m = jt1078OtherHead.m = jt1078VideoHead2019.m = jt1078AudioHead2019.m = jt1078OtherHead2019.m = 1;
+	jt1078VideoHead.ch = jt1078AudioHead.ch = jt1078OtherHead.ch = jt1078VideoHead2019.ch = jt1078AudioHead2019.ch = jt1078OtherHead2019.ch = 1;
+
 	nSendRtcpTime = GetTickCount64();
 	memset(m_recvMediaSource, 0x00, sizeof(m_recvMediaSource));
 	pRecvMediaSource = NULL;
@@ -213,7 +238,11 @@ CNetGB28181RtpClient::CNetGB28181RtpClient(NETHANDLE hServer, NETHANDLE hClient,
 #ifdef WriteRecvPSDataFlag
 	fWritePSDataFile = fopen("E:\\recv_app_recv.ps","wb");
 #endif
-
+#ifdef WriteJtt1078SrcVideoFlag
+	char    szFileName[256] = { 0 };
+	sprintf(szFileName, "%s%1078_X.264", ABL_MediaSeverRunPath, this);
+	fWrite1078SrcFile = fopen(szFileName, "wb");
+#endif
  	WriteLog(Log_Debug, "CNetGB28181RtpClient 构造 = %X  nClient = %llu ", this, nClient);
 }
 
@@ -255,7 +284,9 @@ CNetGB28181RtpClient::~CNetGB28181RtpClient()
 	if(fWritePSDataFile != NULL)
 	  fclose(fWritePSDataFile);
 #endif
-
+#ifdef WriteJtt1078SrcVideoFlag
+	fclose(fWrite1078SrcFile);
+#endif
 	WriteLog(Log_Debug, "CNetGB28181RtpClient 析构 = %X  nClient = %llu ,nMediaClient = %llu\r\n", this, nClient, nMediaClient);
 	malloc_trim(0);
 }
@@ -392,9 +423,22 @@ int CNetGB28181RtpClient::SendVideo()
 	if (!bRunFlag )
 		return -1;
 
+	unsigned char* pData = NULL;
+	int            nLength = 0;
+
 	//代表交互成功，连接成功
 	if (!bUpdateVideoFrameSpeedFlag)
 		bUpdateVideoFrameSpeedFlag = true;
+
+	//jtt1078 
+	if (m_startSendRtpStruct.RtpPayloadDataType[0] == 0x34)
+	{
+		if(strcmp(m_startSendRtpStruct.jtt1078_version,"2013") == 0 || strcmp(m_startSendRtpStruct.jtt1078_version, "2016") == 0)
+		   SendJtt1078VideoPacket();
+		else if(strcmp(m_startSendRtpStruct.jtt1078_version, "2019") == 0)
+		   SendJtt1078VideoPacket2019();
+		return 0;//别格式直接返回
+	}
 
 	if (ABL_MediaServerPort.gb28181LibraryUse == 1)
 	{//自研
@@ -428,8 +472,6 @@ int CNetGB28181RtpClient::SendVideo()
 	//创建rtp句柄
 	CreateRtpHandle();
 
-	unsigned char* pData = NULL;
-	int            nLength = 0;
 	if ((pData = m_videoFifo.pop(&nLength)) != NULL)
 	{
 		input.mediatype = e_psmux_mt_video;
@@ -485,6 +527,16 @@ int CNetGB28181RtpClient::SendAudio()
 {
 	if ( ABL_MediaServerPort.nEnableAudio == 0 || !bRunFlag || m_startSendRtpStruct.disableAudio[0] == 0x31 )
 		return 0;
+
+	//jtt1078 
+	if (m_startSendRtpStruct.RtpPayloadDataType[0] == 0x34)
+	{
+		if (strcmp(m_startSendRtpStruct.jtt1078_version, "2013") == 0 || strcmp(m_startSendRtpStruct.jtt1078_version, "2016") == 0)
+			SendJtt1078AduioPacket();
+		else if (strcmp(m_startSendRtpStruct.jtt1078_version, "2019") == 0)
+			SendJtt1078AduioPacket2019();
+		return 0;
+	}
 
 	unsigned char* pData = NULL;
 	int            nLength = 0;
@@ -878,4 +930,354 @@ bool  CNetGB28181RtpClient::RtpDepacket(unsigned char* pData, int nDataLength)
 bool  CNetGB28181RtpClient::RequestM3u8File()
 {
 	return true;
+}
+
+//发送1078视频码流 
+void  CNetGB28181RtpClient::SendJtt1078VideoPacket()
+{
+	unsigned char* pData = NULL;
+	int            nLength = 0;
+
+	if(gbDstAddr.sin_port == 0)
+	{ 
+	  gbDstAddr.sin_family = AF_INET;
+	  gbDstAddr.sin_addr.s_addr = inet_addr(m_startSendRtpStruct.dst_url);
+	  gbDstAddr.sin_port = htons(atoi(m_startSendRtpStruct.dst_port));
+	}
+ 
+	if ((pData = m_videoFifo.pop(&nLength)) != NULL)
+	{
+		if (strcmp(mediaCodecInfo.szVideoName, "H264") == 0)
+			jt1078VideoHead.pt = 98;
+		else if (strcmp(mediaCodecInfo.szVideoName, "H265") == 0)
+			jt1078VideoHead.pt = 99;
+		else
+		{
+			m_videoFifo.pop_front();
+			return ;
+		}
+
+		//确定帧类型 
+		if (CheckVideoIsIFrame(mediaCodecInfo.szVideoName, pData, nLength))
+		{
+			jt1078VideoHead.frame_type = 0x00;
+			nPFrameCount = 1;
+		}
+		else
+		{
+			jt1078VideoHead.frame_type = 0x01;
+			nPFrameCount ++;
+		}
+
+		//计算总包数量 
+		pPacketCount = nLength / JTT1078_MaxPacketLength;
+		if (nLength % JTT1078_MaxPacketLength != 0)
+			pPacketCount += 1;
+
+		jt1078SendPacketLenth = 0;
+		nPacketOrder = 0;
+		nSrcVideoPos = 0;
+		while (nLength > 0)
+		{
+			nPacketOrder ++;
+
+			//总长度小于等于950 
+			if (pPacketCount == 1)
+				jt1078VideoHead.packet_type = 0;
+			else
+			{//多包 
+				if (nPacketOrder == 1)
+					jt1078VideoHead.packet_type = 1;//第一包
+				else if (nPacketOrder > 1 && nPacketOrder < pPacketCount)
+					jt1078VideoHead.packet_type = 3;//中间包
+				else
+					jt1078VideoHead.packet_type = 2;//最后包
+			}
+
+			//计算时间间隔 
+			jt1078VideoHead.frame_interval = htons(1000 / mediaCodecInfo.nVideoFrameRate);
+			jt1078VideoHead.i_frame_interval = htons(nPFrameCount * (1000 / mediaCodecInfo.nVideoFrameRate));
+			//WriteLog(Log_Debug, "i_frame_interval = %d , frame_interval = %d", ntohs(jt1078VideoHead.i_frame_interval), ntohs(jt1078VideoHead.frame_interval));
+
+			if (nLength >= JTT1078_MaxPacketLength)
+			{
+				jt1078VideoHead.payload_size = htons(JTT1078_MaxPacketLength);
+
+				memcpy(szSendRtpVideoMediaBuffer + jt1078SendPacketLenth, (char*)&jt1078VideoHead, sizeof(jt1078VideoHead));
+				jt1078SendPacketLenth += sizeof(jt1078VideoHead);
+				memcpy(szSendRtpVideoMediaBuffer + jt1078SendPacketLenth, pData + nSrcVideoPos, JTT1078_MaxPacketLength);
+#ifdef WriteJtt1078SrcVideoFlag
+				fwrite(pData + nSrcVideoPos, 1, JTT1078_MaxPacketLength, fWrite1078SrcFile);
+				fflush(fWrite1078SrcFile);
+#endif
+				jt1078SendPacketLenth += JTT1078_MaxPacketLength;
+				nSrcVideoPos += JTT1078_MaxPacketLength;
+ 
+				nLength -= JTT1078_MaxPacketLength;
+			}
+			else
+			{
+				jt1078VideoHead.payload_size = htons(nLength);
+
+				memcpy(szSendRtpVideoMediaBuffer + jt1078SendPacketLenth, (char*)&jt1078VideoHead, sizeof(jt1078VideoHead));
+				jt1078SendPacketLenth += sizeof(jt1078VideoHead);
+				memcpy(szSendRtpVideoMediaBuffer + jt1078SendPacketLenth, pData + nSrcVideoPos, nLength);
+#ifdef WriteJtt1078SrcVideoFlag
+				fwrite(pData + nSrcVideoPos, 1, nLength, fWrite1078SrcFile);
+				fflush(fWrite1078SrcFile);
+#endif
+				jt1078SendPacketLenth += nLength;
+				nSrcVideoPos += nLength;
+ 
+				nLength = 0;
+			}
+
+			if (netBaseNetType == NetBaseNetType_NetGB28181SendRtpUDP)
+			{//udp 
+				XHNetSDK_Sendto(nClient, szSendRtpVideoMediaBuffer, jt1078SendPacketLenth, (void*)&gbDstAddr);
+				jt1078SendPacketLenth = 0;
+			}
+			else if (netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Connect || netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Passive)
+			{//tcp 
+				if ((jt1078SendPacketLenth > (MaxGB28181RtpSendVideoMediaBufferLength - 4096)) || nLength == 0 )
+				{
+					XHNetSDK_Write(nClient, szSendRtpVideoMediaBuffer, jt1078SendPacketLenth, 1);
+
+					jt1078SendPacketLenth = 0;
+				}
+			}
+
+			jt1078VideoHead.seq++;
+			if (jt1078VideoHead.seq >= 0xFFFF)
+				jt1078VideoHead.seq = 0;
+ 		}
+
+		m_videoFifo.pop_front();
+	}
+}
+//发送1078视频码流 
+void  CNetGB28181RtpClient::SendJtt1078VideoPacket2019()
+{
+	unsigned char* pData = NULL;
+	int            nLength = 0;
+
+	if (gbDstAddr.sin_port == 0)
+	{
+		gbDstAddr.sin_family = AF_INET;
+		gbDstAddr.sin_addr.s_addr = inet_addr(m_startSendRtpStruct.dst_url);
+		gbDstAddr.sin_port = htons(atoi(m_startSendRtpStruct.dst_port));
+	}
+
+	if ((pData = m_videoFifo.pop(&nLength)) != NULL)
+	{
+		if (strcmp(mediaCodecInfo.szVideoName, "H264") == 0)
+			jt1078VideoHead2019.pt = 98;
+		else if (strcmp(mediaCodecInfo.szVideoName, "H265") == 0)
+			jt1078VideoHead2019.pt = 99;
+		else
+		{
+			m_videoFifo.pop_front();
+			return;
+		}
+
+		//确定帧类型 
+		if (CheckVideoIsIFrame(mediaCodecInfo.szVideoName, pData, nLength))
+		{
+			jt1078VideoHead2019.frame_type = 0x00;
+			nPFrameCount = 1;
+		}
+		else
+		{
+			jt1078VideoHead2019.frame_type = 0x01;
+			nPFrameCount++;
+		}
+
+		//计算总包数量 
+		pPacketCount = nLength / JTT1078_MaxPacketLength;
+		if (nLength % JTT1078_MaxPacketLength != 0)
+			pPacketCount += 1;
+
+		jt1078SendPacketLenth = 0;
+		nPacketOrder = 0;
+		nSrcVideoPos = 0;
+		while (nLength > 0)
+		{
+			nPacketOrder++;
+
+			//总长度小于等于950 
+			if (pPacketCount == 1)
+				jt1078VideoHead2019.packet_type = 0;
+			else
+			{//多包 
+				if (nPacketOrder == 1)
+					jt1078VideoHead2019.packet_type = 1;//第一包
+				else if (nPacketOrder > 1 && nPacketOrder < pPacketCount)
+					jt1078VideoHead2019.packet_type = 3;//中间包
+				else
+					jt1078VideoHead2019.packet_type = 2;//最后包
+			}
+
+			//计算时间间隔 
+			jt1078VideoHead2019.frame_interval = htons(1000 / mediaCodecInfo.nVideoFrameRate);
+			jt1078VideoHead2019.i_frame_interval = htons(nPFrameCount * (1000 / mediaCodecInfo.nVideoFrameRate));
+			//WriteLog(Log_Debug, "i_frame_interval = %d , frame_interval = %d", ntohs(jt1078VideoHead2019.i_frame_interval), ntohs(jt1078VideoHead2019.frame_interval));
+
+			if (nLength >= JTT1078_MaxPacketLength)
+			{
+				jt1078VideoHead2019.payload_size = htons(JTT1078_MaxPacketLength);
+
+				memcpy(szSendRtpVideoMediaBuffer + jt1078SendPacketLenth, (char*)&jt1078VideoHead2019, sizeof(jt1078VideoHead2019));
+				jt1078SendPacketLenth += sizeof(jt1078VideoHead2019);
+				memcpy(szSendRtpVideoMediaBuffer + jt1078SendPacketLenth, pData + nSrcVideoPos, JTT1078_MaxPacketLength);
+#ifdef WriteJtt1078SrcVideoFlag
+				fwrite(pData + nSrcVideoPos, 1, JTT1078_MaxPacketLength, fWrite1078SrcFile);
+				fflush(fWrite1078SrcFile);
+#endif
+				jt1078SendPacketLenth += JTT1078_MaxPacketLength;
+				nSrcVideoPos += JTT1078_MaxPacketLength;
+
+				nLength -= JTT1078_MaxPacketLength;
+			}
+			else
+			{
+				jt1078VideoHead2019.payload_size = htons(nLength);
+
+				memcpy(szSendRtpVideoMediaBuffer + jt1078SendPacketLenth, (char*)&jt1078VideoHead2019, sizeof(jt1078VideoHead2019));
+				jt1078SendPacketLenth += sizeof(jt1078VideoHead2019);
+				memcpy(szSendRtpVideoMediaBuffer + jt1078SendPacketLenth, pData + nSrcVideoPos, nLength);
+#ifdef WriteJtt1078SrcVideoFlag
+				fwrite(pData + nSrcVideoPos, 1, nLength, fWrite1078SrcFile);
+				fflush(fWrite1078SrcFile);
+#endif
+				jt1078SendPacketLenth += nLength;
+				nSrcVideoPos += nLength;
+
+				nLength = 0;
+			}
+
+			if (netBaseNetType == NetBaseNetType_NetGB28181SendRtpUDP)
+			{//udp 
+				XHNetSDK_Sendto(nClient, szSendRtpVideoMediaBuffer, jt1078SendPacketLenth, (void*)&gbDstAddr);
+				jt1078SendPacketLenth = 0;
+			}
+			else if (netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Connect || netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Passive)
+			{//tcp 
+				if ((jt1078SendPacketLenth > (MaxGB28181RtpSendVideoMediaBufferLength - 4096)) || nLength == 0)
+				{
+					XHNetSDK_Write(nClient, szSendRtpVideoMediaBuffer, jt1078SendPacketLenth, 1);
+
+					jt1078SendPacketLenth = 0;
+				}
+			}
+
+			jt1078VideoHead2019.seq++;
+			if (jt1078VideoHead2019.seq >= 0xFFFF)
+				jt1078VideoHead2019.seq = 0;
+		}
+
+		m_videoFifo.pop_front();
+	}
+}
+
+//发送1078音频码流 
+void  CNetGB28181RtpClient::SendJtt1078AduioPacket()
+{
+	unsigned char* pData = NULL;
+	int            nLength = 0;
+
+	if (gbDstAddr.sin_port == 0)
+	{
+		gbDstAddr.sin_family = AF_INET;
+		gbDstAddr.sin_addr.s_addr = inet_addr(m_startSendRtpStruct.dst_url);
+		gbDstAddr.sin_port = htons(atoi(m_startSendRtpStruct.dst_port));
+	}
+
+	if ((pData = m_audioFifo.pop(&nLength)) != NULL)
+	{
+		if (strcmp(mediaCodecInfo.szAudioName, "G711_A") == 0)
+			jt1078AudioHead.pt = 6;
+		else if (strcmp(mediaCodecInfo.szAudioName, "G711_U") == 0)
+			jt1078AudioHead.pt = 7;
+		else if (strcmp(mediaCodecInfo.szAudioName, "AAC") == 0)
+			jt1078AudioHead.pt = 19;
+		else
+		{
+			m_audioFifo.pop_front();
+			return;
+		}
+
+		jt1078AudioHead.frame_type = 0x03;
+		jt1078AudioHead.packet_type = 0x00;
+  
+		jt1078AudioHead.payload_size = htons(nLength);
+
+		memcpy(szSendRtpVideoMediaBuffer, (char*)&jt1078AudioHead, sizeof(jt1078AudioHead));
+ 		memcpy(szSendRtpVideoMediaBuffer + sizeof(jt1078AudioHead), pData, nLength);
+    
+		if (netBaseNetType == NetBaseNetType_NetGB28181SendRtpUDP)
+		{//udp 
+			XHNetSDK_Sendto(nClient, szSendRtpVideoMediaBuffer, nLength + sizeof(jt1078AudioHead), (void*)&gbDstAddr);
+ 		}
+		else if (netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Connect || netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Passive)
+		{//tcp 
+ 			XHNetSDK_Write(nClient, szSendRtpVideoMediaBuffer, nLength + sizeof(jt1078AudioHead), 1);
+  		}
+
+		jt1078AudioHead.seq++;
+		if (jt1078AudioHead.seq >= 0xFFFF)
+			jt1078AudioHead.seq = 0;
+ 
+		m_audioFifo.pop_front();
+	}
+}
+//发送1078音频码流 
+void  CNetGB28181RtpClient::SendJtt1078AduioPacket2019()
+{
+	unsigned char* pData = NULL;
+	int            nLength = 0;
+
+	if (gbDstAddr.sin_port == 0)
+	{
+		gbDstAddr.sin_family = AF_INET;
+		gbDstAddr.sin_addr.s_addr = inet_addr(m_startSendRtpStruct.dst_url);
+		gbDstAddr.sin_port = htons(atoi(m_startSendRtpStruct.dst_port));
+	}
+
+	if ((pData = m_audioFifo.pop(&nLength)) != NULL)
+	{
+		if (strcmp(mediaCodecInfo.szAudioName, "G711_A") == 0)
+			jt1078AudioHead2019.pt = 6;
+		else if (strcmp(mediaCodecInfo.szAudioName, "G711_U") == 0)
+			jt1078AudioHead2019.pt = 7;
+		else if (strcmp(mediaCodecInfo.szAudioName, "AAC") == 0)
+			jt1078AudioHead2019.pt = 19;
+		else
+		{
+			m_audioFifo.pop_front();
+			return;
+		}
+
+		jt1078AudioHead2019.frame_type = 0x03;
+		jt1078AudioHead2019.packet_type = 0x00;
+
+		jt1078AudioHead2019.payload_size = htons(nLength);
+
+		memcpy(szSendRtpVideoMediaBuffer, (char*)&jt1078AudioHead2019, sizeof(jt1078AudioHead2019));
+		memcpy(szSendRtpVideoMediaBuffer + sizeof(jt1078AudioHead2019), pData, nLength);
+
+		if (netBaseNetType == NetBaseNetType_NetGB28181SendRtpUDP)
+		{//udp 
+			XHNetSDK_Sendto(nClient, szSendRtpVideoMediaBuffer, nLength + sizeof(jt1078AudioHead2019), (void*)&gbDstAddr);
+		}
+		else if (netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Connect || netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Passive)
+		{//tcp 
+			XHNetSDK_Write(nClient, szSendRtpVideoMediaBuffer, nLength + sizeof(jt1078AudioHead2019), 1);
+		}
+
+		jt1078AudioHead2019.seq++;
+		if (jt1078AudioHead2019.seq >= 0xFFFF)
+			jt1078AudioHead2019.seq = 0;
+
+		m_audioFifo.pop_front();
+	}
 }

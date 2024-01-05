@@ -14,9 +14,11 @@ using namespace boost;
 
 #define  MaxGB28181RtpSendVideoMediaBufferLength  1024*64 
 #define  GB28181VideoStartTimestampFlag           0xEFEFEFEF   //视频开始时间戳 
+#define  JTT1078_MaxPacketLength                  950          //最大一包数据长度 
 
 //#define  WriteGB28181PSFileFlag   1 //保存ps 码流
 //#define   WriteRecvPSDataFlag   1 //保存PS流标志
+//#define     WriteJtt1078SrcVideoFlag  1 //保存1078打包的原始流 
 
 class CNetGB28181RtpClient : public CNetRevcBase
 {
@@ -34,11 +36,30 @@ public:
    virtual int SendFirstRequst();//发送第一个请求
    virtual bool RequestM3u8File();//请求m3u8文件
 
+   //1078 数据发送 
+   Jt1078VideoRtpPacket_T  jt1078VideoHead;
+   Jt1078AudioRtpPacket_T  jt1078AudioHead;
+   Jt1078OtherRtpPacket_T  jt1078OtherHead;
+   Jt1078VideoRtpPacket2019_T  jt1078VideoHead2019;
+   Jt1078AudioRtpPacket2019_T  jt1078AudioHead2019;
+   Jt1078OtherRtpPacket2019_T  jt1078OtherHead2019;
+   int                     nPacketOrder, pPacketCount;
+   int                     jt1078SendPacketLenth;//1078包数据长度
+   int                     nSrcVideoPos;
+   void                    SendJtt1078VideoPacket();
+   void                    SendJtt1078AduioPacket();
+   void                    SendJtt1078VideoPacket2019();
+   void                    SendJtt1078AduioPacket2019();
+   int                     nPFrameCount; //和前一个I帧之间的P帧总数 
+#ifdef WriteJtt1078SrcVideoFlag
+   FILE*  fWrite1078SrcFile;
+#endif
+
 #ifdef WriteRecvPSDataFlag
    FILE* fWritePSDataFile;
 #endif
 
-   char                     m_recvMediaSource[512];
+   char                     m_recvMediaSource[string_length_2048];
    boost::shared_ptr<CMediaStreamSource> pRecvMediaSource;//接入媒体源
    ps_demuxer_t*           psBeiJingLaoChenDemuxer;
    bool                    RtpDepacket(unsigned char* pData, int nDataLength);
@@ -85,7 +106,7 @@ public:
 
    int64_t                 nSendRtcpTime;
    CRtcpPacketSR           rtcpSR;//发送者报告
-   unsigned char           szRtcpSRBuffer[512];
+   unsigned char           szRtcpSRBuffer[string_length_2048];
    unsigned int            rtcpSRBufferLength;
 #ifdef  WriteGB28181PSFileFlag
    FILE*   writePsFile;

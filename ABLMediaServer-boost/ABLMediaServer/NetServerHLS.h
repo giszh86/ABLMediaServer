@@ -37,7 +37,7 @@ private :
 	char                    szDateTime1[64];
 	char                    szDateTime2[64];
 	bool                    bRequestHeadFlag; //采用head请求方式 
-	char                    szOrigin[256];//来源
+	char                    szOrigin[string_length_2048];//来源
 	int64_t                 GetTsFileNameOrder(char* szTsFileName);
 	int64_t                 nTsFileNameOrder; //TS切片文件序号 0 ，1 ，2 ，3 ~ N
 	char                    szConnectionType[64];//Close、 Keep-live
@@ -46,16 +46,16 @@ private :
 	bool                    GetHttpRequestFileName(char* szGetRequestFile, char* szHttpHeadData);
 	int                     nWriteRet, nWriteRet2;
 
-	char                    httpResponseData[1024];
+	char                    httpResponseData[string_length_4096];
 	char                    szM3u8Content[string_length_512K];
 	unsigned char           netDataCache[MaxHttp_FlvNetCacheBufferLength+4]; //网络数据缓存
 	int                     netDataCacheLength;//网络数据缓存大小
 	int                     nNetStart, nNetEnd; //网络数据起始位置\结束位置
 	int                     MaxNetDataCacheCount;
  	int                     data_Length;
-	char                    szPushName[512];//hls 对于的推流名字
-	char                    szRequestFileName[string_length_1024];//http请求的文件名字 
-	char                    szReadFileName[512];
+	char                    szPushName[string_length_4096];//hls 对于的推流名字
+	char                    szRequestFileName[string_length_4096];//http请求的文件名字 
+	char                    szReadFileName[string_length_4096];
 	volatile bool           bFindHLSNameFlag;
 };
 

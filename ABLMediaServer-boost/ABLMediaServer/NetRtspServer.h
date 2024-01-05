@@ -76,6 +76,8 @@ public:
    virtual int SendFirstRequst();//发送第一个请求
    virtual bool RequestM3u8File();//请求m3u8文件
 
+   int             nRecvRtpPacketCount;
+   unsigned short  nMaxRtpLength;
    unsigned char   szFullMp3Buffer[2048];
    unsigned char   szMp3HeadFlag[8];
    void            SplitterMp3Buffer(unsigned char* szMp3Buffer, int nLength);
@@ -102,7 +104,7 @@ public:
    int                     nRtspPlayCount;//play的次数
    bool                    FindRtpPacketFlag();
 
-   unsigned char           s_extra_data[256];
+   unsigned char           s_extra_data[string_length_2048];
    int                     extra_data_size;
    struct mpeg4_avc_t      avc;
 #ifdef WriteRtpDepacketFileFlag
@@ -115,9 +117,9 @@ public:
 
    CRtcpPacketSR           rtcpSR;
    CRtcpPacketRR           rtcpRR;
-   unsigned char           szRtcpSRBuffer[512];
+   unsigned char           szRtcpSRBuffer[string_length_2048];
    unsigned int            rtcpSRBufferLength;
-   unsigned char           szRtcpDataOverTCP[1500];
+   unsigned char           szRtcpDataOverTCP[string_length_2048];
    void                    SendRtcpReportData(unsigned int nSSRC,int nChan);//发送rtcp 报告包,发送端
    void                    SendRtcpReportDataRR(unsigned int nSSRC, int nChan);//发送rtcp 报告包,接收端
    void                    ProcessRtcpData(char* szRtpData, int nDataLength, int nChan);
@@ -149,8 +151,8 @@ public:
    uint32_t                nVideoSSRC;
 
    bool                    GetRtspSDPFromMediaStreamSource(RtspSDPContentStruct sdpContent,bool bGetFlag);
-   char                    szRtspSDPContent[512];
-   char                    szRtspAudioSDP[512];
+   char                    szRtspSDPContent[string_length_2048];
+   char                    szRtspAudioSDP[string_length_2048];
    bool                    GetMediaURLFromRtspSDP(); //获取rtsp地址中的媒体文件 ，比如 /Media/Camera_00001
 
    bool                    GetMediaInfoFromRtspSDP();
@@ -190,22 +192,22 @@ public:
    int             nRecvLength;           //已经读取完毕的长度
    unsigned char   szHttpHeadEndFlag[8];  //Http头结束标志
    int             nHttpHeadEndLength;    //Http头结束标志点的长度 
-   char            szResponseHttpHead[512];
-   char            szCSeq[128];
-   char            szTransport[256];
+   char            szResponseHttpHead[string_length_2048];
+   char            szCSeq[string_length_2048];
+   char            szTransport[string_length_2048];
 
    char            szResponseBuffer[string_length_4096];
    int             nSendRet;
   static   uint64_t Session ;
   uint64_t         currentSession;
-  char             szCurRtspURL[512];
+  char             szCurRtspURL[string_length_2048];
   int64_t           nPrintCount;
 
    //只处理rtsp命令，比如 OPTIONS,DESCRIBE,SETUP,PALY 
    void            InputRtspData(unsigned char* pRecvData, int nDataLength);
 
    void           AddADTSHeadToAAC(unsigned char* szData, int nAACLength);
-   unsigned char  aacData[2048];
+   unsigned char  aacData[string_length_2048];
    int            timeValue;
    uint32_t       hRtpHandle[MaxRtpHandleCount];
    char           szVideoName[64];
@@ -216,8 +218,8 @@ public:
    int            nChannels; //音频通道数
    int            nSampleRate; //音频采样频率
    char           szRtspContentSDP[string_length_1024];
-   char           szVideoSDP[512];
-   char           szAudioSDP[512];
+   char           szVideoSDP[string_length_2048];
+   char           szAudioSDP[string_length_2048];
    CABLSipParse   sipParseV, sipParseA;   //sdp 信息分析
 
    boost::shared_ptr<CMediaStreamSource> pMediaSource;

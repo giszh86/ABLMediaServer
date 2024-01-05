@@ -2,6 +2,7 @@
 功能：
     负责接收GB28181Rtp码流，包括UDP、TCP模式 
     增加 国标发送  （即国标接收的同时也支持国标发送）    2023-05-18
+	增加支持1078码流以 2016\2019版本接收                 2023-12-20
 日期    2021-08-08
 作者    罗家兄弟
 QQ      79941308
@@ -143,6 +144,292 @@ void RTP_DEPACKET_CALL_METHOD GB28181_rtppacket_callback_recv(_rtp_depacket_cb* 
 		   fflush(pThis->fWritePsFile);
 	   }
  	}
+}
+
+//对1078数据进行切割 
+void  CNetGB28181RtpServer::SplitterJt1078CacheBuffer()
+{
+	if (pMediaSource == NULL && m_openRtpServerStruct.RtpPayloadDataType[0] == 0x34)
+	{
+		sprintf(m_szShareMediaURL, "/%s/%s", m_openRtpServerStruct.app, m_openRtpServerStruct.stream_id);
+		pMediaSource = CreateMediaStreamSource(m_szShareMediaURL, hParent, MediaSourceType_LiveMedia, 0, m_h265ConvertH264Struct);
+		if (pMediaSource != NULL)
+			pMediaSource->netBaseNetType = netBaseNetType;
+	}
+
+ 	Jt1078VideoRtpPacket_T*      p1078VideoHead;
+	Jt1078AudioRtpPacket_T*      p1078AudioHead;
+	Jt1078OtherRtpPacket_T*      pOtherHead;
+ 
+ 	n1078Pos = 0;
+	n1078CurrentProcCountLength = n1078CacheBufferLength;//当前处理的总长度 
+	while (n1078CacheBufferLength >= 4096)
+	{
+		p1078VideoHead = (Jt1078VideoRtpPacket_T*)(netDataCache + n1078Pos);
+
+		//判断标志头
+		if (!(netDataCache[n1078Pos] == 0x30 && netDataCache[n1078Pos + 1] == 0x31 && netDataCache[n1078Pos + 2] == 0x63 && netDataCache[n1078Pos + 3] == 0x64))
+		{
+			nFind1078FlagPos = Find1078HeadFromCacheBuffer(netDataCache + n1078Pos, n1078CurrentProcCountLength - n1078Pos);
+			if (nFind1078FlagPos < 0)
+			{//数据有错误，丢弃所有数据 
+				n1078CacheBufferLength = 0;
+				return;
+			}
+			else
+			{//找到标志位置，重新定位
+				n1078NewPosition = n1078Pos + nFind1078FlagPos ;// n1078Pos 为已经消费的数据位置、nFind1078FlagPos 因为丢包造成一些错乱数据 从而丢弃的数据 的新位置 
+				memmove(netDataCache, netDataCache + n1078NewPosition, n1078CurrentProcCountLength - n1078NewPosition);
+				return; //等待下一次对1078数据进行解包 
+			}
+		}
+
+		if (p1078VideoHead->frame_type == 0 || p1078VideoHead->frame_type == 1 || p1078VideoHead->frame_type == 2)
+		{//视频
+			nPayloadSize = ntohs(p1078VideoHead->payload_size);
+
+			if (nPayloadSize > 0 && (n1078CurrentProcCountLength - n1078Pos ) > nPayloadSize)
+			{
+#ifdef WriteJt1078VideoFlag
+				fwrite((unsigned char*)(netDataCache + (sizeof(Jt1078VideoRtpPacket_T) + n1078Pos)),1, nPayloadSize, fWrite1078File);
+				fflush(fWrite1078File);
+#endif
+ 				if (Ma1078CacheBufferLength - n1078VideoFrameBufferLength >= nPayloadSize)
+				{
+					memcpy(p1078VideoFrameBuffer + n1078VideoFrameBufferLength, netDataCache + (sizeof(Jt1078VideoRtpPacket_T) + n1078Pos), nPayloadSize);
+					n1078VideoFrameBufferLength += nPayloadSize;
+
+					if (nVideoPT == -1)
+						nVideoPT = p1078VideoHead->pt;
+
+					if (p1078VideoHead->packet_type == 0)
+					{//独立一包，不可分隔
+						if (nVideoPT == 98)
+							pMediaSource->PushVideo(p1078VideoFrameBuffer, n1078VideoFrameBufferLength, "H264");
+						else if (nVideoPT == 99)
+							pMediaSource->PushVideo(p1078VideoFrameBuffer, n1078VideoFrameBufferLength, "H265");
+
+						n1078VideoFrameBufferLength = 0;
+					}
+					else if (p1078VideoHead->packet_type == 2)
+					{//最后1包
+ 						if(nVideoPT == 98 )
+							pMediaSource->PushVideo(p1078VideoFrameBuffer, n1078VideoFrameBufferLength, "H264");
+						else if (nVideoPT == 99)
+							pMediaSource->PushVideo(p1078VideoFrameBuffer, n1078VideoFrameBufferLength, "H265");
+
+						n1078VideoFrameBufferLength = 0 ;
+					}
+
+					if (!bUpdateVideoFrameSpeedFlag)
+					{//更新视频源的帧速度
+						if (ntohs(p1078VideoHead->frame_interval) > 0 && ntohs(p1078VideoHead->frame_interval) <= 1000)
+						{
+							sprintf(pMediaSource->sim, "%X%X%X%X%X%X", p1078VideoHead->sim[0], p1078VideoHead->sim[1], p1078VideoHead->sim[2], p1078VideoHead->sim[3], p1078VideoHead->sim[4], p1078VideoHead->sim[5]);
+							bUpdateVideoFrameSpeedFlag = true;
+							pMediaSource->UpdateVideoFrameSpeed(1000 / ntohs(p1078VideoHead->frame_interval), netBaseNetType);
+							boost::shared_ptr<CNetRevcBase>  pGB28181Proxy = GetNetRevcBaseClient(hParent);
+							if (pGB28181Proxy != NULL)
+								pGB28181Proxy->bUpdateVideoFrameSpeedFlag = true;
+						}
+ 					}
+				}
+				else
+					n1078VideoFrameBufferLength = 0;
+ 
+				n1078CacheBufferLength -= sizeof(Jt1078VideoRtpPacket_T) + nPayloadSize;
+				n1078Pos += sizeof(Jt1078VideoRtpPacket_T) + nPayloadSize;
+			}
+ 		}
+		else if (p1078VideoHead->frame_type == 3)
+		{//音频 
+			Jt1078AudioRtpPacket_T* p1078AudioHead = (Jt1078AudioRtpPacket_T*)(netDataCache + n1078Pos);
+			nPayloadSize = ntohs(p1078AudioHead->payload_size);
+
+ 			if (nPayloadSize > 0 && (n1078CurrentProcCountLength - n1078Pos) > nPayloadSize)
+			{
+				if (nAudioPT == -1)
+					nAudioPT = p1078AudioHead->pt;
+
+				if(nAudioPT == 6)
+					pMediaSource->PushAudio((unsigned char*)(netDataCache + (sizeof(Jt1078AudioRtpPacket_T) + n1078Pos)), nPayloadSize, "G711_A", 1,8000);
+				else if(nAudioPT == 7)
+					pMediaSource->PushAudio((unsigned char*)(netDataCache + (sizeof(Jt1078AudioRtpPacket_T) + n1078Pos)), nPayloadSize, "G711_U", 1, 8000);
+				else if (nAudioPT == 19)//aac 的通道数、采样频率 一定要准确 ，现在暂时固定 1、16000 
+					pMediaSource->PushAudio((unsigned char*)(netDataCache + (sizeof(Jt1078AudioRtpPacket_T) + n1078Pos)), nPayloadSize, "AAC", 1,16000);
+
+				n1078CacheBufferLength -= sizeof(Jt1078AudioRtpPacket_T) + nPayloadSize;
+				n1078Pos += sizeof(Jt1078AudioRtpPacket_T) + nPayloadSize;
+			}
+		}
+		else if (p1078VideoHead->frame_type == 4)
+		{//透传数据
+			Jt1078OtherRtpPacket_T* pOtherHead = (Jt1078OtherRtpPacket_T*)(netDataCache + n1078Pos);
+			nPayloadSize = ntohs(pOtherHead->payload_size);
+
+			if (nPayloadSize > 0 && (n1078CurrentProcCountLength - n1078Pos) > nPayloadSize)
+			{
+ 
+				n1078CacheBufferLength -= sizeof(Jt1078OtherRtpPacket_T) + nPayloadSize;
+				n1078Pos += sizeof(Jt1078OtherRtpPacket_T) + nPayloadSize;
+			}
+		}
+ 	}
+
+	//把剩余的数据移动过来
+	if (n1078CacheBufferLength > 0 && n1078Pos > 0 )
+		memmove(netDataCache, netDataCache + n1078Pos, n1078CacheBufferLength);
+}
+
+//对1078数据进行切割 
+void  CNetGB28181RtpServer::SplitterJt1078CacheBuffer2019()
+{
+	if (pMediaSource == NULL && m_openRtpServerStruct.RtpPayloadDataType[0] == 0x34)
+	{
+		sprintf(m_szShareMediaURL, "/%s/%s", m_openRtpServerStruct.app, m_openRtpServerStruct.stream_id);
+		pMediaSource = CreateMediaStreamSource(m_szShareMediaURL, hParent, MediaSourceType_LiveMedia, 0, m_h265ConvertH264Struct);
+		if (pMediaSource != NULL)
+			pMediaSource->netBaseNetType = netBaseNetType;
+	}
+
+	Jt1078VideoRtpPacket2019_T*      p1078VideoHead;
+	Jt1078AudioRtpPacket2019_T*      p1078AudioHead;
+	Jt1078OtherRtpPacket2019_T*      pOtherHead;
+
+	n1078Pos = 0;
+	n1078CurrentProcCountLength = n1078CacheBufferLength;//当前处理的总长度 
+	while (n1078CacheBufferLength >= 4096)
+	{
+		p1078VideoHead = (Jt1078VideoRtpPacket2019_T*)(netDataCache + n1078Pos);
+
+		//判断标志头
+		if (!(netDataCache[n1078Pos] == 0x30 && netDataCache[n1078Pos + 1] == 0x31 && netDataCache[n1078Pos + 2] == 0x63 && netDataCache[n1078Pos + 3] == 0x64))
+		{
+			nFind1078FlagPos = Find1078HeadFromCacheBuffer(netDataCache + n1078Pos, n1078CurrentProcCountLength - n1078Pos);
+			if (nFind1078FlagPos < 0)
+			{//数据有错误，丢弃所有数据 
+				n1078CacheBufferLength = 0;
+				return;
+			}
+			else
+			{//找到标志位置，重新定位
+				n1078NewPosition = n1078Pos + nFind1078FlagPos;// n1078Pos 为已经消费的数据位置、nFind1078FlagPos 因为丢包造成一些错乱数据 从而丢弃的数据 的新位置 
+				memmove(netDataCache, netDataCache + n1078NewPosition, n1078CurrentProcCountLength - n1078NewPosition);
+				return; //等待下一次对1078数据进行解包 
+			}
+		}
+
+		if (p1078VideoHead->frame_type == 0 || p1078VideoHead->frame_type == 1 || p1078VideoHead->frame_type == 2)
+		{//视频
+			nPayloadSize = ntohs(p1078VideoHead->payload_size);
+
+			if (nPayloadSize > 0 && (n1078CurrentProcCountLength - n1078Pos) > nPayloadSize)
+			{
+#ifdef WriteJt1078VideoFlag
+				fwrite((unsigned char*)(netDataCache + (sizeof(Jt1078VideoRtpPacket2019_T) + n1078Pos)), 1, nPayloadSize, fWrite1078File);
+				fflush(fWrite1078File);
+#endif
+				if (Ma1078CacheBufferLength - n1078VideoFrameBufferLength >= nPayloadSize)
+				{
+					memcpy(p1078VideoFrameBuffer + n1078VideoFrameBufferLength, netDataCache + (sizeof(Jt1078VideoRtpPacket2019_T) + n1078Pos), nPayloadSize);
+					n1078VideoFrameBufferLength += nPayloadSize;
+
+					if (nVideoPT == -1)
+						nVideoPT = p1078VideoHead->pt;
+
+					if (p1078VideoHead->packet_type == 0)
+					{//独立一包，不可分隔
+						if (nVideoPT == 98)
+							pMediaSource->PushVideo(p1078VideoFrameBuffer, n1078VideoFrameBufferLength, "H264");
+						else if (nVideoPT == 99)
+							pMediaSource->PushVideo(p1078VideoFrameBuffer, n1078VideoFrameBufferLength, "H265");
+
+						n1078VideoFrameBufferLength = 0;
+					}
+					else if (p1078VideoHead->packet_type == 2)
+					{//最后1包
+						if (nVideoPT == 98)
+							pMediaSource->PushVideo(p1078VideoFrameBuffer, n1078VideoFrameBufferLength, "H264");
+						else if (nVideoPT == 99)
+							pMediaSource->PushVideo(p1078VideoFrameBuffer, n1078VideoFrameBufferLength, "H265");
+
+						n1078VideoFrameBufferLength = 0;
+					}
+
+					if (!bUpdateVideoFrameSpeedFlag)
+					{//更新视频源的帧速度
+						if (ntohs(p1078VideoHead->frame_interval) > 0 && ntohs(p1078VideoHead->frame_interval) <= 1000)
+						{
+							sprintf(pMediaSource->sim, "%X%X%X%X%X%X%X%X%X%X", p1078VideoHead->sim[0], p1078VideoHead->sim[1], p1078VideoHead->sim[2], p1078VideoHead->sim[3], p1078VideoHead->sim[4], p1078VideoHead->sim[5], p1078VideoHead->sim[6], p1078VideoHead->sim[7], p1078VideoHead->sim[8], p1078VideoHead->sim[9]);
+							bUpdateVideoFrameSpeedFlag = true;
+							pMediaSource->UpdateVideoFrameSpeed(1000 / ntohs(p1078VideoHead->frame_interval), netBaseNetType);
+							boost::shared_ptr<CNetRevcBase>  pGB28181Proxy = GetNetRevcBaseClient(hParent);
+							if (pGB28181Proxy != NULL)
+								pGB28181Proxy->bUpdateVideoFrameSpeedFlag = true;
+						}
+					}
+				}
+				else
+					n1078VideoFrameBufferLength = 0;
+
+				n1078CacheBufferLength -= sizeof(Jt1078VideoRtpPacket2019_T) + nPayloadSize;
+				n1078Pos += sizeof(Jt1078VideoRtpPacket2019_T) + nPayloadSize;
+			}
+		}
+		else if (p1078VideoHead->frame_type == 3)
+		{//音频 
+			Jt1078AudioRtpPacket2019_T* p1078AudioHead = (Jt1078AudioRtpPacket2019_T*)(netDataCache + n1078Pos);
+			nPayloadSize = ntohs(p1078AudioHead->payload_size);
+
+			if (nPayloadSize > 0 && (n1078CurrentProcCountLength - n1078Pos) > nPayloadSize)
+			{
+				if (nAudioPT == -1)
+					nAudioPT = p1078AudioHead->pt;
+
+				if (nAudioPT == 6)
+					pMediaSource->PushAudio((unsigned char*)(netDataCache + (sizeof(Jt1078AudioRtpPacket2019_T) + n1078Pos)), nPayloadSize, "G711_A", 1, 8000);
+				else if (nAudioPT == 7)
+					pMediaSource->PushAudio((unsigned char*)(netDataCache + (sizeof(Jt1078AudioRtpPacket2019_T) + n1078Pos)), nPayloadSize, "G711_U", 1, 8000);
+				else if (nAudioPT == 19)//aac 的通道数、采样频率 一定要准确 ，现在暂时固定 1、16000 
+					pMediaSource->PushAudio((unsigned char*)(netDataCache + (sizeof(Jt1078AudioRtpPacket2019_T) + n1078Pos)), nPayloadSize, "AAC", 1, 16000);
+
+				n1078CacheBufferLength -= sizeof(Jt1078AudioRtpPacket2019_T) + nPayloadSize;
+				n1078Pos += sizeof(Jt1078AudioRtpPacket2019_T) + nPayloadSize;
+			}
+		}
+		else if (p1078VideoHead->frame_type == 4)
+		{//透传数据
+			Jt1078OtherRtpPacket2019_T* pOtherHead = (Jt1078OtherRtpPacket2019_T*)(netDataCache + n1078Pos);
+			nPayloadSize = ntohs(pOtherHead->payload_size);
+
+			if (nPayloadSize > 0 && (n1078CurrentProcCountLength - n1078Pos) > nPayloadSize)
+			{
+
+				n1078CacheBufferLength -= sizeof(Jt1078OtherRtpPacket2019_T) + nPayloadSize;
+				n1078Pos += sizeof(Jt1078OtherRtpPacket2019_T) + nPayloadSize;
+			}
+		}
+	}
+
+	//把剩余的数据移动过来
+	if (n1078CacheBufferLength > 0 && n1078Pos > 0)
+		memmove(netDataCache, netDataCache + n1078Pos, n1078CacheBufferLength);
+}
+
+//在缓存中查找1078标志 0x30 ,0x31 ,0x63, 0x64 
+int   CNetGB28181RtpServer::Find1078HeadFromCacheBuffer(unsigned char* pData, int nLength)
+{
+	if (nLength <= 4 || pData == NULL )
+		return -1;
+
+	for (int i = 0; i < nLength - 4 ; i++)
+	{
+		if (pData[i] == 0x30 && pData[i+1] == 0x31 && pData[i + 2] == 0x63 && pData[i + 3] == 0x64)
+		{
+			return i;
+		}
+	}
+	return -2;
 }
 
 static int on_gb28181_unpacket(void* param, int stream, int avtype, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
@@ -329,6 +616,18 @@ CNetGB28181RtpServer::CNetGB28181RtpServer(NETHANDLE hServer, NETHANDLE hClient,
 	bCheckRtpTimestamp = false;
 	nStartTimestap = 3600;
 #endif 
+#ifdef WriteJt1078VideoFlag
+	char szFileName[256] = { 0 };
+	sprintf(szFileName, "%s%X.264", ABL_MediaSeverRunPath, this);
+	fWrite1078File = fopen(szFileName, "wb");
+#endif
+	nRecvRtpPacketCount = 0;
+	nMaxRtpLength = 0;
+
+	nVideoPT = nAudioPT = -1;
+	p1078VideoFrameBuffer = NULL ;
+	n1078CacheBufferLength = n1078VideoFrameBufferLength = 0;;
+
  	aacDataLength = 0;
 	nMaxRtpSendVideoMediaBufferLength = 640;//默认累计640
 	nSendRtpVideoMediaBufferLength = 0; //已经积累的长度  视频
@@ -372,7 +671,7 @@ CNetGB28181RtpServer::CNetGB28181RtpServer(NETHANDLE hServer, NETHANDLE hClient,
 	
 	if (ABL_MediaServerPort.nSaveGB28181Rtp == 1)
 	{
-		char szVFile[256];
+		char szVFile[string_length_1024];
 		sprintf(szVFile, "%s%llu_%X.ps", ABL_MediaServerPort.debugPath, nClient, this);
  	    fWritePsFile = fopen(szVFile,"wb") ;
 		sprintf(szVFile, "%s%llu_%X.rtp", ABL_MediaServerPort.debugPath, nClient, this);
@@ -423,11 +722,9 @@ CNetGB28181RtpServer::~CNetGB28181RtpServer()
 	  if(bInitFifoFlag)
 	    NetDataFifo.FreeFifo();
 	}
-	else if (netBaseNetType == NetBaseNetType_NetGB28181RtpServerTCP_Server || netBaseNetType == NetBaseNetType_NetGB28181RtpServerTCP_Active )
-	{
-	  SAFE_ARRAY_DELETE(netDataCache);
- 	}
  
+    SAFE_ARRAY_DELETE(netDataCache);
+
 	if (fWritePsFile)
 	{
 	    fclose(fWritePsFile);
@@ -447,8 +744,9 @@ CNetGB28181RtpServer::~CNetGB28181RtpServer()
 	 SAFE_DELETE(pRtpAddress);
 	 SAFE_DELETE(pSrcAddress);
 	 SAFE_ARRAY_DELETE(s_buffer);
- 
-	 malloc_trim(0);
+	 SAFE_ARRAY_DELETE(p1078VideoFrameBuffer);
+	 
+ 	 malloc_trim(0);
 
 	 if (hParent > 0 && netBaseNetType != NetBaseNetType_NetGB28181RtpServerTCP_Active)
 	 {
@@ -474,6 +772,9 @@ CNetGB28181RtpServer::~CNetGB28181RtpServer()
 #endif
 #ifdef WriteRecvAACDataFlag
 	 fclose(fWriteRecvAACFile);
+#endif
+#ifdef WriteJt1078VideoFlag
+	 fclose(fWrite1078File);
 #endif
 	 //码流没有达到通知
 	 if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nClientNotArrive > 0 && bUpdateVideoFrameSpeedFlag == false)
@@ -585,6 +886,24 @@ int CNetGB28181RtpServer::InputNetData(NETHANDLE nServerHandle, NETHANDLE nClien
 	//网络断线检测
 	nRecvDataTimerBySecond = 0;
 
+	if (m_openRtpServerStruct.RtpPayloadDataType[0] == 0x34)
+	{//jt 1078 码流，不是标准的 rtp 流 
+		if (p1078VideoFrameBuffer == NULL)
+  			p1078VideoFrameBuffer = new unsigned char[Ma1078CacheBufferLength];
+		if(netDataCache == NULL )
+			netDataCache = new unsigned char[Ma1078CacheBufferLength];
+
+ 		if (Ma1078CacheBufferLength - n1078CacheBufferLength >= nDataLength)
+		{
+			memcpy(netDataCache + n1078CacheBufferLength, pData, nDataLength);
+			n1078CacheBufferLength += nDataLength;
+		}
+		else
+			n1078CacheBufferLength = 0;
+		
+		return 0 ;
+	}
+
 	if (netBaseNetType == NetBaseNetType_NetGB28181RtpServerUDP)
 	{//UDP
 		if (pRtpAddress == NULL && pSrcAddress == NULL )
@@ -628,7 +947,7 @@ int CNetGB28181RtpServer::InputNetData(NETHANDLE nServerHandle, NETHANDLE nClien
 			}
  		}
 	}
-	else if (netBaseNetType == NetBaseNetType_NetGB28181RtpServerTCP_Server || netBaseNetType == NetBaseNetType_NetGB28181RtpServerTCP_Active )
+	else if (netDataCache != NULL && (netBaseNetType == NetBaseNetType_NetGB28181RtpServerTCP_Server || netBaseNetType == NetBaseNetType_NetGB28181RtpServerTCP_Active || netBaseNetType == NetBaseNetType_GB28181TcpPSInputStream))
 	{//TCP 
  		if (MaxNetDataCacheCount - nNetEnd >= nDataLength)
 		{//剩余空间足够
@@ -671,6 +990,16 @@ int CNetGB28181RtpServer::ProcessNetData()
 	if(!bRunFlag)
 		return -1 ;
 
+	if (m_addStreamProxyStruct.RtpPayloadDataType[0] == 0x34)
+	{//jt1078
+		if(strcmp(m_openRtpServerStruct.jtt1078_version,"2013") == 0 || strcmp(m_openRtpServerStruct.jtt1078_version, "2016") == 0)
+		  SplitterJt1078CacheBuffer();
+		else if(strcmp(m_openRtpServerStruct.jtt1078_version, "2019") == 0)
+		  SplitterJt1078CacheBuffer2019();
+
+		return 0;
+	}
+
 	//数据到达才创建回复的rtp对象 
 	CreateSendRtpByPS();
 
@@ -709,7 +1038,7 @@ int CNetGB28181RtpServer::ProcessNetData()
 			XHNetSDK_Sendto(nClientRtcp, szRtcpSRBuffer, rtcpSRBufferLength, pRtpAddress);
  		}
 	}
-	else if (netBaseNetType == NetBaseNetType_NetGB28181RtpServerTCP_Server || netBaseNetType == NetBaseNetType_NetGB28181RtpServerTCP_Active )
+	else if (netBaseNetType == NetBaseNetType_NetGB28181RtpServerTCP_Server || netBaseNetType == NetBaseNetType_NetGB28181RtpServerTCP_Active || netBaseNetType == NetBaseNetType_GB28181TcpPSInputStream)
 	{//TCP 方式的rtp包读取 
 		while (netDataCacheLength > 2048)
 		{//不能缓存太多buffer,否则造成接收国标流中只有音频流时，会造成延时很大 2048 比较合适 
@@ -752,7 +1081,33 @@ int CNetGB28181RtpServer::ProcessNetData()
 				if (hRtpHandle == 0)
 					m_gbPayload = rtpHeadPtr->payload;
 
-				RtpDepacket(netDataCache + nNetStart, nRtpLength);
+				//给10000国标单端口接入定义url名字 
+				if (netBaseNetType == NetBaseNetType_GB28181TcpPSInputStream && strlen(m_szShareMediaURL) == 0)
+				{
+					strcpy(m_addStreamProxyStruct.app, "rtp");
+					sprintf(m_addStreamProxyStruct.stream, "%X", rtpHeadPtr->ssrc);
+					sprintf(m_szShareMediaURL, "/rtp/%X", rtpHeadPtr->ssrc);
+				}
+
+				if (nRecvRtpPacketCount < 1000 )
+				{
+					nRecvRtpPacketCount ++ ;
+					if (nRtpLength > nMaxRtpLength)
+					{//记录rtp 包最大长度 
+						nMaxRtpLength = nRtpLength;
+						WriteLog(Log_Debug, "CNetGB28181RtpServer = %X  nClient = %llu , 获取到rtp最大长度 , nMaxRtpLength = %d ", this, nClient, nMaxRtpLength);
+					}
+				}
+ 
+				//rtp 包长度正常才进行解包
+				if(nRtpLength <= nMaxRtpLength)
+				  RtpDepacket(netDataCache + nNetStart, nRtpLength);
+				else
+				{//rtp 包长度异常
+					WriteLog(Log_Debug, "CNetGB28181RtpServer = %X rtp包头长度有误  nClient = %llu ,nRtpLength = %llu , nMaxRtpLength = %d ", this, nClient, nRtpLength, nMaxRtpLength);
+					DeleteNetRevcBaseClient(nClient);
+					return -1;
+				}
  			}
 
 			nNetStart += nRtpLength;
@@ -760,7 +1115,7 @@ int CNetGB28181RtpServer::ProcessNetData()
 		}
 
 		//主动发送rtcp 包
-		if (GetTickCount64() - nSendRtcpTime >= 5 * 1000 && psBeiJingLaoChenMuxer == NULL )  // psBeiJingLaoChenMuxer == NULL 时 ，没有回复 /send_app/send_stream 
+		if (GetTickCount64() - nSendRtcpTime >= 5 * 1000 && psBeiJingLaoChenMuxer == NULL && netBaseNetType != NetBaseNetType_GB28181TcpPSInputStream)  // psBeiJingLaoChenMuxer == NULL 时 ，没有回复 /send_app/send_stream 
 		{
 			nSendRtcpTime = ::GetTickCount64();
 
@@ -779,7 +1134,7 @@ struct ps_demuxer_notify_t notify_NetGB28181RtpServer = { mpeg_ps_dec_testonstre
 
 bool  CNetGB28181RtpServer::RtpDepacket(unsigned char* pData, int nDataLength) 
 {
-	if (pData == NULL || nDataLength > 65536 || !bRunFlag || nDataLength < 12 )
+	if (pData == NULL || nDataLength >= 65536 || !bRunFlag || nDataLength < 12 )
 		return false;
 
 	//创建rtp解包
@@ -939,7 +1294,7 @@ void GB28181RtpServer_rtp_packet_callback_func_send(_rtp_packet_cb* cb)
 	{//udp 直接发送 
 	    pThis->SendGBRtpPacketUDP(cb->data, cb->datasize);
 	}
-	else if (pThis->netBaseNetType == NetBaseNetType_NetGB28181RtpServerTCP_Server || pThis->netBaseNetType == NetBaseNetType_NetGB28181RtpServerTCP_Active)
+	else if (pThis->netBaseNetType == NetBaseNetType_NetGB28181RtpServerTCP_Server || pThis->netBaseNetType == NetBaseNetType_NetGB28181RtpServerTCP_Active || pThis->netBaseNetType == NetBaseNetType_GB28181TcpPSInputStream)
 	{//TCP 需要拼接 包头
 		pThis->GB28181SentRtpVideoData(cb->data, cb->datasize);
 	}
@@ -952,7 +1307,7 @@ void  CNetGB28181RtpServer::CreateSendRtpByPS()
 	{//保证加入线程池只有一次
 		addThreadPoolFlag = true;
 
-		char szMediaSource[512] = { 0 };
+		char szMediaSource[string_length_1024] = { 0 };
 		sprintf(szMediaSource, "/%s/%s", m_openRtpServerStruct.send_app, m_openRtpServerStruct.send_stream_id);
 		boost::shared_ptr<CMediaStreamSource> pMediaSource = GetMediaStreamSource(szMediaSource);
 

@@ -16,6 +16,8 @@ extern CMediaSendThreadPool*           pMediaSendThreadPool;
 extern CMediaFifo                      pDisconnectBaseNetFifo; //清理断裂的链接 
 extern bool                            DeleteClientMediaStreamSource(uint64_t nClient);
 extern MediaServerPort                 ABL_MediaServerPort;
+extern bool                            AddClientToMapAddMutePacketList(uint64_t nClient);
+extern bool                            DelClientToMapFromMutePacketList(uint64_t nClient);
 
 //FLV合成回调函数 
 static int NetServerHTTP_FLV_MuxerCB(void* flv, int type, const void* data, size_t bytes, uint32_t timestamp)
@@ -114,6 +116,10 @@ CNetServerHTTP_FLV::~CNetServerHTTP_FLV()
 
 	m_videoFifo.FreeFifo();
 	m_audioFifo.FreeFifo();
+	
+	//从静音链表删除 
+	if (bAddMuteFlag)
+	  DelClientToMapFromMutePacketList(nClient);
 	
 	WriteLog(Log_Debug, "CNetServerHTTP_FLV 析构 =%X szFlvName = %s, nClient = %llu \r\n", this, szFlvName, nClient);
 	
@@ -327,15 +333,22 @@ int CNetServerHTTP_FLV::ProcessNetData()
 		bCheckHttpFlvFlag = true;
 
 		//把请求的FLV文件读取出来
-		char    szTempName[512] = { 0 };
+		char    szTempName[string_length_2048] = { 0 };
 		string  strHttpHead = (char*)netDataCache;
 		int     nPos1, nPos2;
 		nPos1 = strHttpHead.find("GET ", 0);
-		if (nPos1 >= 0)
+		if (nPos1 >= 0 && nPos1 != string::npos )
 		{
 			nPos2 = strHttpHead.find(" HTTP/", 0);
-			if (nPos2 > 0)
+			if (nPos2 > 0 && nPos2 != string::npos)
 			{
+				if ((nPos2 - nPos1 - 4) > string_length_2048)
+				{
+					WriteLog(Log_Debug, "CNetServerHTTP_FLV=%X,请求文件名称长度非法 nClient = %llu ", this, nClient);
+					DeleteNetRevcBaseClient(nClient);
+					return -1;
+ 				}
+
 				bFindFlvNameFlag = true;
 				memset(szTempName, 0x00, sizeof(szTempName));
 				memcpy(szTempName, netDataCache + nPos1 + 4, nPos2 - nPos1 - 4);
@@ -352,7 +365,9 @@ int CNetServerHTTP_FLV::ProcessNetData()
 				}
 				else//没有？，直接拷贝 
 					strcpy(szFlvName, szTempName);
-				WriteLog(Log_Debug, "CNetServerHTTP_FLV=%X ,nClient = %llu ,拷贝出FLV 文件名字 %s ", this, nClient, szFlvName);
+
+				if(strlen(szFlvName) < 512 )
+				   WriteLog(Log_Debug, "CNetServerHTTP_FLV=%X ,nClient = %llu ,拷贝出FLV 文件名字 %s ", this, nClient, szFlvName);
 			}
 		}
 
@@ -366,7 +381,7 @@ int CNetServerHTTP_FLV::ProcessNetData()
 		//根据FLV文件，进行简单判断是否合法
 		if (!(strstr(szFlvName, ".flv") != NULL || strstr(szFlvName, ".FLV") != NULL))
 		{
-			WriteLog(Log_Debug, "CNetServerHTTP_FLV = %X,  nClient = %llu , 请求的名字非法 %s ", this, nClient, szFlvName);
+			WriteLog(Log_Debug, "CNetServerHTTP_FLV = %X,  nClient = %llu ", this, nClient);
 			DeleteNetRevcBaseClient(nClient);
 			return -1;
 		}
@@ -419,7 +434,7 @@ int CNetServerHTTP_FLV::ProcessNetData()
 		SplitterAppStream(szFlvName);
 		sprintf(m_addStreamProxyStruct.url, "http://localhost:%d/%s/%s.flv", ABL_MediaServerPort.nHttpFlvPort, m_addStreamProxyStruct.app, m_addStreamProxyStruct.stream);
  
-		char szOrigin[256] = { 0 };
+		char szOrigin[string_length_1024] = { 0 };
 		flvParse.ParseSipString((char*)netDataCache);
 		flvParse.GetFieldValue("Origin", szOrigin);
 		if (strlen(szOrigin) == 0)
@@ -454,8 +469,27 @@ int CNetServerHTTP_FLV::ProcessNetData()
 		}
 		else if ( strcmp(pushClient->m_mediaCodecInfo.szVideoName, "H264") == 0 || strcmp(pushClient->m_mediaCodecInfo.szVideoName, "H265") == 0)
 		{//H264、H265 只创建视频
-			flvWrite = flv_writer_create2(0, 1, NetServerHTTP_FLV_OnWrite_CB, (void*)this);
-			WriteLog(Log_Debug, "创建http-flv 输出格式为： 视频 %s、音频：无音频  nClient = %llu ", pushClient->m_mediaCodecInfo.szVideoName, nClient);
+			if (ABL_MediaServerPort.nEnableAudio == 0 || ABL_MediaServerPort.flvPlayAddMute == 0)
+			{//没有音频输出，或者没有开启静音
+		  	   flvWrite = flv_writer_create2(0, 1, NetServerHTTP_FLV_OnWrite_CB, (void*)this);
+			   WriteLog(Log_Debug, "创建http-flv 输出格式为： 视频 %s、音频：无音频  nClient = %llu ", pushClient->m_mediaCodecInfo.szVideoName, nClient);
+			}
+			else 
+			{
+#ifdef  OS_System_Windows //window 不增加静音
+				flvWrite = flv_writer_create2(0, 1, NetServerHTTP_FLV_OnWrite_CB, (void*)this);
+				WriteLog(Log_Debug, "创建http-flv 输出格式为： 视频 %s、音频：无音频  nClient = %llu ", pushClient->m_mediaCodecInfo.szVideoName, nClient);
+#else 
+				flvWrite = flv_writer_create2(1, 1, NetServerHTTP_FLV_OnWrite_CB, (void*)this);
+				bAddMuteFlag = true;
+				strcpy(mediaCodecInfo.szAudioName, "AAC");
+				mediaCodecInfo.nChannels = 1;
+				mediaCodecInfo.nSampleRate = 16000;
+				mediaCodecInfo.nBaseAddAudioTimeStamp = 64;
+				AddClientToMapAddMutePacketList(nClient);
+				WriteLog(Log_Debug, "创建http-flv 输出格式为： 视频 %s、音频：AAC(chans:1,sampleRate:16000)  nClient = %llu ", pushClient->m_mediaCodecInfo.szVideoName, nClient);
+#endif
+			}
 		}
 		else if (strlen(pushClient->m_mediaCodecInfo.szVideoName) == 0 && (strcmp(pushClient->m_mediaCodecInfo.szAudioName, "AAC") == 0 || strcmp(pushClient->m_mediaCodecInfo.szAudioName, "MP3") == 0))
 		{//只创建音频

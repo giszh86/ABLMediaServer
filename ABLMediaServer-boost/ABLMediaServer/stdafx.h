@@ -251,6 +251,7 @@ struct MediaServerPort
 	uint64_t   iframeArriveNoticCount;//I帧通知数量
 	int        httqRequstClose;//是否为短链接操作 
 	int        keepaliveDuration; //发送心跳时间间隔
+	int        flvPlayAddMute;
  	MediaServerPort()
 	{
 		memset(wwwPath, 0x00, sizeof(wwwPath));
@@ -360,7 +361,7 @@ struct MediaServerPort
 		httqRequstClose = 0;
 		enable_GetFileDuration = 0;
 		keepaliveDuration = 20;
-		nWebRtcPort = 8000;
+		flvPlayAddMute = 1;
  	}
 };
 
@@ -386,7 +387,8 @@ struct H265ConvertH264Struct
 //网络基本类型
 enum NetBaseNetType
 {
-	NetBaseNetType_Unknown                 = 20 ,  //未定义的网络类型
+	NetBaseNetType_Unknown                 = 20 ,//未定义的网络类型
+	NetBaseNetType_GB28181TcpPSInputStream = 18,//通过10000端口TCP方式接收国标PS流接入
 	NetBaseNetType_WebSocektRecvAudio      = 19 ,//通过websocet 接收音频
 	NetBaseNetType_RtmpServerRecvPush      = 21,//RTMP 服务器，接收客户端的推流 
 	NetBaseNetType_RtmpServerSendPush      = 22,//RTMP 服务器，转发客户端的推上来的码流
@@ -466,7 +468,7 @@ enum NetBaseNetType
 	NetBaseNetType_NetClientWebrtcPlayer = 130,//webrtc的播放 
 };
 
-#define   MediaServerVerson                 "ABLMediaServer-6.3.6(2023-12-06)"
+#define   MediaServerVerson                 "ABLMediaServer-6.3.6(2024-01-03)"
 #define   RtspServerPublic                  "DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE, OPTIONS, ANNOUNCE, RECORD，GET_PARAMETER"
 #define   RecordFileReplaySplitter          "__ReplayFMP4RecordFile__"  //实况、录像区分的标志字符串，用于区分实况，放置在url中。
 
@@ -535,6 +537,7 @@ struct addStreamProxyStruct
 	char  disableAudio[16];//过滤掉音频 1 过滤掉音频 ，0 不过滤音频 ，默认 0 
 	char   dst_url[string_length_256];//TCP主动时 目标IP 
 	char   dst_port[string_length_256];//TCP主动时 目标端口 
+	char   optionsHeartbeat[64];//是否开启options命令作为心跳包
 
 	addStreamProxyStruct()
 	{
@@ -554,6 +557,7 @@ struct addStreamProxyStruct
 		memset(disableAudio, 0x00, sizeof(disableAudio));
 		memset(dst_url, 0x00, sizeof(dst_url));
 		memset(dst_port, 0x00, sizeof(dst_port));
+		memset(optionsHeartbeat, 0x00, sizeof(optionsHeartbeat));
 	}
 };
 
@@ -617,6 +621,7 @@ struct openRtpServerStruct
 	char   send_stream_id[string_length_512];//发送出去
 	char   send_disableVideo[16];//过滤掉视频 1 过滤掉视频 ，0 不过滤视频 ，默认 0 
 	char   send_disableAudio[16];//过滤掉音频 1 过滤掉音频 ，0 不过滤音频 ，默认 0 
+	char   jtt1078_version[128]; //1078版本 2013、2016、2019
 
 	openRtpServerStruct()
 	{
@@ -641,6 +646,7 @@ struct openRtpServerStruct
 		memset(send_disableAudio, 0x00, sizeof(send_disableAudio));
 		memset(dst_url, 0x00, sizeof(dst_url));
 		memset(dst_port, 0x00, sizeof(dst_port));
+		memset(jtt1078_version, 0x00, sizeof(jtt1078_version));
 	}
 };
 
@@ -664,6 +670,7 @@ struct startSendRtpStruct
 	char   recv_stream[string_length_512];//用于接收
 	char   recv_disableVideo[16];//过滤掉视频 1 过滤掉视频 ，0 不过滤视频 ，默认 0 
 	char   recv_disableAudio[16];//过滤掉音频 1 过滤掉音频 ，0 不过滤音频 ，默认 0 
+	char   jtt1078_version[128]; //1078版本 2013、2016、2019
 
 	startSendRtpStruct()
 	{
@@ -683,6 +690,7 @@ struct startSendRtpStruct
 		memset(recv_stream, 0x00, sizeof(recv_stream));
 		memset(recv_disableVideo, 0x00, sizeof(recv_disableVideo));
 		memset(recv_disableAudio, 0x00, sizeof(recv_disableAudio));
+		memset(jtt1078_version, 0x00, sizeof(jtt1078_version));
 	}
 };
 
@@ -1058,6 +1066,226 @@ struct MessageNoticeStruct
 	}
 };
 
+#define  MaxGB28181RtpSendVideoMediaBufferLength  1024*64 
+#define  Ma1078CacheBufferLength                  1024*1024*2   //1078缓存 
+#define  MaxOne1078PacketLength                   950           //1078最大1包长度 
+
+#pragma pack(push)
+#pragma pack (1)
+typedef struct Jt1078VideoRtpPacket_T {
+
+	unsigned char head[4];
+#ifdef IS_JT1078RTP_BIGENDIAN
+	unsigned char v : 2;
+	unsigned char p : 1;
+	unsigned char x : 1;
+	unsigned char cc : 4;
+	unsigned char m : 1;
+	unsigned char pt : 7;
+#else
+	unsigned char cc : 4;
+	unsigned char x : 1;
+	unsigned char p : 1;
+	unsigned char v : 2;
+	unsigned char pt : 7;
+	unsigned char m : 1;
+#endif
+	unsigned short seq;
+	unsigned char sim[6];
+	unsigned char ch;
+#ifdef IS_JT1078RTP_BIGENDIAN
+	unsigned char frame_type : 4;
+	unsigned char packet_type : 4;
+#else
+	unsigned char packet_type : 4;
+	unsigned char frame_type : 4;
+#endif
+	int64_t timestamp;
+	unsigned short i_frame_interval;
+	unsigned short frame_interval;
+	unsigned short payload_size;
+
+}Jt1078VideoRtpPacket;
+
+typedef struct Jt1078VideoRtpPacket2019_T {
+
+	unsigned char head[4];
+#ifdef IS_JT1078RTP_BIGENDIAN
+	unsigned char v : 2;
+	unsigned char p : 1;
+	unsigned char x : 1;
+	unsigned char cc : 4;
+	unsigned char m : 1;
+	unsigned char pt : 7;
+#else
+	unsigned char cc : 4;
+	unsigned char x : 1;
+	unsigned char p : 1;
+	unsigned char v : 2;
+	unsigned char pt : 7;
+	unsigned char m : 1;
+#endif
+	unsigned short seq;
+	unsigned char sim[10];
+	unsigned char ch;
+#ifdef IS_JT1078RTP_BIGENDIAN
+	unsigned char frame_type : 4;
+	unsigned char packet_type : 4;
+#else
+	unsigned char packet_type : 4;
+	unsigned char frame_type : 4;
+#endif
+	int64_t timestamp;
+	unsigned short i_frame_interval;
+	unsigned short frame_interval;
+	unsigned short payload_size;
+
+}Jt1078VideoRtpPacket2019;
+
+typedef struct Jt1078AudioRtpPacket_T {
+
+	unsigned char head[4];
+#ifdef IS_JT1078RTP_BIGENDIAN
+	unsigned char v : 2;
+	unsigned char p : 1;
+	unsigned char x : 1;
+	unsigned char cc : 4;
+	unsigned char m : 1;
+	unsigned char pt : 7;
+#else
+	unsigned char cc : 4;
+	unsigned char x : 1;
+	unsigned char p : 1;
+	unsigned char v : 2;
+	unsigned char pt : 7;
+	unsigned char m : 1;
+#endif
+	unsigned short seq;
+	unsigned char sim[6];
+	unsigned char ch;
+#ifdef IS_JT1078RTP_BIGENDIAN
+	unsigned char frame_type : 4;
+	unsigned char packet_type : 4;
+#else
+	unsigned char packet_type : 4;
+	unsigned char frame_type : 4;
+#endif
+	int64_t timestamp;
+	unsigned short payload_size;
+
+}Jt1078AudioRtpPacket;
+
+typedef struct Jt1078AudioRtpPacket2019_T {
+
+	unsigned char head[4];
+#ifdef IS_JT1078RTP_BIGENDIAN
+	unsigned char v : 2;
+	unsigned char p : 1;
+	unsigned char x : 1;
+	unsigned char cc : 4;
+	unsigned char m : 1;
+	unsigned char pt : 7;
+#else
+	unsigned char cc : 4;
+	unsigned char x : 1;
+	unsigned char p : 1;
+	unsigned char v : 2;
+	unsigned char pt : 7;
+	unsigned char m : 1;
+#endif
+	unsigned short seq;
+	unsigned char sim[10];
+	unsigned char ch;
+#ifdef IS_JT1078RTP_BIGENDIAN
+	unsigned char frame_type : 4;
+	unsigned char packet_type : 4;
+#else
+	unsigned char packet_type : 4;
+	unsigned char frame_type : 4;
+#endif
+	int64_t timestamp;
+	unsigned short payload_size;
+
+}Jt1078AudioRtpPacket2019;
+
+typedef struct Jt1078OtherRtpPacket_T {
+
+	unsigned char head[4];
+#ifdef IS_JT1078RTP_BIGENDIAN
+	unsigned char v : 2;
+	unsigned char p : 1;
+	unsigned char x : 1;
+	unsigned char cc : 4;
+	unsigned char m : 1;
+	unsigned char pt : 7;
+#else
+	unsigned char cc : 4;
+	unsigned char x : 1;
+	unsigned char p : 1;
+	unsigned char v : 2;
+	unsigned char pt : 7;
+	unsigned char m : 1;
+#endif
+	unsigned short seq;
+	unsigned char sim[6];
+	unsigned char ch;
+#ifdef IS_JT1078RTP_BIGENDIAN
+	unsigned char frame_type : 4;
+	unsigned char packet_type : 4;
+#else
+	unsigned char packet_type : 4;
+	unsigned char frame_type : 4;
+#endif
+	unsigned short payload_size;
+
+}Jt1078OtherRtpPacket;
+
+typedef struct Jt1078OtherRtpPacket2019_T {
+
+	unsigned char head[4];
+#ifdef IS_JT1078RTP_BIGENDIAN
+	unsigned char v : 2;
+	unsigned char p : 1;
+	unsigned char x : 1;
+	unsigned char cc : 4;
+	unsigned char m : 1;
+	unsigned char pt : 7;
+#else
+	unsigned char cc : 4;
+	unsigned char x : 1;
+	unsigned char p : 1;
+	unsigned char v : 2;
+	unsigned char pt : 7;
+	unsigned char m : 1;
+#endif
+	unsigned short seq;
+	unsigned char sim[10];
+	unsigned char ch;
+#ifdef IS_JT1078RTP_BIGENDIAN
+	unsigned char frame_type : 4;
+	unsigned char packet_type : 4;
+#else
+	unsigned char packet_type : 4;
+	unsigned char frame_type : 4;
+#endif
+	unsigned short payload_size;
+
+}Jt1078OtherRtpPacket2019;
+
+#pragma  pack(pop)
+
+//音频aac 音频数据 [1 通道  ，16000 采样 
+struct muteAACBufferStruct
+{
+	unsigned char    pAACBuffer[256];
+	unsigned short   nAACLength;
+	muteAACBufferStruct()
+	{
+		memset(pAACBuffer, 0x00, sizeof(pAACBuffer));
+		nAACLength = 0;
+	}
+};
+
 #ifndef OS_System_Windows
 unsigned long GetTickCount();
 int64_t  GetTickCount64();
@@ -1148,7 +1376,6 @@ typedef list<int> LogFileVector;
 #include "NetClientRecvRtmp.h"
 #include "NetClientRecvFLV.h"
 #include "NetClientRecvRtsp.h"
-#include "NetClientRecvJTT1078.h"
 #include "NetClientSendRtsp.h"
 #include "NetClientSendRtmp.h"
 #include "NetClientAddStreamProxy.h"

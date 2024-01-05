@@ -29,7 +29,7 @@ E-Mail  79941308@qq.com
 #include "stdafx.h"
 #include "../webrtc-streamer/rtc_obj_sdk.h"
 
-NETHANDLE srvhandle_8080,srvhandle_554, srvhandle_1935, srvhandle_6088, srvhandle_8088, srvhandle_8089, srvhandle_9088, srvhandle_9298;
+NETHANDLE srvhandle_8080,srvhandle_554, srvhandle_1935, srvhandle_6088, srvhandle_8088, srvhandle_8089, srvhandle_9088, srvhandle_9298, srvhandle_10000;
 
 typedef boost::shared_ptr<CNetRevcBase> CNetRevcBase_ptr;
 typedef boost::unordered_map<NETHANDLE, CNetRevcBase_ptr>        CNetRevcBase_ptrMap;
@@ -57,6 +57,9 @@ typedef boost::shared_ptr<CPictureFileSource>                    CPictureFileSou
 typedef boost::unordered_map<string, CPictureFileSource_ptr>     CPictureFileSource_ptrMap;
 CPictureFileSource_ptrMap                                        xh_ABLPictureFileSourceMap;
 std::mutex                                                       ABL_CPictureFileSourceMapLock;
+
+uint64_t                                                         ArrayAddMutePacketList[8192];//增加静音包的列表
+uint64_t                                                         nMaxAddMuteListNumber = 0; //最后一个静音对象所在的序号
 
 volatile bool                                                    ABL_bMediaServerRunFlag = true ;
 volatile bool                                                    ABL_bExitMediaServerRunFlag = false; //退出处理线程标志 
@@ -109,6 +112,48 @@ ABL_cudaEncode_CudaVideoEncode cudaEncode_CudaVideoEncode  = NULL;
 ABL_cudaEncode_UnInit cudaEncode_UnInit  = NULL;
 
 #endif
+
+//把需要增加
+bool   AddClientToMapAddMutePacketList(uint64_t nClient)
+{
+	bool bRet = false ;
+
+	for (int i = 0; i < 8192; i++)
+	{
+		if (bRet == false && ArrayAddMutePacketList[i] == 0)
+		{
+			ArrayAddMutePacketList[i] = nClient;
+			bRet = true;
+ 		}
+
+		//查找最大的序号
+		if (ArrayAddMutePacketList[i] > 0 && (i + 1) > nMaxAddMuteListNumber)
+			nMaxAddMuteListNumber = i + 1;
+	}
+ 
+	return bRet;
+}
+
+bool   DelClientToMapFromMutePacketList(uint64_t nClient)
+{
+	bool bRet = false;
+	int  nMaxNumber = 0 ;
+	for (int i = 0; i < nMaxAddMuteListNumber ; i++)
+	{
+		if (bRet == false && ArrayAddMutePacketList[i] == nClient)
+		{
+			ArrayAddMutePacketList[i] = 0;
+			bRet = true;
+		}
+
+		//查找最大的序号
+		if (ArrayAddMutePacketList[i] > 0 && (i + 1) > nMaxNumber)
+			nMaxNumber = i + 1;
+	}
+	nMaxAddMuteListNumber = nMaxNumber;
+
+	return bRet;
+}
 
 uint64_t GetCurrentSecondByTime(char* szDateTime)
 {
@@ -580,7 +625,7 @@ int GetAllMediaStreamSource(char* szMediaSourceInfo, getMediaListStruct mediaLis
 		if (pClient->netBaseNetType == NetBaseNetType_WebSocektRecvAudio || pClient->netBaseNetType == NetBaseNetType_addStreamProxyControl || pClient->netBaseNetType == NetBaseNetType_RtspServerRecvPush || pClient->netBaseNetType == NetBaseNetType_RtmpServerRecvPush ||
 			pClient->netBaseNetType == NetBaseNetType_NetGB28181RtpServerUDP || pClient->netBaseNetType == NetBaseNetType_NetGB28181RtpServerTCP_Server || pClient->netBaseNetType == ReadRecordFileInput_ReadFMP4File || pClient->netBaseNetType == NetBaseNetType_NetGB28181UDPTSStreamInput || pClient->netBaseNetType == NetBaseNetType_NetGB28181RtpServerTCP_Active ||
 			pClient->netBaseNetType == NetBaseNetType_NetGB28181UDPPSStreamInput || (pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpUDP && strlen(pClient->m_startSendRtpStruct.recv_app) > 0 && strlen(pClient->m_startSendRtpStruct.recv_stream) > 0)|| (pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Connect  && strlen(pClient->m_startSendRtpStruct.recv_app) > 0 && strlen(pClient->m_startSendRtpStruct.recv_stream) > 0) ||
-			(pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Passive && strlen(pClient->m_startSendRtpStruct.recv_app) > 0 && strlen(pClient->m_startSendRtpStruct.recv_stream) > 0)  )
+			(pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Passive && strlen(pClient->m_startSendRtpStruct.recv_app) > 0 && strlen(pClient->m_startSendRtpStruct.recv_stream) > 0) || pClient->netBaseNetType == NetBaseNetType_GB28181TcpPSInputStream )
 		{//代理拉流（rtsp,rtmp,flv,hls ）,rtsp推流，rtmp推流，gb28181，webrtc 
 
  			if (pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpUDP || pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Connect || pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Passive)
@@ -643,7 +688,7 @@ int GetAllMediaStreamSource(char* szMediaSourceInfo, getMediaListStruct mediaLis
 
 					if (tmpMediaSource->nMediaSourceType == MediaSourceType_LiveMedia)
 					{//实况播放
-						sprintf(szTemp2, "{\"key\":%llu,\"port\":%d,\"app\":\"%s\",\"stream\":\"%s\",\"status\":%s,\"enable_hls\":%s,\"transcodingStatus\":%s,\"sourceURL\":\"%s\",\"networkType\":%d,\"readerCount\":%d,\"noneReaderDuration\":%llu,\"videoCodec\":\"%s\",\"videoFrameSpeed\":%d,\"width\":%d,\"height\":%d,\"videoBitrate\":%d,\"audioCodec\":\"%s\",\"audioChannels\":%d,\"audioSampleRate\":%d,\"audioBitrate\":%d,\"url\":{\"rtsp\":\"rtsp://%s:%d/%s/%s\",\"rtmp\":\"rtmp://%s:%d/%s/%s\",\"http-flv\":\"http://%s:%d/%s/%s.flv\",\"ws-flv\":\"ws://%s:%d/%s/%s.flv\",\"http-mp4\":\"http://%s:%d/%s/%s.mp4\",\"http-hls\":\"http://%s:%d/%s/%s.m3u8\",\"webrtc\":\"http://%s:%d/webrtc-streamer.html?video=/%s/%s\"}},", tmpMediaSource->nClient, nClientPort, szApp, szStream, tmpMediaSource->enable_mp4 == true ? "true" : "false",tmpMediaSource->enable_hls == true ? "true" : "false", tmpMediaSource->H265ConvertH264_enable == true ? "true" : "false", pClient->m_addStreamProxyStruct.url, pClient->netBaseNetType, tmpMediaSource->mediaSendMap.size(), nNoneReadDuration,
+						sprintf(szTemp2, "{\"key\":%llu,\"port\":%d,\"app\":\"%s\",\"stream\":\"%s\",\"sim\":\"%s\",\"status\":%s,\"enable_hls\":%s,\"transcodingStatus\":%s,\"sourceURL\":\"%s\",\"networkType\":%d,\"readerCount\":%d,\"noneReaderDuration\":%llu,\"videoCodec\":\"%s\",\"videoFrameSpeed\":%d,\"width\":%d,\"height\":%d,\"videoBitrate\":%d,\"audioCodec\":\"%s\",\"audioChannels\":%d,\"audioSampleRate\":%d,\"audioBitrate\":%d,\"url\":{\"rtsp\":\"rtsp://%s:%d/%s/%s\",\"rtmp\":\"rtmp://%s:%d/%s/%s\",\"http-flv\":\"http://%s:%d/%s/%s.flv\",\"ws-flv\":\"ws://%s:%d/%s/%s.flv\",\"http-mp4\":\"http://%s:%d/%s/%s.mp4\",\"http-hls\":\"http://%s:%d/%s/%s.m3u8\",\"webrtc\":\"http://%s:%d/webrtc-streamer.html?video=/%s/%s\"}},", tmpMediaSource->nClient, nClientPort, szApp, szStream, tmpMediaSource->sim, tmpMediaSource->enable_mp4 == true ? "true" : "false",tmpMediaSource->enable_hls == true ? "true" : "false", tmpMediaSource->H265ConvertH264_enable == true ? "true" : "false", pClient->m_addStreamProxyStruct.url, pClient->netBaseNetType, tmpMediaSource->mediaSendMap.size(), nNoneReadDuration,
 							tmpMediaSource->m_mediaCodecInfo.szVideoName, tmpMediaSource->m_mediaCodecInfo.nVideoFrameRate, tmpMediaSource->m_mediaCodecInfo.nWidth, tmpMediaSource->m_mediaCodecInfo.nHeight, tmpMediaSource->m_mediaCodecInfo.nVideoBitrate, tmpMediaSource->m_mediaCodecInfo.szAudioName, tmpMediaSource->m_mediaCodecInfo.nChannels, tmpMediaSource->m_mediaCodecInfo.nSampleRate, tmpMediaSource->m_mediaCodecInfo.nAudioBitrate,
 							ABL_szLocalIP, ABL_MediaServerPort.nRtspPort, szApp, szStream,
 							ABL_szLocalIP, ABL_MediaServerPort.nRtmpPort, szApp, szStream,
@@ -655,7 +700,7 @@ int GetAllMediaStreamSource(char* szMediaSourceInfo, getMediaListStruct mediaLis
 					}
 					else
 					{//录像点播
-						sprintf(szTemp2, "{\"key\":%llu,\"port\":%d,\"app\":\"%s\",\"stream\":\"%s\",\"status\":%s,\"enable_hls\":%s,\"transcodingStatus\":%s,\"sourceURL\":\"%s\",\"networkType\":%d,\"readerCount\":%d,\"noneReaderDuration\":%llu,\"videoCodec\":\"%s\",\"videoFrameSpeed\":%d,\"width\":%d,\"height\":%d,\"videoBitrate\":%d,\"audioCodec\":\"%s\",\"audioChannels\":%d,\"audioSampleRate\":%d,\"audioBitrate\":%d,\"url\":{\"rtsp\":\"rtsp://%s:%d/%s/%s\",\"rtmp\":\"rtmp://%s:%d/%s/%s\",\"http-flv\":\"http://%s:%d/%s/%s.flv\",\"ws-flv\":\"ws://%s:%d/%s/%s.flv\",\"http-mp4\":\"http://%s:%d/%s/%s.mp4\"}},", tmpMediaSource->nClient, nClientPort, szApp, szStream, tmpMediaSource->enable_mp4 == true ? "true" : "false","false", tmpMediaSource->enable_mp4 == true ? "true" : "false", pClient->m_addStreamProxyStruct.url, pClient->netBaseNetType, tmpMediaSource->mediaSendMap.size(), nNoneReadDuration,
+						sprintf(szTemp2, "{\"key\":%llu,\"port\":%d,\"app\":\"%s\",\"stream\":\"%s\",\"sim\":\"%s\",\"status\":%s,\"enable_hls\":%s,\"transcodingStatus\":%s,\"sourceURL\":\"%s\",\"networkType\":%d,\"readerCount\":%d,\"noneReaderDuration\":%llu,\"videoCodec\":\"%s\",\"videoFrameSpeed\":%d,\"width\":%d,\"height\":%d,\"videoBitrate\":%d,\"audioCodec\":\"%s\",\"audioChannels\":%d,\"audioSampleRate\":%d,\"audioBitrate\":%d,\"url\":{\"rtsp\":\"rtsp://%s:%d/%s/%s\",\"rtmp\":\"rtmp://%s:%d/%s/%s\",\"http-flv\":\"http://%s:%d/%s/%s.flv\",\"ws-flv\":\"ws://%s:%d/%s/%s.flv\",\"http-mp4\":\"http://%s:%d/%s/%s.mp4\"}},", tmpMediaSource->nClient, nClientPort, szApp, szStream, tmpMediaSource->sim, tmpMediaSource->enable_mp4 == true ? "true" : "false","false", tmpMediaSource->enable_mp4 == true ? "true" : "false", pClient->m_addStreamProxyStruct.url, pClient->netBaseNetType, tmpMediaSource->mediaSendMap.size(), nNoneReadDuration,
 							tmpMediaSource->m_mediaCodecInfo.szVideoName, tmpMediaSource->m_mediaCodecInfo.nVideoFrameRate, tmpMediaSource->m_mediaCodecInfo.nWidth, tmpMediaSource->m_mediaCodecInfo.nHeight, tmpMediaSource->m_mediaCodecInfo.nVideoBitrate, tmpMediaSource->m_mediaCodecInfo.szAudioName, tmpMediaSource->m_mediaCodecInfo.nChannels, tmpMediaSource->m_mediaCodecInfo.nSampleRate, tmpMediaSource->m_mediaCodecInfo.nAudioBitrate,
 							ABL_szLocalIP, ABL_MediaServerPort.nRtspPort, szApp, szStream,
 							ABL_szLocalIP, ABL_MediaServerPort.nRtmpPort, szApp, szStream,
@@ -710,7 +755,8 @@ int GetALLListServerPort(char* szMediaSourceInfo, ListServerPortStruct  listServ
 		if (strlen(pClient->m_addStreamProxyStruct.app) > 0 && strlen(pClient->m_addStreamProxyStruct.stream) > 0 && pClient->nClientPort > 0 )
 		{
 			if(pClient->nClientPort >= 0 && !(pClient->netBaseNetType == NetBaseNetType_addStreamProxyControl || pClient->netBaseNetType == NetBaseNetType_addPushProxyControl || pClient->netBaseNetType == NetBaseNetType_NetServerHTTP ||
-			   pClient->netBaseNetType == NetBaseNetType_RecordFile_FMP4 || pClient->netBaseNetType == NetBaseNetType_RecordFile_MP4 || pClient->netBaseNetType == RtspPlayerType_RecordReplay || pClient->netBaseNetType == NetBaseNetType_SnapPicture_JPEG  
+			   pClient->netBaseNetType == NetBaseNetType_RecordFile_FMP4 || pClient->netBaseNetType == NetBaseNetType_RecordFile_MP4 || pClient->netBaseNetType == RtspPlayerType_RecordReplay || pClient->netBaseNetType == NetBaseNetType_SnapPicture_JPEG ||
+			  pClient->netBaseNetType == NetBaseNetType_GB28181TcpPSInputStream
 				))
 			{ 
 				memset(szTemp2, 0x00, sizeof(szTemp2));
@@ -1342,6 +1388,19 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType,NETHANDLE serverHandl
 					pXHClient = boost::make_shared<CNetServerHTTP_MP4>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
 				else if (serverHandle == srvhandle_9298)
 					pXHClient = boost::make_shared<CNetServerRecvAudio>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+				else if (serverHandle == srvhandle_10000)
+				{//国标单端口输入
+					pXHClient = boost::make_shared<CNetGB28181RtpServer>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+					if (pXHClient != NULL)
+					{
+						CNetGB28181RtpServer* gb28181TCP = (CNetGB28181RtpServer*)pXHClient.get();
+						pXHClient->netBaseNetType = NetBaseNetType_GB28181TcpPSInputStream;
+						gb28181TCP->netDataCache = new unsigned char[MaxNetDataCacheBufferLength];
+						gb28181TCP->m_addStreamProxyStruct.RtpPayloadDataType[0] = 0x31;//PS  
+						gb28181TCP->m_addStreamProxyStruct.disableVideo[0] = 0x30;//没有屏蔽视频
+						gb28181TCP->m_addStreamProxyStruct.disableAudio[0] = 0x30;//没有屏蔽音频
+					}
+				}
 				else
 				{
 					    CNetRevcBase_ptr gb28181Listen = GetNetRevcBaseClientNoLock(serverHandle);
@@ -1751,7 +1810,13 @@ bool  DeleteNetRevcBaseClient(NETHANDLE CltHandle)
 			}
 			if ((*iterator1).second->nMediaClient > 0)
 				pDisconnectBaseNetFifo.push((unsigned char*)&(*iterator1).second->nMediaClient, sizeof((*iterator1).second->nMediaClient));
-		}else //在此处关闭，确保boost:asio 单线程状态下 close(pSocket) ;
+		}
+		else if ((*iterator1).second->netBaseNetType == NetBaseNetType_NetGB28181RtpSendListen)
+		{
+			XHNetSDK_Unlisten((*iterator1).second->nClient);
+			WriteLog(Log_Debug, " XHNetSDK_Unlisten() , nMediaClient = %llu  ", (*iterator1).second->nClient);
+		}
+		else //在此处关闭，确保boost:asio 单线程状态下 close(pSocket) ;
  		  XHNetSDK_Disconnect((*iterator1).second->nClient);
 
  		xh_ABLNetRevcBaseMap.erase(iterator1);
@@ -1987,6 +2052,7 @@ int  CheckNetRevcBaseClientDisconnect()
 			((*iterator1).second)->netBaseNetType == NetBaseNetType_NetGB28181RtpServerTCP_Active || //国标TCP方式接收 tcp主动连接方式 
 			((*iterator1).second)->netBaseNetType == NetBaseNetType_SnapPicture_JPEG || //抓拍对象超时检测
 			((*iterator1).second)->netBaseNetType == NetBaseNetType_WebSocektRecvAudio || //websocket协议接入pcm音频流
+			((*iterator1).second)->netBaseNetType == NetBaseNetType_GB28181TcpPSInputStream ||//通过10000端口TCP方式接收国标PS流接入
 			((*iterator1).second)->netBaseNetType == NetBaseNetType_NetClientWebrtcPlayer //webRTC 播放 
 		)
 		{//现在检测 HLS 网络断线 ，还可以增加别的类型检测 
@@ -2017,6 +2083,10 @@ int  CheckNetRevcBaseClientDisconnect()
 					   pRtspClient->SendRtcpReportData();
 			       }
 		      }
+
+			  //发送options 心跳包 
+			  if(atoi(pRtspClient->m_addStreamProxyStruct.optionsHeartbeat) == 1)
+			     pRtspClient->SendOptionsHeartbeat();
 		   }
 
 		   //定期更新动态域名的IP
@@ -2418,6 +2488,22 @@ void*  ABLMedisServerProcessThread(void* lpVoid)
 	return 0;
 }
 
+//列表里面的对象增加静音
+void  SendToMapFromMutePacketList()
+{
+	for (int i = 0; i < nMaxAddMuteListNumber; i++)
+	{
+		if (ArrayAddMutePacketList[i] > 0 )
+		{
+			CNetRevcBase_ptr  pClient = GetNetRevcBaseClient(ArrayAddMutePacketList[i]);
+			if (pClient != NULL)
+			{
+				pClient->AddMuteAACBuffer();
+			}
+		}
+	}
+}
+
 //快速删除资源线程
 void*  ABLMedisServerFastDeleteThread(void* lpVoid)
 {
@@ -2442,7 +2528,9 @@ void*  ABLMedisServerFastDeleteThread(void* lpVoid)
 			pDisconnectBaseNetFifo.pop_front();
 		}
 
-		Sleep(50);
+		SendToMapFromMutePacketList();
+
+		Sleep(64);
 	}
 	return 0;
 }
@@ -2942,15 +3030,20 @@ int main(int argc, char* argv[])
 {
 	pcm16_alaw_tableinit();
 	pcm16_ulaw_tableinit();
-
+ 
 ABL_Restart:
 	unsigned char nGet;
-	int nBindHttp, nBindRtsp, nBindRtmp,nBindWsFlv,nBindHttpFlv, nBindHls,nBindMp4,nBindRecvAudio;
+	int nBindHttp, nBindRtsp, nBindRtmp,nBindWsFlv,nBindHttpFlv, nBindHls,nBindMp4,nBindRecvAudio,nBingPS10000;
 	char szConfigFileName[256] = { 0 };
 
 	memset(ABL_MediaSeverRunPath, 0x00, sizeof(ABL_MediaSeverRunPath));
 	memset(ABL_wwwMediaPath, 0x00, sizeof(ABL_wwwMediaPath));
 	memset(ABL_szLocalIP, 0x00, sizeof(ABL_szLocalIP));
+
+	nMaxAddMuteListNumber = 0;
+	for (int i = 0; i < 8192; i++)
+		ArrayAddMutePacketList[i] = 0;
+
 #ifdef OS_System_Windows
 
 	//鼠标点击控制台窗口，不会再卡住 
@@ -3066,6 +3159,7 @@ ABL_Restart:
 	ABL_MediaServerPort.ForceSendingIFrame = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "ForceSendingIFrame", "0"));
 	ABL_MediaServerPort.gb28181LibraryUse = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "gb28181LibraryUse", "1"));
 	ABL_MediaServerPort.httqRequstClose = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "httqRequstClose", "0"));
+	ABL_MediaServerPort.flvPlayAddMute = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "flvPlayAddMute", "1"));
  
 	//读取事件通知配置
 	ABL_MediaServerPort.hook_enable = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "hook_enable", "0"));
@@ -3358,6 +3452,7 @@ ABL_Restart:
 	ABL_MediaServerPort.ForceSendingIFrame = ABL_ConfigFile.GetInt("ABLMediaServer", "ForceSendingIFrame");
 	ABL_MediaServerPort.gb28181LibraryUse = ABL_ConfigFile.GetInt("ABLMediaServer", "gb28181LibraryUse");
 	ABL_MediaServerPort.keepaliveDuration = ABL_ConfigFile.GetInt("ABLMediaServer", "keepaliveDuration");
+	ABL_MediaServerPort.flvPlayAddMute = ABL_ConfigFile.GetInt("ABLMediaServer", "flvPlayAddMute");
 	ABL_MediaServerPort.nWebRtcPort = ABL_ConfigFile.GetInt("ABLMediaServer", "webrtcPort");
 
 	if (ABL_MediaServerPort.httpDownloadSpeed > 10)
@@ -3608,9 +3703,9 @@ ABL_Restart:
 	{
 		nRet = XHNetSDK_Init(ABL_MediaServerPort.nIOContentNumber, ABL_MediaServerPort.nThreadCountOfIOContent);
  	    ABL_bInitXHNetSDKFlag = true;
-		WriteLog(Log_Debug, "Network Init = %d  \r\n", nRet);
+		WriteLog(Log_Debug, "Network Init = %d \r\n", nRet);
 	}
-
+	  
 	nBindHttp = XHNetSDK_Listen((int8_t*)("0.0.0.0"), ABL_MediaServerPort.nHttpServerPort, &srvhandle_8080, onaccept, onread, onclose, true);
 	nBindRtsp = XHNetSDK_Listen((int8_t*)("0.0.0.0"), ABL_MediaServerPort.nRtspPort, &srvhandle_554, onaccept, onread, onclose, true);
 	nBindRtmp = XHNetSDK_Listen((int8_t*)("0.0.0.0"), ABL_MediaServerPort.nRtmpPort, &srvhandle_1935, onaccept, onread, onclose, true);
@@ -3619,7 +3714,8 @@ ABL_Restart:
 	nBindHls = XHNetSDK_Listen((int8_t*)("0.0.0.0"), ABL_MediaServerPort.nHlsPort, &srvhandle_9088, onaccept, onread, onclose, true);
 	nBindMp4 = XHNetSDK_Listen((int8_t*)("0.0.0.0"), ABL_MediaServerPort.nHttpMp4Port, &srvhandle_8089, onaccept, onread, onclose, true);
 	nBindRecvAudio = XHNetSDK_Listen((int8_t*)("0.0.0.0"), ABL_MediaServerPort.WsRecvPcmPort, &srvhandle_9298, onaccept, onread, onclose, true);
-	
+	nBingPS10000 = XHNetSDK_Listen((int8_t*)("0.0.0.0"), ABL_MediaServerPort.ps_tsRecvPort, &srvhandle_10000, onaccept, onread, onclose, true);
+
 	WriteLog(Log_Debug, (nBindHttp == 0) ? "绑定端口 %d 成功(success) ":"绑定端口 %d 失败(fail) ", ABL_MediaServerPort.nHttpServerPort);
 	WriteLog(Log_Debug, (nBindRtsp == 0) ? "绑定端口 %d 成功(success)  " : "绑定端口 %d 失败(fail) ", ABL_MediaServerPort.nRtspPort);
 	WriteLog(Log_Debug, (nBindRtmp == 0) ? "绑定端口 %d 成功(success)  " : "绑定端口 %d 失败(fail) ", ABL_MediaServerPort.nRtmpPort);
@@ -3628,7 +3724,8 @@ ABL_Restart:
 	WriteLog(Log_Debug, (nBindHls == 0) ? "绑定端口 %d 成功(success)  " : "绑定端口 %d 失败(fail) ", ABL_MediaServerPort.nHlsPort);
 	WriteLog(Log_Debug, (nBindMp4 == 0) ? "绑定端口 %d 成功(success)  " : "绑定端口 %d 失败(fail) ", ABL_MediaServerPort.nHttpMp4Port);
 	WriteLog(Log_Debug, (nBindRecvAudio == 0) ? "绑定端口 %d 成功(success)  " : "绑定端口 %d 失败(fail) ", ABL_MediaServerPort.WsRecvPcmPort);
- 	
+	WriteLog(Log_Debug, (nBingPS10000 == 0) ? "绑定端口 %d(tcp) 成功(success)  " : "绑定端口 %d(tcp) 失败(fail) ", ABL_MediaServerPort.ps_tsRecvPort);
+
 	alaw_pcm16_tableinit();
 	ulaw_pcm16_tableinit();
 
@@ -3637,7 +3734,6 @@ ABL_Restart:
 	//创建消息通知
 	if (ABL_MediaServerPort.hook_enable == 1)
 	   CreateHttpClientFunc();
-
 
 #if  0 //测试 hls 客户端  http://190.168.24.112:8082/live/Camera_00001.m3u8  \   http://190.15.240.36:9088/Media/Camera_00001.m3u8 \ http://190.15.240.36:9088/Media/Camera_00001/hls.m3u8
 	//CreateNetRevcBaseClient(0, 0, "http://190.168.24.112:8082/live/Camera_00001.m3u8", 0);
@@ -3734,7 +3830,8 @@ ABL_Restart:
 	XHNetSDK_Unlisten(srvhandle_8089);
 	XHNetSDK_Unlisten(srvhandle_9088);
 	XHNetSDK_Unlisten(srvhandle_9298);
-
+	XHNetSDK_Unlisten(srvhandle_10000);
+	
 	delete NetBaseThreadPool;
 	NetBaseThreadPool = NULL;
 
@@ -3761,7 +3858,6 @@ ABL_Restart:
 	ExitLogFile();
 	ABL_ConfigFile.CloseFile();
 #endif
-
 	WebRtcEndpoint::getInstance().Uninit();
 
 	WriteLog(Log_Debug, "--------------------ABLMediaServer End .... --------------------");

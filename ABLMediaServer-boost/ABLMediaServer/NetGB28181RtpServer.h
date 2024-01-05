@@ -12,8 +12,7 @@
 //#define   WriteSendPsFileFlag   1 //保存回复的PS数据
 
 //#define     WriteRtpTimestamp      1  //启用当国标rtp包头时间戳为0时，启用覆写时间戳
-
-#define  MaxGB28181RtpSendVideoMediaBufferLength  1024*64 
+//#define       WriteJt1078VideoFlag   1  //写1078的视频
 
 using namespace boost;
 
@@ -32,6 +31,24 @@ public:
    virtual int SendAudio();//发送音频数据
    virtual int SendFirstRequst();//发送第一个请求
    virtual bool RequestM3u8File();//请求m3u8文件
+
+#ifdef WriteJt1078VideoFlag
+   FILE*                        fWrite1078File;
+#endif
+   int                          nRecvRtpPacketCount;
+   int                          nMaxRtpLength;
+   int                          Find1078HeadFromCacheBuffer(unsigned char* pData, int nLength);
+   void                         SplitterJt1078CacheBuffer();
+   void                         SplitterJt1078CacheBuffer2019();
+   unsigned char*               p1078VideoFrameBuffer;
+   int                          n1078VideoFrameBufferLength;
+   unsigned short               nPayloadSize;
+   int                          n1078Pos;
+   int                          n1078CacheBufferLength;
+   int                          nVideoPT,nAudioPT;
+   int                          n1078CurrentProcCountLength;//当前出来的总长度 
+   int                          nFind1078FlagPos;//查找到的1078标志头位置 
+   int                          n1078NewPosition;//查找到的1078标志头位置后重新计算位置
 
 #ifdef  WriteRtpTimestamp
    uint32_t       nStartTimestap ;
@@ -90,11 +107,11 @@ public:
    ps_demuxer_t*           psBeiJingLaoChen;
 
    int                     nRtpRtcpPacketType;//是否是RTP包，0 未知，2 rtp 包
-   unsigned char           szRtcpDataOverTCP[1024];
+   unsigned char           szRtcpDataOverTCP[string_length_2048];
    sockaddr_in*            pRtpAddress,*pSrcAddress;
    int64_t                 nSendRtcpTime;
    CRtcpPacketRR           rtcpRR;//接收者报告
-   unsigned char           szRtcpSRBuffer[512];
+   unsigned char           szRtcpSRBuffer[string_length_2048];
    unsigned int            rtcpSRBufferLength;
 
    //rtp 解包

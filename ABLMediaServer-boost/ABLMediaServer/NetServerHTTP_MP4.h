@@ -68,7 +68,7 @@ public:
    int                     nNetStart, nNetEnd; //网络数据起始位置\结束位置
    int                     MaxNetDataCacheCount;
    int                     data_Length;
-   char                    szMP4Name[1024];
+   char                    szMP4Name[string_length_2048];
    volatile bool           bFindMP4NameFlag;
    volatile  bool          bCheckHttpMP4Flag; //检测是否为http-MP4协议 
    int                     nWriteRet;
