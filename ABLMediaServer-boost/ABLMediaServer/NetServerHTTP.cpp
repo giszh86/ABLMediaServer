@@ -60,6 +60,9 @@ extern  CIni                                 ABL_ConfigFile;
 
 CNetServerHTTP::CNetServerHTTP(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort,char* szShareMediaURL)
 {
+	memset(szConnection, 0x00, sizeof(szConnection));
+	strcpy(szConnection, "Close");
+
 	netBaseNetType = NetBaseNetType_NetServerHTTP;
 	nServer = hServer;
 	nClient = hClient;
@@ -174,8 +177,11 @@ int CNetServerHTTP::ProcessNetData()
 	if ( !(memcmp(netDataCache, "GET ", 4) == 0 || memcmp(netDataCache, "POST ", 5) == 0))
 	{
 		WriteLog(Log_Debug, "CNetServerHTTP = %X , nClient = %llu , 接收的数据非法 ", this, nClient);
+        sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"Not find GET or POST method in body content . \",\"key\":%d}", IndexApiCode_HttpProtocolError, 0);
+		ResponseSuccess(szResponseBody);
 		bRunFlag = false;
 		DeleteNetRevcBaseClient(nClient);
+		return -1 ;
 	}
 
 	if (nHttpHeadEndPos < 0 )
@@ -859,9 +865,9 @@ bool  CNetServerHTTP::index_api_addStreamProxy()
 		int nWidth  = atoi(m_addStreamProxyStruct.convertOutWidth);
 		int nHeight = atoi(m_addStreamProxyStruct.convertOutHeight);
 		if (!((nWidth == -1 && nHeight == -1) || (nWidth == 1920 && nHeight == 1080) || (nWidth == 1280 && nHeight == 720) || (nWidth == 960 && nHeight == 640) ||
-			(nWidth == 800 && nHeight == 480) || (nWidth == 704 && nHeight == 576) ))
+			(nWidth == 800 && nHeight == 480) || (nWidth == 704 && nHeight == 576) || (nWidth == 960 && nHeight == 540)))
 		{
-			sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"convertOutWidth : %d ,convertOutHeight: %d error. reference value [-1 x -1 , 1920 x 1080, 1280 x 720 ,960 x 640 , 800 x 480 ,704 x 576 ]\"}", IndexApiCode_ParamError, nWidth,nHeight);
+			sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"convertOutWidth : %d ,convertOutHeight: %d error. reference value [-1 x -1 , 1920 x 1080, 1280 x 720 ,960 x 640 ,960 x 540, 800 x 480 ,704 x 576 ]\"}", IndexApiCode_ParamError, nWidth,nHeight);
 			ResponseSuccess(szResponseBody);
 			return false;
 		}
@@ -1200,9 +1206,9 @@ bool  CNetServerHTTP::index_api_openRtpServer()
 	{
 		int nWidth = atoi(m_openRtpServerStruct.convertOutWidth);
 		int nHeight = atoi(m_openRtpServerStruct.convertOutHeight);
-		if (!((nWidth == -1 && nHeight == -1) || (nWidth == 1920 && nHeight == 1080) || (nWidth == 1280 && nHeight == 720) || (nWidth == 960 && nHeight == 640) || (nWidth == 800 && nHeight == 480) || (nWidth == 704 && nHeight == 576)))
+		if (!((nWidth == -1 && nHeight == -1) || (nWidth == 1920 && nHeight == 1080) || (nWidth == 1280 && nHeight == 720) || (nWidth == 960 && nHeight == 640) || (nWidth == 960 && nHeight == 540) || (nWidth == 800 && nHeight == 480) || (nWidth == 704 && nHeight == 576)))
  		{
-			sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"convertOutWidth : %d ,convertOutHeight: %d error. reference value [-1 x -1 ,1920 x 1080 , 1280 x 720 ,960 x 640 ,800 x 480 ,704 x 576 ]\"}", IndexApiCode_ParamError, nWidth, nHeight);
+			sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"convertOutWidth : %d ,convertOutHeight: %d error. reference value [-1 x -1 ,1920 x 1080 , 1280 x 720 ,960 x 640 ,960 x 540 ,800 x 480 ,704 x 576 ]\"}", IndexApiCode_ParamError, nWidth, nHeight);
 			ResponseSuccess(szResponseBody);
 			return false;
 		}
@@ -1915,6 +1921,44 @@ bool CNetServerHTTP::index_api_getServerConfig()
 	sprintf(szTempBuffer, ",{\"on_record_progress\":\"%s\",\"memo\":\"Sending event notifications every 1 second while recording .\"}", ABL_MediaServerPort.on_record_progress);
 	strcat(szMediaSourceInfoBuffer, szTempBuffer);
 	sprintf(szTempBuffer, ",{\"on_record_ts\":\"%s\",\"memo\":\"Send event notification when hls slicing completes a section of ts file .\"}", ABL_MediaServerPort.on_record_ts);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"enable_GetFileDuration\":%d,\"memo\":\"Whether to enable the acquistition of record File duration  .\"}", ABL_MediaServerPort.enable_GetFileDuration);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"keepaliveDuration\":%d,\"memo\":\"Time interval for sending heartbeat .\"}", ABL_MediaServerPort.keepaliveDuration);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"captureReplayType\":%d,\"memo\":\"Capture Image Return Method .\"}", ABL_MediaServerPort.captureReplayType);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"pictureMaxCount\":%d,\"memo\":\"Maximum number of saved captured images  .\"}", ABL_MediaServerPort.pictureMaxCount);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"videoFileFormat\":%d,\"memo\":\"Video files are in sliced format [1  fmp4 , 2  mp4 , 3  ts ]  .\"}", ABL_MediaServerPort.videoFileFormat);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"MaxDiconnectTimeoutSecond\":%d,\"memo\":\"Maximum timeout for recviving data  .\"}", ABL_MediaServerPort.MaxDiconnectTimeoutSecond);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"G711ConvertAAC\":%d,\"memo\":\"Do G711a and g711u transcode to aac  .\"}", ABL_MediaServerPort.nG711ConvertAAC);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"filterVideo_enable\":%d,\"memo\":\"Do you want to turn on video watermark  .\"}", ABL_MediaServerPort.filterVideo_enable);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"filterVideo_text\":\"%s\",\"memo\":\"Set Video watermark content .\"}", ABL_MediaServerPort.filterVideoText);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"FilterFontSize\":%d,\"memo\":\"Set Video watermark font size .\"}", ABL_MediaServerPort.nFilterFontSize);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"FilterFontColor\":\"%s\",\"memo\":\"Set Video watermark font color .\"}", ABL_MediaServerPort.nFilterFontColor);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"FilterFontLeft\":%d,\"memo\":\"Set the left coordinate of th Video watermark  .\"}", ABL_MediaServerPort.nFilterFontLeft);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"FilterFontTop\":%d,\"memo\":\"Set the top coordinate of th Video watermark  .\"}", ABL_MediaServerPort.nFilterFontTop);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"FilterFontAlpha\":%.2f,\"memo\":\"Set the transparency of th Video watermark  .\"}", ABL_MediaServerPort.nFilterFontAlpha);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"convertOutWidth\":%d,\"memo\":\"Set transcoding video Width  .\"}", ABL_MediaServerPort.convertOutWidth);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"convertOutHeight\":%d,\"memo\":\"Set transcoding video Height  .\"}", ABL_MediaServerPort.convertOutHeight);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"convertOutBitrate\":%d,\"memo\":\"Set th bitrate for video transcoding  .\"}", ABL_MediaServerPort.convertOutBitrate);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"webrtcPort\":%d,\"memo\":\"WebRtc Player port  .\"}", ABL_MediaServerPort.nWebRtcPort);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"WsRecvPcmPort\":%d,\"memo\":\"the port for recv audio by Websocket .\"}", ABL_MediaServerPort.WsRecvPcmPort);
 	strcat(szMediaSourceInfoBuffer, szTempBuffer);
 
 	strcat(szMediaSourceInfoBuffer, "]}");
@@ -2834,7 +2878,7 @@ bool CNetServerHTTP::WriteParamValue(char* szSection, char* szKey, char* szValue
 	else if (strcmp("enable_audio", szKey) == 0)
 		ABL_MediaServerPort.nEnableAudio = atoi(szValue);
 	else if (strcmp("G711ConvertAAC", szKey) == 0)
-		ABL_MediaServerPort.nEnableAudio = atoi(szValue);
+		ABL_MediaServerPort.nG711ConvertAAC = atoi(szValue);
 	else if (strcmp("IOContentNumber", szKey) == 0)
 		ABL_MediaServerPort.nIOContentNumber = atoi(szValue);
 	else if (strcmp("ThreadCountOfIOContent", szKey) == 0)
@@ -2865,6 +2909,34 @@ bool CNetServerHTTP::WriteParamValue(char* szSection, char* szKey, char* szValue
 		strcpy(ABL_MediaServerPort.on_stream_iframe_arrive, szValue);
 	else if (strcmp("httqRequstClose", szKey) == 0)
 		ABL_MediaServerPort.httqRequstClose = atoi(szValue);
+	else if (strcmp("enable_GetFileDuration", szKey) == 0)
+		ABL_MediaServerPort.enable_GetFileDuration = atoi(szValue);
+	else if (strcmp("keepaliveDuration", szKey) == 0)
+		ABL_MediaServerPort.keepaliveDuration = atoi(szValue);
+	else if (strcmp("filterVideo_enable", szKey) == 0)
+		ABL_MediaServerPort.filterVideo_enable = atoi(szValue);
+	else if (strcmp("filterVideo_text", szKey) == 0)
+		strcpy(ABL_MediaServerPort.filterVideoText, szValue);
+	else if (strcmp("FilterFontSize", szKey) == 0)
+		ABL_MediaServerPort.nFilterFontSize = atoi(szValue);
+	else if (strcmp("FilterFontColor", szKey) == 0)
+		strcpy(ABL_MediaServerPort.nFilterFontColor, szValue);
+	else if (strcmp("FilterFontLeft", szKey) == 0)
+		ABL_MediaServerPort.nFilterFontLeft = atoi(szValue);
+	else if (strcmp("FilterFontTop", szKey) == 0)
+		ABL_MediaServerPort.nFilterFontTop = atoi(szValue);
+	else if (strcmp("FilterFontAlpha", szKey) == 0)
+		ABL_MediaServerPort.nFilterFontAlpha = atof(szValue);
+	else if (strcmp("convertOutWidth", szKey) == 0)
+		ABL_MediaServerPort.convertOutWidth = atoi(szValue);
+	else if (strcmp("convertOutHeight", szKey) == 0)
+		ABL_MediaServerPort.convertOutHeight = atoi(szValue);
+	else if (strcmp("convertOutBitrate", szKey) == 0)
+		ABL_MediaServerPort.convertOutBitrate = atoi(szValue);
+	else if (strcmp("webrtcPort", szKey) == 0)
+	   ABL_MediaServerPort.nWebRtcPort = atoi(szValue);
+	else if (strcmp("WsRecvPcmPort", szKey) == 0)
+		ABL_MediaServerPort.WsRecvPcmPort = atoi(szValue);
 	else if (strcmp("wwwPath", szKey) == 0)
 	{
  		if(strlen(szValue) == 0)
@@ -2924,7 +2996,7 @@ bool   CNetServerHTTP::index_api_shutdownServer()
  	ResponseSuccess(szResponseBody);
 
 	WriteLog(Log_Debug, "CNetServerHTTP = %X  nClient = %llu index_api_shutdownServer() , %s  ", this, nClient, szResponseBody);
-
+	Sleep(1000);
 	ABL_bMediaServerRunFlag = false;
 
 	return true;
@@ -2954,7 +3026,7 @@ bool   CNetServerHTTP::index_api_restartServer()
 	ResponseSuccess(szResponseBody);
 
 	WriteLog(Log_Debug, "CNetServerHTTP = %X  nClient = %llu index_api_restartServer() , %s  ", this, nClient, szResponseBody);
-
+	Sleep(1500);
 	ABL_bMediaServerRunFlag = false;
 	ABL_bRestartServerFlag = true;
 

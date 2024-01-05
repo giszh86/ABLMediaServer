@@ -6,15 +6,6 @@
 
 #define  MaxHttp_WsFlvNetCacheBufferLength    1024*64 
 
-//ws_socket 同学状态 
-enum WebSocketCommStatus
-{
-	WebSocketCommStatus_NoConnect = 0, //没有连接
-	WebSocketCommStatus_Connect = 1,//已经连接
-	WebSocketCommStatus_ShakeHands= 2,//开始握手
-	WebSocketCommStatus_HandsSuccess = 3 //websocket 链接成功
-};
-
 //#define  WriteHttp_FlvFileFlag              1  //写FLV文件，用于调试 
 
 class CNetServerWS_FLV : public CNetRevcBase

@@ -133,7 +133,7 @@ bool CABLSipParse::ParseSipString(char* szSipString)
 
 				//²éÕÒ×ÓÏî
 				int  nPos4=0, nPos5,nPos6;
-				char             subKeyValue[1024*16] = { 0 };
+				char             subKeyValue[32*1024] = { 0 };
 				string           strSubKeyValue;
 
 				strFieldValue = sipKey->szValue;

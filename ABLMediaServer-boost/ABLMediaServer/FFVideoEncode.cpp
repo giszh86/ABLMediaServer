@@ -19,6 +19,7 @@ extern int GB2312ToUTF8(char* szSrc, size_t iSrcLen, char* szDst, size_t iDstLen
 
 CFFVideoEncode::CFFVideoEncode()
 {
+	m_nAVPixel = AV_PIX_FMT_NV12;
 	m_bInitFlag = enableFilter = false;
 	videoFilter = NULL;
 	WriteLog(Log_Debug, "CFFVideoEncode 构造函数 = %X 创建编码器成功 line= %d ", this, __LINE__);
@@ -44,6 +45,7 @@ int           nFrameRate     视频帧速度
 bool CFFVideoEncode::StartEncode(char* szEncodeName, AVPixelFormat nAVPixel, int nWidth, int nHeight, int nFrameRate, int nEncodeByteRate)
 {
 	std::lock_guard<std::mutex> lock(enable_Lock);
+	WriteLog(Log_Debug, "StartEncode nAVPixel = %d ",(int)nAVPixel);
 
 	 strcpy(m_szEncodeName, szEncodeName);
 	 m_nAVPixel = nAVPixel;
@@ -324,7 +326,7 @@ bool CFFVideoFilter::StartFilter(AVPixelFormat nAVPixel, int nWidth, int nHeight
 	//图片水印
 	//std::string filters_descr = "movie=./watermark/logo.png[watermark];[in][watermark]overlay=10:10[out]";
 
-	enum AVPixelFormat pix_fmts[] = {AV_PIX_FMT_YUV420P, AV_PIX_FMT_NONE};
+	enum AVPixelFormat pix_fmts[] = {nAVPixel, AV_PIX_FMT_NONE};
 	const AVFilter *buffersrc = avfilter_get_by_name("buffer");
 	const AVFilter *buffersink = avfilter_get_by_name("buffersink");
 

@@ -19,6 +19,7 @@
 
 //#define  WriteRtpDepacketFileFlag   1 //是否写rtp解包文件
 //#define    WriteVideoDataFlag         1 //写入视频标志  
+//#define      WritRtspMp3FileFlag         1 //写mp3文件
 
 #define    RtspServerRecvDataLength             1024*32      //用于切割缓存区的大小 
 #define    MaxRtpSendVideoMediaBufferLength     1024*64      //用于拼接RTP包，准备发送 
@@ -75,6 +76,12 @@ public:
    virtual int SendFirstRequst();//发送第一个请求
    virtual bool RequestM3u8File();//请求m3u8文件
 
+   unsigned char   szFullMp3Buffer[2048];
+   unsigned char   szMp3HeadFlag[8];
+   void            SplitterMp3Buffer(unsigned char* szMp3Buffer, int nLength);
+#ifdef  WritRtspMp3FileFlag 
+   FILE*         fWriteMp3File;
+#endif
 #ifdef WriteVideoDataFlag 
    FILE*   fWriteVideoFile;
 #endif 

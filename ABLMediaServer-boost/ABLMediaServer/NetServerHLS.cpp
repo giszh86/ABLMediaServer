@@ -1,7 +1,9 @@
 /*
 功能：
        实现HLS服务器的媒体数据发送功能 
-日期    2021-05-20
+日期    2021-05-20   实况hls支持
+        2023-11-06   增加录像回放hls的支持 
+
 作者    罗家兄弟
 QQ      79941308
 E-Mail  79941308@qq.com
@@ -19,7 +21,7 @@ extern char                            ABL_wwwMediaPath[256]; //www 子路径
 extern MediaServerPort                 ABL_MediaServerPort;
 extern uint64_t                        ABL_nBaseCookieNumber ; //Cookie 序号 
 extern uint64_t                        GetCurrentSecond();
-extern CMediaFifo                      pMessageNoticeFifo;          //消息通知FIFO
+extern CMediaFifo                      pMessageNoticeFifo; //消息通知FIFO
 
 CNetServerHLS::CNetServerHLS(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort,char* szShareMediaURL)
 {
@@ -310,10 +312,28 @@ int CNetServerHLS::ProcessNetData()
 	httpParse.GetFieldValue("Origin", szOrigin);
 	if (strlen(szOrigin) == 0)
 		strcpy(szOrigin, "*");
-	//WriteLog(Log_Debug, "CNetServerHLS=%X, 获取到 Origin = %s , nClient = %llu ", this, szOrigin, nClient);
+ 	
+	//WriteLog(Log_Debug, "CNetServerHLS= %X, nClient = %llu , 获取的请求文件 szRequestFileName = %s ", this,  nClient, szRequestFileName);
+	if (strstr(szRequestFileName, RecordFileReplaySplitter) != NULL)
+	{//录像回放
+		SendRecordHLS();
+	}else //实况播放 
+	    SendLiveHLS();//发送实况的hls 
 
+#if 0  //服务器不能主动断开，否则VLC播放不正常 ,ffplay 也经常播放不正常
+	  //发送完毕,如果是短连接，立即删除
+	  if(strcmp(szConnectionType,"Close") == 0 || strcmp(szConnectionType, "close") == 0 || bRequestHeadFlag == true)
+	      pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
+#endif
+
+
+	return 0;
+}
+
+int CNetServerHLS::SendLiveHLS()
+{
 	//根据推流名字找到
-	boost::shared_ptr<CMediaStreamSource> pushClient = GetMediaStreamSource(szPushName,true);
+	boost::shared_ptr<CMediaStreamSource> pushClient = GetMediaStreamSource(szPushName, true);
 	if (pushClient == NULL)
 	{
 		WriteLog(Log_Debug, "CNetServerHLS=%X, 没有推流对象的地址 %s nClient = %llu ", this, szPushName, nClient);
@@ -330,7 +350,7 @@ int CNetServerHLS::ProcessNetData()
 
 	//记下媒体源
 	sprintf(m_addStreamProxyStruct.url, "http://localhost:%d/%s/%s.m3u8", ABL_MediaServerPort.nHlsPort, m_addStreamProxyStruct.app, m_addStreamProxyStruct.stream);
- 
+
 	if (strstr(szRequestFileName, ".m3u8") != NULL)
 	{//请求M3U8文件
 		if (strlen(pushClient->szDataM3U8) == 0)
@@ -342,7 +362,7 @@ int CNetServerHLS::ProcessNetData()
 
 			DeleteNetRevcBaseClient(nClient);
 			return -1;
- 		}
+		}
 
 		memset(szM3u8Content, 0x00, sizeof(szM3u8Content));
 		strcpy(szM3u8Content, pushClient->szDataM3U8);
@@ -356,12 +376,12 @@ int CNetServerHLS::ProcessNetData()
 		}
 		else
 		{
-		  sprintf(httpResponseData, "HTTP/1.1 200 OK\r\nAccess-Control-Allow-Credentials: true\r\nAccess-Control-Allow-Origin: %s\r\nConnection: %s\r\nContent-Length: %d\r\nContent-Type: application/vnd.apple.mpegurl; charset=utf-8\r\nDate: %s\r\nKeep-Alive: timeout=30, max=100\r\nServer: %s\r\nSet-Cookie: AB_COOKIE=%s;expires=%s;path=%s/\r\n\r\n", szOrigin, szConnectionType,
-			strlen(szM3u8Content), szDateTime1, MediaServerVerson, szCookieNumber,szDateTime2, szPushName);
- 		}
+			sprintf(httpResponseData, "HTTP/1.1 200 OK\r\nAccess-Control-Allow-Credentials: true\r\nAccess-Control-Allow-Origin: %s\r\nConnection: %s\r\nContent-Length: %d\r\nContent-Type: application/vnd.apple.mpegurl; charset=utf-8\r\nDate: %s\r\nKeep-Alive: timeout=30, max=100\r\nServer: %s\r\nSet-Cookie: AB_COOKIE=%s;expires=%s;path=%s/\r\n\r\n", szOrigin, szConnectionType,
+				strlen(szM3u8Content), szDateTime1, MediaServerVerson, szCookieNumber, szDateTime2, szPushName);
+		}
 
 		nWriteRet = XHNetSDK_Write(nClient, (unsigned char*)httpResponseData, strlen(httpResponseData), 1);
- 		nWriteRet2 = XHNetSDK_Write(nClient, (unsigned char*)szM3u8Content, strlen(szM3u8Content), 1);
+		nWriteRet2 = XHNetSDK_Write(nClient, (unsigned char*)szM3u8Content, strlen(szM3u8Content), 1);
 		if (nWriteRet != 0 || nWriteRet2 != 0)
 		{
 			WriteLog(Log_Debug, "CNetServerHLS=%X, 回复http失败 szRequestFileName = %s, nClient = %llu ", this, szRequestFileName, nClient);
@@ -370,7 +390,7 @@ int CNetServerHLS::ProcessNetData()
 		}
 
 		WriteLog(Log_Debug, "CNetServerHLS=%X, 发送完毕m3u8文件 szRequestFileName = %s, nClient = %llu , 文件字节大小 %d ", this, szRequestFileName, nClient, strlen(szM3u8Content));
- 		//WriteLog(Log_Debug, "CNetServerHLS=%X, nClient = %llu 发出http回复：\r\n%s", this, nClient, httpResponseData);
+		//WriteLog(Log_Debug, "CNetServerHLS=%X, nClient = %llu 发出http回复：\r\n%s", this, nClient, httpResponseData);
 		//WriteLog(Log_Debug, "CNetServerHLS=%X, nClient = %llu 发出http回复：\r\n%s", this, nClient, szM3u8Content);
 	}
 	else if (strstr(szRequestFileName, ".ts") != NULL || strstr(szRequestFileName, ".mp4") != NULL)
@@ -398,8 +418,8 @@ int CNetServerHLS::ProcessNetData()
 		//如果要读取的文件字节数大于  nCurrentTsFileBufferSize
 		if (fFileByteCount > nCurrentTsFileBufferSize)
 		{
-			delete [] pTsFileBuffer;
-			nCurrentTsFileBufferSize = fFileByteCount + 1024 * 512 ; //再扩大512K 
+			delete[] pTsFileBuffer;
+			nCurrentTsFileBufferSize = fFileByteCount + 1024 * 512; //再扩大512K 
 			pTsFileBuffer = new unsigned char[nCurrentTsFileBufferSize];
 		}
 
@@ -411,7 +431,7 @@ int CNetServerHLS::ProcessNetData()
 			sprintf(szReadFileName, "%s/%s", ABL_wwwMediaPath, szRequestFileName);
 #endif
 			WriteLog(Log_Debug, "CNetServerHLS=%X, 开始读取TS文件 szReadFileName = %s nClient = %llu ", this, szReadFileName, nClient);
-			FILE* tsFile = fopen(szReadFileName,"rb");
+			FILE* tsFile = fopen(szReadFileName, "rb");
 			if (tsFile == NULL)
 			{//打开TS文件失败
 				WriteLog(Log_Debug, "CNetServerHLS=%X, 文件打开失败 szReadFileName = %s nClient = %llu ", this, szReadFileName, nClient);
@@ -422,8 +442,8 @@ int CNetServerHLS::ProcessNetData()
 				pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
 				return -1;
 			}
-    		fread(pTsFileBuffer,1, fFileByteCount, tsFile);
- 			fclose(tsFile);
+			fread(pTsFileBuffer, 1, fFileByteCount, tsFile);
+			fclose(tsFile);
 		}
 		else if (ABL_MediaServerPort.nHLSCutType == 2)
 		{
@@ -431,8 +451,8 @@ int CNetServerHLS::ProcessNetData()
 			{
 				if (nTsFileNameOrder == 0)//请求的是 SPS \ PPS 的 0.mp4 文件 
 				{
-					if(pushClient->nFmp4SPSPPSLength > 0)
-					  memcpy(pTsFileBuffer, pushClient->pFmp4SPSPPSBuffer, pushClient->nFmp4SPSPPSLength);
+					if (pushClient->nFmp4SPSPPSLength > 0)
+						memcpy(pTsFileBuffer, pushClient->pFmp4SPSPPSBuffer, pushClient->nFmp4SPSPPSLength);
 					else
 					{
 						WriteLog(Log_Debug, "CNetServerHLS=%X, fmp4 切片没有生成 0.mp4 文件 szReadFileName = %s nClient = %llu ", this, szReadFileName, nClient);
@@ -443,11 +463,13 @@ int CNetServerHLS::ProcessNetData()
 						pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
 						return -1;
 					}
-				}else
+				}
+				else
 					pushClient->CopyTsFileBuffer(nTsFileNameOrder, pTsFileBuffer);
-			}else
-  			   pushClient->CopyTsFileBuffer(nTsFileNameOrder, pTsFileBuffer);
-   		}
+			}
+			else
+				pushClient->CopyTsFileBuffer(nTsFileNameOrder, pTsFileBuffer);
+		}
 
 		//发送http头
 		sprintf(httpResponseData, "HTTP/1.1 200 OK\r\nAccess-Control-Allow-Credentials: true\r\nAccess-Control-Allow-Origin: %s\r\nConnection: %s\r\nContent-Length: %d\r\nContent-Type: video/mp2t; charset=utf-8\r\nDate: %s\r\nkeep-Alive: timeout=30, max=100\r\nServer: %s\r\n\r\n", szOrigin,
@@ -459,7 +481,7 @@ int CNetServerHLS::ProcessNetData()
 
 		//发送TS码流 
 		int             nPos = 0;
- 		while (fFileByteCount > 0 && pTsFileBuffer != NULL)
+		while (fFileByteCount > 0 && pTsFileBuffer != NULL)
 		{
 			if (fFileByteCount > Send_TsFile_MaxPacketCount)
 			{
@@ -480,7 +502,7 @@ int CNetServerHLS::ProcessNetData()
 				break;
 			}
 		}
- 		WriteLog(Log_Debug, "CNetServerHLS=%X, 发送完毕TS、FMP4 文件 szRequestFileName = %s, nClient = %llu ,文件字节大小 %d", this, szRequestFileName, nClient, nPos);
+		WriteLog(Log_Debug, "CNetServerHLS=%X, 发送完毕TS、FMP4 文件 szRequestFileName = %s, nClient = %llu ,文件字节大小 %d", this, szRequestFileName, nClient, nPos);
 	}
 	else
 	{
@@ -488,16 +510,140 @@ int CNetServerHLS::ProcessNetData()
 		pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
 		return -1;
 	}
-
-#if 0  //服务器不能主动断开，否则VLC播放不正常 ,ffplay 也经常播放不正常
-	  //发送完毕,如果是短连接，立即删除
-	  if(strcmp(szConnectionType,"Close") == 0 || strcmp(szConnectionType, "close") == 0 || bRequestHeadFlag == true)
-	      pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
-#endif
-
-	return 0;
 }
 
+int CNetServerHLS::SendRecordHLS()
+{
+ 	if (strstr(szRequestFileName, ".m3u8") != NULL)
+	{//请求M3U8文件
+		string  strTemp = szRequestFileName;
+ 
+ 		replace_all(strTemp, RecordFileReplaySplitter, "/");
+		sprintf(szRequestFileName, "%s%s", ABL_MediaServerPort.recordPath, strTemp.c_str()+1);
+ 
+		FILE* fReadM3u8 = NULL;
+		fReadM3u8 = fopen(szRequestFileName, "rb");
+		
+ 		if (fReadM3u8  == NULL)
+		{//不存在m3u8文件  
+			WriteLog(Log_Debug, "CNetServerHLS=%X, nClient = %llu , 不存在文件 %s  ", this, nClient, szRequestFileName);
+
+			sprintf(httpResponseData, "HTTP/1.1 404 Not Found\r\nConnection: Close\r\nDate: Thu, Feb 18 2021 01:57:15 GMT\r\nKeep-Alive: timeout=30, max=100\r\nAccess-Control-Allow-Origin: *\r\nServer: %s\r\n\r\n", MediaServerVerson);
+			nWriteRet = XHNetSDK_Write(nClient, (unsigned char*)httpResponseData, strlen(httpResponseData), 1);
+
+			DeleteNetRevcBaseClient(nClient);
+			return -1;
+		}
+
+		memset(szM3u8Content, 0x00, sizeof(szM3u8Content));
+		fread(szM3u8Content, 1, sizeof(szM3u8Content), fReadM3u8);
+		fclose(fReadM3u8);
+
+		if (bRequestHeadFlag == true)
+		{//HEAD 请求
+			sprintf(httpResponseData, "HTTP/1.1 200 OK\r\nAccess-Control-Allow-Credentials: true\r\nAccess-Control-Allow-Origin: %s\r\nConnection: close\r\nContent-Length: 0\r\nDate: %s\r\nServer: %s\r\n\r\n", szOrigin, szDateTime1, MediaServerVerson);
+			nWriteRet = XHNetSDK_Write(nClient, (unsigned char*)httpResponseData, strlen(httpResponseData), 1);
+			WriteLog(Log_Debug, "CNetServerHLS=%X, 回复HEAD请求 httpResponseData = %s, nClient = %llu ", this, httpResponseData, nClient);
+			pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
+			return 0;
+		}
+		else
+		{
+			sprintf(httpResponseData, "HTTP/1.1 200 OK\r\nAccess-Control-Allow-Credentials: true\r\nAccess-Control-Allow-Origin: %s\r\nConnection: %s\r\nContent-Length: %d\r\nContent-Type: application/vnd.apple.mpegurl; charset=utf-8\r\nDate: %s\r\nKeep-Alive: timeout=30, max=100\r\nServer: %s\r\nSet-Cookie: AB_COOKIE=%s;expires=%s;path=%s/\r\n\r\n", szOrigin, szConnectionType,
+				strlen(szM3u8Content), szDateTime1, MediaServerVerson, szCookieNumber, szDateTime2, szPushName);
+		}
+
+		nWriteRet = XHNetSDK_Write(nClient, (unsigned char*)httpResponseData, strlen(httpResponseData), 1);
+		nWriteRet2 = XHNetSDK_Write(nClient, (unsigned char*)szM3u8Content, strlen(szM3u8Content), 1);
+		if (nWriteRet != 0 || nWriteRet2 != 0)
+		{
+			WriteLog(Log_Debug, "CNetServerHLS=%X, 回复http失败 szRequestFileName = %s, nClient = %llu ", this, szRequestFileName, nClient);
+			pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
+			return -1;
+		} 
+
+		WriteLog(Log_Debug, "CNetServerHLS=%X, 发送完毕m3u8文件 szRequestFileName = %s, nClient = %llu , 文件字节大小 %d ", this, szRequestFileName, nClient, strlen(szM3u8Content));
+ 	}
+	else if (strstr(szRequestFileName, ".ts") != NULL || strstr(szRequestFileName, ".mp4") != NULL)
+	{//请求TS文件 
+		string  strTemp = szRequestFileName;
+
+		replace_all(strTemp, RecordFileReplaySplitter, "/");
+		sprintf(szRequestFileName, "%s%s", ABL_MediaServerPort.recordPath, strTemp.c_str() + 1);
+
+		FILE* fReadMP4 = NULL;
+		fReadMP4 = fopen(szRequestFileName, "rb");
+
+		if (fReadMP4 == NULL)
+		{//不存在 mp4 文件 
+			WriteLog(Log_Debug, "CNetServerHLS=%X, nClient = %llu , 不存在文件 %s  ", this, nClient, szRequestFileName);
+
+			sprintf(httpResponseData, "HTTP/1.1 404 Not Found\r\nConnection: Close\r\nDate: Thu, Feb 18 2021 01:57:15 GMT\r\nKeep-Alive: timeout=30, max=100\r\nAccess-Control-Allow-Origin: *\r\nServer: %s\r\n\r\n", MediaServerVerson);
+			nWriteRet = XHNetSDK_Write(nClient, (unsigned char*)httpResponseData, strlen(httpResponseData), 1);
+
+			DeleteNetRevcBaseClient(nClient);
+			return -1;
+		}
+	
+		//获取文件大小 
+#ifdef OS_System_Windows 
+		struct _stat64 fileBuf;
+		int error = _stat64(szRequestFileName, &fileBuf);
+		if (error == 0)
+			fFileByteCount = fileBuf.st_size;
+#else 
+		struct stat fileBuf;
+		int error = stat(szRequestFileName, &fileBuf);
+		if (error == 0)
+			fFileByteCount = fileBuf.st_size;
+#endif
+
+		//发送http头
+		sprintf(httpResponseData, "HTTP/1.1 200 OK\r\nAccess-Control-Allow-Credentials: true\r\nAccess-Control-Allow-Origin: %s\r\nConnection: %s\r\nContent-Length: %d\r\nContent-Type: video/mp2t; charset=utf-8\r\nDate: %s\r\nkeep-Alive: timeout=30, max=100\r\nServer: %s\r\n\r\n", szOrigin,
+			szConnectionType,
+			fFileByteCount,
+			szDateTime1,
+			MediaServerVerson);
+		nWriteRet = XHNetSDK_Write(nClient, (unsigned char*)httpResponseData, strlen(httpResponseData), 1);
+
+		//发送TS码流 
+		int             nRead = 0;
+		while (true)
+		{
+			nRead = fread(pTsFileBuffer, 1, 1024 * 1024 * 1, fReadMP4);
+			if (nRead > 0)
+			{
+				nWriteRet2 = XHNetSDK_Write(nClient, (unsigned char*)pTsFileBuffer, nRead, 1);
+ 			}
+			else
+				break;
+ 
+			if (nWriteRet2 != 0)
+			{//发送出错
+		        if(fReadMP4)
+				{
+				  fclose(fReadMP4);
+				  fReadMP4 = NULL ;
+				}
+				pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
+				break;
+			}
+		}
+		if(fReadMP4)
+		{
+		   fclose(fReadMP4) ;
+		   fReadMP4 = NULL ;
+		}
+		WriteLog(Log_Debug, "CNetServerHLS=%X, 发送完毕TS、FMP4 文件 szRequestFileName = %s, nClient = %llu ,文件字节大小 %d", this, szRequestFileName, nClient, fFileByteCount);
+ 	}
+	else
+	{
+		WriteLog(Log_Debug, "CNetServerHLS=%X, 请求 http 文件类型有误 szRequestFileName = %s, nClient = %llu ", this, szRequestFileName, nClient);
+		pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
+		return -1;
+	}
+}
+ 
 //根据TS文件名字 ，获取文件序号 
 int64_t  CNetServerHLS::GetTsFileNameOrder(char* szTsFileName)
 {

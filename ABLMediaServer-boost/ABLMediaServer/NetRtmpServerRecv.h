@@ -23,6 +23,7 @@ using namespace boost;
 //#define    WriteFlvToEsFileFlag  1 //用于写FLV解包后的ES流，测试flv解包视频、音频是否正确 
 
 //#define    WriteG711toPCMFileFlag  1 //用于写pcm文件 
+//#define      WritMp3FileFlag         1 //写mp3文件
 
 class CNetRtmpServerRecv : public CNetRevcBase
 {
@@ -30,6 +31,9 @@ public:
 	CNetRtmpServerRecv(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort, char* szShareMediaURL);
    ~CNetRtmpServerRecv() ;
 
+#ifdef  WritMp3FileFlag 
+   FILE*         fWriteMp3File;
+#endif
 #ifdef  WriteG711toPCMFileFlag 
    FILE*         fWriteG711;
 #endif

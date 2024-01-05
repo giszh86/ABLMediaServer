@@ -90,14 +90,61 @@ void RTP_DEPACKET_CALL_METHOD rtppacket_callback(_rtp_depacket_cb* cb)
 			if (strcmp(pUserHandle->szAudioName, "AAC") == 0)
 			{//aac
  				pUserHandle->SplitterRtpAACData(cb->data, cb->datasize);
+ 			}else if (strcmp(pUserHandle->szAudioName, "MP3") == 0 && cb->datasize > 4 )
+			{//mp3
+				if(cb->data[0] == 0x00 && cb->data[1] == 0x00 && cb->data[2] == 0x00 && cb->data[3] == 0x00)
+				   pUserHandle->SplitterMp3Buffer(cb->data + 4, cb->datasize - 4);
+				else 
+				   pUserHandle->SplitterMp3Buffer(cb->data, cb->datasize);
  			}
 			else
 			{// G711A 、G711U
 				pUserHandle->pMediaSource->PushAudio(cb->data, cb->datasize, pUserHandle->szAudioName, pUserHandle->nChannels, pUserHandle->nSampleRate);
  			}
-		   //WriteLog(Log_Debug, "CNetRtspServer=%X ,nClient = %llu, rtp Audio 解包回调 %02X %02X %02X %02X %02X, timeStamp = %llu ,datasize = %d ", pUserHandle, pUserHandle->nClient, cb->data[0], cb->data[1], cb->data[2], cb->data[3], cb->data[4],cb->timestamp,cb->datasize);
-
+#ifdef  WritRtspMp3FileFlag 
+			if (pUserHandle->fWriteMp3File)
+			{
+				fwrite(cb->data, 1, cb->datasize, pUserHandle->fWriteMp3File);
+				fflush(pUserHandle->fWriteMp3File);
+			}
+#endif
+			//WriteLog(Log_Debug, "CNetRtspServer=%X ,nClient = %llu, rtp Audio 解包回调 %02X %02X %02X %02X %02X, timeStamp = %llu ,datasize = %d ", pUserHandle, pUserHandle->nClient, cb->data[0], cb->data[1], cb->data[2], cb->data[3], cb->data[4],cb->timestamp,cb->datasize);
 		}
+	}
+}
+
+//对mp3数据包进行切割
+void    CNetRtspServer::SplitterMp3Buffer(unsigned char* szMp3Buffer, int nLength)
+{
+	if (szMp3Buffer == NULL || nLength <= 0)
+		return;
+	int nPos1 = -1, nPos2 = -1;
+
+	for (int i = 0; i < nLength; i++)
+	{
+		if (nPos1 == -1 && nPos2 == -1)
+		{
+			if (memcmp(szMp3Buffer + i, szMp3HeadFlag, 2) == 0)
+			{
+				nPos1 = i;
+			}
+		}
+		else if (nPos1 != -1 && nPos2 == -1)
+		{
+			if (memcmp(szMp3Buffer + i, szMp3HeadFlag, 2) == 0)
+			{
+				nPos2 = i;
+				pMediaSource->PushAudio(szMp3Buffer+nPos1, nPos2 - nPos1,szAudioName, nChannels, nSampleRate);
+
+				nPos1 = i;
+				nPos2 = -1;
+			}
+		}
+	}
+
+	if (nPos1 != -1 && nPos2 == -1)
+	{
+		pMediaSource->PushAudio(szMp3Buffer + nPos1, nLength - nPos1, szAudioName, nChannels, nSampleRate);
 	}
 }
 
@@ -195,6 +242,7 @@ void  CNetRtspServer::AddADTSHeadToAAC(unsigned char* szData, int nAACLength)
 
 CNetRtspServer::CNetRtspServer(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort,char* szShareMediaURL)
 {
+	memset(szAudioName,0x00,sizeof(szAudioName));
 	currentSession = Session;
 	Session ++;
 
@@ -267,6 +315,15 @@ CNetRtspServer::CNetRtspServer(NETHANDLE hServer, NETHANDLE hClient, char* szIP,
 #ifdef WriteVideoDataFlag 
 	fWriteVideoFile =	fopen("D:\\rtspServer.264","wb");
 #endif
+#ifdef  WritRtspMp3FileFlag 
+	char    szMp3File[256] = { 0 };
+	sprintf(szMp3File, "E:\\rtsp_recv_%X_%d.mp3", this, rand());
+	fWriteMp3File = fopen(szMp3File, "wb"); ;
+#endif
+	memset(szFullMp3Buffer, 0x00, sizeof(szFullMp3Buffer));
+	memset(szMp3HeadFlag, 0x00, sizeof(szMp3HeadFlag));
+	szMp3HeadFlag[0] = 0xFF;
+	szMp3HeadFlag[1] = 0xFB;
 	bRunFlag = true;
 	WriteLog(Log_Debug, "CNetRtspServer 构造 nClient = %llu ", nClient);
 }
@@ -306,6 +363,10 @@ CNetRtspServer::~CNetRtspServer()
 #ifdef WriteVideoDataFlag 
 	if(fWriteVideoFile != NULL)
 	  fclose(fWriteVideoFile );
+#endif
+#ifdef  WritRtspMp3FileFlag 
+	if (fWriteMp3File)
+		fclose(fWriteMp3File);
 #endif
 	if (hRtpVideo != 0)
 	{
@@ -408,6 +469,16 @@ int CNetRtspServer::SendAudio()
 		inputAudio.data = pData;
 		inputAudio.datasize = nLength;
 
+		if (strcmp(mediaCodecInfo.szAudioName, "MP3") == 0)
+		{//给mp3增加帧头
+			if (!(pData[0] == 0x00 && pData[1] == 0x00 && pData[2] == 0x00 && pData[3] == 0x00))
+			{
+				memcpy(szFullMp3Buffer + 4, pData, nLength);
+				inputAudio.data = szFullMp3Buffer;
+				inputAudio.datasize = nLength + 4;
+ 			}
+		}
+
 		if (nMediaSourceType == MediaSourceType_ReplayMedia)
 		{//录像回放
 			inputAudio.data = pData + 4;
@@ -499,7 +570,7 @@ bool   CNetRtspServer::ReadRtspEnd()
 {
 	unsigned int nReadLength = 1;
 	unsigned int nRet;
-	bool     bRet = false;
+	bool     bRet = true;
 	bExitProcessFlagArray[1] = false;
 	while (!bIsInvalidConnectFlag && bRunFlag)
 	{
@@ -984,6 +1055,13 @@ bool CNetRtspServer::GetRtspSDPFromMediaStreamSource(RtspSDPContentStruct sdpCon
 		sprintf(szRtspAudioSDP, "m=audio 0 RTP/AVP %d\r\na=rtpmap:%d MPEG4-GENERIC/%d/%d\r\na=fmtp:%d profile-level-id=15; streamtype=5; mode=AAC-hbr; config=%s;SizeLength=13; IndexLength=3; IndexDeltaLength=3; Profile=1;\r\na=control:streamid=1\r\n",
 			nAudioPayload, nAudioPayload, pMediaSource->m_mediaCodecInfo.nSampleRate, pMediaSource->m_mediaCodecInfo.nChannels, nAudioPayload,getAACConfig(pMediaSource->m_mediaCodecInfo.nChannels,pMediaSource->m_mediaCodecInfo.nSampleRate));
     }
+	else if (strcmp(pMediaSource->m_mediaCodecInfo.szAudioName, "MP3") == 0)
+	{
+		optionAudio.ttincre = 1024; 
+		optionAudio.streamtype = e_rtppkt_st_mpeg1a;
+		nAudioPayload = 14 ;
+		sprintf(szRtspAudioSDP, "v=0\r\no=- 0 0 IN IP4 127.0.0.1\r\ns=No Name\r\nc=IN IP4 %s\r\nt=0 0\r\na=tool:libavformat 58.29.100\r\nm=audio 0 RTP/AVP %d\r\nb=AS:0\r\na=control:streamid=0\r\n", ABL_MediaServerPort.ABL_szLocalIP, nAudioPayload);
+	}
 
 	//追加音频SDP
 	if (strlen(szRtspAudioSDP) > 0 )
@@ -1145,6 +1223,10 @@ void  CNetRtspServer::InputRtspData(unsigned char* pRecvData, int nDataLength)
 		{
 			rtp_depacket_setpayload(hRtpHandle[1], nAudioPayload, e_rtpdepkt_st_g726le);
 		}
+		else if (strstr(szAudioName, "MP3") != NULL)
+		{
+			rtp_depacket_setpayload(hRtpHandle[1], nAudioPayload, e_rtpdepkt_st_mp3);
+		}		
 
 		//确定ADTS头相关参数
 		sample_index = 11;
@@ -1620,6 +1702,13 @@ bool   CNetRtspServer::GetMediaInfoFromRtspSDP()
 				nChannels = 1;
 				strcpy(szAudioName, "PCMA");
 			}
+			else if (strstr(szTemp, "RTP/AVP 14") != NULL)
+			{
+				nSampleRate = 44100;
+				nChannels = 2;
+				strcpy(szAudioName, "MP3");
+				nAudioPayload = 14;
+			}
 		}
 
 		if (strcmp(szAudioName, "PCMA") == 0)
@@ -1638,8 +1727,6 @@ bool   CNetRtspServer::GetMediaInfoFromRtspSDP()
 		{
 			strcpy(szAudioName, "G726LE");
 		}
-		else
-			strcpy(szAudioName, "NONE");
 
 		WriteLog(Log_Debug, "在SDP中，获取到的音频格式为 %s ,nChannels = %d ,SampleRate = %d , payload = %d ！", szAudioName, nChannels, nSampleRate, nAudioPayload);
 	}
@@ -1655,20 +1742,32 @@ bool CNetRtspServer::FindRtpPacketFlag()
 {
 	bool bFindFlag = false;
 
-	unsigned char szRtpFlag[2] = { 0x24, 0x00 };
+	unsigned char szRtpFlag1[2] = { 0x24, 0x00 };
+	unsigned char szRtpFlag2[2] = { 0x24, 0x01 };
+	unsigned char szRtpFlag3[2] = { 0x24, 0x02 };
+	unsigned char szRtpFlag4[2] = { 0x24, 0x03 };
 	int  nPos = 0;
+	unsigned short nFindLength;
 
 	if (netDataCacheLength > 2)
 	{
 		for (int i = nNetStart; i < nNetEnd; i++)
 		{
-			if (memcmp(netDataCache + i, szRtpFlag, 2) == 0)
+			if ((memcmp(netDataCache + i, szRtpFlag1, 2) == 0) || 
+				(memcmp(netDataCache + i, szRtpFlag2, 2) == 0) || 
+				(memcmp(netDataCache + i, szRtpFlag3, 2) == 0) || 
+				(memcmp(netDataCache + i, szRtpFlag4, 2) == 0))
 			{
-				nPos = i;
-				bFindFlag = true;
-				break;
+				memcpy((char*)&nFindLength, netDataCache + i + 2, sizeof(nFindLength));
+				nFindLength = ntohs(nFindLength);
+				if (nFindLength > 0 && nFindLength <= 1500)
+				{//需要判断rtp包数据长度 
+				  nPos = i;
+				  bFindFlag = true;
+ 				  break;
+ 				}
 			}
-		}
+  		}
 	}
 
 	//找到标志，重新计算起点，及长度 

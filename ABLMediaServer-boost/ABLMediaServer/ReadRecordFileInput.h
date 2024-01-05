@@ -20,6 +20,7 @@ using namespace boost;
 
 #define     ReadRecordFileInput_MaxPacketCount     1024*1024*3 
 #define     OpenMp4FileToReadWaitMaxMilliSecond    300  //打开mp4文件，500毫秒后 才开始读取文件 
+//#define     WriteAACFileFlag                       1    //是否保存AAC文件
 
 //视频，音频
 enum ABLAVType
@@ -44,6 +45,34 @@ public:
    virtual int SendFirstRequst();//发送第一个请求
    virtual bool RequestM3u8File();//请求m3u8文件
 
+   char           szFileNameUTF8[512] ;
+   int            open_codec_context(int *stream_idx, AVCodecContext **dec_ctx, AVFormatContext *fmt_ctx, enum AVMediaType type);
+   void           AddADTSHeadToAAC(unsigned char* szData, int nAACLength);
+   AVCodecContext *video_dec_ctx = NULL, *audio_dec_ctx = NULL;
+   AVStream       *video_stream = NULL, *audio_stream = NULL;
+   enum AVPixelFormat pix_fmt;
+
+#ifdef WriteAACFileFlag
+   FILE*                 fWriteAAC;
+#endif 
+
+   int64_t               nCurrentDateTime;
+   CMediaFifo            m_audioCacheFifo;
+   int                   nInputAudioDelay;
+   int64_t               nInputAudioTime;
+
+   int                   sample_index;
+   int                   ret1, ret2;
+   AVBitStreamFilter *   buffersrc;
+   AVBSFContext *        bsf_ctx;
+   AVCodecParameters *   codecpar;
+   AVFormatContext *     pFormatCtx2;
+   AVPacket*             packet2;
+   int                   stream_isVideo;
+   int                   stream_isAudio;
+   int64_t               nRangeCount;
+   unsigned char   pAACBufferADTS[2048];//增加adts头的AAC数据 
+
    uint64_t             mov_readerTime;//上一次读取时间
    volatile  int        nWaitTime ;//需要等待的时间然后进行读取
    bool                 ReaplyFileSeek(uint64_t nTimestamp);
@@ -55,25 +84,10 @@ public:
    boost::shared_ptr<CMediaStreamSource> pMediaSource;
    int                   nRetLength;
    std::mutex            readRecordFileInputLock;
-   unsigned char         s_buffer[ReadRecordFileInput_MaxPacketCount];
    unsigned char         s_packet[ReadRecordFileInput_MaxPacketCount];
    unsigned char         audioBuffer[4096];
-   struct mpeg4_avc_t    s_avc;
-   struct mpeg4_hevc_t   s_hevc;
-   struct mpeg4_aac_t    s_aac;
 
-   uint32_t             s_aac_track ;
-   uint32_t             s_avc_track;
-   uint32_t             s_av1_track ;
-   uint32_t             s_vpx_track;
-   uint32_t             s_hevc_track;
-   uint32_t             s_opus_track;
-   uint32_t             s_mp3_track;
-   uint32_t             s_subtitle_track;
-
-   FILE*                 fp;
-   mov_reader_t*         mov;
-   int                   nReadRet;
+   int64_t               nReadRet;
 
    volatile  ABLAVType   nAVType, nOldAVType;//上一帧媒体类型 
    uint64_t              nOldPTS;

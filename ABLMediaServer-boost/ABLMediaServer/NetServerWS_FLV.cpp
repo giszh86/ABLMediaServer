@@ -141,8 +141,8 @@ int CNetServerWS_FLV::PushAudio(uint8_t* pAudioData, uint32_t nDataLength, char*
 		mediaCodecInfo.nChannels = nChannels;
 		mediaCodecInfo.nSampleRate = SampleRate;
 	}
-	if (strcmp(szAudioCodec, "AAC") != 0 || ABL_MediaServerPort.nEnableAudio == 0)
-		return 0;
+	if (ABL_MediaServerPort.nEnableAudio == 0 || !(strcmp(szAudioCodec, "AAC") == 0 || strcmp(szAudioCodec, "MP3") == 0))
+		return -1;
 
 	m_audioFifo.push(pAudioData, nDataLength);
 
@@ -171,27 +171,29 @@ void  CNetServerWS_FLV::MuxerVideoFlV(char* codeName, unsigned char* pVideo, int
 
 void  CNetServerWS_FLV::MuxerAudioFlV(char* codeName, unsigned char* pAudio, int nLength)
 {
-	if (strcmp(codeName, "AAC") == 0)
+	if (flvMuxer)
 	{
-		if (flvMuxer)
+		if (strcmp(mediaCodecInfo.szAudioName, "AAC") == 0)
 			flv_muxer_aac(flvMuxer, pAudio, nLength, flvAACDts, flvAACDts);
-
-		if (bUserNewAudioTimeStamp == false)
-			flvAACDts += mediaCodecInfo.nBaseAddAudioTimeStamp;
-		else
-		{
-			nUseNewAddAudioTimeStamp --;
-			flvAACDts += nNewAddAudioTimeStamp;
-			if (nUseNewAddAudioTimeStamp <= 0)
-			{
-				bUserNewAudioTimeStamp = false;
-			}
-		}
-
-		//AAC 的时间增量计算 ，以海康的16K采样为例，AAC每1024字节编码一次，那么(1024 / 16000 * 2) * 1000 = 32 毫秒 ，但是海康往往2帧发送一次 ，那么两帧递增 32 * 2 = 64 毫秒 ，64 就是海康摄像头 DTS ,PTS 的增量 
-		// 以大华的8K采样为例，AAC每1024字节编码一次，那么(1024 / 8000 * 2) * 1000 = 64 毫秒 ，但是大华往往2帧发送一次 ，那么两帧递增 64 * 2 = 128 毫秒 ，128 就是大华摄像头 DTS ,PTS 的增量 
+		else if (strcmp(mediaCodecInfo.szAudioName, "MP3") == 0)
+			flv_muxer_mp3(flvMuxer, pAudio, nLength, flvAACDts, flvAACDts);
 	}
 
+	if (bUserNewAudioTimeStamp == false)
+		flvAACDts += mediaCodecInfo.nBaseAddAudioTimeStamp;
+	else
+	{
+		nUseNewAddAudioTimeStamp --;
+		flvAACDts += nNewAddAudioTimeStamp;
+		if (nUseNewAddAudioTimeStamp <= 0)
+		{
+			bUserNewAudioTimeStamp = false;
+		}
+	}
+
+	//AAC 的时间增量计算 ，以海康的16K采样为例，AAC每1024字节编码一次，那么(1024 / 16000 * 2) * 1000 = 32 毫秒 ，但是海康往往2帧发送一次 ，那么两帧递增 32 * 2 = 64 毫秒 ，64 就是海康摄像头 DTS ,PTS 的增量 
+	// 以大华的8K采样为例，AAC每1024字节编码一次，那么(1024 / 8000 * 2) * 1000 = 64 毫秒 ，但是大华往往2帧发送一次 ，那么两帧递增 64 * 2 = 128 毫秒 ，128 就是大华摄像头 DTS ,PTS 的增量 
+ 
 	//同步音视频 
 	SyncVideoAudioTimestamp();
 }
@@ -239,8 +241,8 @@ int CNetServerWS_FLV::SendAudio()
 		return -1;
 	}
 
-	//不是AAC
-	if (strcmp(mediaCodecInfo.szAudioName, "AAC") != 0 || ABL_MediaServerPort.nEnableAudio == 0)
+	//不是AAC,mp3
+	if (ABL_MediaServerPort.nEnableAudio == 0 || !(strcmp(mediaCodecInfo.szAudioName, "AAC") == 0 || strcmp(mediaCodecInfo.szAudioName, "MP3") == 0))
 		return -1;
 
 	unsigned char* pData = NULL;
@@ -529,12 +531,12 @@ bool  CNetServerWS_FLV::Create_WS_FLV_Handle()
 			flvWrite = flv_writer_create2(1, 1, NetServerWS_FLV_OnWrite_CB, (void*)this);
 			WriteLog(Log_Debug, "创建ws-flv 输出格式为： 视频 %s、音频 %s  nClient = %llu ", pushClient->m_mediaCodecInfo.szVideoName, pushClient->m_mediaCodecInfo.szAudioName, nClient);
 		}
-		else if (strcmp(pushClient->m_mediaCodecInfo.szVideoName, "H264") == 0 || strcmp(pushClient->m_mediaCodecInfo.szVideoName, "H265") == 0)
+		else if (strcmp(pushClient->m_mediaCodecInfo.szVideoName, "H264") == 0 || strcmp(pushClient->m_mediaCodecInfo.szVideoName, "H265") == 0 )
 		{//H264、H265 只创建视频
 			flvWrite = flv_writer_create2(0, 1, NetServerWS_FLV_OnWrite_CB, (void*)this);
 			WriteLog(Log_Debug, "创建ws-flv 输出格式为： 视频 %s、音频：无音频  nClient = %llu ", pushClient->m_mediaCodecInfo.szVideoName, nClient);
 		}
-		else if (strlen(pushClient->m_mediaCodecInfo.szVideoName) == 0 && strcmp(pushClient->m_mediaCodecInfo.szAudioName, "AAC") == 0)
+		else if (strlen(pushClient->m_mediaCodecInfo.szVideoName) == 0 && (strcmp(pushClient->m_mediaCodecInfo.szAudioName, "AAC") == 0 || strcmp(pushClient->m_mediaCodecInfo.szAudioName, "MP3") == 0))
 		{//只创建音频
 			flvWrite = flv_writer_create2(1, 0, NetServerWS_FLV_OnWrite_CB, (void*)this);
 			WriteLog(Log_Debug, "创建ws-flv 输出格式为： 无视频 、只有音频 %s  nClient = %llu ", pushClient->m_mediaCodecInfo.szAudioName, nClient);

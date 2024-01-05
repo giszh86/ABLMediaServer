@@ -376,6 +376,17 @@ static int NetRtmpServerRecvCallBackFLV(void* param, int codec, const void* data
 		}
 #endif
 	}
+	else if (codec == FLV_AUDIO_MP3)
+	{
+#ifdef  WritMp3FileFlag 
+		if (pClient->fWriteMp3File)
+		{
+			fwrite(data,1,bytes,pClient->fWriteMp3File);
+			fflush(pClient->fWriteMp3File);
+		}
+#endif
+		pClient->pMediaSource->PushAudio((unsigned char*)data, bytes, "MP3", 2, 44100);
+	}
 	else if (codec == FLV_AUDIO_G711A || codec == FLV_AUDIO_G711U )
 	{
      	if (codec == FLV_AUDIO_G711A)
@@ -497,7 +508,11 @@ CNetRtmpServerRecv::CNetRtmpServerRecv(NETHANDLE hServer, NETHANDLE hClient, cha
 	sprintf(szPcmFile, "D:\\%X_%d.pcm", this, rand());
 	fWriteG711 = fopen(szPcmFile, "wb");
 #endif
-
+#ifdef  WritMp3FileFlag 
+	char    szMp3File[256] = { 0 };
+	sprintf(szMp3File, "E:\\rtmp_recv_%X_%d.mp3", this, rand());
+	fWriteMp3File = fopen(szMp3File, "wb"); ;
+#endif
 	rtmp = rtmp_server_create(this, &handler);
 	memset(szRtmpName, 0x00, sizeof(szRtmpName));
 	bRunFlag = true;
@@ -538,7 +553,10 @@ CNetRtmpServerRecv::~CNetRtmpServerRecv()
 	if(fWriteG711)
  	 fclose(fWriteG711);
 #endif
-
+#ifdef  WritMp3FileFlag 
+	if (fWriteMp3File)
+		fclose(fWriteMp3File);
+#endif
 	NetDataFifo.FreeFifo();
 	m_videoFifo.FreeFifo();
 	m_audioFifo.FreeFifo();
@@ -572,7 +590,7 @@ int CNetRtmpServerRecv::PushAudio(uint8_t* pVideoData, uint32_t nDataLength, cha
 		mediaCodecInfo.nChannels = nChannels;
 		mediaCodecInfo.nSampleRate = SampleRate;
 	}
-	if (strcmp(szAudioCodec, "AAC") != 0)
+	if ( !(strcmp(szAudioCodec, "AAC") == 0 || strcmp(szAudioCodec, "MP3") == 0))
 		return 0;
 
 	m_audioFifo.push(pVideoData, nDataLength);
@@ -633,8 +651,8 @@ int CNetRtmpServerRecv::SendAudio()
 		return -1;
 	}
 
-	//不是AAC
-	if (strcmp(mediaCodecInfo.szAudioName, "AAC") != 0 || ABL_MediaServerPort.nEnableAudio == 0)
+	//不是AAC\mp3
+	if ( !(strcmp(mediaCodecInfo.szAudioName, "AAC") == 0 || strcmp(mediaCodecInfo.szAudioName, "MP3") == 0)|| ABL_MediaServerPort.nEnableAudio == 0)
 		return -1;
 
 	unsigned char* pData = NULL;
@@ -644,7 +662,12 @@ int CNetRtmpServerRecv::SendAudio()
 		if (flvMuxer)
 		{
 			if (nMediaSourceType == MediaSourceType_LiveMedia)
-				flv_muxer_aac(flvMuxer, pData, nLength , flvAACDts, flvAACDts);
+			{
+			    if(strcmp(mediaCodecInfo.szAudioName, "AAC") == 0)
+				  flv_muxer_aac(flvMuxer, pData, nLength, flvAACDts, flvAACDts);
+				else if(strcmp(mediaCodecInfo.szAudioName, "MP3") == 0)
+				  flv_muxer_mp3(flvMuxer, pData, nLength, flvAACDts, flvAACDts);
+			}
 			else
 				flv_muxer_aac(flvMuxer, pData+4, nLength-4, flvAACDts, flvAACDts);
 		}

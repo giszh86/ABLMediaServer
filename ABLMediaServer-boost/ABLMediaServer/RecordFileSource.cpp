@@ -155,3 +155,82 @@ bool  CRecordFileSource::queryRecordFile(char* szRecordFileName)
 
 	return bRet;
 }
+
+m3u8FileList::m3u8FileList(char* szName)
+{
+	memset(m3u8Name, 0x00, sizeof(m3u8Name));
+	strcpy(m3u8Name, szName);
+	lastTime = GetTickCount64();
+}
+
+m3u8FileList::~m3u8FileList()
+{
+	char szDeleFile[string_length_512] = { 0 };
+	sprintf(szDeleFile, "%s%s", ABL_MediaServerPort.recordPath, m3u8Name+1);
+	ABLDeleteFile(szDeleFile);
+	WriteLog(Log_Debug, " 已经删除 m3u8 文件 %s ", m3u8Name);
+}
+
+//往map增加m3u8文件名字 
+bool  CRecordFileSource::AddM3u8FileToMap(char* szM3u8Name)
+{
+	std::lock_guard<std::mutex> lock(m3u8NameMutex);
+
+	m3u8FileList_ptr m3u8Prt = NULL;
+	m3u8FileList_ptrMap::iterator it;
+ 
+	it = m_m3u8FileMap.find(szM3u8Name);
+	if (it != m_m3u8FileMap.end())
+		return false; //已经存在 
+	else 
+	{
+	    m3u8Prt = boost::make_shared<m3u8FileList>(szM3u8Name);
+	    m_m3u8FileMap.insert(std::make_pair(szM3u8Name, m3u8Prt));
+ 	    WriteLog(Log_Debug, " 增加 m3u8 文件 %s ", szM3u8Name);
+	    return true;
+	}
+}
+
+//更新 m3u8 文件播放时间 
+bool  CRecordFileSource::UpdateM3u8FileTime(char* szM3u8Name)
+{
+	std::lock_guard<std::mutex> lock(m3u8NameMutex);
+
+	m3u8FileList_ptr m3u8Prt = NULL;
+	m3u8FileList_ptrMap::iterator it;
+  
+	it = m_m3u8FileMap.find(szM3u8Name);
+	if (it != m_m3u8FileMap.end())
+	{
+		m3u8Prt = (*it).second;
+		m3u8Prt->lastTime = GetTickCount64();
+		return true ;  
+ 	}
+	else
+	{
+  		return false ;
+	}
+}
+
+//删除过期的m3u8文件 
+int  CRecordFileSource::DeleteM3u8ExpireFile()
+{
+	std::lock_guard<std::mutex> lock(m3u8NameMutex);
+
+	uint64_t tCurTime = GetTickCount64();
+	int      nDelCount  = 0;
+	m3u8FileList_ptr m3u8Ptr = NULL ;
+
+	for (m3u8FileList_ptrMap::iterator it = m_m3u8FileMap.begin(); it != m_m3u8FileMap.end();)
+	{
+		m3u8Ptr = (*it).second;
+		if (tCurTime - m3u8Ptr->lastTime > max_hls_replay_time)
+		{
+			m_m3u8FileMap.erase(it++);
+		}
+		else
+			it++;
+	}
+
+	return nDelCount;
+}

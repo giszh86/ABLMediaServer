@@ -22,6 +22,9 @@ public:
 	virtual int SendFirstRequst();//发送第一个请求
 	virtual bool RequestM3u8File();//请求m3u8文件
 
+	int          SendLiveHLS();//发送实况的hls 
+	int          SendRecordHLS();//发送录像回放的hls 
+
 private :
 	unsigned char*          pTsFileBuffer;//读取TS、FMP4文件缓存
 	int                     nCurrentTsFileBufferSize; //当前TS、FMP4缓存字节大小 
@@ -44,14 +47,14 @@ private :
 	int                     nWriteRet, nWriteRet2;
 
 	char                    httpResponseData[1024];
-	char                    szM3u8Content[512];
+	char                    szM3u8Content[string_length_512K];
 	unsigned char           netDataCache[MaxHttp_FlvNetCacheBufferLength+4]; //网络数据缓存
 	int                     netDataCacheLength;//网络数据缓存大小
 	int                     nNetStart, nNetEnd; //网络数据起始位置\结束位置
 	int                     MaxNetDataCacheCount;
  	int                     data_Length;
 	char                    szPushName[512];//hls 对于的推流名字
-	char                    szRequestFileName[512];//http请求的文件名字 
+	char                    szRequestFileName[string_length_1024];//http请求的文件名字 
 	char                    szReadFileName[512];
 	volatile bool           bFindHLSNameFlag;
 };

@@ -433,7 +433,7 @@ bool  CStreamRecordFMP4::VideoFrameToFMP4File(unsigned char* szVideoData, int nL
 			return false;
 
 		///如果没有音频，直接开始写视频，如果有音频则需要等待音频句柄有效
-		if (nMp4BufferLength > 0 && (strcmp(mediaCodecInfo.szAudioName, "AAC") != 0 || (strcmp(mediaCodecInfo.szAudioName, "AAC") == 0 && track_aac >= 0)))
+		if (nMp4BufferLength > 0 && (ABL_MediaServerPort.nEnableAudio == 0 || strcmp(mediaCodecInfo.szAudioName, "AAC") != 0 || (strcmp(mediaCodecInfo.szAudioName, "AAC") == 0 && track_aac >= 0)))
 		{
 			if (hls_init_segmentFlag == false)
 			{
