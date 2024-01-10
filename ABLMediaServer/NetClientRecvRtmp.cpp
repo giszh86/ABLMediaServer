@@ -10,7 +10,7 @@ E-Mail  79941308@qq.com
 
 #include "stdafx.h"
 #include "NetClientRecvRtmp.h"
-
+#ifdef USE_BOOST
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
 extern boost::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
@@ -18,6 +18,17 @@ extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL, b
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 extern MediaServerPort                       ABL_MediaServerPort;
+
+#else
+extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
+extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
+extern std::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
+extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound = false);
+extern bool                                  DeleteMediaStreamSource(char* szURL);
+extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
+extern MediaServerPort                       ABL_MediaServerPort;
+
+#endif
 
 extern CMediaSendThreadPool* pMediaSendThreadPool;
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
@@ -158,7 +169,7 @@ static int NetRtmpClientRecvCallBackFLV(void* param, int codec, const void* data
 				sprintf(pClient->szResponseBody, "{\"code\":0,\"memo\":\"success\",\"key\":%llu}", pClient->hParent);
 				pClient->ResponseHttp(pClient->nClient_http, pClient->szResponseBody, false);
 
-				boost::shared_ptr<CNetRevcBase>   pParentPtr = GetNetRevcBaseClient(pClient->hParent);
+				auto  pParentPtr = GetNetRevcBaseClient(pClient->hParent);
 				if (pParentPtr && pParentPtr->bProxySuccessFlag == false)
 					pClient->bProxySuccessFlag = pParentPtr->bProxySuccessFlag = true;
 			}

@@ -10,7 +10,7 @@
 
 //定义当前操作系统为Windows 
 #if (defined _WIN32 || defined _WIN64)
- #define      OS_System_Windows        1
+#define      OS_System_Windows        1
 #endif
 
 
@@ -102,9 +102,9 @@ enum WebSocketCommStatus
 //rtsp 播放类型
 enum ABLRtspPlayerType
 {
-	RtspPlayerType_Unknow = -1 ,  //未知 
-	RtspPlayerType_Liveing = 0 , //实时播放
-	RtspPlayerType_RecordReplay = 1 ,//录像回放
+	RtspPlayerType_Unknow = -1,  //未知 
+	RtspPlayerType_Liveing = 0, //实时播放
+	RtspPlayerType_RecordReplay = 1,//录像回放
 	RtspPlayerType_RecordDownload = 2,//录像下载
 };
 
@@ -126,11 +126,11 @@ struct MediaCodecInfo
 	MediaCodecInfo()
 	{
 		memset(szVideoName, 0x00, sizeof(szVideoName));
-		nVideoFrameRate = 25 ;
+		nVideoFrameRate = 25;
 		memset(szAudioName, 0x00, sizeof(szAudioName));
 		nChannels = 0;
 		nSampleRate = 0;
-		nBaseAddAudioTimeStamp = 0 ;
+		nBaseAddAudioTimeStamp = 0;
 		nWidth = 0;
 		nHeight = 0;
 		nVideoBitrate = 0;
@@ -254,7 +254,8 @@ struct MediaServerPort
 	uint64_t   iframeArriveNoticCount;//I帧通知数量
 	int        httqRequstClose;//是否为短链接操作 
 	int        keepaliveDuration; //发送心跳时间间隔
- 	MediaServerPort()
+	int        flvPlayAddMute;
+	MediaServerPort()
 	{
 		memset(wwwPath, 0x00, sizeof(wwwPath));
 		nServerStartTime = 0;
@@ -263,16 +264,16 @@ struct MediaServerPort
 		memset(on_server_keepalive, 0x00, sizeof(on_server_keepalive));
 		memset(on_delete_record_mp4, 0x00, sizeof(on_delete_record_mp4));
 		memset(secret, 0x00, sizeof(secret));
-		nRtspPort    = 554;
-		nRtmpPort    = 1935;
+		nRtspPort = 554;
+		nRtmpPort = 1935;
 		nHttpFlvPort = 8088;
 		nHttpMp4Port = 8089;
 		WsRecvPcmPort = 9298;
 		ps_tsRecvPort = 10000;
 
-		nHlsPort     = 9088;
-		nHlsEnable   = 0;
-		nHLSCutType  = 1;
+		nHlsPort = 9088;
+		nHlsEnable = 0;
+		nHLSCutType = 1;
 		nH265CutType = 1;
 		hlsCutTime = 3;
 		nMaxTsFileCount = 20;
@@ -281,7 +282,7 @@ struct MediaServerPort
 		nSendThreadCount = 64;
 		nRecordReplayThread = 64;
 		nGBRtpTCPHeadType = 1;
-		nEnableAudio = 0 ;
+		nEnableAudio = 0;
 
 		nIOContentNumber = 16;
 		nThreadCountOfIOContent = 16;
@@ -312,13 +313,13 @@ struct MediaServerPort
 		memset(on_record_progress, 0x00, sizeof(on_record_progress));
 		memset(on_stream_arrive, 0x00, sizeof(on_stream_arrive));
 		memset(on_stream_not_arrive, 0x00, sizeof(on_stream_not_arrive));
- 		memset(on_record_ts, 0x00, sizeof(on_record_ts));
+		memset(on_record_ts, 0x00, sizeof(on_record_ts));
 		memset(on_stream_disconnect, 0x00, sizeof(on_stream_disconnect));
 		memset(on_play, 0x00, sizeof(on_play));
 		memset(on_publish, 0x00, sizeof(on_publish));
 		memset(on_stream_iframe_arrive, 0x00, sizeof(on_stream_iframe_arrive));
- 
-		nClientNoneReader = 0 ;
+
+		nClientNoneReader = 0;
 		nClientNotFound = 0;
 		nClientRecordMp4 = 0;
 		nClientDeleteRecordMp4 = 0;
@@ -329,13 +330,13 @@ struct MediaServerPort
 		nClientRecordTS = 0;
 		nServerStarted = 0;
 		nServerKeepalive = 0;
-		nPlay=0;//播放
-	    nPublish=0;//接入
+		nPlay = 0;//播放
+		nPublish = 0;//接入
 		nFrameArrive = 0;
 
 		maxSameTimeSnap = 16;
-		snapOutPictureWidth; 
-		snapOutPictureHeight; 
+		snapOutPictureWidth;
+		snapOutPictureHeight;
 
 		H265ConvertH264_enable = 0;
 		H265DecodeCpuGpuType = 0;
@@ -343,19 +344,19 @@ struct MediaServerPort
 		convertOutHeight = 576;
 		convertMaxObject = 24;
 		convertOutBitrate = 512;
-		H264DecodeEncode_enable=0;
-		filterVideo_enable=0;
-		memset(filterVideoText,0x00,sizeof(filterVideoText));
-		nFilterFontSize=12;
-		memset(nFilterFontColor,0x00,sizeof(nFilterFontColor));
+		H264DecodeEncode_enable = 0;
+		filterVideo_enable = 0;
+		memset(filterVideoText, 0x00, sizeof(filterVideoText));
+		nFilterFontSize = 12;
+		memset(nFilterFontColor, 0x00, sizeof(nFilterFontColor));
 		nFilterFontAlpha = 0.6;//透明度
 		nFilterFontLeft = 10;//x坐标
-		nFilterFontTop = 10 ;//y坐标
+		nFilterFontTop = 10;//y坐标
 		MaxDiconnectTimeoutSecond = 16;
 		ForceSendingIFrame = 0;
 
-		nSaveProxyRtspRtp = 0; 
-		nSaveGB28181Rtp = 0 ; 
+		nSaveProxyRtspRtp = 0;
+		nSaveGB28181Rtp = 0;
 		memset(debugPath, 0x00, sizeof(debugPath));
 
 		gb28181LibraryUse = 1;
@@ -363,8 +364,8 @@ struct MediaServerPort
 		httqRequstClose = 0;
 		enable_GetFileDuration = 0;
 		keepaliveDuration = 20;
-		nWebRtcPort = 8000;
- 	}
+		flvPlayAddMute = 1;
+	}
 };
 
 //真对单独某一路视频转码结构
@@ -372,104 +373,105 @@ struct H265ConvertH264Struct
 {
 	int  H265ConvertH264_enable;//H265是否转码
 	int  H264DecodeEncode_enable;//h264是否重新解码，再编码 
- 	int  convertOutWidth;
+	int  convertOutWidth;
 	int	 convertOutHeight;
- 	int  convertOutBitrate;
+	int  convertOutBitrate;
 
 	H265ConvertH264Struct()
 	{
-	  H265ConvertH264_enable = 0;
-	  H264DecodeEncode_enable = 0;
- 	  convertOutWidth = 0;
-	  convertOutHeight = 0;
- 	  convertOutBitrate = 512;
- 	}
+		H265ConvertH264_enable = 0;
+		H264DecodeEncode_enable = 0;
+		convertOutWidth = 0;
+		convertOutHeight = 0;
+		convertOutBitrate = 512;
+	}
 };
 
 //网络基本类型
 enum NetBaseNetType
 {
-	NetBaseNetType_Unknown                 = 20 ,  //未定义的网络类型
-	NetBaseNetType_WebSocektRecvAudio      = 19 ,//通过websocet 接收音频
-	NetBaseNetType_RtmpServerRecvPush      = 21,//RTMP 服务器，接收客户端的推流 
-	NetBaseNetType_RtmpServerSendPush      = 22,//RTMP 服务器，转发客户端的推上来的码流
-	NetBaseNetType_RtspServerRecvPush      = 23,//RTSP 服务器，接收客户端的推流 
-	NetBaseNetType_RtspServerSendPush      = 24,//RTSP 服务器，转发客户端的推上来的码流
-	NetBaseNetType_HttpFLVServerSendPush   = 25,//Http-FLV 服务器，转发 rtsp 、rtmp 、GB28181等等推流上来的码流
-	NetBaseNetType_HttpHLSServerSendPush   = 26,//Http-HLS 服务器，转发 rtsp 、rtmp 、GB28181等等推流上来的码流
-	NetBaseNetType_WsFLVServerSendPush     = 27,//WS-FLV 服务器，转发 rtsp 、rtmp 、GB28181等等推流上来的码流
-	NetBaseNetType_HttpMP4ServerSendPush   = 28,//http-mp4 服务器，转发 rtsp 、rtmp 、GB28181等等推流上来的码流以mp4发送出去
-	NetBaseNetType_WebRtcServerSendPush    = 29,//WebRtc 服务器，转发 rtsp 、rtmp 、GB28181等等推流上来的码流
+	NetBaseNetType_Unknown = 20,//未定义的网络类型
+	NetBaseNetType_GB28181TcpPSInputStream = 18,//通过10000端口TCP方式接收国标PS流接入
+	NetBaseNetType_WebSocektRecvAudio = 19,//通过websocet 接收音频
+	NetBaseNetType_RtmpServerRecvPush = 21,//RTMP 服务器，接收客户端的推流 
+	NetBaseNetType_RtmpServerSendPush = 22,//RTMP 服务器，转发客户端的推上来的码流
+	NetBaseNetType_RtspServerRecvPush = 23,//RTSP 服务器，接收客户端的推流 
+	NetBaseNetType_RtspServerSendPush = 24,//RTSP 服务器，转发客户端的推上来的码流
+	NetBaseNetType_HttpFLVServerSendPush = 25,//Http-FLV 服务器，转发 rtsp 、rtmp 、GB28181等等推流上来的码流
+	NetBaseNetType_HttpHLSServerSendPush = 26,//Http-HLS 服务器，转发 rtsp 、rtmp 、GB28181等等推流上来的码流
+	NetBaseNetType_WsFLVServerSendPush = 27,//WS-FLV 服务器，转发 rtsp 、rtmp 、GB28181等等推流上来的码流
+	NetBaseNetType_HttpMP4ServerSendPush = 28,//http-mp4 服务器，转发 rtsp 、rtmp 、GB28181等等推流上来的码流以mp4发送出去
+	NetBaseNetType_WebRtcServerSendPush = 29,//WebRtc 服务器，转发 rtsp 、rtmp 、GB28181等等推流上来的码流
 
 	//主动拉流对象
-	NetBaseNetType_RtspClientRecv          = 30 ,//rtsp主动拉流对象 
-	NetBaseNetType_RtmpClientRecv          = 31 ,//rtmp主动拉流对象 
-	NetBaseNetType_HttpFlvClientRecv       = 32 ,//http-flv主动拉流对象 
-	NetBaseNetType_HttpHLSClientRecv       = 33 ,//http-hls主动拉流对象 
-	NetBaseNetType_HttClientRecvJTT1078    = 34, //接收交通部JTT1078 
-	NetBaseNetType_ReadLocalMediaFile      = 35, //代理读取本地媒体文件主要包括mp4文件
+	NetBaseNetType_RtspClientRecv = 30,//rtsp主动拉流对象 
+	NetBaseNetType_RtmpClientRecv = 31,//rtmp主动拉流对象 
+	NetBaseNetType_HttpFlvClientRecv = 32,//http-flv主动拉流对象 
+	NetBaseNetType_HttpHLSClientRecv = 33,//http-hls主动拉流对象 
+	NetBaseNetType_HttClientRecvJTT1078 = 34, //接收交通部JTT1078 
+	NetBaseNetType_ReadLocalMediaFile = 35, //代理读取本地媒体文件主要包括mp4文件
 
 	//主动推流对象
-	NetBaseNetType_RtspClientPush          = 40,//rtsp主动推流对象 
-	NetBaseNetType_RtmpClientPush          = 41,//rtmp主动推流对象 
- 	NetBaseNetType_GB28181ClientPushTCP    = 42,//GB28181主动推流对象 
-	NetBaseNetType_GB28181ClientPushUDP    = 43,//GB28181主动推流对象 
+	NetBaseNetType_RtspClientPush = 40,//rtsp主动推流对象 
+	NetBaseNetType_RtmpClientPush = 41,//rtmp主动推流对象 
+	NetBaseNetType_GB28181ClientPushTCP = 42,//GB28181主动推流对象 
+	NetBaseNetType_GB28181ClientPushUDP = 43,//GB28181主动推流对象 
 
-	NetBaseNetType_addStreamProxyControl   = 50,//控制代理rtsp\rtmp\flv\hsl 拉流
-	NetBaseNetType_addPushProxyControl     = 51,//控制代理rtsp\rtmp  推流 代理
+	NetBaseNetType_addStreamProxyControl = 50,//控制代理rtsp\rtmp\flv\hsl 拉流
+	NetBaseNetType_addPushProxyControl = 51,//控制代理rtsp\rtmp  推流 代理
 
-	NetBaseNetType_NetGB28181RtpServerListen      = 56,//国标TCP方式接收Listen类
-	NetBaseNetType_NetGB28181RtpSendListen        = 57,//国标TCP方式发送Listen类
-	NetBaseNetType_NetGB28181RtpServerTCP_Active  = 58,//国标28181 TCP方式 接收码流,主动连接方式 
-	NetBaseNetType_NetGB28181SendRtpTCP_Passive   = 59, //国标28181 TCP方式 发送码流,被动方式推送码流
+	NetBaseNetType_NetGB28181RtpServerListen = 56,//国标TCP方式接收Listen类
+	NetBaseNetType_NetGB28181RtpSendListen = 57,//国标TCP方式发送Listen类
+	NetBaseNetType_NetGB28181RtpServerTCP_Active = 58,//国标28181 TCP方式 接收码流,主动连接方式 
+	NetBaseNetType_NetGB28181SendRtpTCP_Passive = 59, //国标28181 TCP方式 发送码流,被动方式推送码流
 
-	NetBaseNetType_NetGB28181RtpServerUDP         = 60,//国标28181 UDP方式 接收码流
-	NetBaseNetType_NetGB28181RtpServerTCP_Server  = 61,//国标28181 TCP方式 接收码流,被动连接方式 
-	NetBaseNetType_NetGB28181RtpServerTCP_Client  = 62,//国标28181 TCP方式 接收码流,主动连接方式 
-	NetBaseNetType_NetGB28181RtpServerRTCP        = 63,//国标28181 UDP方式 接收码流 中的 rtcp 包
-	NetBaseNetType_NetGB28181UDPPSStreamInput     = 64,//PS推流接入国标单端口推流接入
-	NetBaseNetType_NetGB28181SendRtpUDP           = 65,//国标28181 UDP方式 推送码流
-	NetBaseNetType_NetGB28181SendRtpTCP_Connect   = 66,//国标28181 TCP方式 接收码流,主动连接方式 推送码流
-	NetBaseNetType_NetGB28181SendRtpTCP_Server    = 67,//国标28181 TCP方式 接收码流,被动连接方式 推送码流
-	NetBaseNetType_NetGB28181RecvRtpPS_TS         = 68,//国标28181 单端口接收PS、TS码流
-	NetBaseNetType_NetGB28181UDPTSStreamInput     = 69,//TS推流接入
+	NetBaseNetType_NetGB28181RtpServerUDP = 60,//国标28181 UDP方式 接收码流
+	NetBaseNetType_NetGB28181RtpServerTCP_Server = 61,//国标28181 TCP方式 接收码流,被动连接方式 
+	NetBaseNetType_NetGB28181RtpServerTCP_Client = 62,//国标28181 TCP方式 接收码流,主动连接方式 
+	NetBaseNetType_NetGB28181RtpServerRTCP = 63,//国标28181 UDP方式 接收码流 中的 rtcp 包
+	NetBaseNetType_NetGB28181UDPPSStreamInput = 64,//PS推流接入国标单端口推流接入
+	NetBaseNetType_NetGB28181SendRtpUDP = 65,//国标28181 UDP方式 推送码流
+	NetBaseNetType_NetGB28181SendRtpTCP_Connect = 66,//国标28181 TCP方式 接收码流,主动连接方式 推送码流
+	NetBaseNetType_NetGB28181SendRtpTCP_Server = 67,//国标28181 TCP方式 接收码流,被动连接方式 推送码流
+	NetBaseNetType_NetGB28181RecvRtpPS_TS = 68,//国标28181 单端口接收PS、TS码流
+	NetBaseNetType_NetGB28181UDPTSStreamInput = 69,//TS推流接入
 
-	NetBaseNetType_RecordFile_FMP4                = 70,//录像存储为fmp4格式
-	NetBaseNetType_RecordFile_TS                  = 71,//录像存储为TS格式
-	NetBaseNetType_RecordFile_PS                  = 72,//录像存储为PS格式
-	NetBaseNetType_RecordFile_FLV                 = 73,//录像存储为flv格式
-	NetBaseNetType_RecordFile_MP4                 = 74,//录像存储为mp4格式
+	NetBaseNetType_RecordFile_FMP4 = 70,//录像存储为fmp4格式
+	NetBaseNetType_RecordFile_TS = 71,//录像存储为TS格式
+	NetBaseNetType_RecordFile_PS = 72,//录像存储为PS格式
+	NetBaseNetType_RecordFile_FLV = 73,//录像存储为flv格式
+	NetBaseNetType_RecordFile_MP4 = 74,//录像存储为mp4格式
 
- 	ReadRecordFileInput_ReadFMP4File              = 80,//以读取fmp4文件格式 
-	ReadRecordFileInput_ReadTSFile                = 81,//以读取TS文件格式 
-	ReadRecordFileInput_ReadPSFile                = 82,//以读取PS文件格式 
-	ReadRecordFileInput_ReadFLVFile               = 83,//以读取FLV文件格式 
+	ReadRecordFileInput_ReadFMP4File = 80,//以读取fmp4文件格式 
+	ReadRecordFileInput_ReadTSFile = 81,//以读取TS文件格式 
+	ReadRecordFileInput_ReadPSFile = 82,//以读取PS文件格式 
+	ReadRecordFileInput_ReadFLVFile = 83,//以读取FLV文件格式 
 
-	NetBaseNetType_HttpClient_None_reader           = 90,//无人观看
-	NetBaseNetType_HttpClient_Not_found             = 91,//流没有找到
-	NetBaseNetType_HttpClient_Record_mp4            = 92,//完成一段录像
-	NetBaseNetType_HttpClient_on_stream_arrive      = 93,//码流到达
-	NetBaseNetType_HttpClient_on_stream_disconnect  = 94,//连接已断开
-	NetBaseNetType_HttpClient_on_record_ts          = 95,//TS切片完成
-	NetBaseNetType_HttpClient_on_stream_not_arrive  = 96,//码流没有到达
-	NetBaseNetType_HttpClient_Record_Progress       = 97,//录像下载进度
- 
-	NetBaseNetType_SnapPicture_JPEG               =100,//抓拍为JPG 
-	NetBaseNetType_SnapPicture_PNG                =101,//抓拍为PNG
+	NetBaseNetType_HttpClient_None_reader = 90,//无人观看
+	NetBaseNetType_HttpClient_Not_found = 91,//流没有找到
+	NetBaseNetType_HttpClient_Record_mp4 = 92,//完成一段录像
+	NetBaseNetType_HttpClient_on_stream_arrive = 93,//码流到达
+	NetBaseNetType_HttpClient_on_stream_disconnect = 94,//连接已断开
+	NetBaseNetType_HttpClient_on_record_ts = 95,//TS切片完成
+	NetBaseNetType_HttpClient_on_stream_not_arrive = 96,//码流没有到达
+	NetBaseNetType_HttpClient_Record_Progress = 97,//录像下载进度
 
-	NetBaseNetType_NetServerHTTP                  =110,//http 操作请求 
+	NetBaseNetType_SnapPicture_JPEG = 100,//抓拍为JPG 
+	NetBaseNetType_SnapPicture_PNG = 101,//抓拍为PNG
 
-	NetBaseNetType_HttpClient_ServerStarted       = 120,//服务器启动
-	NetBaseNetType_HttpClient_ServerKeepalive     = 121,//服务器心跳
-	NetBaseNetType_HttpClient_DeleteRecordMp4     = 122,//覆盖录像文件
-	NetBaseNetType_HttpClient_on_play              = 123,//播放视频事件通知
-	NetBaseNetType_HttpClient_on_publish           = 124,//码流接入通知 
-	NetBaseNetType_HttpClient_on_iframe_arrive     = 125,//i帧到达事件
+	NetBaseNetType_NetServerHTTP = 110,//http 操作请求 
+
+	NetBaseNetType_HttpClient_ServerStarted = 120,//服务器启动
+	NetBaseNetType_HttpClient_ServerKeepalive = 121,//服务器心跳
+	NetBaseNetType_HttpClient_DeleteRecordMp4 = 122,//覆盖录像文件
+	NetBaseNetType_HttpClient_on_play = 123,//播放视频事件通知
+	NetBaseNetType_HttpClient_on_publish = 124,//码流接入通知 
+	NetBaseNetType_HttpClient_on_iframe_arrive = 125,//i帧到达事件
 
 	NetBaseNetType_NetClientWebrtcPlayer = 130,//webrtc的播放 
 };
 
-#define   MediaServerVerson                 "ABLMediaServer-6.3.6(2023-12-06)"
+#define   MediaServerVerson                 "ABLMediaServer-6.3.6(2024-01-03)"
 #define   RtspServerPublic                  "DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE, OPTIONS, ANNOUNCE, RECORD，GET_PARAMETER"
 #define   RecordFileReplaySplitter          "__ReplayFMP4RecordFile__"  //实况、录像区分的标志字符串，用于区分实况，放置在url中。
 
@@ -489,7 +491,7 @@ struct RtspURLParseStruct
 	char szSrcRtspPullUrl[string_length_1024]; //原始URL
 	char szDstRtspUrl[string_length_1024];//打算分发的RTSP url 
 	char szRequestFile[string_length_1024];//请求的文件 比如 http://admin:szga2019@190.15.240.189:9088/Media/Camera_00001/hls.m3u8 中的 /Media/Camera_00001/hls.m3u8
-	                                  // 比如 http://admin:szga2019@190.15.240.189:8088/Media/Camera_00001.flv 中的 /Media/Camera_00001.flv
+									  // 比如 http://admin:szga2019@190.15.240.189:8088/Media/Camera_00001.flv 中的 /Media/Camera_00001.flv
 	char szRtspURLTrim[string_length_1024];//去掉？后面的字符串得到的rtsp url 
 
 	bool bHavePassword; //是否有密码
@@ -533,11 +535,12 @@ struct addStreamProxyStruct
 	char  convertOutWidth[64];//转码输出宽
 	char  convertOutHeight[64];//转码输出高 
 	char  H264DecodeEncode_enable[64];//H264是否解码再编码 
-	char  RtpPayloadDataType[64]; 
+	char  RtpPayloadDataType[64];
 	char  disableVideo[16];//过滤掉视频 1 过滤掉视频 ，0 不过滤视频 ，默认 0 
 	char  disableAudio[16];//过滤掉音频 1 过滤掉音频 ，0 不过滤音频 ，默认 0 
 	char   dst_url[string_length_256];//TCP主动时 目标IP 
 	char   dst_port[string_length_256];//TCP主动时 目标端口 
+	char   optionsHeartbeat[64];//是否开启options命令作为心跳包
 
 	addStreamProxyStruct()
 	{
@@ -557,6 +560,7 @@ struct addStreamProxyStruct
 		memset(disableAudio, 0x00, sizeof(disableAudio));
 		memset(dst_url, 0x00, sizeof(dst_url));
 		memset(dst_port, 0x00, sizeof(dst_port));
+		memset(optionsHeartbeat, 0x00, sizeof(optionsHeartbeat));
 	}
 };
 
@@ -565,7 +569,7 @@ struct delRequestStruct
 {
 	char  secret[string_length_256];//api操作密码 
 	char  key[128];//key
- 
+
 	delRequestStruct()
 	{
 		memset(secret, 0x00, sizeof(secret));
@@ -603,7 +607,7 @@ struct openRtpServerStruct
 	char   vhost[string_length_256];//添加流的虚拟主机
 	char   app[string_length_256];//添加流的应用名
 	char   stream_id[string_length_512];//添加流的id 
-	char   port[64] ;//GB2818端口
+	char   port[64];//GB2818端口
 	char   enable_tcp[16]; //0 UDP，1 TCP 被动，2 TCP 主动 
 	char   payload[64]; //payload rtp 打包的payload 
 	char   dst_url[string_length_256];//TCP主动时 目标IP 
@@ -620,6 +624,7 @@ struct openRtpServerStruct
 	char   send_stream_id[string_length_512];//发送出去
 	char   send_disableVideo[16];//过滤掉视频 1 过滤掉视频 ，0 不过滤视频 ，默认 0 
 	char   send_disableAudio[16];//过滤掉音频 1 过滤掉音频 ，0 不过滤音频 ，默认 0 
+	char   jtt1078_version[128]; //1078版本 2013、2016、2019
 
 	openRtpServerStruct()
 	{
@@ -644,6 +649,7 @@ struct openRtpServerStruct
 		memset(send_disableAudio, 0x00, sizeof(send_disableAudio));
 		memset(dst_url, 0x00, sizeof(dst_url));
 		memset(dst_port, 0x00, sizeof(dst_port));
+		memset(jtt1078_version, 0x00, sizeof(jtt1078_version));
 	}
 };
 
@@ -667,6 +673,7 @@ struct startSendRtpStruct
 	char   recv_stream[string_length_512];//用于接收
 	char   recv_disableVideo[16];//过滤掉视频 1 过滤掉视频 ，0 不过滤视频 ，默认 0 
 	char   recv_disableAudio[16];//过滤掉音频 1 过滤掉音频 ，0 不过滤音频 ，默认 0 
+	char   jtt1078_version[128]; //1078版本 2013、2016、2019
 
 	startSendRtpStruct()
 	{
@@ -686,11 +693,12 @@ struct startSendRtpStruct
 		memset(recv_stream, 0x00, sizeof(recv_stream));
 		memset(recv_disableVideo, 0x00, sizeof(recv_disableVideo));
 		memset(recv_disableAudio, 0x00, sizeof(recv_disableAudio));
+		memset(jtt1078_version, 0x00, sizeof(jtt1078_version));
 	}
 };
 
 //获取列表结构
-struct getMediaListStruct 
+struct getMediaListStruct
 {
 	char   secret[string_length_256];//api操作密码 
 	char   vhost[string_length_256];//添加流的虚拟主机
@@ -725,7 +733,7 @@ struct getServerConfigStruct
 	getServerConfigStruct()
 	{
 		memset(secret, 0x00, sizeof(secret));
- 	}
+	}
 };
 
 //关闭源流结构
@@ -736,7 +744,7 @@ struct closeStreamsStruct
 	char   	vhost[string_length_256];
 	char   	app[string_length_256];
 	char   	stream[string_length_512];
-	int	    force ; //1 强制关闭，不管是否有人观看 ，0 有人能观看时，不关闭
+	int	    force; //1 强制关闭，不管是否有人观看 ，0 有人能观看时，不关闭
 	closeStreamsStruct()
 	{
 		memset(secret, 0x00, sizeof(secret));
@@ -744,7 +752,7 @@ struct closeStreamsStruct
 		memset(vhost, 0x00, sizeof(vhost));
 		memset(app, 0x00, sizeof(app));
 		memset(stream, 0x00, sizeof(stream));
-		force = 1; 
+		force = 1;
 	}
 };
 
@@ -762,7 +770,7 @@ struct startStopRecordStruct
 		memset(vhost, 0x00, sizeof(vhost));
 		memset(app, 0x00, sizeof(app));
 		memset(stream, 0x00, sizeof(stream));
- 	}
+	}
 };
 
 //查询录像文件列表
@@ -831,7 +839,7 @@ struct controlStreamProxy
 {
 	char  secret[string_length_256];//api操作密码 
 	char  key[64];//key
- 	char  command[string_length_256];//命令 
+	char  command[string_length_256];//命令 
 	char  value[string_length_256];//值
 
 	controlStreamProxy()
@@ -840,7 +848,7 @@ struct controlStreamProxy
 		memset(key, 0x00, sizeof(key));
 		memset(command, 0x00, sizeof(command));
 		memset(value, 0x00, sizeof(value));
- 	}
+	}
 };
 
 //设置配置参数值
@@ -854,7 +862,7 @@ struct SetConfigParamValue
 	{
 		memset(secret, 0x00, sizeof(secret));
 		memset(key, 0x00, sizeof(key));
- 		memset(value, 0x00, sizeof(value));
+		memset(value, 0x00, sizeof(value));
 	}
 };
 
@@ -877,12 +885,12 @@ struct ListServerPortStruct
 
 enum NetRevcBaseClientType
 {
-	NetRevcBaseClient_ServerAccept               = 1, //服务器端口接入 ，比如 554,8080,8088,8089,1935 等等端口accept进来的
-	NetRevcBaseClient_addStreamProxy             = 2, //代理拉流方式
-	NetRevcBaseClient_addPushStreamProxy         = 3, //代理推流方式
-	NetRevcBaseClient_addStreamProxyControl      = 4, //控制代理拉流
-	NetRevcBaseClient_addPushProxyControl        = 5, //控制代理推流
-	NetRevcBaseClient__NetGB28181Proxy           = 6, //GB28181代理 
+	NetRevcBaseClient_ServerAccept = 1, //服务器端口接入 ，比如 554,8080,8088,8089,1935 等等端口accept进来的
+	NetRevcBaseClient_addStreamProxy = 2, //代理拉流方式
+	NetRevcBaseClient_addPushStreamProxy = 3, //代理推流方式
+	NetRevcBaseClient_addStreamProxyControl = 4, //控制代理拉流
+	NetRevcBaseClient_addPushProxyControl = 5, //控制代理推流
+	NetRevcBaseClient__NetGB28181Proxy = 6, //GB28181代理 
 };
 
 //http请求参数 
@@ -915,13 +923,13 @@ struct WebRtcCallStruct
 //http 操作返回码
 enum HttpReponseIndexApiCode
 {
-	IndexApiCode_OK           = 0 ,     //操作正常
+	IndexApiCode_OK = 0,     //操作正常
 	IndexApiCode_ErrorRequest = -100,   //非法请求
-	IndexApiCode_secretError  = -200,   //secret错误
-	IndexApiCode_ParamError   = -300,   //参数错误
-	IndexApiCode_KeyNotFound  = -400,   //Key 没有找到
-	IndexApiCode_SqlError     = -500,   //Sql错误
-	IndexApiCode_ConnectFail  = -600,   //连接失败
+	IndexApiCode_secretError = -200,   //secret错误
+	IndexApiCode_ParamError = -300,   //参数错误
+	IndexApiCode_KeyNotFound = -400,   //Key 没有找到
+	IndexApiCode_SqlError = -500,   //Sql错误
+	IndexApiCode_ConnectFail = -600,   //连接失败
 	IndexApiCode_RtspSDPError = -700,   //rtsp推流失败
 	IndexApiCode_RtmpPushError = -800,  //rtmp推流失败
 	IndexApiCode_BindPortError = -900,  //网络绑定失败
@@ -929,13 +937,13 @@ enum HttpReponseIndexApiCode
 	IndexApiCode_HttpJsonError = -1001, //http 请求 json参数非法
 	IndexApiCode_HttpProtocolError = -1002, //http 请求 协议错误
 	IndexApiCode_MediaSourceNotFound = -1003, //可以媒体源没有找到 
-	IndexApiCode_RequestProcessFailed  = -1004 ,//执行失败 
+	IndexApiCode_RequestProcessFailed = -1004,//执行失败 
 	IndexApiCode_RequestFileNotFound = -1005,//文件没有找到
 	IndexApiCode_ContentTypeNotSupported = -1006,//Content-Type 类型不支持
 	IndexApiCode_OverMaxSameTimeSnap = -1007,//超过最大抓拍数量
 	IndexApiCode_AppStreamAlreadyUsed = -1008,//app/sream 已经使用中
-	IndexApiCode_PortAlreadyUsed      = -1009,//port 已经使用中
-	IndexApiCode_SSRClreadyUsed       = -1010,//SSRC 已经使用中
+	IndexApiCode_PortAlreadyUsed = -1009,//port 已经使用中
+	IndexApiCode_SSRClreadyUsed = -1010,//SSRC 已经使用中
 	IndexApiCode_TranscodingVideoFilterNotEnable = -1011,//转码、水印功能尚未开启
 	IndexApiCode_TranscodingVideoFilterTakeEffect = -1012,//转码、水印功能尚未生效
 	IndexApiCode_RecvRtmpFailed = -1100, //获取rtmp码流失败
@@ -969,7 +977,7 @@ enum  WWW_AuthenticateType
 enum NetGB28181ProxyType
 {
 	NetGB28181ProxyType_RecvStream = 1, //国标收流
-	NetGB28181ProxyType_PushStream = 2 ,//国标推流
+	NetGB28181ProxyType_PushStream = 2,//国标推流
 };
 
 //accept 过来的网络类型
@@ -990,7 +998,7 @@ struct NetServerHandleParam
 		nNetServerHandleType = 0;
 		hParent = 0;
 		memset(szMediaSource, 0x00, sizeof(szMediaSource));
-		nAcceptNumber = 0 ;
+		nAcceptNumber = 0;
 	}
 };
 
@@ -1035,15 +1043,15 @@ enum MediaSourceType
 enum RtspRtpPayloadType
 {
 	RtspRtpPayloadType_Unknow = 0,  //未知
-	RtspRtpPayloadType_ES     = 1, //rtp负载ES 
-	RtspRtpPayloadType_PS     = 2, //rtp负载PS 
+	RtspRtpPayloadType_ES = 1, //rtp负载ES 
+	RtspRtpPayloadType_PS = 2, //rtp负载PS 
 };
 
 //图片类型
 enum HttpImageType
 {
 	HttpImageType_jpeg = 1,  //jpeg
-    HttpImageType_png = 2, //png
+	HttpImageType_png = 2, //png
 };
 bool          ABLDeleteFile(char* szFileName);
 
@@ -1061,10 +1069,228 @@ struct MessageNoticeStruct
 	}
 };
 
+#define  MaxGB28181RtpSendVideoMediaBufferLength  1024*64 
+#define  Ma1078CacheBufferLength                  1024*1024*2   //1078缓存 
+#define  MaxOne1078PacketLength                   950           //1078最大1包长度 
 
+#pragma pack(push)
+#pragma pack (1)
+typedef struct Jt1078VideoRtpPacket_T {
+
+	unsigned char head[4];
+#ifdef IS_JT1078RTP_BIGENDIAN
+	unsigned char v : 2;
+	unsigned char p : 1;
+	unsigned char x : 1;
+	unsigned char cc : 4;
+	unsigned char m : 1;
+	unsigned char pt : 7;
+#else
+	unsigned char cc : 4;
+	unsigned char x : 1;
+	unsigned char p : 1;
+	unsigned char v : 2;
+	unsigned char pt : 7;
+	unsigned char m : 1;
+#endif
+	unsigned short seq;
+	unsigned char sim[6];
+	unsigned char ch;
+#ifdef IS_JT1078RTP_BIGENDIAN
+	unsigned char frame_type : 4;
+	unsigned char packet_type : 4;
+#else
+	unsigned char packet_type : 4;
+	unsigned char frame_type : 4;
+#endif
+	int64_t timestamp;
+	unsigned short i_frame_interval;
+	unsigned short frame_interval;
+	unsigned short payload_size;
+
+}Jt1078VideoRtpPacket;
+
+typedef struct Jt1078VideoRtpPacket2019_T {
+
+	unsigned char head[4];
+#ifdef IS_JT1078RTP_BIGENDIAN
+	unsigned char v : 2;
+	unsigned char p : 1;
+	unsigned char x : 1;
+	unsigned char cc : 4;
+	unsigned char m : 1;
+	unsigned char pt : 7;
+#else
+	unsigned char cc : 4;
+	unsigned char x : 1;
+	unsigned char p : 1;
+	unsigned char v : 2;
+	unsigned char pt : 7;
+	unsigned char m : 1;
+#endif
+	unsigned short seq;
+	unsigned char sim[10];
+	unsigned char ch;
+#ifdef IS_JT1078RTP_BIGENDIAN
+	unsigned char frame_type : 4;
+	unsigned char packet_type : 4;
+#else
+	unsigned char packet_type : 4;
+	unsigned char frame_type : 4;
+#endif
+	int64_t timestamp;
+	unsigned short i_frame_interval;
+	unsigned short frame_interval;
+	unsigned short payload_size;
+
+}Jt1078VideoRtpPacket2019;
+
+typedef struct Jt1078AudioRtpPacket_T {
+
+	unsigned char head[4];
+#ifdef IS_JT1078RTP_BIGENDIAN
+	unsigned char v : 2;
+	unsigned char p : 1;
+	unsigned char x : 1;
+	unsigned char cc : 4;
+	unsigned char m : 1;
+	unsigned char pt : 7;
+#else
+	unsigned char cc : 4;
+	unsigned char x : 1;
+	unsigned char p : 1;
+	unsigned char v : 2;
+	unsigned char pt : 7;
+	unsigned char m : 1;
+#endif
+	unsigned short seq;
+	unsigned char sim[6];
+	unsigned char ch;
+#ifdef IS_JT1078RTP_BIGENDIAN
+	unsigned char frame_type : 4;
+	unsigned char packet_type : 4;
+#else
+	unsigned char packet_type : 4;
+	unsigned char frame_type : 4;
+#endif
+	int64_t timestamp;
+	unsigned short payload_size;
+
+}Jt1078AudioRtpPacket;
+
+typedef struct Jt1078AudioRtpPacket2019_T {
+
+	unsigned char head[4];
+#ifdef IS_JT1078RTP_BIGENDIAN
+	unsigned char v : 2;
+	unsigned char p : 1;
+	unsigned char x : 1;
+	unsigned char cc : 4;
+	unsigned char m : 1;
+	unsigned char pt : 7;
+#else
+	unsigned char cc : 4;
+	unsigned char x : 1;
+	unsigned char p : 1;
+	unsigned char v : 2;
+	unsigned char pt : 7;
+	unsigned char m : 1;
+#endif
+	unsigned short seq;
+	unsigned char sim[10];
+	unsigned char ch;
+#ifdef IS_JT1078RTP_BIGENDIAN
+	unsigned char frame_type : 4;
+	unsigned char packet_type : 4;
+#else
+	unsigned char packet_type : 4;
+	unsigned char frame_type : 4;
+#endif
+	int64_t timestamp;
+	unsigned short payload_size;
+
+}Jt1078AudioRtpPacket2019;
+
+typedef struct Jt1078OtherRtpPacket_T {
+
+	unsigned char head[4];
+#ifdef IS_JT1078RTP_BIGENDIAN
+	unsigned char v : 2;
+	unsigned char p : 1;
+	unsigned char x : 1;
+	unsigned char cc : 4;
+	unsigned char m : 1;
+	unsigned char pt : 7;
+#else
+	unsigned char cc : 4;
+	unsigned char x : 1;
+	unsigned char p : 1;
+	unsigned char v : 2;
+	unsigned char pt : 7;
+	unsigned char m : 1;
+#endif
+	unsigned short seq;
+	unsigned char sim[6];
+	unsigned char ch;
+#ifdef IS_JT1078RTP_BIGENDIAN
+	unsigned char frame_type : 4;
+	unsigned char packet_type : 4;
+#else
+	unsigned char packet_type : 4;
+	unsigned char frame_type : 4;
+#endif
+	unsigned short payload_size;
+
+}Jt1078OtherRtpPacket;
+
+typedef struct Jt1078OtherRtpPacket2019_T {
+
+	unsigned char head[4];
+#ifdef IS_JT1078RTP_BIGENDIAN
+	unsigned char v : 2;
+	unsigned char p : 1;
+	unsigned char x : 1;
+	unsigned char cc : 4;
+	unsigned char m : 1;
+	unsigned char pt : 7;
+#else
+	unsigned char cc : 4;
+	unsigned char x : 1;
+	unsigned char p : 1;
+	unsigned char v : 2;
+	unsigned char pt : 7;
+	unsigned char m : 1;
+#endif
+	unsigned short seq;
+	unsigned char sim[10];
+	unsigned char ch;
+#ifdef IS_JT1078RTP_BIGENDIAN
+	unsigned char frame_type : 4;
+	unsigned char packet_type : 4;
+#else
+	unsigned char packet_type : 4;
+	unsigned char frame_type : 4;
+#endif
+	unsigned short payload_size;
+
+}Jt1078OtherRtpPacket2019;
+
+#pragma  pack(pop)
+
+//音频aac 音频数据 [1 通道  ，16000 采样 
+struct muteAACBufferStruct
+{
+	unsigned char    pAACBuffer[256];
+	unsigned short   nAACLength;
+	muteAACBufferStruct()
+	{
+		memset(pAACBuffer, 0x00, sizeof(pAACBuffer));
+		nAACLength = 0;
+	}
+};
 
 #ifndef OS_System_Windows
-unsigned long  GetTickCount();
+unsigned long GetTickCount();
 int64_t  GetTickCount64();
 #ifdef USE_BOOST
 void          Sleep(int mMicroSecond);
@@ -1162,7 +1388,6 @@ typedef list<int> LogFileVector;
 #include "NetClientRecvRtmp.h"
 #include "NetClientRecvFLV.h"
 #include "NetClientRecvRtsp.h"
-#include "NetClientRecvJTT1078.h"
 #include "NetClientSendRtsp.h"
 #include "NetClientSendRtmp.h"
 #include "NetClientAddStreamProxy.h"

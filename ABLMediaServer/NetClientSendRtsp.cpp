@@ -50,7 +50,7 @@ extern void LIBNET_CALLMETHOD onread(NETHANDLE srvhandle,
 extern void LIBNET_CALLMETHOD	onclose(NETHANDLE srvhandle,
 	NETHANDLE clihandle);
 
-CNetClientSendRtsp::CNetClientSendRtsp(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort,char* szShareMediaURL)
+CNetClientSendRtsp::CNetClientSendRtsp(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort, char* szShareMediaURL)
 {
 	nServer = hServer;
 	nClient = hClient;
@@ -70,7 +70,7 @@ CNetClientSendRtsp::CNetClientSendRtsp(NETHANDLE hServer, NETHANDLE hClient, cha
 
 	netDataCacheLength = 0;//网络数据缓存大小
 	nNetStart = nNetEnd = 0; //网络数据起始位置\结束位置
-	MaxNetDataCacheCount = MaxNetDataCacheBufferLength ;
+	MaxNetDataCacheCount = MaxNetDataCacheBufferLength;
 	data_Length = 0;
 
 	nRecvLength = 0;
@@ -82,7 +82,7 @@ CNetClientSendRtsp::CNetClientSendRtsp(NETHANDLE hServer, NETHANDLE hClient, cha
 
 	m_bHaveSPSPPSFlag = false;
 	m_nSpsPPSLength = 0;
-	memset(s_extra_data,0x00,sizeof(s_extra_data));
+	memset(s_extra_data, 0x00, sizeof(s_extra_data));
 	extra_data_size = 0;
 
 	RtspProtectArrayOrder = 0;
@@ -90,8 +90,8 @@ CNetClientSendRtsp::CNetClientSendRtsp(NETHANDLE hServer, NETHANDLE hClient, cha
 		memset((char*)&RtspProtectArray[i], 0x00, sizeof(RtspProtectArray[i]));
 
 	for (int i = 0; i < MaxRtpHandleCount; i++)
-  		hRtpHandle[i] = 0 ;
- 
+		hRtpHandle[i] = 0;
+
 	for (int i = 0; i < 3; i++)
 		bExitProcessFlagArray[i] = true;
 
@@ -109,7 +109,7 @@ CNetClientSendRtsp::CNetClientSendRtsp(NETHANDLE hServer, NETHANDLE hClient, cha
 	nMediaCount = 0;
 #ifdef WriteRtpDepacketFileFlag
 	fWriteRtpVideo = fopen("d:\\rtspRecv.264", "wb");
- 	fWriteRtpAudio = fopen("d:\\rtspRecv.aac", "wb");
+	fWriteRtpAudio = fopen("d:\\rtspRecv.aac", "wb");
 	bStartWriteFlag = false;
 #endif
 	bRunFlag = true;
@@ -120,10 +120,10 @@ CNetClientSendRtsp::CNetClientSendRtsp(NETHANDLE hServer, NETHANDLE hClient, cha
 
 CNetClientSendRtsp::~CNetClientSendRtsp()
 {
-	WriteLog(Log_Debug, "CNetClientSendRtsp 等待任务退出 nTime = %llu, nClient = %llu ",GetTickCount64(), nClient);
+	WriteLog(Log_Debug, "CNetClientSendRtsp 等待任务退出 nTime = %llu, nClient = %llu ", GetTickCount64(), nClient);
 	bRunFlag = false;
- 	std::lock_guard<std::mutex> lock(businessProcMutex);
-	
+	std::lock_guard<std::mutex> lock(businessProcMutex);
+
 	for (int i = 0; i < 3; i++)
 	{
 		while (!bExitProcessFlagArray[i])
@@ -131,14 +131,14 @@ CNetClientSendRtsp::~CNetClientSendRtsp()
 			//Sleep(5);
 	}
 	WriteLog(Log_Debug, "CNetClientSendRtsp 任务退出完毕 nTime = %llu, nClient = %llu ", GetTickCount64(), nClient);
- 
+
 #ifdef WriteRtpDepacketFileFlag
-	if(fWriteRtpVideo)
-	  fclose(fWriteRtpVideo);
-	if(fWriteRtpAudio)
-	  fclose(fWriteRtpAudio);
+	if (fWriteRtpVideo)
+		fclose(fWriteRtpVideo);
+	if (fWriteRtpAudio)
+		fclose(fWriteRtpAudio);
 #endif
-	 
+
 	if (hRtpVideo != 0)
 	{
 		rtp_packet_stop(hRtpVideo);
@@ -158,7 +158,7 @@ CNetClientSendRtsp::~CNetClientSendRtsp()
 int CNetClientSendRtsp::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, char* szVideoCodec)
 {
 	nRecvDataTimerBySecond = 0;
-	if (!bRunFlag || m_addPushProxyStruct.disableVideo[0] != 0x30 )
+	if (!bRunFlag || m_addPushProxyStruct.disableVideo[0] != 0x30)
 		return -1;
 	std::lock_guard<std::mutex> lock(businessProcMutex);
 
@@ -244,7 +244,7 @@ int CNetClientSendRtsp::InputNetData(NETHANDLE nServerHandle, NETHANDLE nClientH
 			nNetStart = 0;
 			nNetEnd = netDataCacheLength;
 
- 			if (MaxNetDataCacheCount - nNetEnd < nDataLength)
+			if (MaxNetDataCacheCount - nNetEnd < nDataLength)
 			{
 				nNetStart = nNetEnd = netDataCacheLength = 0;
 				WriteLog(Log_Debug, "CNetClientSendRtsp = %X nClient = %llu 数据异常 , 执行删除", this, nClient);
@@ -262,7 +262,7 @@ int CNetClientSendRtsp::InputNetData(NETHANDLE nServerHandle, NETHANDLE nClientH
 		netDataCacheLength += nDataLength;
 		nNetEnd += nDataLength;
 	}
- 	return 0 ;
+	return 0;
 }
 
 //读取网络数据 ，模拟原来底层网络库读取函数 
@@ -272,25 +272,24 @@ int32_t  CNetClientSendRtsp::XHNetSDKRead(NETHANDLE clihandle, uint8_t* buffer, 
 	bExitProcessFlagArray[0] = false;
 	while (!bIsInvalidConnectFlag && bRunFlag)
 	{
- 		if (netDataCacheLength >= *buffsize)
+		if (netDataCacheLength >= *buffsize)
 		{
 			memcpy(buffer, netDataCache + nNetStart, *buffsize);
 			nNetStart += *buffsize;
 			netDataCacheLength -= *buffsize;
-			
+
 			bExitProcessFlagArray[0] = true;
- 			return 0;
+			return 0;
 		}
  	//	Sleep(10);
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
-		
-		nWaitCount ++;
+		nWaitCount++;
 		if (nWaitCount >= 100 * 3)
 			break;
 	}
 	bExitProcessFlagArray[0] = true;
 
-	return -1;  
+	return -1;
 }
 
 bool   CNetClientSendRtsp::ReadRtspEnd()
@@ -332,7 +331,7 @@ bool   CNetClientSendRtsp::ReadRtspEnd()
 int  CNetClientSendRtsp::FindHttpHeadEndFlag()
 {
 	if (data_Length <= 0)
-		return -1 ;
+		return -1;
 
 	for (int i = 0; i < data_Length; i++)
 	{
@@ -364,7 +363,7 @@ void CNetClientSendRtsp::GetHttpModemHttpURL(char* szMedomHttpURL)
 
 	int nPos1, nPos2, nPos3, nPos4;
 	string strHttpURL = szMedomHttpURL;
-	char   szTempRtsp[512] = { 0 };
+	char   szTempRtsp[string_length_2048] = { 0 };
 	string strTempRtsp;
 
 	strcpy(RtspProtectArray[RtspProtectArrayOrder].szRtspCmdString, szMedomHttpURL);
@@ -403,7 +402,7 @@ void CNetClientSendRtsp::GetHttpModemHttpURL(char* szMedomHttpURL)
 	}
 }
 
- //把http头数据填充到结构中
+//把http头数据填充到结构中
 int  CNetClientSendRtsp::FillHttpHeadToStruct()
 {
 	RtspProtectArrayOrder = 0;
@@ -431,7 +430,7 @@ int  CNetClientSendRtsp::FillHttpHeadToStruct()
 				memset(RtspProtectArray[RtspProtectArrayOrder].rtspField[nKeyCount].szKey, 0x00, sizeof(RtspProtectArray[RtspProtectArrayOrder].rtspField[nKeyCount].szKey));//要清空
 				memset(RtspProtectArray[RtspProtectArrayOrder].rtspField[nKeyCount].szValue, 0x00, sizeof(RtspProtectArray[RtspProtectArrayOrder].rtspField[nKeyCount].szValue));//要清空 
 
- 				memcpy(RtspProtectArray[RtspProtectArrayOrder].rtspField[nKeyCount].szKey, szTemp, nFlagLength);
+				memcpy(RtspProtectArray[RtspProtectArrayOrder].rtspField[nKeyCount].szKey, szTemp, nFlagLength);
 				memcpy(RtspProtectArray[RtspProtectArrayOrder].rtspField[nKeyCount].szValue, szTemp + nFlagLength + 2, strlen(szTemp) - nFlagLength - 2);
 
 				strcpy(szKey, RtspProtectArray[RtspProtectArrayOrder].rtspField[nKeyCount].szKey);
@@ -456,14 +455,14 @@ int  CNetClientSendRtsp::FillHttpHeadToStruct()
 			else
 			{//保存 http 方法、URL 
 				GetHttpModemHttpURL(szTemp);
-			} 
+			}
 
 			nPos = i + 2;
 		}
 	}
 
 	return true;
-} 
+}
 
 bool CNetClientSendRtsp::GetFieldValue(char* szFieldName, char* szFieldValue)
 {
@@ -491,7 +490,7 @@ int  CNetClientSendRtsp::GetRtspPathCount(char* szRtspURL)
 	string strCurRtspURL = szRtspURL;
 	int    nPos1, nPos2;
 	int    nPathCount = 0;
- 	nPos1 = strCurRtspURL.find("//", 0);
+	nPos1 = strCurRtspURL.find("//", 0);
 	if (nPos1 < 0)
 		return 0;//地址非法 
 
@@ -501,7 +500,7 @@ int  CNetClientSendRtsp::GetRtspPathCount(char* szRtspURL)
 		if (nPos1 >= 0)
 		{
 			nPos1 += 1;
-			nPathCount ++;
+			nPathCount++;
 		}
 		else
 			break;
@@ -513,40 +512,40 @@ int  CNetClientSendRtsp::GetRtspPathCount(char* szRtspURL)
 void Video_rtp_packet_callback_func_send(_rtp_packet_cb* cb)
 {
 	CNetClientSendRtsp* pRtspClient = (CNetClientSendRtsp*)cb->userdata;
-	if(pRtspClient->bRunFlag)
-	  pRtspClient->ProcessRtpVideoData(cb->data, cb->datasize);
+	if (pRtspClient->bRunFlag)
+		pRtspClient->ProcessRtpVideoData(cb->data, cb->datasize);
 }
 
 //rtp 打包回调音频
 void Audio_rtp_packet_callback_func_send(_rtp_packet_cb* cb)
 {
 	CNetClientSendRtsp* pRtspClient = (CNetClientSendRtsp*)cb->userdata;
-	if(pRtspClient->bRunFlag)
-	  pRtspClient->ProcessRtpAudioData(cb->data, cb->datasize);
+	if (pRtspClient->bRunFlag)
+		pRtspClient->ProcessRtpAudioData(cb->data, cb->datasize);
 }
 
-void CNetClientSendRtsp::ProcessRtpVideoData(unsigned char* pRtpVideo,int nDataLength)
+void CNetClientSendRtsp::ProcessRtpVideoData(unsigned char* pRtpVideo, int nDataLength)
 {
-	if ((MaxRtpSendVideoMediaBufferLength - nSendRtpVideoMediaBufferLength < nDataLength + 4) && nSendRtpVideoMediaBufferLength > 0 )
+	if ((MaxRtpSendVideoMediaBufferLength - nSendRtpVideoMediaBufferLength < nDataLength + 4) && nSendRtpVideoMediaBufferLength > 0)
 	{//剩余空间不够存储 ,防止出错 
 		SumSendRtpMediaBuffer(szSendRtpVideoMediaBuffer, nSendRtpVideoMediaBufferLength);
- 		nSendRtpVideoMediaBufferLength = 0;
+		nSendRtpVideoMediaBufferLength = 0;
 	}
 
 	memcpy((char*)&nCurrentVideoTimestamp, pRtpVideo + 4, sizeof(uint32_t));
-	if (nStartVideoTimestamp != VideoStartTimestampFlag &&  nStartVideoTimestamp != nCurrentVideoTimestamp && nSendRtpVideoMediaBufferLength > 0)
+	if (nStartVideoTimestamp != VideoStartTimestampFlag && nStartVideoTimestamp != nCurrentVideoTimestamp && nSendRtpVideoMediaBufferLength > 0)
 	{//产生一帧新的视频 
 		//WriteLog(Log_Debug, "CNetClientSendRtsp= %X, 发送一帧视频 ，Length = %d ", this, nSendRtpVideoMediaBufferLength);
 		SumSendRtpMediaBuffer(szSendRtpVideoMediaBuffer, nSendRtpVideoMediaBufferLength);
 		nSendRtpVideoMediaBufferLength = 0;
 	}
- 
+
 	szSendRtpVideoMediaBuffer[nSendRtpVideoMediaBufferLength + 0] = '$';
 	szSendRtpVideoMediaBuffer[nSendRtpVideoMediaBufferLength + 1] = 0;
 	nVideoRtpLen = htons(nDataLength);
 	memcpy(szSendRtpVideoMediaBuffer + (nSendRtpVideoMediaBufferLength + 2), (unsigned char*)&nVideoRtpLen, sizeof(nVideoRtpLen));
- 	memcpy(szSendRtpVideoMediaBuffer + (nSendRtpVideoMediaBufferLength + 4), pRtpVideo, nDataLength);
- 
+	memcpy(szSendRtpVideoMediaBuffer + (nSendRtpVideoMediaBufferLength + 4), pRtpVideo, nDataLength);
+
 	nStartVideoTimestamp = nCurrentVideoTimestamp;
 	nSendRtpVideoMediaBufferLength += nDataLength + 4;
 }
@@ -554,7 +553,7 @@ void CNetClientSendRtsp::ProcessRtpAudioData(unsigned char* pRtpAudio, int nData
 {
 	if (hRtpVideo != 0)
 	{
-		if ((MaxRtpSendAudioMediaBufferLength - nSendRtpAudioMediaBufferLength < nDataLength + 4) && nSendRtpAudioMediaBufferLength > 0 )
+		if ((MaxRtpSendAudioMediaBufferLength - nSendRtpAudioMediaBufferLength < nDataLength + 4) && nSendRtpAudioMediaBufferLength > 0)
 		{//剩余空间不够存储 ,防止出错 
 			SumSendRtpMediaBuffer(szSendRtpAudioMediaBuffer, nSendRtpAudioMediaBufferLength);
 
@@ -568,13 +567,13 @@ void CNetClientSendRtsp::ProcessRtpAudioData(unsigned char* pRtpAudio, int nData
 		memcpy(szSendRtpAudioMediaBuffer + (nSendRtpAudioMediaBufferLength + 2), (unsigned char*)&nAudioRtpLen, sizeof(nAudioRtpLen));
 		memcpy(szSendRtpAudioMediaBuffer + (nSendRtpAudioMediaBufferLength + 4), pRtpAudio, nDataLength);
 
- 		nSendRtpAudioMediaBufferLength += nDataLength + 4;
- 		nCalcAudioFrameCount ++;
+		nSendRtpAudioMediaBufferLength += nDataLength + 4;
+		nCalcAudioFrameCount++;
 
-		if (nCalcAudioFrameCount >= 3 && nSendRtpAudioMediaBufferLength > 0 )
+		if (nCalcAudioFrameCount >= 3 && nSendRtpAudioMediaBufferLength > 0)
 		{
 			SumSendRtpMediaBuffer(szSendRtpAudioMediaBuffer, nSendRtpAudioMediaBufferLength);
- 			nSendRtpAudioMediaBufferLength = 0;
+			nSendRtpAudioMediaBufferLength = 0;
 			nCalcAudioFrameCount = 0;
 		}
 	}
@@ -595,17 +594,17 @@ void CNetClientSendRtsp::ProcessRtpAudioData(unsigned char* pRtpAudio, int nData
 void CNetClientSendRtsp::SumSendRtpMediaBuffer(unsigned char* pRtpMedia, int nRtpLength)
 {
 	std::lock_guard<std::mutex> lock(MediaSumRtpMutex);
- 
+
 	if (bRunFlag)
 	{
 		nSendRet = XHNetSDK_Write(nClient, pRtpMedia, nRtpLength, 1);
 		if (nSendRet != 0)
 		{
-			nSendRtpFailCount ++ ;
+			nSendRtpFailCount++;
 			//WriteLog(Log_Debug, "发送rtp 包失败 ,累计次数 nSendRtpFailCount = %d 次 ，nClient = %llu ", nSendRtpFailCount, nClient);
 			if (nSendRtpFailCount >= 30)
 			{
-				bRunFlag = false;			
+				bRunFlag = false;
 				WriteLog(Log_Debug, "发送rtp 包失败 ,累计次数 已经达到 nSendRtpFailCount = %d 次，即将删除 ，nClient = %llu ", nSendRtpFailCount, nClient);
 				pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
 			}
@@ -623,7 +622,7 @@ bool CNetClientSendRtsp::GetRtspSDPFromMediaStreamSource(RtspSDPContentStruct sd
 	//视频
 	nVideoSSRC = rand();
 	memset((char*)&optionVideo, 0x00, sizeof(optionVideo));
-	if (strcmp(sdpContent.szVideoName,"H264") == 0)
+	if (strcmp(sdpContent.szVideoName, "H264") == 0)
 	{
 		optionVideo.streamtype = e_rtppkt_st_h264;
 		if (bGetFlag)
@@ -631,7 +630,7 @@ bool CNetClientSendRtsp::GetRtspSDPFromMediaStreamSource(RtspSDPContentStruct sd
 		else
 			nVideoPayload = 96;
 		sprintf(szRtspSDPContent, "v=0\r\no=- 0 0 IN IP4 127.0.0.1\r\ns=No Name\r\nc=IN IP4 190.15.240.36\r\nt=0 0\r\na=tool:libavformat 55.19.104\r\nm=video 6000 RTP/AVP %d\r\nb=AS:832\r\na=rtpmap:%d H264/90000\r\na=fmtp:%d packetization-mode=1\r\na=control:streamid=0\r\n", nVideoPayload, nVideoPayload, nVideoPayload);
-		nMediaCount ++;
+		nMediaCount++;
 	}
 	else if (strcmp(sdpContent.szVideoName, "H265") == 0)
 	{
@@ -639,7 +638,7 @@ bool CNetClientSendRtsp::GetRtspSDPFromMediaStreamSource(RtspSDPContentStruct sd
 		if (bGetFlag)
 			nVideoPayload = sdpContent.nVidePayload;
 		else
-		    nVideoPayload = 97;
+			nVideoPayload = 97;
 		sprintf(szRtspSDPContent, "v=0\r\no=- 0 0 IN IP4 127.0.0.1\r\ns=No Name\r\nc=IN IP4 190.15.240.36\r\nt=0 0\r\na=tool:libavformat 55.19.104\r\nm=video 6000 RTP/AVP %d\r\nb=AS:3007\r\na=rtpmap:%d H265/90000\r\na=fmtp:%d packetization-mode=1\r\na=control:streamid=0\r\n", nVideoPayload, nVideoPayload, nVideoPayload);
 		nMediaCount++;
 	}
@@ -654,13 +653,13 @@ bool CNetClientSendRtsp::GetRtspSDPFromMediaStreamSource(RtspSDPContentStruct sd
 		nRet = rtp_packet_start(Video_rtp_packet_callback_func_send, (void*)this, &hRtpVideo);
 		if (nRet != e_rtppkt_err_noerror)
 		{
-			WriteLog(Log_Debug, "CNetClientSendRtsp = %X ，创建视频rtp打包失败,nClient = %llu,  nRet = %d", this,nClient, nRet);
+			WriteLog(Log_Debug, "CNetClientSendRtsp = %X ，创建视频rtp打包失败,nClient = %llu,  nRet = %d", this, nClient, nRet);
 			return false;
 		}
- 		optionVideo.handle = hRtpVideo;
+		optionVideo.handle = hRtpVideo;
 		optionVideo.ssrc = nVideoSSRC;
 		optionVideo.mediatype = e_rtppkt_mt_video;
- 		optionVideo.payload = nVideoPayload;
+		optionVideo.payload = nVideoPayload;
 		optionVideo.ttincre = 90000 / mediaCodecInfo.nVideoFrameRate; //视频时间戳增量
 
 		inputVideo.handle = hRtpVideo;
@@ -673,8 +672,8 @@ bool CNetClientSendRtsp::GetRtspSDPFromMediaStreamSource(RtspSDPContentStruct sd
 			return false;
 		}
 	}
- 	memset(szRtspAudioSDP, 0x00, sizeof(szRtspAudioSDP));
- 
+	memset(szRtspAudioSDP, 0x00, sizeof(szRtspAudioSDP));
+
 	memset((char*)&optionAudio, 0x00, sizeof(optionAudio));
 	if (strcmp(sdpContent.szAudioName, "G711_A") == 0 && ABL_MediaServerPort.nEnableAudio == 1)
 	{
@@ -683,11 +682,11 @@ bool CNetClientSendRtsp::GetRtspSDPFromMediaStreamSource(RtspSDPContentStruct sd
 		if (bGetFlag)
 			nAudioPayload = sdpContent.nAudioPayload;
 		else
- 		   nAudioPayload = 8;
-		if(hRtpVideo != 0)
-		 sprintf(szRtspAudioSDP, "m=audio 0 RTP/AVP %d\r\nb=AS:50\r\na=recvonly\r\na=rtpmap:%d PCMA/%d\r\na=control:streamid=1\r\na=framerate:25\r\n",nAudioPayload, nAudioPayload, 8000);
+			nAudioPayload = 8;
+		if (hRtpVideo != 0)
+			sprintf(szRtspAudioSDP, "m=audio 0 RTP/AVP %d\r\nb=AS:50\r\na=recvonly\r\na=rtpmap:%d PCMA/%d\r\na=control:streamid=1\r\na=framerate:25\r\n", nAudioPayload, nAudioPayload, 8000);
 		else
-		 sprintf(szRtspAudioSDP, "m=audio 0 RTP/AVP %d\r\nb=AS:50\r\na=recvonly\r\na=rtpmap:%d PCMA/%d\r\na=control:streamid=0\r\na=framerate:25\r\n", nAudioPayload, nAudioPayload, 8000);
+			sprintf(szRtspAudioSDP, "m=audio 0 RTP/AVP %d\r\nb=AS:50\r\na=recvonly\r\na=rtpmap:%d PCMA/%d\r\na=control:streamid=0\r\na=framerate:25\r\n", nAudioPayload, nAudioPayload, 8000);
 
 		nMediaCount++;
 	}
@@ -700,24 +699,24 @@ bool CNetClientSendRtsp::GetRtspSDPFromMediaStreamSource(RtspSDPContentStruct sd
 		else
 			nAudioPayload = 0;
 		if (hRtpVideo != 0)
-		  sprintf(szRtspAudioSDP, "m=audio 0 RTP/AVP %d\r\nb=AS:50\r\na=recvonly\r\na=rtpmap:%d PCMU/%d\r\na=control:streamid=1\r\na=framerate:25\r\n",nAudioPayload, nAudioPayload, 8000);
+			sprintf(szRtspAudioSDP, "m=audio 0 RTP/AVP %d\r\nb=AS:50\r\na=recvonly\r\na=rtpmap:%d PCMU/%d\r\na=control:streamid=1\r\na=framerate:25\r\n", nAudioPayload, nAudioPayload, 8000);
 		else
-		 sprintf(szRtspAudioSDP, "m=audio 0 RTP/AVP %d\r\nb=AS:50\r\na=recvonly\r\na=rtpmap:%d PCMU/%d\r\na=control:streamid=0\r\na=framerate:25\r\n", nAudioPayload, nAudioPayload, 8000);
+			sprintf(szRtspAudioSDP, "m=audio 0 RTP/AVP %d\r\nb=AS:50\r\na=recvonly\r\na=rtpmap:%d PCMU/%d\r\na=control:streamid=0\r\na=framerate:25\r\n", nAudioPayload, nAudioPayload, 8000);
 
 		nMediaCount++;
 	}
 	else if (strcmp(sdpContent.szAudioName, "AAC") == 0 && ABL_MediaServerPort.nEnableAudio == 1)
 	{
-		optionAudio.ttincre = 1024 ;//aac 的长度增量
+		optionAudio.ttincre = 1024;//aac 的长度增量
 		optionAudio.streamtype = e_rtppkt_st_aac;
 		if (bGetFlag)
 			nAudioPayload = sdpContent.nAudioPayload;
 		else
 			nAudioPayload = 104;
 		if (hRtpVideo != 0)
-		  sprintf(szRtspAudioSDP, "m=audio 0 RTP/AVP %d\r\na=rtpmap:%d MPEG4-GENERIC/%d/%d\r\na=fmtp:%d profile-level-id=15; streamtype=5; mode=AAC-hbr; config=1408;SizeLength=13; IndexLength=3; IndexDeltaLength=3; Profile=1;\r\na=control:streamid=1\r\n",nAudioPayload, nAudioPayload, sdpContent.nSampleRate, sdpContent.nChannels, nAudioPayload);
+			sprintf(szRtspAudioSDP, "m=audio 0 RTP/AVP %d\r\na=rtpmap:%d MPEG4-GENERIC/%d/%d\r\na=fmtp:%d profile-level-id=15; streamtype=5; mode=AAC-hbr; config=1408;SizeLength=13; IndexLength=3; IndexDeltaLength=3; Profile=1;\r\na=control:streamid=1\r\n", nAudioPayload, nAudioPayload, sdpContent.nSampleRate, sdpContent.nChannels, nAudioPayload);
 		else
-		  sprintf(szRtspAudioSDP, "m=audio 0 RTP/AVP %d\r\na=rtpmap:%d MPEG4-GENERIC/%d/%d\r\na=fmtp:%d profile-level-id=15; streamtype=5; mode=AAC-hbr; config=1408;SizeLength=13; IndexLength=3; IndexDeltaLength=3; Profile=1;\r\na=control:streamid=0\r\n", nAudioPayload, nAudioPayload, sdpContent.nSampleRate, sdpContent.nChannels, nAudioPayload);
+			sprintf(szRtspAudioSDP, "m=audio 0 RTP/AVP %d\r\na=rtpmap:%d MPEG4-GENERIC/%d/%d\r\na=fmtp:%d profile-level-id=15; streamtype=5; mode=AAC-hbr; config=1408;SizeLength=13; IndexLength=3; IndexDeltaLength=3; Profile=1;\r\na=control:streamid=0\r\n", nAudioPayload, nAudioPayload, sdpContent.nSampleRate, sdpContent.nChannels, nAudioPayload);
 
 		nMediaCount++;
 	}
@@ -728,7 +727,7 @@ bool CNetClientSendRtsp::GetRtspSDPFromMediaStreamSource(RtspSDPContentStruct sd
 		int32_t nRet = rtp_packet_start(Audio_rtp_packet_callback_func_send, (void*)this, &hRtpAudio);
 		if (nRet != e_rtppkt_err_noerror)
 		{
-			WriteLog(Log_Debug, "CNetClientSendRtsp = %X ，创建音频rtp打包失败 ,nClient = %llu,  nRet = %d", this,nClient, nRet);
+			WriteLog(Log_Debug, "CNetClientSendRtsp = %X ，创建音频rtp打包失败 ,nClient = %llu,  nRet = %d", this, nClient, nRet);
 			return false;
 		}
 		optionAudio.handle = hRtpAudio;
@@ -736,15 +735,15 @@ bool CNetClientSendRtsp::GetRtspSDPFromMediaStreamSource(RtspSDPContentStruct sd
 		optionAudio.mediatype = e_rtppkt_mt_audio;
 		optionAudio.payload = nAudioPayload;
 
- 		inputAudio.handle = hRtpAudio;
+		inputAudio.handle = hRtpAudio;
 		inputAudio.ssrc = optionAudio.ssrc;
 
 		rtp_packet_setsessionopt(&optionAudio);
 
 		if (hRtpVideo != 0)
-		   strcat(szRtspSDPContent, szRtspAudioSDP);
+			strcat(szRtspSDPContent, szRtspAudioSDP);
 		else
-		   strcpy(szRtspSDPContent, szRtspAudioSDP);
+			strcpy(szRtspSDPContent, szRtspAudioSDP);
 	}
 
 	if (bGetFlag)
@@ -758,11 +757,11 @@ bool CNetClientSendRtsp::GetRtspSDPFromMediaStreamSource(RtspSDPContentStruct sd
 void  CNetClientSendRtsp::InputRtspData(unsigned char* pRecvData, int nDataLength)
 {
 #if 0
-	 if (nDataLength < 1024)
+	if (nDataLength < 1024)
 		WriteLog(Log_Debug, "RecvData \r\n%s \r\n", pRecvData);
 #endif
 
-    if (memcmp(data_, "RTSP/1.0 401", 12) == 0 && nRtspProcessStep == RtspProcessStep_OPTIONS && strstr((char*)pRecvData, "\r\n\r\n") != NULL)
+	if (memcmp(data_, "RTSP/1.0 401", 12) == 0 && nRtspProcessStep == RtspProcessStep_OPTIONS && strstr((char*)pRecvData, "\r\n\r\n") != NULL)
 	{//大华摄像机,OPTIONS需要发送md5方式验证
 		if (!GetWWW_Authenticate())
 		{
@@ -778,7 +777,7 @@ void  CNetClientSendRtsp::InputRtspData(unsigned char* pRecvData, int nDataLengt
 		auto pMediaSource = GetMediaStreamSource(m_szShareMediaURL, true);
 		if (pMediaSource == NULL)
 		{
-			WriteLog(Log_Debug, "CNetClientSendRtsp = %X ,媒体源 %s 不存在 , nClient = %llu ", this, m_szShareMediaURL,nClient);
+			WriteLog(Log_Debug, "CNetClientSendRtsp = %X ,媒体源 %s 不存在 , nClient = %llu ", this, m_szShareMediaURL, nClient);
 			DeleteNetRevcBaseClient(nClient);
 			return;
 		}
@@ -808,7 +807,7 @@ void  CNetClientSendRtsp::InputRtspData(unsigned char* pRecvData, int nDataLengt
 		}
 
 		SendANNOUNCE(AuthenticateType);
-   	}
+	}
 	else if (memcmp(data_, "RTSP/1.0 200", 12) == 0 && nRtspProcessStep == RtspProcessStep_ANNOUNCE && strstr((char*)pRecvData, "\r\n\r\n") != NULL)
 	{
 		GetFieldValue("Session", szSessionID);
@@ -832,7 +831,7 @@ void  CNetClientSendRtsp::InputRtspData(unsigned char* pRecvData, int nDataLengt
 				strcpy(szSessionID, "1000005");
 		}
 		SendSetup(AuthenticateType);
- 	}
+	}
 	else if (memcmp(data_, "RTSP/1.0 200", 12) == 0 && nRtspProcessStep == RtspProcessStep_SETUP && strstr((char*)pRecvData, "\r\n\r\n") != NULL)
 	{
 		if (nMediaCount == 1)
@@ -850,7 +849,7 @@ void  CNetClientSendRtsp::InputRtspData(unsigned char* pRecvData, int nDataLengt
 		}
 
 		nRecvLength = nHttpHeadEndLength = 0;
-   	}
+	}
 	else if (memcmp(data_, "RTSP/1.0 200", 12) == 0 && nRtspProcessStep == RtspProcessStep_RECORD && strstr((char*)pRecvData, "\r\n\r\n") != NULL)
 	{
 		WriteLog(Log_Debug, "收到 RECORD 回复命令，rtsp交互完毕 nClient = %llu ", nClient);
@@ -859,7 +858,7 @@ void  CNetClientSendRtsp::InputRtspData(unsigned char* pRecvData, int nDataLengt
 		{
 			WriteLog(Log_Debug, "CNetClientSendRtsp = %X nClient = %llu ,不存在媒体源 %s", this, nClient, m_szShareMediaURL);
 			DeleteNetRevcBaseClient(nClient);
-			return ;
+			return;
 		}
 		m_videoFifo.InitFifo(MaxLiveingVideoFifoBufferLength);
 		m_audioFifo.InitFifo(MaxLiveingAudioFifoBufferLength);
@@ -877,7 +876,7 @@ void  CNetClientSendRtsp::InputRtspData(unsigned char* pRecvData, int nDataLengt
 		if (pParentPtr && pParentPtr->bProxySuccessFlag == false)
 			bProxySuccessFlag = pParentPtr->bProxySuccessFlag = true;
 
- 	}
+	}
 	else if (memcmp(pRecvData, "TEARDOWN", 8) == 0 && strstr((char*)pRecvData, "\r\n\r\n") != NULL)
 	{
 		WriteLog(Log_Debug, "收到断开 TEARDOWN 命令，立即执行删除 nClient = %llu ", nClient);
@@ -893,7 +892,7 @@ void  CNetClientSendRtsp::InputRtspData(unsigned char* pRecvData, int nDataLengt
 		nSendRet = XHNetSDK_Write(nClient, (unsigned char*)szResponseBuffer, strlen(szResponseBuffer), 1);
 		if (nSendRet != 0)
 			pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
- 	}
+	}
 	else
 	{
 		//回复http请求
@@ -901,7 +900,7 @@ void  CNetClientSendRtsp::InputRtspData(unsigned char* pRecvData, int nDataLengt
 		ResponseHttp(nClient_http, szResponseBody, false);
 
 		bIsInvalidConnectFlag = true; //确认为非法连接 
-		WriteLog(Log_Debug, "非法的rtsp 命令，立即执行删除 nClient = %llu , \r\n%s ",nClient, pRecvData);
+		WriteLog(Log_Debug, "非法的rtsp 命令，立即执行删除 nClient = %llu , \r\n%s ", nClient, pRecvData);
 
 		//删除掉代理拉流、推流
 		pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
@@ -977,11 +976,11 @@ int CNetClientSendRtsp::ProcessNetData()
 {
 	std::lock_guard<std::mutex> lock(netDataLock);
 
-	bExitProcessFlagArray[2] = false; 
+	bExitProcessFlagArray[2] = false;
 	tRtspProcessStartTime = GetTickCount64();
 	while (!bIsInvalidConnectFlag && bRunFlag && netDataCacheLength > 4)
 	{
-	    uint32_t nReadLength = 4;
+		uint32_t nReadLength = 4;
 		data_Length = 0;
 
 		int nRet = XHNetSDKRead(nClient, data_ + data_Length, &nReadLength, true, true);
@@ -1001,7 +1000,7 @@ int CNetClientSendRtsp::ProcessNetData()
 					}
 					else if (data_[1] == 0x02)
 					{
-						nPrintCount ++;
+						nPrintCount++;
 					}
 					else if (data_[1] == 0x01)
 					{//收到RTCP包，需要回复rtcp报告包
@@ -1010,7 +1009,7 @@ int CNetClientSendRtsp::ProcessNetData()
 					}
 					else if (data_[1] == 0x03)
 					{//收到RTCP包，需要回复rtcp报告包
-						SendRtcpReportData(nVideoSSRC+1, data_[1]);
+						SendRtcpReportData(nVideoSSRC + 1, data_[1]);
 						//WriteLog(Log_Debug, "this =%X ,收到 音频 的RTCP包，需要回复rtcp报告包，netBaseNetType = %d  收到RCP包长度 = %d ", this, netBaseNetType, nReadLength);
 					}
 				}
@@ -1029,7 +1028,7 @@ int CNetClientSendRtsp::ProcessNetData()
 					WriteLog(Log_Debug, "ReadDataFunc() ,尚未读取到rtsp (1)数据 ! nClient = %llu ", nClient);
 					bExitProcessFlagArray[2] = true;
 					pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
- 					return  -1;
+					return  -1;
 				}
 				else
 				{
@@ -1126,7 +1125,7 @@ void  CNetClientSendRtsp::ProcessRtcpData(char* szRtcpData, int nDataLength, int
 int CNetClientSendRtsp::SendFirstRequst()
 {
 	SendOptions(AuthenticateType);
- 	return 0;
+	return 0;
 }
 
 //请求m3u8文件
@@ -1140,7 +1139,7 @@ bool  CNetClientSendRtsp::GetSPSPPSFromDescribeSDP()
 {
 	m_bHaveSPSPPSFlag = false;
 	int  nPos1, nPos2;
-	char  szSprop_Parameter_Sets[512] = { 0 };
+	char  szSprop_Parameter_Sets[string_length_2048] = { 0 };
 
 	m_nSpsPPSLength = 0;
 	string strSDPTemp = szRtspContentSDP;
@@ -1178,7 +1177,7 @@ bool  CNetClientSendRtsp::GetSPSPPSFromDescribeSDP()
 
 void  CNetClientSendRtsp::UserPasswordBase64(char* szUserPwdBase64)
 {
-	char szTemp[128] = { 0 };
+	char szTemp[string_length_2048] = { 0 };
 	sprintf(szTemp, "%s:%s", m_rtspStruct.szUser, m_rtspStruct.szPwd);
 	Base64Encode((unsigned char*)szUserPwdBase64, (unsigned char*)szTemp, strlen(szTemp));
 }
@@ -1186,7 +1185,7 @@ void  CNetClientSendRtsp::UserPasswordBase64(char* szUserPwdBase64)
 //确定SDP里面视频，音频的总媒体数量, 从Describe中找到 trackID，大华的从0开始，海康，华为的从1开始
 void  CNetClientSendRtsp::FindVideoAudioInSDP()
 {
-	char szTemp[1280] = { 0 };
+	char szTemp[string_length_2048] = { 0 };
 
 	nMediaCount = 0;
 	if (strlen(szRtspContentSDP) <= 0)
@@ -1261,7 +1260,7 @@ void  CNetClientSendRtsp::FindVideoAudioInSDP()
 void  CNetClientSendRtsp::SendOptions(WWW_AuthenticateType wwwType)
 {
 	//确定类型
- 	nSendSetupCount = 0;
+	nSendSetupCount = 0;
 	nMediaCount = 0;
 	nTrackIDOrer = 1;//从1开始，不从0开始
 	CSeq = 1;
@@ -1273,7 +1272,7 @@ void  CNetClientSendRtsp::SendOptions(WWW_AuthenticateType wwwType)
 	else if (wwwType == WWW_Authenticate_MD5)
 	{
 		Authenticator author;
-		char*         szResponse;
+		char* szResponse;
 
 		author.setRealmAndNonce(m_rtspStruct.szRealm, m_rtspStruct.szNonce);
 		author.setUsernameAndPassword(m_rtspStruct.szUser, m_rtspStruct.szPwd);
@@ -1311,7 +1310,7 @@ void  CNetClientSendRtsp::SendANNOUNCE(WWW_AuthenticateType wwwType)
 	else if (wwwType == WWW_Authenticate_MD5)
 	{
 		Authenticator author;
-		char*         szResponse;
+		char* szResponse;
 
 		author.setRealmAndNonce(m_rtspStruct.szRealm, m_rtspStruct.szNonce);
 		author.setUsernameAndPassword(m_rtspStruct.szUser, m_rtspStruct.szPwd);
@@ -1363,7 +1362,7 @@ void  CNetClientSendRtsp::SendSetup(WWW_AuthenticateType wwwType)
 	else if (wwwType == WWW_Authenticate_MD5)
 	{
 		Authenticator author;
-		char*         szResponse;
+		char* szResponse;
 
 		author.setRealmAndNonce(m_rtspStruct.szRealm, m_rtspStruct.szNonce);
 		author.setUsernameAndPassword(m_rtspStruct.szUser, m_rtspStruct.szPwd);
@@ -1419,18 +1418,18 @@ void  CNetClientSendRtsp::SendRECORD(WWW_AuthenticateType wwwType)
 {//\r\nScale: 255
 	if (wwwType == WWW_Authenticate_None)
 	{
- 		sprintf(szResponseBuffer, "RECORD %s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: ABL_RtspServer_3.0.1\r\nSession: %s\r\nRange: npt=0.000-\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, CSeq, szSessionID);
+		sprintf(szResponseBuffer, "RECORD %s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: ABL_RtspServer_3.0.1\r\nSession: %s\r\nRange: npt=0.000-\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, CSeq, szSessionID);
 	}
 	else if (wwwType == WWW_Authenticate_MD5)
 	{
 		Authenticator author;
-		char*         szResponse;
+		char* szResponse;
 
 		author.setRealmAndNonce(m_rtspStruct.szRealm, m_rtspStruct.szNonce);
 		author.setUsernameAndPassword(m_rtspStruct.szUser, m_rtspStruct.szPwd);
 		szResponse = (char*)author.computeDigestResponse("PLAY", m_rtspStruct.szSrcRtspPullUrl); //要注意 uri ,有时候没有最后的 斜杠 /
 
- 		sprintf(szResponseBuffer, "RECORD %s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: ABL_RtspServer_3.0.1\r\nSession: %s\r\nAuthorization: Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", response=\"%s\"\r\nRange: npt=0.000-\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, CSeq, szSessionID, m_rtspStruct.szUser, m_rtspStruct.szRealm, m_rtspStruct.szNonce, m_rtspStruct.szSrcRtspPullUrl, szResponse);
+		sprintf(szResponseBuffer, "RECORD %s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: ABL_RtspServer_3.0.1\r\nSession: %s\r\nAuthorization: Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", response=\"%s\"\r\nRange: npt=0.000-\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, CSeq, szSessionID, m_rtspStruct.szUser, m_rtspStruct.szRealm, m_rtspStruct.szNonce, m_rtspStruct.szSrcRtspPullUrl, szResponse);
 
 		author.reclaimDigestResponse(szResponse);
 	}
@@ -1438,7 +1437,7 @@ void  CNetClientSendRtsp::SendRECORD(WWW_AuthenticateType wwwType)
 	{
 		UserPasswordBase64(szBasic);
 
- 		sprintf(szResponseBuffer, "RECORD %s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: ABL_RtspServer_3.0.1\r\nSession: %s\r\nAuthorization: Basic %s\r\nRange: npt=0.000-\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, CSeq, szSessionID, szBasic);
+		sprintf(szResponseBuffer, "RECORD %s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: ABL_RtspServer_3.0.1\r\nSession: %s\r\nAuthorization: Basic %s\r\nRange: npt=0.000-\r\n\r\n", m_rtspStruct.szSrcRtspPullUrl, CSeq, szSessionID, szBasic);
 	}
 	XHNetSDK_Write(nClient, (unsigned char*)szResponseBuffer, strlen(szResponseBuffer), 1);
 

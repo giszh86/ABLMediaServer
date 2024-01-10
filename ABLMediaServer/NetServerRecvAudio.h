@@ -44,22 +44,22 @@ struct AudioRegisterStruct
 class CNetServerRecvAudio : public CNetRevcBase
 {
 public:
-	CNetServerRecvAudio(NETHANDLE hServer,NETHANDLE hClient,char* szIP,unsigned short nPort,char* szShareMediaURL);
+	CNetServerRecvAudio(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort, char* szShareMediaURL);
 	~CNetServerRecvAudio();
-   
-    virtual int InputNetData(NETHANDLE nServerHandle, NETHANDLE nClientHandle, uint8_t* pData, uint32_t nDataLength, void* address) ;
-	virtual int ProcessNetData() ;
 
-	virtual int PushVideo(uint8_t* pVideoData, uint32_t nDataLength, char* szVideoCodec) ;//塞入视频数据
-	virtual int PushAudio(uint8_t* pAudioData, uint32_t nDataLength, char* szAudioCodec, int nChannels, int SampleRate) ;//塞入音频数据
+	virtual int InputNetData(NETHANDLE nServerHandle, NETHANDLE nClientHandle, uint8_t* pData, uint32_t nDataLength, void* address);
+	virtual int ProcessNetData();
 
-	virtual int SendVideo() ;//发送视频数据
-	virtual int SendAudio() ;//发送音频数据
+	virtual int PushVideo(uint8_t* pVideoData, uint32_t nDataLength, char* szVideoCodec);//塞入视频数据
+	virtual int PushAudio(uint8_t* pAudioData, uint32_t nDataLength, char* szAudioCodec, int nChannels, int SampleRate);//塞入音频数据
+
+	virtual int SendVideo();//发送视频数据
+	virtual int SendAudio();//发送音频数据
 	virtual int SendFirstRequst();//发送第一个请求
 	virtual bool RequestM3u8File();//请求m3u8文件
 
-	int             webSocket_dePackage(unsigned char *data, unsigned int dataLen, unsigned char *package, unsigned int packageMaxLen, unsigned int *packageLen, unsigned int *packageHeadLen);
-	
+	int             webSocket_dePackage(unsigned char* data, unsigned int dataLen, unsigned char* package, unsigned int packageMaxLen, unsigned int* packageLen, unsigned int* packageHeadLen);
+
 	CAACEncode       aacEnc;
 	int              nAACEncodeLength;
 	int              nRetunEncodeLength;
@@ -68,7 +68,6 @@ public:
 #else
 	std::shared_ptr<CMediaStreamSource> pMediaSouce;
 #endif
-
 
 	unsigned char   szG711Encodec[1024];
 	unsigned char   pPcmCacheBuffer[MaxPcmChacheBufferLength];
@@ -80,25 +79,25 @@ public:
 	unsigned char     pPcmSplitterBuffer[MaxPcmChacheBufferLength];
 	unsigned short    nPcmSplitterLength;
 	unsigned short    nSplitterCount;
- 	SwrContext *      swr_ctx;
+	SwrContext* swr_ctx;
 	void              AudioPcmResamle(unsigned char* inPCM, int nPcmDataLength);
 	int               nInChannels;
 	int               in_channel_layout;
 	int               out_buffer_size;
 	unsigned int      out_ch_layout;
- 	int               out_channel_nb;
+	int               out_channel_nb;
 	int               outSampleRate;
 	unsigned short    pPcmForEncodeLength;
 	unsigned short    nResampleLength;
-	uint8_t**         pcm_buffer;
-	uint8_t**         pcm_OutputBuffer;
+	uint8_t** pcm_buffer;
+	uint8_t** pcm_OutputBuffer;
 	int               src_linesize;
 	int               dst_linesize;
 	int               SplitterMaxPcmLength;
 
 #ifdef WritePCMDaFile
 	uint64_t        nWritePCMCount;
-	FILE*           fWritePCMFile;
+	FILE* fWritePCMFile;
 #endif
 
 	virtual bool    SendWebSocketData(unsigned char* pData, int nDataLength);
@@ -109,16 +108,16 @@ public:
 
 	int            m_nMaxRecvBufferLength;//允许最大接收字节数量
 	unsigned char* dePacket;
-	unsigned int   packageLen  ;
-	unsigned int   packageHeadLen ;
+	unsigned int   packageLen;
+	unsigned int   packageHeadLen;
 	CABLSipParse   wsParse;
 
 	bool           Create_WS_FLV_Handle();
-	int            nWebSocketCommStatus; 
+	int            nWebSocketCommStatus;
 
-    std::mutex     NetServerWS_FLVLock;
+	std::mutex     NetServerWS_FLVLock;
 
-private :
+private:
 	volatile  bool         bCheckHttpFlvFlag; //检测是否为http-flv协议 
 
 	char                    szSec_WebSocket_Key[256];
@@ -126,12 +125,12 @@ private :
 	char                    szSec_WebSocket_Protocol[256];
 
 	char                    httpResponseData[512];
-	unsigned char*          netDataCache; //网络数据缓存
+	unsigned char* netDataCache; //网络数据缓存
 	int                     netDataCacheLength;//网络数据缓存大小
 	int                     nNetStart, nNetEnd; //网络数据起始位置\结束位置
 	int                     MaxNetDataCacheCount;
- 	int                     data_Length;
-	char                    szFlvName[512];
+	int                     data_Length;
+	char                    szFlvName[string_length_2048];
 	volatile bool           bFindFlvNameFlag;
 };
 

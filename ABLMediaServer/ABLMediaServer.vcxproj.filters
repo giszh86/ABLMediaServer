@@ -216,6 +216,9 @@
     <ClInclude Include="StreamRecordTS.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="GlobalManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -399,6 +402,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="StreamRecordTS.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GlobalManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

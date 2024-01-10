@@ -242,6 +242,7 @@
     <ClInclude Include="FFVideoEncode.h" />
     <ClInclude Include="g711.h" />
     <ClInclude Include="g711_table.h" />
+    <ClInclude Include="GlobalManager.h" />
     <ClInclude Include="H265_SPS_Nal.h" />
     <ClInclude Include="LCbase64.h" />
     <ClInclude Include="ConfigFile.h" />
@@ -349,6 +350,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='boost_release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="GlobalManager.cpp" />
     <ClCompile Include="LCbase64.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>

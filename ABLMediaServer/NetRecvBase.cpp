@@ -1,11 +1,11 @@
 /*
 功能：
-   网络接收、处理基类 ，有两个纯虚函数 
+   网络接收、处理基类 ，有两个纯虚函数
    1 接收网络数据
-      virtual int InputNetData(NETHANDLE nServerHandle, NETHANDLE nClientHandle, uint8_t* pData, uint32_t nDataLength) = 0;
+	  virtual int InputNetData(NETHANDLE nServerHandle, NETHANDLE nClientHandle, uint8_t* pData, uint32_t nDataLength) = 0;
 
-   2 执行处理 
-      virtual int ProcessNetData() = 0;//处理网络数据，比如进行解包、发送网络数据等等
+   2 执行处理
+	  virtual int ProcessNetData() = 0;//处理网络数据，比如进行解包、发送网络数据等等
 
 日期    2021-03-29
 作者    罗家兄弟
@@ -16,7 +16,7 @@ E-Mail  79941308@qq.com
 #include "stdafx.h"
 #include "NetRecvBase.h"
 #ifdef USE_BOOST
-extern CMediaSendThreadPool*                 pMediaSendThreadPool;
+extern CMediaSendThreadPool* pMediaSendThreadPool;
 extern CMediaFifo                            pDisconnectBaseNetFifo;             //清理断裂的链接 
 extern MediaServerPort                       ABL_MediaServerPort;
 extern boost::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
@@ -25,8 +25,13 @@ extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltH
 extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClientNoLock(NETHANDLE CltHandle);
 extern int                                   avpriv_mpeg4audio_sample_rates[];
 extern int                                   SampleRateArray[];
+unsigned char                                muteAACBuffer1[] = { 0xff,0xf1,0x60,0x40,0x0a,0x7f,0xfc,0xde,0x04,0x00,0x00,0x6c,0x69,0x62,0x66,0x61,0x61,0x63,0x20,0x31,0x2e,0x33,0x30,0x00,0x00,0x02,0x75,0x3b,0x18,0x7e,0x2c,0xb1,0x25,0xbd,0xd9,0x62,0x84,0xb0,0x1d,0x96,0x43,0xe6,0xa1,0xdf,0xab,0x8d,0x4d,0x5e,0xbf,0x30,0x0a,0xff,0xfb,0x90,0x0b,0xbc,0x7a,0x0f,0x2a,0x2a,0xaa,0x56,0x3c,0x5b,0xcd,0xe1,0xff,0x2b,0xe3,0xe3,0xe3,0xe3,0xe3,0xe3,0xe3,0x85,0x30,0x70,0xa6,0x0e,0x14,0xc1,0xc0 };
+unsigned char                                muteAACBuffer2[] = { 0xff,0xf1,0x60,0x40,0x06,0xbf,0xfc,0x01,0x4c,0xd4,0xac,0x34,0x14,0x11,0x0b,0x7e,0x45,0xda,0x1e,0x2d,0x4b,0xa9,0x35,0x2a,0x69,0x52,0x42,0xd1,0x22,0x49,0x24,0x96,0x09,0x65,0x0e,0x48,0xe2,0xf9,0xae,0x2e,0xe8,0x59,0x52,0xa2,0x86,0xff,0xc5,0xf8,0xab,0x2f,0xfc,0x7c,0x0e };
+unsigned char                                muteAACBuffer3[] = { 0xff,0xf1,0x60,0x40,0x02,0x7f,0xfc,0x01,0x38,0x14,0xac,0x21,0xf4,0x87,0x0b,0xe2,0x30,0x00,0xe0 };
+unsigned char                                muteAACBuffer4[] = { 0xff,0xf1,0x60,0x40,0x02,0x7f,0xfc,0x01,0x2c,0x14,0xac,0x21,0xf4,0x87,0x0b,0xf1,0xec,0x00,0x38 };
+
 #else
-extern CMediaSendThreadPool*                 pMediaSendThreadPool;
+extern CMediaSendThreadPool* pMediaSendThreadPool;
 extern CMediaFifo                            pDisconnectBaseNetFifo;             //清理断裂的链接 
 extern MediaServerPort                       ABL_MediaServerPort;
 extern std::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
@@ -35,10 +40,26 @@ extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHan
 extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClientNoLock(NETHANDLE CltHandle);
 extern int                                   avpriv_mpeg4audio_sample_rates[];
 extern int                                   SampleRateArray[];
-#endif
+unsigned char                                muteAACBuffer1[] = { 0xff,0xf1,0x60,0x40,0x0a,0x7f,0xfc,0xde,0x04,0x00,0x00,0x6c,0x69,0x62,0x66,0x61,0x61,0x63,0x20,0x31,0x2e,0x33,0x30,0x00,0x00,0x02,0x75,0x3b,0x18,0x7e,0x2c,0xb1,0x25,0xbd,0xd9,0x62,0x84,0xb0,0x1d,0x96,0x43,0xe6,0xa1,0xdf,0xab,0x8d,0x4d,0x5e,0xbf,0x30,0x0a,0xff,0xfb,0x90,0x0b,0xbc,0x7a,0x0f,0x2a,0x2a,0xaa,0x56,0x3c,0x5b,0xcd,0xe1,0xff,0x2b,0xe3,0xe3,0xe3,0xe3,0xe3,0xe3,0xe3,0x85,0x30,0x70,0xa6,0x0e,0x14,0xc1,0xc0 };
+unsigned char                                muteAACBuffer2[] = { 0xff,0xf1,0x60,0x40,0x06,0xbf,0xfc,0x01,0x4c,0xd4,0xac,0x34,0x14,0x11,0x0b,0x7e,0x45,0xda,0x1e,0x2d,0x4b,0xa9,0x35,0x2a,0x69,0x52,0x42,0xd1,0x22,0x49,0x24,0x96,0x09,0x65,0x0e,0x48,0xe2,0xf9,0xae,0x2e,0xe8,0x59,0x52,0xa2,0x86,0xff,0xc5,0xf8,0xab,0x2f,0xfc,0x7c,0x0e };
+unsigned char                                muteAACBuffer3[] = { 0xff,0xf1,0x60,0x40,0x02,0x7f,0xfc,0x01,0x38,0x14,0xac,0x21,0xf4,0x87,0x0b,0xe2,0x30,0x00,0xe0 };
+unsigned char                                muteAACBuffer4[] = { 0xff,0xf1,0x60,0x40,0x02,0x7f,0xfc,0x01,0x2c,0x14,0xac,0x21,0xf4,0x87,0x0b,0xf1,0xec,0x00,0x38 };
+
+#endif //USE_BOOST
 
 CNetRevcBase::CNetRevcBase()
 {
+	bAddMuteFlag = false;
+	nAddMuteAACBufferOrder = 0;
+	memcpy(muteAACBuffer[0].pAACBuffer, muteAACBuffer1, sizeof(muteAACBuffer1));
+	muteAACBuffer[0].nAACLength = sizeof(muteAACBuffer1);
+	memcpy(muteAACBuffer[1].pAACBuffer, muteAACBuffer2, sizeof(muteAACBuffer2));
+	muteAACBuffer[1].nAACLength = sizeof(muteAACBuffer2);
+	memcpy(muteAACBuffer[2].pAACBuffer, muteAACBuffer3, sizeof(muteAACBuffer3));
+	muteAACBuffer[2].nAACLength = sizeof(muteAACBuffer3);
+	memcpy(muteAACBuffer[3].pAACBuffer, muteAACBuffer4, sizeof(muteAACBuffer4));
+	muteAACBuffer[3].nAACLength = sizeof(muteAACBuffer4);
+
 	m_nSpsPPSLength = 0;
 	m_bHaveSPSPPSFlag = false;
 	nReplayClient = 0;
@@ -64,8 +85,8 @@ CNetRevcBase::CNetRevcBase()
 	memset(app, 0x00, sizeof(app));
 	memset(stream, 0x00, sizeof(stream));
 
-	memset(szClientIP,0x00,sizeof(szClientIP)); //连接上来的客户端IP 
-	nClientPort = 0 ; //连接上来的客户端端口 
+	memset(szClientIP, 0x00, sizeof(szClientIP)); //连接上来的客户端IP 
+	nClientPort = 0; //连接上来的客户端端口 
 	nRecvDataTimerBySecond = 0;
 
 	szVideoFrameHead[0] = 0x00;
@@ -79,9 +100,9 @@ CNetRevcBase::CNetRevcBase()
 	psHeadFlag[2] = 0x01;
 	psHeadFlag[3] = 0xBA;
 
-	nVideoStampAdd = 0 ;
-	nAsyncAudioStamp = GetTickCount64() ;
-	nCreateDateTime = nProxyDisconnectTime  = GetTickCount64();
+	nVideoStampAdd = 0;
+	nAsyncAudioStamp = GetTickCount64();
+	nCreateDateTime = nProxyDisconnectTime = GetTickCount64();
 	bRecordProxyDisconnectTimeFlag = false;
 
 	flvPS = flvAACDts = 0;
@@ -94,25 +115,25 @@ CNetRevcBase::CNetRevcBase()
 	bUpdateVideoFrameSpeedFlag = false;
 	memset(szMediaSourceURL, 0x00, sizeof(szMediaSourceURL));
 	bResponseHttpFlag = false;
-	nGB28181ConnectCount = 0; 
-	nReConnectingCount = 0 ;
+	nGB28181ConnectCount = 0;
+	nReConnectingCount = 0;
 
 	memset(szRecordPath, 0x00, sizeof(szRecordPath));
 	nReplayClient = 0;
 
 	nCalcVideoFrameCount = 0; //计算次数
-	for(int i= 0;i<CalcMaxVideoFrameSpeed ;i++)
-	 nVideoFrameSpeedArray[i] = 0;//视频帧速度数组
+	for (int i = 0; i < CalcMaxVideoFrameSpeed; i++)
+		nVideoFrameSpeedArray[i] = 0;//视频帧速度数组
 
 	nMediaSourceType = MediaSourceType_LiveMedia;//默认实况播放
-	duration = 0 ;
+	duration = 0;
 	nClientRtcp = 0;
-	nRtspRtpPayloadType = RtspRtpPayloadType_Unknow ;  //未知
+	nRtspRtpPayloadType = RtspRtpPayloadType_Unknow;  //未知
 	bConnectSuccessFlag = false;
 	bSnapSuccessFlag = false;
 	timeout_sec = 10;
-	memset(domainName,0x00,sizeof(domainName)); //域名
-    ifConvertFlag = false;//是否需要转换
+	memset(domainName, 0x00, sizeof(domainName)); //域名
+	ifConvertFlag = false;//是否需要转换
 	tUpdateIPTime = GetTickCount64();
 }
 
@@ -121,8 +142,8 @@ CNetRevcBase::~CNetRevcBase()
 	//关闭回放的ID，就会是否媒体源
 	if (nReplayClient > 0)
 		pDisconnectBaseNetFifo.push((unsigned char*)&nReplayClient, sizeof(nReplayClient));
-	
-	 malloc_trim(0);
+
+	malloc_trim(0);
 }
 
 //把域名转换为IP地址
@@ -139,7 +160,7 @@ bool   CNetRevcBase::ConvertDemainToIPAddress()
 	for (int i = 0; host->h_addr_list[i]; i++)
 	{
 		memset(getIP, 0x00, sizeof(getIP));
-		strcpy(getIP,inet_ntoa(*(struct in_addr*)host->h_addr_list[i]));
+		strcpy(getIP, inet_ntoa(*(struct in_addr*)host->h_addr_list[i]));
 		if (strlen(getIP) > 0)
 		{
 			strcpy(m_rtspStruct.szIP, getIP);
@@ -148,7 +169,7 @@ bool   CNetRevcBase::ConvertDemainToIPAddress()
 		}
 	}
 
-	return false ;
+	return false;
 }
 
 //分离rtsp\rtmp\http相关参数，IP，端口，用户，密码
@@ -212,8 +233,8 @@ bool  CNetRevcBase::ParseRtspRtmpHttpURL(char* szURL)
 				else
 				{//没有指定端口
 					strcpy(m_rtspStruct.szIP, szIPPort);
-					if (memcmp(szSrcRtspPullUrl, "rtsp://",7) == 0)
-					   strcpy(m_rtspStruct.szPort, "554");
+					if (memcmp(szSrcRtspPullUrl, "rtsp://", 7) == 0)
+						strcpy(m_rtspStruct.szPort, "554");
 					else  if (memcmp(szSrcRtspPullUrl, "rtmp://", 7) == 0)
 						strcpy(m_rtspStruct.szPort, "1935");
 					else  if (memcmp(szSrcRtspPullUrl, "http://", 7) == 0)
@@ -275,9 +296,9 @@ bool  CNetRevcBase::ParseRtspRtmpHttpURL(char* szURL)
 		nPos2 = strRtspURL.find("/", nPos1 + 4);
 		if (nPos2 > 0)
 		{
-			memcpy(m_rtspStruct.szRequestFile, szURL + nPos2 , strlen(szURL) - nPos2 - 1);
+			memcpy(m_rtspStruct.szRequestFile, szURL + nPos2, strlen(szURL) - nPos2 - 1);
 		}
-	}	
+	}
 
 	if (strlen(m_rtspStruct.szIP) == 0 || strlen(m_rtspStruct.szPort) == 0)
 	{
@@ -300,7 +321,7 @@ bool  CNetRevcBase::ParseRtspRtmpHttpURL(char* szURL)
 
 			if (!ConvertDemainToIPAddress())
 			{
-				WriteLog(Log_Debug, "CNetRevcBase = %X ,nClient = %llu ，domainName = %s ,域名转为IP 失败 ", this,nClient,domainName);
+				WriteLog(Log_Debug, "CNetRevcBase = %X ,nClient = %llu ，domainName = %s ,域名转为IP 失败 ", this, nClient, domainName);
 				return false;
 			}
 		}
@@ -328,13 +349,13 @@ bool  CNetRevcBase::ParseRtspRtmpHttpURL(char* szURL)
 /*
 检测视频是否是I帧
 */
-bool  CNetRevcBase::CheckVideoIsIFrame(char* szVideoName,unsigned char* szPVideoData, int nPVideoLength)
+bool  CNetRevcBase::CheckVideoIsIFrame(char* szVideoName, unsigned char* szPVideoData, int nPVideoLength)
 {
 	int nPos = 0;
 	bool bVideoIsIFrameFlag = false;
 	unsigned char  nFrameType = 0x00;
 
-	for (int i = 0; i< nPVideoLength; i++)
+	for (int i = 0; i < nPVideoLength; i++)
 	{
 		if (memcmp(szPVideoData + i, szVideoFrameHead, 4) == 0)
 		{//找到帧片段
@@ -361,7 +382,7 @@ bool  CNetRevcBase::CheckVideoIsIFrame(char* szVideoName,unsigned char* szPVideo
 		//不需要全部检查完毕，就可以判断一帧类型
 		if (i >= 256)
 			return false;
- 	}
+	}
 
 	return bVideoIsIFrameFlag;
 }
@@ -373,11 +394,11 @@ void  CNetRevcBase::SyncVideoAudioTimestamp()
 	{
 		if (flvPS < flvAACDts)
 		{
-			nVideoStampAdd = (1000 / mediaCodecInfo.nVideoFrameRate ) + 5 ;
+			nVideoStampAdd = (1000 / mediaCodecInfo.nVideoFrameRate) + 5;
 		}
 		else if (flvPS > flvAACDts)
 		{
-			nVideoStampAdd = (1000 / mediaCodecInfo.nVideoFrameRate) - 5 ;
+			nVideoStampAdd = (1000 / mediaCodecInfo.nVideoFrameRate) - 5;
 		}
 		nAsyncAudioStamp = GetTickCount();
 
@@ -389,10 +410,10 @@ void  CNetRevcBase::SyncVideoAudioTimestamp()
 int  CNetRevcBase::CalcVideoFrameSpeed(unsigned char* pRtpData, int nLength)
 {
 	if (pRtpData == NULL)
-		return -1 ;
-	
-	int nVideoFrameSpeed = 25 ;
- 	memcpy((char*)&rtp_header, pRtpData, sizeof(rtp_header));
+		return -1;
+
+	int nVideoFrameSpeed = 25;
+	memcpy((char*)&rtp_header, pRtpData, sizeof(rtp_header));
 	if (oldVideoTimestamp == 0)
 	{
 		oldVideoTimestamp = ntohl(rtp_header.timestamp);
@@ -404,8 +425,8 @@ int  CNetRevcBase::CalcVideoFrameSpeed(unsigned char* pRtpData, int nLength)
 			//WriteLog(Log_Debug, "this = %X ,nVideoFrameSpeed = %llu ", this,(90000 / (ntohl(rtp_header.timestamp) - oldVideoTimestamp)) );
 
 			nVideoFrameSpeed = 90000 / (ntohl(rtp_header.timestamp) - oldVideoTimestamp);
-			if (nVideoFrameSpeed > 120 )
-				nVideoFrameSpeed = 120 ;
+			if (nVideoFrameSpeed > 120)
+				nVideoFrameSpeed = 120;
 
 			//妈的，有些时间戳乱搞打包，强制赋值为25帧每秒 
 			if (nVideoFrameSpeed <= 5)
@@ -434,7 +455,7 @@ int  CNetRevcBase::CalcVideoFrameSpeed(unsigned char* pRtpData, int nLength)
 					{
 						dCount += nVideoFrameSpeedArray[i];
 						if (nVideoFrameSpeedArray[i] < 10)
-							nSmallFrameCount ++;
+							nSmallFrameCount++;
 					}
 
 					double dDec = dCount / dArrayCount;
@@ -473,12 +494,12 @@ int   CNetRevcBase::CalcFlvVideoFrameSpeed(int nVideoPTS, int nMaxValue)
 	{
 		if (nVideoPTS != oldVideoTimestamp && nVideoPTS > oldVideoTimestamp)
 		{
-			nVideoFrameSpeed = nMaxValue / (nVideoPTS  - oldVideoTimestamp);
+			nVideoFrameSpeed = nMaxValue / (nVideoPTS - oldVideoTimestamp);
 			if (nVideoFrameSpeed > 120)
-				nVideoFrameSpeed = 120 ;
+				nVideoFrameSpeed = 120;
 
 			oldVideoTimestamp = nVideoPTS;
-			nVideoFrameSpeedOrder ++;
+			nVideoFrameSpeedOrder++;
 			//WriteLog(Log_Debug, "this = %X ,nVideoFrameSpeed = %llu ", this, nVideoFrameSpeed );
 			if (nVideoFrameSpeedOrder < 10)
 				return -1;
@@ -487,8 +508,8 @@ int   CNetRevcBase::CalcFlvVideoFrameSpeed(int nVideoPTS, int nMaxValue)
 				if (nCalcVideoFrameCount >= CalcMaxVideoFrameSpeed)
 					return m_nVideoFrameSpeed;
 
- 				nVideoFrameSpeedArray[nCalcVideoFrameCount] = nVideoFrameSpeed;//视频帧速度数组
- 				nCalcVideoFrameCount ++ ; //计算次数
+				nVideoFrameSpeedArray[nCalcVideoFrameCount] = nVideoFrameSpeed;//视频帧速度数组
+				nCalcVideoFrameCount++; //计算次数
 
 				if (nCalcVideoFrameCount >= CalcMaxVideoFrameSpeed)
 				{
@@ -500,12 +521,12 @@ int   CNetRevcBase::CalcFlvVideoFrameSpeed(int nVideoPTS, int nMaxValue)
 						dCount += nVideoFrameSpeedArray[i];
 						if (nVideoFrameSpeedArray[i] < 10)
 							nSmallFrameCount++;
- 					}
+					}
 
-					double dDec = dCount / dArrayCount ;
+					double dDec = dCount / dArrayCount;
 					m_nVideoFrameSpeed = dCount / dArrayCount;
 					double dJian = dDec - m_nVideoFrameSpeed;
-					
+
 					if (dJian > 0.5)
 						m_nVideoFrameSpeed += 1;
 					if (nSmallFrameCount >= 10)
@@ -530,7 +551,7 @@ int   CNetRevcBase::CalcFlvVideoFrameSpeed(int nVideoPTS, int nMaxValue)
 //切割app ,stream 
 bool  CNetRevcBase::SplitterAppStream(char* szMediaSoureFile)
 {
-	if (szMediaSoureFile == NULL || szMediaSoureFile[0] != '/' )
+	if (szMediaSoureFile == NULL || szMediaSoureFile[0] != '/')
 		return false;
 	string strMediaSource = szMediaSoureFile;
 	int  nPos2;
@@ -543,14 +564,14 @@ bool  CNetRevcBase::SplitterAppStream(char* szMediaSoureFile)
 	memset(m_addStreamProxyStruct.app, 0x00, sizeof(m_addStreamProxyStruct.app));
 	memset(m_addStreamProxyStruct.stream, 0x00, sizeof(m_addStreamProxyStruct.stream));
 
-	memcpy(m_addStreamProxyStruct.app, szMediaSoureFile+1, nPos2 - 1 );
-	memcpy(m_addStreamProxyStruct.stream, szMediaSoureFile + nPos2 +1 ,strlen(szMediaSoureFile) - nPos2 - 1);
+	memcpy(m_addStreamProxyStruct.app, szMediaSoureFile + 1, nPos2 - 1);
+	memcpy(m_addStreamProxyStruct.stream, szMediaSoureFile + nPos2 + 1, strlen(szMediaSoureFile) - nPos2 - 1);
 
 	return true;
 }
 
 //回复成功信息
-bool  CNetRevcBase::ResponseHttp(uint64_t nHttpClient,char* szSuccessInfo,bool bClose)
+bool  CNetRevcBase::ResponseHttp(uint64_t nHttpClient, char* szSuccessInfo, bool bClose)
 {
 	if (szSuccessInfo == NULL)
 		return false;
@@ -560,7 +581,7 @@ bool  CNetRevcBase::ResponseHttp(uint64_t nHttpClient,char* szSuccessInfo,bool b
 
 	auto  pClient = GetNetRevcBaseClientNoLock(nHttpClient);
 	if (pClient == NULL)
- 		return true;
+		return true;
 	if (pClient->bResponseHttpFlag)
 		return true;
 
@@ -577,11 +598,11 @@ bool  CNetRevcBase::ResponseHttp(uint64_t nHttpClient,char* szSuccessInfo,bool b
 	InsertUUIDtoJson(szSuccessInfo, pClient->request_uuid);
 
 	int nLength = strlen(szSuccessInfo);
-	if(bClose == true)
-	  sprintf(szResponseHttpHead, "HTTP/1.1 200 OK\r\nServer: %s\r\nContent-Type: application/json;charset=utf-8\r\nAccess-Control-Allow-Origin: *\r\nConnection: close\r\nContent-Length: %d\r\n\r\n", MediaServerVerson, nLength);
+	if (bClose == true)
+		sprintf(szResponseHttpHead, "HTTP/1.1 200 OK\r\nServer: %s\r\nContent-Type: application/json;charset=utf-8\r\nAccess-Control-Allow-Origin: *\r\nConnection: close\r\nContent-Length: %d\r\n\r\n", MediaServerVerson, nLength);
 	else
-	  sprintf(szResponseHttpHead, "HTTP/1.1 200 OK\r\nServer: %s\r\nContent-Type: application/json;charset=utf-8\r\nAccess-Control-Allow-Origin: *\r\nConnection: %s\r\nContent-Length: %d\r\n\r\n", MediaServerVerson, "keep-alive", nLength);
- 
+		sprintf(szResponseHttpHead, "HTTP/1.1 200 OK\r\nServer: %s\r\nContent-Type: application/json;charset=utf-8\r\nAccess-Control-Allow-Origin: *\r\nConnection: %s\r\nContent-Length: %d\r\n\r\n", MediaServerVerson, "keep-alive", nLength);
+
 	XHNetSDK_Write(nHttpClient, (unsigned char*)szResponseHttpHead, strlen(szResponseHttpHead), 1);
 	XHNetSDK_Write(nHttpClient, (unsigned char*)szSuccessInfo, nLength, 1);
 
@@ -680,80 +701,80 @@ bool  CNetRevcBase::ResponseImage(uint64_t nHttpClient, HttpImageType imageType,
 }
 
 //url解码 
-bool CNetRevcBase::DecodeUrl(char *Src, char  *url, int  MaxLen)  
-{  
-    if(NULL == url || NULL == Src || strlen(Src) == 0)  
-    {  
-        return false;  
-    }  
-    if(MaxLen == 0)  
-    {  
-        return false;  
-    }  
+bool CNetRevcBase::DecodeUrl(char* Src, char* url, int  MaxLen)
+{
+	if (NULL == url || NULL == Src || strlen(Src) == 0)
+	{
+		return false;
+	}
+	if (MaxLen == 0)
+	{
+		return false;
+	}
 
-    char  *p = Src;  // 用来循环  
-    int    i = 0;    // i用来控制url数组  
+	char* p = Src;  // 用来循环  
+	int    i = 0;    // i用来控制url数组  
 
-    /* 临时保存url编码的数据
-       例如: %1A%2B%3C
-    */  
-    char  t = '\0';  
-    while(*p != '\0' && MaxLen--)  
-    {  
-        if(*p == 0x25) // 0x25 = '%'  
-        {  
-            /* 以下是十六进制数中常出现的大写字母,小写字母,数字的判断 */  
-            if(p[1] >= 'A' && p[1] <= 'Z') // 大写字母  
-            {  
-                t = p[1] - 'A' + 10;  // A = 10,下同  
-            }  
-            else if(p[1] >= 'a' && p[1] <= 'z') // 小写字母  
-            {  
-                t = p[1] - 'a' + 10;  
-            }  
-            else if(p[1] >= '0' && p[1] <= '9') // 数字  
-            {  
-                t = p[1] - '0';  
-            }  
+	/* 临时保存url编码的数据
+	   例如: %1A%2B%3C
+	*/
+	char  t = '\0';
+	while (*p != '\0' && MaxLen--)
+	{
+		if (*p == 0x25) // 0x25 = '%'  
+		{
+			/* 以下是十六进制数中常出现的大写字母,小写字母,数字的判断 */
+			if (p[1] >= 'A' && p[1] <= 'Z') // 大写字母  
+			{
+				t = p[1] - 'A' + 10;  // A = 10,下同  
+			}
+			else if (p[1] >= 'a' && p[1] <= 'z') // 小写字母  
+			{
+				t = p[1] - 'a' + 10;
+			}
+			else if (p[1] >= '0' && p[1] <= '9') // 数字  
+			{
+				t = p[1] - '0';
+			}
 
-            t *= 16;  // 将数放到十位上去  
+			t *= 16;  // 将数放到十位上去  
 
-            if(p[2] >= 'A' && p[2] <= 'Z') // 大写字母  
-            {  
-                t += p[2] - 'A' + 10;  
-            }  
-            else if(p[2] >= 'a' && p[2] <= 'z') // 小写字母  
-            {  
-                t += p[2] - 'a' + 10;  
-            }  
-            else if(p[2] >= '0' && p[2] <= '9') // 数字  
-            {  
-                t += p[2] - '0';  
-            }  
+			if (p[2] >= 'A' && p[2] <= 'Z') // 大写字母  
+			{
+				t += p[2] - 'A' + 10;
+			}
+			else if (p[2] >= 'a' && p[2] <= 'z') // 小写字母  
+			{
+				t += p[2] - 'a' + 10;
+			}
+			else if (p[2] >= '0' && p[2] <= '9') // 数字  
+			{
+				t += p[2] - '0';
+			}
 
-            // 到此合成了一个十六进制数  
-            url[i] = t;  
-            p += 3, i++;  
-        }  
-        else  
-        {  
-            // 没有被url编码的数据  
-            // '+'特殊处理.它相当于一个空格  
-            if(*p != '+')  
-            {  
-                url[i] = *p;  
-            }  
-            else  
-            {  
-                url[i] = *p;//+号，还是原来的字符输出，不要修改为 空格，否则华为的url会破坏 
-            }  
-            i++;  
-            p++;  
-        }  
-    }  
-    url[i] = '\0';  // 结束符  
-    return true;  
-}  
+			// 到此合成了一个十六进制数  
+			url[i] = t;
+			p += 3, i++;
+		}
+		else
+		{
+			// 没有被url编码的数据  
+			// '+'特殊处理.它相当于一个空格  
+			if (*p != '+')
+			{
+				url[i] = *p;
+			}
+			else
+			{
+				url[i] = *p;//+号，还是原来的字符输出，不要修改为 空格，否则华为的url会破坏 
+			}
+			i++;
+			p++;
+		}
+	}
+	url[i] = '\0';  // 结束符  
+	return true;
+}
 
 //根据录像点播的url查询录像文件是否存在 
 bool   CNetRevcBase::QueryRecordFileIsExiting(char* szReplayRecordFileURL)
@@ -765,22 +786,22 @@ bool   CNetRevcBase::QueryRecordFileIsExiting(char* szReplayRecordFileURL)
 	memset(szReplayRecordFile, 0x00, sizeof(szReplayRecordFile));//录像点播切割的录像文件名字 
 	memset(szSplliterApp, 0x00, sizeof(szSplliterApp));
 	memset(szSplliterStream, 0x00, sizeof(szSplliterStream));
- 	string strRequestMediaSourceURL = szReplayRecordFileURL;
+	string strRequestMediaSourceURL = szReplayRecordFileURL;
 	int   nPos = strRequestMediaSourceURL.find(RecordFileReplaySplitter, 0);
 	if (nPos <= 0)
-  		return false ;
+		return false;
 
- 	memcpy(szSplliterShareURL, szMediaSourceURL, nPos);
+	memcpy(szSplliterShareURL, szMediaSourceURL, nPos);
 	memcpy(szReplayRecordFile, szMediaSourceURL + (nPos + strlen(RecordFileReplaySplitter)), strlen(szMediaSourceURL) - nPos - strlen(RecordFileReplaySplitter));
 
 	if (QureyRecordFileFromRecordSource(szSplliterShareURL, szReplayRecordFile) == false)
- 		return false ;
+		return false;
 
 	int   nPos2 = strRequestMediaSourceURL.find("/", 2);
 	if (nPos2 > 0)
 	{
-		memcpy(szSplliterApp, szReplayRecordFileURL + 1, nPos2 -1 );
-		memcpy(szSplliterStream, szReplayRecordFileURL + nPos2 + 1, nPos - nPos2 -1 );
+		memcpy(szSplliterApp, szReplayRecordFileURL + 1, nPos2 - 1);
+		memcpy(szSplliterStream, szReplayRecordFileURL + nPos2 + 1, nPos - nPos2 - 1);
 	}
 
 	return true;
@@ -822,7 +843,7 @@ std::shared_ptr<CMediaStreamSource>   CNetRevcBase::CreateReplayClient(char* szR
 			if (nWaitCount >= 10)
 				break;
 		}
-	    replayClient->hParent = nClient ;
+		replayClient->hParent = nClient;
 	}
 	nMediaSourceType = MediaSourceType_ReplayMedia;
 	duration = pTempSource->nMediaDuration;
@@ -831,7 +852,7 @@ std::shared_ptr<CMediaStreamSource>   CNetRevcBase::CreateReplayClient(char* szR
 }
 
 //根据通道数，采样频率获取的 sdp 的 config 
-char*   CNetRevcBase::getAACConfig(int nChanels, int nSampleRate)
+char* CNetRevcBase::getAACConfig(int nChanels, int nSampleRate)
 {
 	int  profile = 1;
 	int  samplingFrequencyIndex = 8;
@@ -853,11 +874,11 @@ char*   CNetRevcBase::getAACConfig(int nChanels, int nSampleRate)
 	audioSpecificConfig[1] = (samplingFrequencyIndex << 7) | (channelConfiguration << 3);
 	sprintf(szConfigStr, "%02X%02x", audioSpecificConfig[0], audioSpecificConfig[1]);
 
-	return (char*) szConfigStr;
+	return (char*)szConfigStr;
 }
 
 //request_uui 的 key 值 插入 回复的json 
-bool CNetRevcBase::InsertUUIDtoJson(char* szSrcJSON,char* szUUID)
+bool CNetRevcBase::InsertUUIDtoJson(char* szSrcJSON, char* szUUID)
 {
 	int  nLength2 = strlen(szUUID);
 	if (nLength2 > 0 && strlen(szSrcJSON) > 0)
@@ -965,10 +986,10 @@ bool  CNetRevcBase::GetH265VPSSPSPPS(char* szSDPString, int  nVideoPayload)
 {//获取h265的VPS、SPS、PPS 
 	m_bHaveSPSPPSFlag = false;
 	char  vpsspsppsStr[string_length_2048] = { 0 };
-	char  szFmt[64] = { 0 };
-	char  szVPS[string_length_512] = { 0 };
-	char  szSPS[string_length_512] = { 0 };
-	char  szPPS[string_length_512] = { 0 };
+	char  szFmt[string_length_1024] = { 0 };
+	char  szVPS[string_length_2048] = { 0 };
+	char  szSPS[string_length_2048] = { 0 };
+	char  szPPS[string_length_2048] = { 0 };
 	sprintf(szFmt, "a=fmtp:%d", nVideoPayload);
 	if (GetSubFromString(szSDPString, szFmt, "\r\n", vpsspsppsStr) > 0)
 	{
@@ -988,6 +1009,17 @@ bool  CNetRevcBase::GetH265VPSSPSPPS(char* szSDPString, int  nVideoPayload)
 		}
 	}
 	return m_bHaveSPSPPSFlag;
+}
+//增加aac静音 ， 1 通道 ，16000 采样频率 
+void   CNetRevcBase::AddMuteAACBuffer()
+{
+	if (nAddMuteAACBufferOrder <= 3)
+		m_audioFifo.push(muteAACBuffer[nAddMuteAACBufferOrder].pAACBuffer, muteAACBuffer[nAddMuteAACBufferOrder].nAACLength);
+	else
+		m_audioFifo.push(muteAACBuffer[3].pAACBuffer, muteAACBuffer[3].nAACLength);
+
+	if (nAddMuteAACBufferOrder < 64)
+		nAddMuteAACBufferOrder++;
 }
 
 //检查SPS的位置 

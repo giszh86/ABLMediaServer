@@ -116,7 +116,7 @@ static int rtmp_server_onpublish(void* param, const char* app, const char* strea
 		pTempSource = GetMediaStreamSource(pClient->szURL,true);
 		if (pTempSource != NULL)
 		{//推流地址已经存在 
-			WriteLog(Log_Debug, "--- 推流地址已经存在--- %s ",pClient->szURL );
+			WriteLog(Log_Debug, "--- 推流地址已经存在--- %s ", pClient->szURL);
 			DeleteNetRevcBaseClient(pClient->nClient);
 			return 0;
 		}
@@ -129,8 +129,8 @@ static int rtmp_server_onpublish(void* param, const char* app, const char* strea
 		pClient->flvDemuxer = flv_demuxer_create(NetRtmpServerRecvCallBackFLV, pClient);
 		pClient->netBaseNetType = NetBaseNetType_RtmpServerRecvPush;
 
- 		pClient->bPushMediaSuccessFlag = true; //成功推流 
-		pClient->pMediaSource =  CreateMediaStreamSource(pClient->szURL,pClient->nClient, MediaSourceType_LiveMedia, 0, pClient->m_h265ConvertH264Struct);
+		pClient->bPushMediaSuccessFlag = true; //成功推流 
+		pClient->pMediaSource = CreateMediaStreamSource(pClient->szURL, pClient->nClient, MediaSourceType_LiveMedia, 0, pClient->m_h265ConvertH264Struct);
 		if (pClient->pMediaSource == NULL)
 		{//推流地址已经存在 
 			WriteLog(Log_Debug, "创建媒体源失败 %s ", pClient->szURL);
@@ -158,7 +158,7 @@ static int rtmp_server_onplay(void* param, const char* app, const char* stream, 
 
 	//去掉？后面参数字符串
 	string strMP4Name = stream;
-	char   szStream[string_length_512] = { 0 };
+	char   szStream[string_length_1024] = { 0 };
 	strcpy(szStream, stream);
 	int    nPos = strMP4Name.find("?", 0);
 	if (nPos > 0 && strlen(stream) > 0)
@@ -167,7 +167,7 @@ static int rtmp_server_onplay(void* param, const char* app, const char* stream, 
 		szStream[nPos] = 0x00;
 	}
 
-	char szTemp[512] = { 0 };
+	char szTemp[string_length_1024] = { 0 };
 	sprintf(szTemp, "/%s/%s", app, szStream);
 	strcpy(pClient->szMediaSourceURL, szTemp);
 
