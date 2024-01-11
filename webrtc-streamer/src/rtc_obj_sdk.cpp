@@ -147,7 +147,7 @@ WebRtcEndpoint::WebRtcEndpoint()
 	rtc::AutoSocketServerThread main_thread(&ss);
 	rtc::LogMessage::LogTimestamps();
 	rtc::LogMessage::LogThreads();
-	rtc::LogMessage::AddLogToStream(new RtcLogSink(), rtc::LS_ERROR);
+	rtc::LogMessage::AddLogToStream(new RtcLogSink(), rtc::LS_NONE);
 
 	rtc::InitializeSSL();
 	bInit.store(false);

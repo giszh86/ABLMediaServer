@@ -171,5 +171,11 @@ server_ptr server_manager::get_server(NETHANDLE id)
 	return s;
 }
 
+server_manager& server_manager::getInstance()
+{
+		static server_manager instance;
+	return instance;
+}
+
 
 #endif

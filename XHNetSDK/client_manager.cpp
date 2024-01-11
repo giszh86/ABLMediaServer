@@ -276,5 +276,8 @@ client_ptr client_manager::get_client(NETHANDLE id)
 	}
 	return cli;
 }
-
+ client_manager& client_manager::getInstance() {
+	static client_manager instance;
+	return instance;
+}
 #endif

@@ -7,8 +7,8 @@
 #include <thread>
 
 #ifdef WEBRTC_WIN
-#include "AudioRecordWas.h"
-#include "device_audios.h"
+//#include "AudioRecordWas.h"
+//#include "device_audios.h"
 #endif
 AudioCapture* AudioCapture::CreateAudioCapture(std::string audiourl, const std::map<std::string, std::string> opts)
 {

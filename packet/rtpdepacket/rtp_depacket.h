@@ -93,6 +93,8 @@ enum e_rtp_depacket_stream_type
 	e_rtpdepkt_st_hwp = 0xf1,			//HW private
 
 	e_rtpdepkt_st_dhp = 0xf2,			//DH private
+	e_rtpdepkt_st_xhb = 0xf4,         //一家公司 xhb
+	e_rtpdepkt_st_mp3 = 0xf5,         //mp3
 };
 
 struct _rtp_depacket_cb

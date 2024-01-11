@@ -95,10 +95,7 @@ public:
 	client_ptr get_client(NETHANDLE id);
 public:
 	// 获取线程池实例
-	static client_manager& getInstance() {
-		static client_manager instance;
-		return instance;
-	}
+	static client_manager& getInstance();
 private:
 
 	client_manager(const client_manager&) = delete;

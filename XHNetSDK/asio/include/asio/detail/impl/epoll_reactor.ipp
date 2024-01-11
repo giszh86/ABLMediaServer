@@ -233,12 +233,17 @@ void epoll_reactor::start_op(int op_type, socket_type descriptor,
     epoll_reactor::per_descriptor_data& descriptor_data, reactor_op* op,
     bool is_continuation, bool allow_speculative)
 {
+  mutex::scoped_lock lock(mutex_);
+ 
   if (!descriptor_data)
   {
     op->ec_ = asio::error::bad_descriptor;
     post_immediate_completion(op, is_continuation);
+ 
+    lock.unlock();
     return;
   }
+  lock.unlock();
 
   mutex::scoped_lock descriptor_lock(descriptor_data->mutex_);
 
@@ -322,9 +327,14 @@ void epoll_reactor::start_op(int op_type, socket_type descriptor,
 void epoll_reactor::cancel_ops(socket_type,
     epoll_reactor::per_descriptor_data& descriptor_data)
 {
+  mutex::scoped_lock lock(mutex_);
   if (!descriptor_data)
+  {
+    lock.unlock();
     return;
-
+  }
+  lock.unlock();
+  
   mutex::scoped_lock descriptor_lock(descriptor_data->mutex_);
 
   op_queue<operation> ops;
@@ -375,8 +385,13 @@ void epoll_reactor::cancel_ops_by_key(socket_type,
 void epoll_reactor::deregister_descriptor(socket_type descriptor,
     epoll_reactor::per_descriptor_data& descriptor_data, bool closing)
 {
+  mutex::scoped_lock lock(mutex_);
   if (!descriptor_data)
+  {
+    lock.unlock();
     return;
+  }
+  lock.unlock();
 
   mutex::scoped_lock descriptor_lock(descriptor_data->mutex_);
 
@@ -422,6 +437,7 @@ void epoll_reactor::deregister_descriptor(socket_type descriptor,
   {
     // We are shutting down, so prevent cleanup_descriptor_data from freeing
     // the descriptor_data object and let the destructor free it instead.
+    mutex::scoped_lock lock(mutex_);
     descriptor_data = 0;
   }
 }
@@ -429,9 +445,14 @@ void epoll_reactor::deregister_descriptor(socket_type descriptor,
 void epoll_reactor::deregister_internal_descriptor(socket_type descriptor,
     epoll_reactor::per_descriptor_data& descriptor_data)
 {
+  mutex::scoped_lock lock(mutex_);
   if (!descriptor_data)
+  {  
+    lock.unlock();
     return;
-
+   }
+  lock.unlock();
+  
   mutex::scoped_lock descriptor_lock(descriptor_data->mutex_);
 
   if (!descriptor_data->shutdown_)
@@ -459,6 +480,7 @@ void epoll_reactor::deregister_internal_descriptor(socket_type descriptor,
   {
     // We are shutting down, so prevent cleanup_descriptor_data from freeing
     // the descriptor_data object and let the destructor free it instead.
+    mutex::scoped_lock lock(mutex_);
     descriptor_data = 0;
   }
 }
@@ -466,6 +488,7 @@ void epoll_reactor::deregister_internal_descriptor(socket_type descriptor,
 void epoll_reactor::cleanup_descriptor_data(
     per_descriptor_data& descriptor_data)
 {
+   mutex::scoped_lock lock(mutex_);
   if (descriptor_data)
   {
     free_descriptor_state(descriptor_data);

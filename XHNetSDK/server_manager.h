@@ -48,10 +48,7 @@ public:
 	server_ptr get_server(NETHANDLE id);
 
 public:
-	static server_manager& getInstance() {
-		static server_manager instance;
-		return instance;
-	}
+	static server_manager& getInstance();
 
 private:
 	server_manager();
