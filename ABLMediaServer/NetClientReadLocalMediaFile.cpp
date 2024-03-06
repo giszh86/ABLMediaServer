@@ -437,7 +437,8 @@ int CNetClientReadLocalMediaFile::ProcessNetData()
 	nCurrentDateTime = GetTickCount64();
 	if (m_bPauseFlag == true )
 	{
-		Sleep(2);
+		//Sleep(2);
+		std::this_thread::sleep_for(std::chrono::milliseconds(2));
  		RecordReplayThreadPool->InsertIntoTask(nClient);
 		return -1;
 	}
@@ -446,7 +447,8 @@ int CNetClientReadLocalMediaFile::ProcessNetData()
 	{//打开mp4文件后需要等待一段事件，否则读取文件会失败
 		if (nCurrentDateTime - mov_readerTime < nWaitTime)
 		{
-			Sleep(2);
+			//Sleep(2);
+			std::this_thread::sleep_for(std::chrono::milliseconds(2));
 			RecordReplayThreadPool->InsertIntoTask(nClient);
 			return 0;
 		}
@@ -602,8 +604,8 @@ int CNetClientReadLocalMediaFile::ProcessNetData()
 	    return -1;
 	}
 	nOldAVType = nAVType;
-	Sleep(1);
-
+	//Sleep(1);
+	std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	//加入音频
 	if (nCurrentDateTime - nInputAudioTime >= nInputAudioDelay - 5)
 	{

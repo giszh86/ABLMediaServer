@@ -2,13 +2,21 @@
 #define  _cudeCodecDLL_H
 
 #include <stdint.h>
-#include <Windows.h>
+#ifdef WIN32
 
+#include <Windows.h>
 #ifdef CUDACODECDLL_EXPORTS
 #define CUDACODECDLL_API __declspec(dllexport)
 #else
 #define CUDACODECDLL_API __declspec(dllimport)
 #endif
+
+#else
+#define CUDACODECDLL_API 
+#define WINAPI 
+#endif // WIN32
+
+
 
 //视频格式 
 typedef enum cudaCodecVideo_enum {
@@ -99,7 +107,13 @@ typedef bool (WINAPI* ABL_CreateVideoDecode) (cudaCodecVideo_enum videoCodec, cu
   int             nDecodeFrameCount   解码成功后返回多少帧， 1、4 等等 
   int&            nOutDecodeLength    解码返回一帧buffer长度 
 */
-typedef unsigned char** (WINAPI* ABL_CudaVideoDecode) (uint64_t nCudaChan,unsigned char* pVideoData,int nVideoLength,int& nDecodeFrameCount,int& nOutDecodeLength);
+#ifdef  WIN32
+typedef unsigned char** (WINAPI* ABL_CudaVideoDecode) (uint64_t nCudaChan, unsigned char* pVideoData, int nVideoLength, int& nDecodeFrameCount, int& nOutDecodeLength);
+
+#else
+typedef unsigned char* (WINAPI* ABL_CudaVideoDecode) (uint64_t nCudaChan, unsigned char* pVideoData, int nVideoLength, int& nDecodeFrameCount, int& nOutDecodeLength);
+
+#endif
 
 /*
 功能：

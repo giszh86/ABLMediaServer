@@ -122,6 +122,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ClCompile Include="..\ABLMediaServer\AACEncode.cpp" />
+    <ClCompile Include="..\ABLMediaServer\ABLMediaServer.cpp" />
     <ClCompile Include="..\ABLMediaServer\ABLogFile.cpp" />
     <ClCompile Include="..\ABLMediaServer\ABLSipParse.cpp" />
     <ClCompile Include="..\ABLMediaServer\ABLString.cpp" />
@@ -135,7 +136,6 @@
     <ClCompile Include="..\ABLMediaServer\g711_table.cpp" />
     <ClCompile Include="..\ABLMediaServer\Ini.cpp" />
     <ClCompile Include="..\ABLMediaServer\LCbase64.cpp" />
-    <ClCompile Include="..\ABLMediaServer\main.cpp" />
     <ClCompile Include="..\ABLMediaServer\MediaFifo.cpp" />
     <ClCompile Include="..\ABLMediaServer\MediaSendThreadPool.cpp" />
     <ClCompile Include="..\ABLMediaServer\MediaStreamSource.cpp" />
@@ -174,7 +174,6 @@
     <ClCompile Include="..\ABLMediaServer\strDup.cpp" />
     <ClCompile Include="..\ABLMediaServer\StreamRecordFMP4.cpp" />
     <ClCompile Include="..\ABLMediaServer\StreamRecordMP4.cpp" />
-    <ClCompile Include="..\ABLMediaServer\Unit_ReadSPS.cpp" />
     <ClCompile Include="..\ABLMediaServer\VideoDecode.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -241,7 +240,6 @@
     <ClInclude Include="..\ABLMediaServer\strDup.hh" />
     <ClInclude Include="..\ABLMediaServer\StreamRecordFMP4.h" />
     <ClInclude Include="..\ABLMediaServer\StreamRecordMP4.h" />
-    <ClInclude Include="..\ABLMediaServer\Unit_ReadSPS.h" />
     <ClInclude Include="..\ABLMediaServer\VideoDecode.h" />
     <ClInclude Include="..\ABLMediaServer\XHNetSDK.h" />
     <ClInclude Include="..\rapidjson-master\include\rapidjson\allocators.h" />

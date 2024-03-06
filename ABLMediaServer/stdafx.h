@@ -182,6 +182,7 @@ struct MediaServerPort
 	int  fileRepeat;//MP4点播(rtsp/rtmp/http-flv/ws-flv)是否循环播放文件
 
 	char picturePath[256];//图片抓拍保存路径
+	char defaultSnap[256]; //默认截图图片
 	int  pictureMaxCount; //每路媒体源最大抓拍保留数量
 	int  snapOutPictureWidth;//抓拍输出宽
 	int  snapOutPictureHeight;//抓拍输出高
@@ -255,6 +256,10 @@ struct MediaServerPort
 	int        httqRequstClose;//是否为短链接操作 
 	int        keepaliveDuration; //发送心跳时间间隔
 	int        flvPlayAddMute;
+
+	int         nUseWvp = 0; //是否参考wvp-zlm的接口返回  为1时候返回格式和ZLM的一致
+	char port_range[string_length_512]; //随机端口范围，最少确保36个端口
+
 	MediaServerPort()
 	{
 		memset(wwwPath, 0x00, sizeof(wwwPath));
@@ -365,6 +370,9 @@ struct MediaServerPort
 		enable_GetFileDuration = 0;
 		keepaliveDuration = 20;
 		flvPlayAddMute = 1;
+
+		nUseWvp = 0;
+		memset(port_range, 0x00, sizeof(port_range));
 	}
 };
 
@@ -626,6 +634,7 @@ struct openRtpServerStruct
 	char   send_disableAudio[16];//过滤掉音频 1 过滤掉音频 ，0 不过滤音频 ，默认 0 
 	char   jtt1078_version[128]; //1078版本 2013、2016、2019
 
+	char   key[64]; //流的唯一值
 	openRtpServerStruct()
 	{
 		memset(secret, 0x00, sizeof(secret));

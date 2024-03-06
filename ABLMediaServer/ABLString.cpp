@@ -168,5 +168,11 @@ namespace ABL {
 			.count();
 	}
 
+	void parseString(const std::string& input, std::string& szSection, std::string& szKey) {
+		std::stringstream ss(input);
+		std::getline(ss, szSection, '.');
+		std::getline(ss, szKey, '.');
+	}
+
 
 }

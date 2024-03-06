@@ -219,6 +219,15 @@
     <ClInclude Include="GlobalManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="cudaCodecDLL.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cudaEncodeDLL.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cudaCodecDLL_Linux.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">

@@ -10,6 +10,11 @@
 using namespace boost;
 #else
 #include <memory>
+#include <iostream>
+#include <string>
+#include <sstream>
+#include <unordered_set>
+#include <random>
 #endif
 
 #define Send_ResponseHttp_MaxPacketCount   1024*48  //回复http包最大发送一次字节
@@ -37,6 +42,7 @@ public:
 
 	bool                    index_api_setServerConfig();
 	bool                    index_api_listServerPort();
+	bool                    index_api_getRtpInfo();
 	bool                    index_api_getTranscodingCount();
 	bool                    WriteParamValue(char* szSection, char* szKey, char* szValue);
 	bool                    index_api_restartServer();
@@ -75,6 +81,9 @@ public:
 	bool                    ResponseHttpRequest(char* szModem, char* httpURL, char* requestParam);
 	int                     CheckHttpHeadEnd();
 
+
+	int getRandomPort(); //获取随机端口
+	void removeValue(int port);//删除端口
 	RequestKeyValueMap      requestKeyValueMap;
 	CABLSipParse            httpParse;
 	std::mutex              NetServerHTTPLock;
@@ -89,6 +98,12 @@ public:
 	char                    szConnection[string_length_2048];
 	char                    szMediaSourceInfoBuffer[MaxMediaSourceInfoLength];
 	int64_t                 nDelKey;
+	std::map<std::string, openRtpServerStruct> m_mapstreamid_key;
+
+	std::unordered_set<int> m_portSet;
+	int m_maxPort_range=30500, m_minPort_range = 30000;
+	std::mt19937 gen;
+
 };
 
 #endif

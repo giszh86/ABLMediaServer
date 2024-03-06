@@ -1,9 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\ABLMediaServer\main.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\ABLMediaServer\ABLogFile.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -88,9 +85,6 @@
     <ClCompile Include="..\ABLMediaServer\NetServerWS_FLV.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\ABLMediaServer\Unit_ReadSPS.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\ABLMediaServer\NetServerHTTP_MP4.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -164,6 +158,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\ABLMediaServer\NetClientRecvJTT1078.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\ABLMediaServer.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
@@ -462,9 +459,6 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\ABLMediaServer\H265_SPS_Nal.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\ABLMediaServer\Unit_ReadSPS.h">
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\ABLMediaServer\faac.h">

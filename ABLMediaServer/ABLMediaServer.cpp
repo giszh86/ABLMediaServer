@@ -819,13 +819,33 @@ int GetALLListServerPort(char* szMediaSourceInfo, ListServerPortStruct  listServ
 					nClient = pClient->hParent;//有代理类的都需要 返回父类ID 
 				else
 					nClient = pClient->nClient;
-
+#ifdef  USE_WVP
+				if (strlen(listServerPortStruct.app) > 0 && strlen(listServerPortStruct.stream) > 0 && strcmp(pClient->m_addStreamProxyStruct.app, listServerPortStruct.app) == 0 && strcmp(pClient->m_addStreamProxyStruct.stream, listServerPortStruct.stream) == 0)
+				{
+					Document doc;
+					doc.SetObject();
+					Document::AllocatorType& allocator = doc.GetAllocator();
+					// 添加成员变量
+					doc.AddMember("code", 0, allocator);
+					doc.AddMember("exist", true, allocator);
+					doc.AddMember("local_port", pClient->nClientPort, allocator);
+					// 将 JSON 对象转换为字符串
+					StringBuffer buffer;
+					Writer<StringBuffer> writer(buffer);
+					doc.Accept(writer);
+					sprintf(szMediaSourceInfo, "%s", buffer.GetString());
+					nMediaCount++;
+					break;
+				}
+			
+#else
 				if (strlen(listServerPortStruct.app) == 0 && strlen(listServerPortStruct.stream) == 0)
 				{
 					sprintf(szTemp2, "{\"key\":%llu,\"app\":\"%s\",\"stream\":\"%s\",\"networkType\":%d,\"port\":%d},", nClient, pClient->m_addStreamProxyStruct.app, pClient->m_addStreamProxyStruct.stream, pClient->netBaseNetType, pClient->nClientPort);
 				}
 				else if (strlen(listServerPortStruct.app) > 0 && strlen(listServerPortStruct.stream) > 0 && strcmp(pClient->m_addStreamProxyStruct.app, listServerPortStruct.app) == 0 && strcmp(pClient->m_addStreamProxyStruct.stream, listServerPortStruct.stream) == 0)
 				{
+
 					sprintf(szTemp2, "{\"key\":%llu,\"app\":\"%s\",\"stream\":\"%s\",\"networkType\":%d,\"port\":%d},", nClient, pClient->m_addStreamProxyStruct.app, pClient->m_addStreamProxyStruct.stream, pClient->netBaseNetType, pClient->nClientPort);
 				}
 				else if (strlen(listServerPortStruct.app) > 0 && strlen(listServerPortStruct.stream) == 0 && strcmp(pClient->m_addStreamProxyStruct.app, listServerPortStruct.app) == 0)
@@ -834,6 +854,7 @@ int GetALLListServerPort(char* szMediaSourceInfo, ListServerPortStruct  listServ
 				}
 				else if (strlen(listServerPortStruct.app) == 0 && strlen(listServerPortStruct.stream) > 0 && strcmp(pClient->m_addStreamProxyStruct.stream, listServerPortStruct.stream) == 0)
 				{
+
 					sprintf(szTemp2, "{\"key\":%llu,\"app\":\"%s\",\"stream\":\"%s\",\"networkType\":%d,\"port\":%d},", nClient, pClient->m_addStreamProxyStruct.app, pClient->m_addStreamProxyStruct.stream, pClient->netBaseNetType, pClient->nClientPort);
 				}
 
@@ -842,10 +863,38 @@ int GetALLListServerPort(char* szMediaSourceInfo, ListServerPortStruct  listServ
 					strcat(szMediaSourceInfo, szTemp2);
 					nMediaCount++;
 				}
+#endif
+			
 			}
 		}
 
 	}
+#ifdef  USE_WVP
+
+	if (nMediaCount > 0)
+	{
+		//szMediaSourceInfo[strlen(szMediaSourceInfo) - 1] = 0x00;
+	//	strcat(szMediaSourceInfo, "]}");
+	}
+
+	if (nMediaCount == 0)
+	{
+		Document doc;
+		doc.SetObject();
+		Document::AllocatorType& allocator = doc.GetAllocator();
+		// 添加成员变量
+		doc.AddMember("code", IndexApiCode_RequestFileNotFound, allocator);
+		doc.AddMember("exist", false, allocator);
+		doc.AddMember("local_port", 0, allocator);
+		// 将 JSON 对象转换为字符串
+		StringBuffer buffer;
+		Writer<StringBuffer> writer(buffer);
+		doc.Accept(writer);
+		sprintf(szMediaSourceInfo, "%s", buffer.GetString());
+	}
+
+	return nMediaCount;
+#else
 
 	if (nMediaCount > 0)
 	{
@@ -857,8 +906,9 @@ int GetALLListServerPort(char* szMediaSourceInfo, ListServerPortStruct  listServ
 	{
 		sprintf(szMediaSourceInfo, "{\"code\":%d,\"memo\":\"listServerPort [app: %s , stream: %s] Not Found .\"}", IndexApiCode_RequestFileNotFound, listServerPortStruct.app, listServerPortStruct.stream);
 	}
-
 	return nMediaCount;
+#endif
+	
 }
 
 //获取所有往外发送的列
@@ -2736,7 +2786,9 @@ void LIBNET_CALLMETHOD onread(NETHANDLE srvhandle,
 	if (pBasePtr != NULL)
 	{
 		pBasePtr->InputNetData(srvhandle, clihandle, data, datasize, address);
-		NetBaseThreadPool->InsertIntoTask(clihandle);
+		pBasePtr->ProcessNetData();
+
+		//NetBaseThreadPool->InsertIntoTask(clihandle);
 	}
 }
 
@@ -3475,6 +3527,26 @@ void WebRtcCallBack(const char* callbackJson, void* pUserHandle)
 		}
 	}
 };
+#define VERSION	 "1.0.002.0229" //   001是当日第几个版本       最后的是日期
+void  printfVersion()
+{
+
+	WriteLog(Log_Debug, "******************************************");
+	WriteLog(Log_Debug, "*                                        *");
+	WriteLog(Log_Debug, "*                                        *");
+	WriteLog(Log_Debug, "*                                        *");
+	WriteLog(Log_Debug, "*                                        *");
+	WriteLog(Log_Debug, "*                                        *");
+	WriteLog(Log_Debug, "*           当前版本 : %s      *", VERSION);
+	WriteLog(Log_Debug, "*                                        *");
+	WriteLog(Log_Debug, "*                                        *");
+	WriteLog(Log_Debug, "*                                        *");
+	WriteLog(Log_Debug, "*                                        *");
+	WriteLog(Log_Debug, "*                                        *");
+	WriteLog(Log_Debug, "******************************************");
+
+}
+
 
 #ifdef OS_System_Windows
 int _tmain(int argc, _TCHAR* argv[])
@@ -3544,6 +3616,8 @@ ABL_Restart:
 			strcpy(ABL_szLocalIP, "127.0.0.1");
 	}
 	strcpy(ABL_MediaServerPort.ABL_szLocalIP, ABL_szLocalIP);
+
+	printfVersion();
 	WriteLog(Log_Debug, "本机IP地址 ABL_szLocalIP : %s ", ABL_szLocalIP);
 
 	strcpy(ABL_MediaServerPort.secret, ABL_ConfigFile.ReadConfigString("ABLMediaServer", "secret", "035c73f7-bb6b-4889-a715-d9eb2d1925cc111"));
@@ -3585,6 +3659,8 @@ ABL_Restart:
 	ABL_MediaServerPort.nG711ConvertAAC = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "G711ConvertAAC", "0"));
 
 	strcpy(ABL_MediaServerPort.picturePath, ABL_ConfigFile.ReadConfigString("ABLMediaServer", "picturePath", ""));
+	
+
 	ABL_MediaServerPort.pictureMaxCount = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "pictureMaxCount", "30"));
 	ABL_MediaServerPort.captureReplayType = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "captureReplayType", "1"));
 	ABL_MediaServerPort.deleteSnapPicture = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "deleteSnapPicture", "0"));
@@ -3633,8 +3709,15 @@ ABL_Restart:
 	strcpy(ABL_MediaServerPort.on_play, ABL_ConfigFile.ReadConfigString("ABLMediaServer", "on_play", ""));
 	strcpy(ABL_MediaServerPort.on_publish, ABL_ConfigFile.ReadConfigString("ABLMediaServer", "on_publish", ""));
 	strcpy(ABL_MediaServerPort.on_stream_iframe_arrive, ABL_ConfigFile.ReadConfigString("ABLMediaServer", "on_stream_iframe_arrive", ""));
+
 	ABL_MediaServerPort.keepaliveDuration = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "keepaliveDuration", "20"));
 	ABL_MediaServerPort.nWebRtcPort = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "webrtcPort", "8000"));
+
+	strcpy(ABL_MediaServerPort.defaultSnap, ABL_ConfigFile.ReadConfigString("api", "defaultSnap", ""));
+	ABL_MediaServerPort.nUseWvp = atoi(ABL_ConfigFile.ReadConfigString("api", "usewvp", "0"));
+	strcpy(ABL_MediaServerPort.port_range, ABL_ConfigFile.ReadConfigString("rtp_proxy", "port_range", ""));
+
+
 
 	if (ABL_MediaServerPort.httpDownloadSpeed > 10)
 		ABL_MediaServerPort.httpDownloadSpeed = 10;
@@ -3910,6 +3993,10 @@ ABL_Restart:
 	ABL_MediaServerPort.flvPlayAddMute = ABL_ConfigFile.GetInt("ABLMediaServer", "flvPlayAddMute");
 	ABL_MediaServerPort.nWebRtcPort = ABL_ConfigFile.GetInt("ABLMediaServer", "webrtcPort");
 
+	strcpy(ABL_MediaServerPort.defaultSnap, ABL_ConfigFile.GetStr("api", "defaultSnap"));
+	ABL_MediaServerPort.nUseWvp = atoi(ABL_ConfigFile.GetStr("api", "usewvp"));
+	strcpy(ABL_MediaServerPort.port_range, ABL_ConfigFile.GetStr("rtp_proxy", "port_range"));
+
 	if (ABL_MediaServerPort.httpDownloadSpeed > 10)
 		ABL_MediaServerPort.httpDownloadSpeed = 10;
 	else if (ABL_MediaServerPort.httpDownloadSpeed <= 0)
@@ -4052,17 +4139,17 @@ ABL_Restart:
 			ABL_bInitCudaSDKFlag = true;
 			WriteLog(Log_Debug, " dlopen libcudaCodecDLL.so success , NVIDIA graphics card installed  ");
 
-			cudaCodec_Init = (ABL_cudaCodec_Init)dlsym(pCudaDecodeHandle, "cudaCodec_Init");
+			cudaCodec_Init = (ABL_cudaDecode_Init)dlsym(pCudaDecodeHandle, "cudaCodec_Init");
 			if (cudaCodec_Init != NULL)
 				WriteLog(Log_Debug, " dlsym cudaCodec_Init success ");
-			cudaCodec_GetDeviceGetCount = (ABL_cudaCodec_GetDeviceGetCount)dlsym(pCudaDecodeHandle, "cudaCodec_GetDeviceGetCount");
-			cudaCodec_GetDeviceName = (ABL_cudaCodec_GetDeviceName)dlsym(pCudaDecodeHandle, "cudaCodec_GetDeviceName");
-			cudaCodec_GetDeviceUse = (ABL_cudaCodec_GetDeviceUse)dlsym(pCudaDecodeHandle, "cudaCodec_GetDeviceUse");
-			cudaCodec_CreateVideoDecode = (ABL_cudaCodec_CreateVideoDecode)dlsym(pCudaDecodeHandle, "cudaCodec_CreateVideoDecode");
-			cudaCodec_CudaVideoDecode = (ABL_cudaCodec_CudaVideoDecode)dlsym(pCudaDecodeHandle, "cudaCodec_CudaVideoDecode");
-			cudaCodec_DeleteVideoDecode = (ABL_cudaCodec_DeleteVideoDecode)dlsym(pCudaDecodeHandle, "cudaCodec_DeleteVideoDecode");
-			cudaCodec_GetCudaDecodeCount = (ABL_cudaCodec_GetCudaDecodeCount)dlsym(pCudaDecodeHandle, "cudaCodec_GetCudaDecodeCount");
-			cudaCodec_UnInit = (ABL_cudaCodec_UnInit)dlsym(pCudaDecodeHandle, "cudaCodec_UnInit");
+			cudaCodec_GetDeviceGetCount = (ABL_cudaDecode_GetDeviceGetCount)dlsym(pCudaDecodeHandle, "cudaCodec_GetDeviceGetCount");
+			cudaCodec_GetDeviceName = (ABL_cudaDecode_GetDeviceName)dlsym(pCudaDecodeHandle, "cudaCodec_GetDeviceName");
+			cudaCodec_GetDeviceUse = (ABL_cudaDecode_GetDeviceUse)dlsym(pCudaDecodeHandle, "cudaCodec_GetDeviceUse");
+			cudaCodec_CreateVideoDecode = (ABL_CreateVideoDecode)dlsym(pCudaDecodeHandle, "cudaCodec_CreateVideoDecode");
+			cudaCodec_CudaVideoDecode = (ABL_CudaVideoDecode)dlsym(pCudaDecodeHandle, "cudaCodec_CudaVideoDecode");
+			cudaCodec_DeleteVideoDecode = (ABL_DeleteVideoDecode)dlsym(pCudaDecodeHandle, "cudaCodec_DeleteVideoDecode");
+			cudaCodec_GetCudaDecodeCount = (ABL_GetCudaDecodeCount)dlsym(pCudaDecodeHandle, "cudaCodec_GetCudaDecodeCount");
+			cudaCodec_UnInit = (ABL_VideoDecodeUnInit)dlsym(pCudaDecodeHandle, "cudaCodec_UnInit");
 		}
 		else
 			WriteLog(Log_Debug, " dlopen libcudaCodecDLL.so failed , NVIDIA graphics card is not installed  ");
@@ -4173,15 +4260,15 @@ ABL_Restart:
 	nBindRecvAudio = XHNetSDK_Listen((int8_t*)("0.0.0.0"), ABL_MediaServerPort.WsRecvPcmPort, &srvhandle_9298, onaccept, onread, onclose, true);
 	nBingPS10000 = XHNetSDK_Listen((int8_t*)("0.0.0.0"), ABL_MediaServerPort.ps_tsRecvPort, &srvhandle_10000, onaccept, onread, onclose, true);
 
-	WriteLog(Log_Debug, (nBindHttp == 0) ? "绑定端口 %d 成功(success) " : "绑定端口 %d 失败(fail) ", ABL_MediaServerPort.nHttpServerPort);
-	WriteLog(Log_Debug, (nBindRtsp == 0) ? "绑定端口 %d 成功(success)  " : "绑定端口 %d 失败(fail) ", ABL_MediaServerPort.nRtspPort);
-	WriteLog(Log_Debug, (nBindRtmp == 0) ? "绑定端口 %d 成功(success)  " : "绑定端口 %d 失败(fail) ", ABL_MediaServerPort.nRtmpPort);
-	WriteLog(Log_Debug, (nBindWsFlv == 0) ? "绑定端口 %d 成功(success)  " : "绑定端口 %d 失败(fail) ", ABL_MediaServerPort.nWSFlvPort);
-	WriteLog(Log_Debug, (nBindHttpFlv == 0) ? "绑定端口 %d 成功(success)  " : "绑定端口 %d 失败(fail) ", ABL_MediaServerPort.nHttpFlvPort);
-	WriteLog(Log_Debug, (nBindHls == 0) ? "绑定端口 %d 成功(success)  " : "绑定端口 %d 失败(fail) ", ABL_MediaServerPort.nHlsPort);
-	WriteLog(Log_Debug, (nBindMp4 == 0) ? "绑定端口 %d 成功(success)  " : "绑定端口 %d 失败(fail) ", ABL_MediaServerPort.nHttpMp4Port);
-	WriteLog(Log_Debug, (nBindRecvAudio == 0) ? "绑定端口 %d 成功(success)  " : "绑定端口 %d 失败(fail) ", ABL_MediaServerPort.WsRecvPcmPort);
-	WriteLog(Log_Debug, (nBingPS10000 == 0) ? "绑定端口 %d(tcp) 成功(success)  " : "绑定端口 %d(tcp) 失败(fail) ", ABL_MediaServerPort.ps_tsRecvPort);
+	WriteLog(Log_Debug, (nBindHttp == 0) ? "绑定http 端口%d 成功(success) " : "绑定http 端口 %d 失败(fail) ", ABL_MediaServerPort.nHttpServerPort);
+	WriteLog(Log_Debug, (nBindRtsp == 0) ? "绑定rtsp端口 %d 成功(success)  " : "绑定rtsp端口 %d 失败(fail) ", ABL_MediaServerPort.nRtspPort);
+	WriteLog(Log_Debug, (nBindRtmp == 0) ? "绑定rtmp端口 %d 成功(success)  " : "绑定rtmp端口 %d 失败(fail) ", ABL_MediaServerPort.nRtmpPort);
+	WriteLog(Log_Debug, (nBindWsFlv == 0) ? "绑定wsflv端口 %d 成功(success)  " : "绑定wsflv端口 %d 失败(fail) ", ABL_MediaServerPort.nWSFlvPort);
+	WriteLog(Log_Debug, (nBindHttpFlv == 0) ? "绑定HttpFlvP端口 %d 成功(success)  " : "绑定HttpFlvP端口 %d 失败(fail) ", ABL_MediaServerPort.nHttpFlvPort);
+	WriteLog(Log_Debug, (nBindHls == 0) ? "绑定Hls端口 %d 成功(success)  " : "绑定Hls端口 %d 失败(fail) ", ABL_MediaServerPort.nHlsPort);
+	WriteLog(Log_Debug, (nBindMp4 == 0) ? "绑定HttpMp4Por端口 %d 成功(success)  " : "绑定HttpMp4Por端口 %d 失败(fail) ", ABL_MediaServerPort.nHttpMp4Port);
+	WriteLog(Log_Debug, (nBindRecvAudio == 0) ? "绑定WsRecvPcmPort端口 %d 成功(success)  " : "绑定WsRecvPcmPort端口 %d 失败(fail) ", ABL_MediaServerPort.WsRecvPcmPort);
+	WriteLog(Log_Debug, (nBingPS10000 == 0) ? "绑定ps_tsRecvPort端口 %d(tcp) 成功(success)  " : "绑定ps_tsRecvPort端口 %d(tcp) 失败(fail) ", ABL_MediaServerPort.ps_tsRecvPort);
 
 	alaw_pcm16_tableinit();
 	ulaw_pcm16_tableinit();

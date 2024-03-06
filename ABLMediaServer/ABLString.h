@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include <string>
 #include <cstring>
+#include <iostream>
+#include <sstream>
+#include <string>
 namespace ABL {
 
 	std::string& trim(std::string& s);
@@ -31,6 +34,8 @@ namespace ABL {
 	void to_upper(std::string& str);
 	// 定义一个用于获取当前时间的函数
 	unsigned long long getCurrentTime();
+
+	void parseString(const std::string& input, std::string& szSection, std::string& szKey);
 
 
 }
