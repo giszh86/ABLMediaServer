@@ -43,7 +43,6 @@ extern bool 	                       ABL_bCudaFlag ;
 extern int                             ABL_nCudaCount ;
 extern CMediaFifo                      pMessageNoticeFifo;          //消息通知FIFO
 extern char                            ABL_szLocalIP[128];
-
 #ifdef OS_System_Windows
 extern ABL_cudaDecode_Init  cudaCodec_Init;
 extern ABL_CreateVideoDecode cudaCodec_CreateVideoDecode;
@@ -52,15 +51,16 @@ extern ABL_DeleteVideoDecode cudaCodec_DeleteVideoDecode;
 #else
 
 
-extern ABL_cudaDecode_Init cudaCodec_Init = NULL;
-extern ABL_cudaDecode_GetDeviceGetCount  cudaCodec_GetDeviceGetCount = NULL;
-extern ABL_cudaDecode_GetDeviceName cudaCodec_GetDeviceName = NULL;
-extern ABL_cudaDecode_GetDeviceUse cudaCodec_GetDeviceUse = NULL;
-extern ABL_CreateVideoDecode cudaCodec_CreateVideoDecode = NULL;
-extern ABL_CudaVideoDecode cudaCodec_CudaVideoDecode = NULL;
-extern ABL_DeleteVideoDecode cudaCodec_DeleteVideoDecode = NULL;
-extern ABL_GetCudaDecodeCount cudaCodec_GetCudaDecodeCount = NULL;
-extern  ABL_VideoDecodeUnInit cudaCodec_UnInit = NULL;
+extern ABL_cudaDecode_Init cudaCodec_Init ;
+extern ABL_cudaDecode_GetDeviceGetCount  cudaCodec_GetDeviceGetCount ;
+extern ABL_cudaDecode_GetDeviceName cudaCodec_GetDeviceName ;
+extern ABL_cudaDecode_GetDeviceUse cudaCodec_GetDeviceUse ;
+extern ABL_CreateVideoDecode cudaCodec_CreateVideoDecode ;
+extern ABL_CudaVideoDecode cudaCodec_CudaVideoDecode ;
+extern ABL_DeleteVideoDecode cudaCodec_DeleteVideoDecode ;
+extern ABL_GetCudaDecodeCount cudaCodec_GetCudaDecodeCount;
+extern ABL_VideoDecodeUnInit cudaCodec_UnInit ;
+
 
 extern ABL_cudaEncode_Init cudaEncode_Init ;
 extern ABL_cudaEncode_GetDeviceGetCount cudaEncode_GetDeviceGetCount ;
@@ -69,8 +69,8 @@ extern ABL_cudaEncode_CreateVideoEncode cudaEncode_CreateVideoEncode ;
 extern ABL_cudaEncode_DeleteVideoEncode cudaEncode_DeleteVideoEncode ;
 extern ABL_cudaEncode_CudaVideoEncode cudaEncode_CudaVideoEncode ;
 extern ABL_cudaEncode_UnInit cudaEncode_UnInit ;
-#endif
 
+#endif
 CMediaStreamSource::CMediaStreamSource(char* szURL, uint64_t nClientTemp, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct)
 {
 	memset(sim, 0x00, sizeof(sim));
