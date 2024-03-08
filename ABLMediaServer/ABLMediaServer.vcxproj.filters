@@ -60,9 +60,6 @@
     <ClInclude Include="WriteAVFile.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ConfigFile.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="RtcpDef.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -219,6 +216,9 @@
     <ClInclude Include="GlobalManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SimpleIni.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -258,9 +258,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="WriteAVFile.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ConfigFile.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RtcpPacket.cpp">

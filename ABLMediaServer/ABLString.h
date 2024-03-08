@@ -5,6 +5,15 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <cstdlib>
+#ifdef _WIN32
+#include <direct.h>
+#define GetCurrentDir _getcwd
+#else
+#include <unistd.h>
+#define GetCurrentDir getcwd
+#endif
+
 namespace ABL {
 
 	std::string& trim(std::string& s);
@@ -36,6 +45,10 @@ namespace ABL {
 	unsigned long long getCurrentTime();
 
 	void parseString(const std::string& input, std::string& szSection, std::string& szKey);
+
+
+	std::string GetCurrentWorkingDirectory();
+
 
 
 }

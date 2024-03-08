@@ -17,6 +17,7 @@
 #include <vector>
 #include <string>
 #include <functional>
+#include <thread>
 #include <atomic>
 #include "../capture/VideoCapture.h"
 

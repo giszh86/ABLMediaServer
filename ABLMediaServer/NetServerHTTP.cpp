@@ -99,12 +99,13 @@ extern char                                   ABL_szLocalIP[128];
 #endif
 
 
+extern  CSimpleIniA                            ABL_ConfigFile;
 
-#ifdef OS_System_Windows
-extern  CConfigFile                          ABL_ConfigFile;
-#else
-extern  CIni                                 ABL_ConfigFile;
-#endif
+//#ifdef OS_System_Windows
+//extern  CConfigFile                          ABL_ConfigFile;
+//#else
+//extern  CIni                                 ABL_ConfigFile;
+//#endif
 
 CNetServerHTTP::CNetServerHTTP(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort, char* szShareMediaURL)
 {
@@ -3512,11 +3513,16 @@ bool CNetServerHTTP::WriteParamValue(char* szSection, char* szKey, char* szValue
 		return false;
 
 
-#ifdef OS_System_Windows
-	ABL_ConfigFile.WriteConfigString(szSection, szKey, szValue);
-#else
-	ABL_ConfigFile.WriteKeyString(szSection, szKey, szValue);
-#endif
+	ABL_ConfigFile.SetValue(szSection, szKey, szValue);
+	char szConfigFileName[256] = { 0 };	
+	sprintf(szConfigFileName, "%s%s", ABL::GetCurrentWorkingDirectory(), "ABLMediaServer.ini");
+	ABL_ConfigFile.SaveFile(szConfigFileName);
+			
+//#ifdef OS_System_Windows
+//	ABL_ConfigFile.WriteConfigString(szSection, szKey, szValue);
+//#else
+//	ABL_ConfigFile.WriteKeyString(szSection, szKey, szValue);
+//#endif
 
 	return true;
 }
