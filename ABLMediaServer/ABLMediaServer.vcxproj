@@ -236,9 +236,6 @@
     <ClInclude Include="ABLSipParse.h" />
     <ClInclude Include="ABLString.h" />
     <ClInclude Include="AVFrameSWS.h" />
-    <ClInclude Include="cudaCodecDLL.h" />
-    <ClInclude Include="cudaCodecDLL_Linux.h" />
-    <ClInclude Include="cudaEncodeDLL.h" />
     <ClInclude Include="faac.h" />
     <ClInclude Include="faaccfg.h" />
     <ClInclude Include="FFVideoDecode.h" />

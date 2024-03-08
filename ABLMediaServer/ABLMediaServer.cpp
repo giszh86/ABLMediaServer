@@ -3527,7 +3527,7 @@ void WebRtcCallBack(const char* callbackJson, void* pUserHandle)
 		}
 	}
 };
-#define VERSION	 "1.0.002.0229" //   001是当日第几个版本       最后的是日期
+#define VERSION	 "1.0.001.0306" //   001是当日第几个版本       最后的是日期
 void  printfVersion()
 {
 
@@ -3617,7 +3617,7 @@ ABL_Restart:
 	}
 	strcpy(ABL_MediaServerPort.ABL_szLocalIP, ABL_szLocalIP);
 
-	printfVersion();
+	
 	WriteLog(Log_Debug, "本机IP地址 ABL_szLocalIP : %s ", ABL_szLocalIP);
 
 	strcpy(ABL_MediaServerPort.secret, ABL_ConfigFile.ReadConfigString("ABLMediaServer", "secret", "035c73f7-bb6b-4889-a715-d9eb2d1925cc111"));
@@ -4184,7 +4184,7 @@ ABL_Restart:
 	}
 #endif
 	WriteLog(Log_Debug, "....高性能流媒体服务器 ABLMediaServer Start ....");
-
+	printfVersion();
 	WriteLog(Log_Debug, "从配置文件中读取到 \r\n运行参数：http = %d, rtsp = %d , rtmp = %d ,http-flv = %d ,ws-flv = %d ,http-mp4 = %d, nHlsPort = %d , nHlsEnable = %d nHLSCutType = %d \r\n 网络接收线程数量 RecvThreadCount = %d 网络发送线程数量 SendThreadCount = %d ",
 		ABL_MediaServerPort.nHttpServerPort, ABL_MediaServerPort.nRtspPort, ABL_MediaServerPort.nRtmpPort, ABL_MediaServerPort.nHttpFlvPort, ABL_MediaServerPort.nWSFlvPort, ABL_MediaServerPort.nHttpMp4Port, ABL_MediaServerPort.nHlsPort, ABL_MediaServerPort.nHlsEnable, ABL_MediaServerPort.nHLSCutType,
 		ABL_MediaServerPort.nRecvThreadCount, ABL_MediaServerPort.nSendThreadCount);

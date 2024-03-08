@@ -363,7 +363,8 @@ CNetRtspServer::~CNetRtspServer()
 	for (int i = 0; i < 3; i++)
 	{
 		while (!bExitProcessFlagArray[i])
-			Sleep(5);
+			std::this_thread::sleep_for(std::chrono::milliseconds(5));
+			//Sleep(5);
 	}
 	WriteLog(Log_Debug, "CNetRtspServer 任务退出完毕 nTime = %llu, nClient = %llu ", GetTickCount64(), nClient);
 

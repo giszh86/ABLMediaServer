@@ -44,10 +44,21 @@ extern int                             ABL_nCudaCount ;
 extern CMediaFifo                      pMessageNoticeFifo;          //消息通知FIFO
 extern char                            ABL_szLocalIP[128];
 #ifdef OS_System_Windows
-extern ABL_cudaDecode_Init  cudaCodec_Init;
+extern ABL_cudaDecode_Init  cudaEncode_Init;
+extern ABL_CreateVideoDecode cudaCreateVideoDecode;
+extern ABL_CudaVideoDecode   cudaVideoDecode;
+extern ABL_DeleteVideoDecode cudaDeleteVideoDecode;
+
+
+extern ABL_cudaDecode_Init cudaCodec_Init;
+extern ABL_cudaDecode_GetDeviceGetCount  cudaCodec_GetDeviceGetCount;
+extern ABL_cudaDecode_GetDeviceName cudaCodec_GetDeviceName;
+extern ABL_cudaDecode_GetDeviceUse cudaCodec_GetDeviceUse;
 extern ABL_CreateVideoDecode cudaCodec_CreateVideoDecode;
-extern ABL_CudaVideoDecode   cudaCodec_CudaVideoDecode;
+extern ABL_CudaVideoDecode cudaCodec_CudaVideoDecode;
 extern ABL_DeleteVideoDecode cudaCodec_DeleteVideoDecode;
+extern ABL_GetCudaDecodeCount cudaCodec_GetCudaDecodeCount;
+extern ABL_VideoDecodeUnInit cudaCodec_UnInit;
 #else
 
 
