@@ -15,7 +15,7 @@ set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-fPIC")
 
 # 设置输出目录
 message("当前系统架构: ${CMAKE_SYSTEM_PROCESSOR}")
-set(SYSTEM_NAME_LOWER "arm64")   # 自定义系统名称
+set(SYSTEM_NAME_LOWER "amd64")   # 自定义系统名称
 if(NOT CMAKE_BUILD_TYPE)
    set(CMAKE_BUILD_TYPE "Release")   # 自定义构建类型
 endif()
@@ -23,7 +23,7 @@ endif()
 #set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Bin/${SYSTEM_NAME_LOWER}/${CMAKE_BUILD_TYPE})
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Bin)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Bin/${SYSTEM_NAME_LOWER}/${CMAKE_BUILD_TYPE})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Bin)
 
 message("OUTPUT_DIR : ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
 
@@ -71,12 +71,15 @@ link_directories(
 
 
 # 添加子目录，这样子目录中的CMakeLists.txt才会被调用
-#add_subdirectory(webrtc-streamer)
+add_subdirectory(webrtc-streamer)
+
+# 添加子目录，
+add_subdirectory(XHNetSDK)
 
 # Add executable
 add_executable(${PROJECT_NAME})
 
-file(GLOB sources CONFIGURE_DEPENDS 
+file(GLOB ABL_SRC_LIST CONFIGURE_DEPENDS 
    ./ABLMediaServer/*.cpp
     ./ABLMediaServer/packet/ps_demux/*.cpp
     ./ABLMediaServer/packet/ps_mux/*.cpp
@@ -84,12 +87,12 @@ file(GLOB sources CONFIGURE_DEPENDS
     ./ABLMediaServer/packet/rtppacket/*.cpp
 )
 
-target_sources(${PROJECT_NAME} PUBLIC ${sources})
+target_sources(${PROJECT_NAME} PUBLIC ${ABL_SRC_LIST})
 
 # 链接需要的库文件
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
-	pthread
+    pthread
     XHNetSDK
     dl
     PsDemux
@@ -105,7 +108,7 @@ target_link_libraries(${PROJECT_NAME}
     swresample
     webrtc-streamer
     ${MEDIA_SERVER_PATH}/librtmp.a
-	${MEDIA_SERVER_PATH}/libflv.a
+    ${MEDIA_SERVER_PATH}/libflv.a
 	${MEDIA_SERVER_PATH}/libhls.a
 	${MEDIA_SERVER_PATH}/libmov.a
 	${MEDIA_SERVER_PATH}/libmpeg.a	
