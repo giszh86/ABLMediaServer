@@ -27,8 +27,8 @@ std::map<std::string, std::string> ReadAuth(std::string  line)
 	if (len > 0) {
 		name_to_key.emplace(line.substr(0, sep), std::string(buf, len));
 	}
-	std::string str = std::string(buf, len);
-	std::cout << "std::string(buf, len) = " << std::string(buf, len).c_str() << std::endl;
+	//std::string str = std::string(buf, len);
+	//std::cout << "std::string(buf, len) = " << std::string(buf, len).c_str() << std::endl;
 	return name_to_key;
 }
 
@@ -48,40 +48,6 @@ std::string CalculateMD5(const std::string& input) {
 	return ss.str();
 }
 
-std::map<std::string, std::string> ReadTurnServerConfig(std::string strPath) {
-	std::map<std::string, std::string> configMap;
-
-	// 获取当前程序所在文件夹
-	std::filesystem::path exePath = std::filesystem::canonical(std::filesystem::path(strPath));
-	std::filesystem::path folderPath = exePath.parent_path();
-
-	// 读取配置文件
-	std::ifstream configFile(folderPath / "turnserver.conf");
-	if (configFile.is_open()) {
-		std::string line;
-		while (std::getline(configFile, line)) {
-			// 忽略注释和空行
-			if (line.empty() || line[0] == '#') {
-				continue;
-			}
-
-			// 分割每行配置项
-			size_t pos = line.find('=');
-			if (pos != std::string::npos) {
-				std::string key = line.substr(0, pos);
-				std::string value = line.substr(pos + 1);
-				configMap[key] = value;
-			}
-		}
-
-		configFile.close();
-	}
-	else {
-		std::cerr << "Unable to open turnserver.conf" << std::endl;
-	}
-
-	return configMap;
-}
 
 std::string  setAuth(std::string username, std::string realm)
 {
@@ -96,7 +62,7 @@ std::string  setAuth(std::string username, std::string realm)
 		std::vector<std::string> userParts(it, end);
 		if (userParts.size() == 2) {
 			std::string result = userParts[0] + ":" + realm + ":" + userParts[1];
-			std::cout << "Result: " << result << std::endl;
+		//	std::cout << "Result: " << result << std::endl;
 			md5_result = CalculateMD5(result);
 			md5_result = "admin=" + md5_result;
 		}
