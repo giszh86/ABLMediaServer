@@ -27,10 +27,13 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Bin)
 
 message("OUTPUT_DIR : ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
 
+
 # 设置 FFmpeg 版本
 set(FFMPEG_VERSION "v6.0")
-set(FAAC_PATH             ${CMAKE_CURRENT_SOURCE_DIR}/3rd/faac-1.29.9.2/build)
-set(MEDIA_SERVER_PATH     ${CMAKE_CURRENT_SOURCE_DIR}/media-server-master/amd64)
+set(FAAC_PATH ${CMAKE_CURRENT_SOURCE_DIR}/3rd/faac-1.29.9.2/build)
+set(MEDIA_SERVER_PATH ${CMAKE_CURRENT_SOURCE_DIR}/media-server-master/${SYSTEM_NAME_LOWER})
+
+
 # 根据 FFmpeg 版本进行不同操作
 if(FFMPEG_VERSION STREQUAL "v4.0")
     message("Using FFmpeg v4.0")
@@ -116,4 +119,5 @@ target_link_libraries(${PROJECT_NAME}
        ${CMAKE_CURRENT_SOURCE_DIR}/3rd/faac-1.29.9.2/bulid/lib/libfaac.so
       
 )
+
 
