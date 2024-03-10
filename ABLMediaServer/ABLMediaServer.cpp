@@ -221,7 +221,7 @@ uint64_t GetCurrentSecondByTime(char* szDateTime)
 	clock = mktime(&tm);
 	return clock;
 }
-CSimpleIniA                            ABL_ConfigFile;
+CSimpleIni                            ABL_ConfigFile;
 #ifdef OS_System_Windows
 
 uint64_t GetCurrentSecond()
@@ -819,95 +819,96 @@ int GetALLListServerPort(char* szMediaSourceInfo, ListServerPortStruct  listServ
 					nClient = pClient->hParent;//有代理类的都需要 返回父类ID 
 				else
 					nClient = pClient->nClient;
-#ifdef  USE_WVP
-				if (strlen(listServerPortStruct.app) > 0 && strlen(listServerPortStruct.stream) > 0 && strcmp(pClient->m_addStreamProxyStruct.app, listServerPortStruct.app) == 0 && strcmp(pClient->m_addStreamProxyStruct.stream, listServerPortStruct.stream) == 0)
+
+				if (ABL_MediaServerPort.nUseWvp == 1)
 				{
-					Document doc;
-					doc.SetObject();
-					Document::AllocatorType& allocator = doc.GetAllocator();
-					// 添加成员变量
-					doc.AddMember("code", 0, allocator);
-					doc.AddMember("exist", true, allocator);
-					doc.AddMember("local_port", pClient->nClientPort, allocator);
-					// 将 JSON 对象转换为字符串
-					StringBuffer buffer;
-					Writer<StringBuffer> writer(buffer);
-					doc.Accept(writer);
-					sprintf(szMediaSourceInfo, "%s", buffer.GetString());
-					nMediaCount++;
-					break;
+					if (strlen(listServerPortStruct.app) > 0 && strlen(listServerPortStruct.stream) > 0 && strcmp(pClient->m_addStreamProxyStruct.app, listServerPortStruct.app) == 0 && strcmp(pClient->m_addStreamProxyStruct.stream, listServerPortStruct.stream) == 0)
+					{
+						Document doc;
+						doc.SetObject();
+						Document::AllocatorType& allocator = doc.GetAllocator();
+						// 添加成员变量
+						doc.AddMember("code", 0, allocator);
+						doc.AddMember("exist", true, allocator);
+						doc.AddMember("local_port", pClient->nClientPort, allocator);
+						// 将 JSON 对象转换为字符串
+						StringBuffer buffer;
+						Writer<StringBuffer> writer(buffer);
+						doc.Accept(writer);
+						sprintf(szMediaSourceInfo, "%s", buffer.GetString());
+						nMediaCount++;
+						break;
+					}
 				}
-			
-#else
-				if (strlen(listServerPortStruct.app) == 0 && strlen(listServerPortStruct.stream) == 0)
-				{
-					sprintf(szTemp2, "{\"key\":%llu,\"app\":\"%s\",\"stream\":\"%s\",\"networkType\":%d,\"port\":%d},", nClient, pClient->m_addStreamProxyStruct.app, pClient->m_addStreamProxyStruct.stream, pClient->netBaseNetType, pClient->nClientPort);
-				}
-				else if (strlen(listServerPortStruct.app) > 0 && strlen(listServerPortStruct.stream) > 0 && strcmp(pClient->m_addStreamProxyStruct.app, listServerPortStruct.app) == 0 && strcmp(pClient->m_addStreamProxyStruct.stream, listServerPortStruct.stream) == 0)
+				else
 				{
 
-					sprintf(szTemp2, "{\"key\":%llu,\"app\":\"%s\",\"stream\":\"%s\",\"networkType\":%d,\"port\":%d},", nClient, pClient->m_addStreamProxyStruct.app, pClient->m_addStreamProxyStruct.stream, pClient->netBaseNetType, pClient->nClientPort);
-				}
-				else if (strlen(listServerPortStruct.app) > 0 && strlen(listServerPortStruct.stream) == 0 && strcmp(pClient->m_addStreamProxyStruct.app, listServerPortStruct.app) == 0)
-				{
-					sprintf(szTemp2, "{\"key\":%llu,\"app\":\"%s\",\"stream\":\"%s\",\"networkType\":%d,\"port\":%d},", nClient, pClient->m_addStreamProxyStruct.app, pClient->m_addStreamProxyStruct.stream, pClient->netBaseNetType, pClient->nClientPort);
-				}
-				else if (strlen(listServerPortStruct.app) == 0 && strlen(listServerPortStruct.stream) > 0 && strcmp(pClient->m_addStreamProxyStruct.stream, listServerPortStruct.stream) == 0)
-				{
+					if (strlen(listServerPortStruct.app) == 0 && strlen(listServerPortStruct.stream) == 0)
+					{
+						sprintf(szTemp2, "{\"key\":%llu,\"app\":\"%s\",\"stream\":\"%s\",\"networkType\":%d,\"port\":%d},", nClient, pClient->m_addStreamProxyStruct.app, pClient->m_addStreamProxyStruct.stream, pClient->netBaseNetType, pClient->nClientPort);
+					}
+					else if (strlen(listServerPortStruct.app) > 0 && strlen(listServerPortStruct.stream) > 0 && strcmp(pClient->m_addStreamProxyStruct.app, listServerPortStruct.app) == 0 && strcmp(pClient->m_addStreamProxyStruct.stream, listServerPortStruct.stream) == 0)
+					{
 
-					sprintf(szTemp2, "{\"key\":%llu,\"app\":\"%s\",\"stream\":\"%s\",\"networkType\":%d,\"port\":%d},", nClient, pClient->m_addStreamProxyStruct.app, pClient->m_addStreamProxyStruct.stream, pClient->netBaseNetType, pClient->nClientPort);
-				}
+						sprintf(szTemp2, "{\"key\":%llu,\"app\":\"%s\",\"stream\":\"%s\",\"networkType\":%d,\"port\":%d},", nClient, pClient->m_addStreamProxyStruct.app, pClient->m_addStreamProxyStruct.stream, pClient->netBaseNetType, pClient->nClientPort);
+					}
+					else if (strlen(listServerPortStruct.app) > 0 && strlen(listServerPortStruct.stream) == 0 && strcmp(pClient->m_addStreamProxyStruct.app, listServerPortStruct.app) == 0)
+					{
+						sprintf(szTemp2, "{\"key\":%llu,\"app\":\"%s\",\"stream\":\"%s\",\"networkType\":%d,\"port\":%d},", nClient, pClient->m_addStreamProxyStruct.app, pClient->m_addStreamProxyStruct.stream, pClient->netBaseNetType, pClient->nClientPort);
+					}
+					else if (strlen(listServerPortStruct.app) == 0 && strlen(listServerPortStruct.stream) > 0 && strcmp(pClient->m_addStreamProxyStruct.stream, listServerPortStruct.stream) == 0)
+					{
 
-				if (strlen(szTemp2) > 0)
-				{
-					strcat(szMediaSourceInfo, szTemp2);
-					nMediaCount++;
+						sprintf(szTemp2, "{\"key\":%llu,\"app\":\"%s\",\"stream\":\"%s\",\"networkType\":%d,\"port\":%d},", nClient, pClient->m_addStreamProxyStruct.app, pClient->m_addStreamProxyStruct.stream, pClient->netBaseNetType, pClient->nClientPort);
+					}
+
+					if (strlen(szTemp2) > 0)
+					{
+						strcat(szMediaSourceInfo, szTemp2);
+						nMediaCount++;
+					}
 				}
-#endif
-			
 			}
 		}
 
 	}
-#ifdef  USE_WVP
-
-	if (nMediaCount > 0)
+	if (ABL_MediaServerPort.nUseWvp == 1)
 	{
-		//szMediaSourceInfo[strlen(szMediaSourceInfo) - 1] = 0x00;
-	//	strcat(szMediaSourceInfo, "]}");
+		if (nMediaCount == 0)
+		{
+			Document doc;
+			doc.SetObject();
+			Document::AllocatorType& allocator = doc.GetAllocator();
+			// 添加成员变量
+			doc.AddMember("code", IndexApiCode_RequestFileNotFound, allocator);
+			doc.AddMember("exist", false, allocator);
+			doc.AddMember("local_port", 0, allocator);
+			// 将 JSON 对象转换为字符串
+			StringBuffer buffer;
+			Writer<StringBuffer> writer(buffer);
+			doc.Accept(writer);
+			sprintf(szMediaSourceInfo, "%s", buffer.GetString());
+		}
+
+		return nMediaCount;
+	}
+	else
+	{
+		if (nMediaCount > 0)
+		{
+			szMediaSourceInfo[strlen(szMediaSourceInfo) - 1] = 0x00;
+			strcat(szMediaSourceInfo, "]}");
+		}
+
+		if (nMediaCount == 0)
+		{
+			sprintf(szMediaSourceInfo, "{\"code\":%d,\"memo\":\"listServerPort [app: %s , stream: %s] Not Found .\"}", IndexApiCode_RequestFileNotFound, listServerPortStruct.app, listServerPortStruct.stream);
+		}
+		return nMediaCount;
+
 	}
 
-	if (nMediaCount == 0)
-	{
-		Document doc;
-		doc.SetObject();
-		Document::AllocatorType& allocator = doc.GetAllocator();
-		// 添加成员变量
-		doc.AddMember("code", IndexApiCode_RequestFileNotFound, allocator);
-		doc.AddMember("exist", false, allocator);
-		doc.AddMember("local_port", 0, allocator);
-		// 将 JSON 对象转换为字符串
-		StringBuffer buffer;
-		Writer<StringBuffer> writer(buffer);
-		doc.Accept(writer);
-		sprintf(szMediaSourceInfo, "%s", buffer.GetString());
-	}
 
-	return nMediaCount;
-#else
-
-	if (nMediaCount > 0)
-	{
-		szMediaSourceInfo[strlen(szMediaSourceInfo) - 1] = 0x00;
-		strcat(szMediaSourceInfo, "]}");
-	}
-
-	if (nMediaCount == 0)
-	{
-		sprintf(szMediaSourceInfo, "{\"code\":%d,\"memo\":\"listServerPort [app: %s , stream: %s] Not Found .\"}", IndexApiCode_RequestFileNotFound, listServerPortStruct.app, listServerPortStruct.stream);
-	}
-	return nMediaCount;
-#endif
 	
 }
 
@@ -3528,7 +3529,7 @@ void WebRtcCallBack(const char* callbackJson, void* pUserHandle)
 		}
 	}
 };
-#define VERSION	 "1.0.001.0308" //   001是当日第几个版本       最后的是日期
+#define VERSION	 "1.0.002.0310" //   001是当日第几个版本       最后的是日期
 void  printfVersion()
 {
 
