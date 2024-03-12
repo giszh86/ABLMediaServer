@@ -3540,7 +3540,7 @@ void  printfVersion()
 	WriteLog(Log_Debug, "*                                        *");
 	WriteLog(Log_Debug, "*                                        *");
 	WriteLog(Log_Debug, "*           µ±Ç°°æ±¾ : %s      *", VERSION);
-	WriteLog(Log_Debug, "*                                        *");
+	WriteLog(Log_Debug, "*                  %s             *", MediaServerVerson);
 	WriteLog(Log_Debug, "*                                        *");
 	WriteLog(Log_Debug, "*                                        *");
 	WriteLog(Log_Debug, "*                                        *");

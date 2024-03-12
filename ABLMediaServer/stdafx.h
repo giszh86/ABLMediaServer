@@ -399,6 +399,8 @@ struct H265ConvertH264Struct
 enum NetBaseNetType
 {
 	NetBaseNetType_Unknown = 20,//未定义的网络类型
+	NetBaseNetType_RtspServerRecvPushVideo = 16,//接收rtsp推流udp方式的视频
+	NetBaseNetType_RtspServerRecvPushAudio = 17,//接收rtsp推流udp方式的音频
 	NetBaseNetType_GB28181TcpPSInputStream = 18,//通过10000端口TCP方式接收国标PS流接入
 	NetBaseNetType_WebSocektRecvAudio = 19,//通过websocet 接收音频
 	NetBaseNetType_RtmpServerRecvPush = 21,//RTMP 服务器，接收客户端的推流 
@@ -479,7 +481,7 @@ enum NetBaseNetType
 	NetBaseNetType_NetClientWebrtcPlayer = 130,//webrtc的播放 
 };
 
-#define   MediaServerVerson                 "ABLMediaServer-6.3.6(2024-01-03)"
+#define   MediaServerVerson                 "ABLMediaServer-6.3.6(2024-03-12)"
 #define   RtspServerPublic                  "DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE, OPTIONS, ANNOUNCE, RECORD，GET_PARAMETER"
 #define   RecordFileReplaySplitter          "__ReplayFMP4RecordFile__"  //实况、录像区分的标志字符串，用于区分实况，放置在url中。
 
@@ -488,7 +490,7 @@ enum NetBaseNetType
 #define  MaxLiveingAudioFifoBufferLength    1024*512      //最大的音频缓存 
 #define  BaseRecvRtpSSRCNumber              0xFFFFFFFFFF  //用于接收TS接收时 加上 ssrc 的值作为关键字 Key
 #define  IDRFrameMaxBufferLength            1024*1024*3   //IDR帧最大缓存区域字节大小
-#define  MaxClientConnectTimerout           15*1000       //连接服务器最大超时时长 10 秒 
+#define  MaxClientConnectTimerout           10*1000       //连接服务器最大超时时长 10 秒 
 
 //rtsp url 地址分解
 //rtsp://admin:szga2019@190.15.240.189:554
@@ -633,7 +635,7 @@ struct openRtpServerStruct
 	char   send_disableVideo[16];//过滤掉视频 1 过滤掉视频 ，0 不过滤视频 ，默认 0 
 	char   send_disableAudio[16];//过滤掉音频 1 过滤掉音频 ，0 不过滤音频 ，默认 0 
 	char   jtt1078_version[128]; //1078版本 2013、2016、2019
-
+	char   detectSendAppStream[64];//检测回复的码流是否存在
 	char   key[64]; //流的唯一值
 	openRtpServerStruct()
 	{
@@ -658,7 +660,10 @@ struct openRtpServerStruct
 		memset(send_disableAudio, 0x00, sizeof(send_disableAudio));
 		memset(dst_url, 0x00, sizeof(dst_url));
 		memset(dst_port, 0x00, sizeof(dst_port));
-		memset(jtt1078_version, 0x00, sizeof(jtt1078_version));
+		memset(jtt1078_version, 0x00, sizeof(jtt1078_version));	
+		memset(detectSendAppStream, 0x00, sizeof(detectSendAppStream));
+		memset(key, 0x00, sizeof(key));
+
 	}
 };
 
@@ -892,6 +897,20 @@ struct ListServerPortStruct
 	}
 };
 
+//请求国标暂停、继续 pauseResumeRtpServer 
+struct pauseResumeRtpServer
+{
+	char  secret[string_length_256];//api操作密码 
+	char  key[128];//key
+
+	pauseResumeRtpServer()
+	{
+		memset(secret, 0x00, sizeof(secret));
+		memset(key, 0x00, sizeof(key));
+	}
+};
+
+
 enum NetRevcBaseClientType
 {
 	NetRevcBaseClient_ServerAccept = 1, //服务器端口接入 ，比如 554,8080,8088,8089,1935 等等端口accept进来的
@@ -955,6 +974,7 @@ enum HttpReponseIndexApiCode
 	IndexApiCode_SSRClreadyUsed = -1010,//SSRC 已经使用中
 	IndexApiCode_TranscodingVideoFilterNotEnable = -1011,//转码、水印功能尚未开启
 	IndexApiCode_TranscodingVideoFilterTakeEffect = -1012,//转码、水印功能尚未生效
+	IndexApiCode_dst_url_dst_portUsed = -1013,//已经往同一个目标地址、端口发送过
 	IndexApiCode_RecvRtmpFailed = -1100, //获取rtmp码流失败
 	IndexApiCode_AppStreamHaveUsing = -1200, //app,stream 正在使用，但是码流尚未到达 
 };
@@ -1076,6 +1096,13 @@ struct MessageNoticeStruct
 		nSendCount = 0;
 		memset(szMsg, 0x00, sizeof(szMsg));
 	}
+};
+//rtsp 中 rtp 网络传输类型
+enum RtspNetworkType
+{
+	RtspNetworkType_Unknow = -1, //未知
+	RtspNetworkType_TCP = 1,//TCP
+	RtspNetworkType_UDP = 2,//UDP 
 };
 
 #define  MaxGB28181RtpSendVideoMediaBufferLength  1024*64 
@@ -1312,13 +1339,12 @@ void          Sleep(int mMicroSecond);
 #include <filesystem>
 #ifdef OS_System_Windows 
 #include "ABLogSDK.h"
-//#include "ConfigFile.h"
 
 void malloc_trim(int n);
 
 #else 
 #include "ABLogFile.h"
-//#include "Ini.h"
+
 #endif
 
 #ifdef USE_BOOST
@@ -1369,6 +1395,7 @@ typedef list<int> LogFileVector;
 #define SAFE_DELETE(x)   if( x != NULL ) { delete x; x = NULL; }
 
 #include "NetRecvBase.h"
+#include "NetRtspServerUDP.h"
 #include "NetServerHTTP.h"
 #include "NetRtspServer.h"
 #include "NetRtmpServerRecv.h"
