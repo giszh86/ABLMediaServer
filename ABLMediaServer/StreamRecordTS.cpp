@@ -1,7 +1,7 @@
 /*
 功能：
-    负责把码流保存为mp4(ts格式) 
-	 
+	负责把码流保存为mp4(ts格式)
+
 日期    2023-11-04
 作者    罗家兄弟
 QQ      79941308
@@ -76,7 +76,7 @@ static int record_ts_write(void* param, const void* packet, size_t bytes)
 #else
 				time_t now;
 				time(&now);
-				struct tm *local;
+				struct tm* local;
 				local = localtime(&now);
 				sprintf(handle->szFileName, "%s%04d%02d%02d%02d%02d%02d.mp4", handle->szRecordPath, local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);
 				sprintf(handle->szFileNameOrder, "%04d%02d%02d%02d%02d%02d.mp4", local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);;
@@ -149,7 +149,7 @@ bool  CStreamRecordTS::H264H265FrameToTSFile(unsigned char* szVideo, int nLength
 	{
 
 	}
-	nVideoOrder ++;
+	nVideoOrder++;
 
 	if (nVideoOrder % (ABL_MediaServerPort.fileSecond * 25) == 0)
 	{//1秒切片1次
@@ -166,13 +166,14 @@ bool  CStreamRecordTS::H264H265FrameToTSFile(unsigned char* szVideo, int nLength
 			sprintf(msgNotice.szMsg, "{\"app\":\"%s\",\"stream\":\"%s\",\"mediaServerId\":\"%s\",\"networkType\":%d,\"fileName\":\"%s\",\"currentFileDuration\":%llu}", app, stream, ABL_MediaServerPort.mediaServerID, netBaseNetType, szFileNameOrder, (nCurrentVideoFrames / mediaCodecInfo.nVideoFrameRate));
 			pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
 		}
- 		nCurrentVideoFrames = 0;
+		nCurrentVideoFrames = 0;
 	}
 	return true;
 }
 
-CStreamRecordTS::CStreamRecordTS(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort,char* szShareMediaURL)
+CStreamRecordTS::CStreamRecordTS(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort, char* szShareMediaURL)
 {
+	nVideoStampAdd = 1000 / 25;
 	nVideoOrder = 0;
 	fTSFileWrite = NULL;
 	fTSFileWriteByteCount = 0;
@@ -184,38 +185,38 @@ CStreamRecordTS::CStreamRecordTS(NETHANDLE hServer, NETHANDLE hClient, char* szI
 	nCurrentVideoFrames = 0;//当前视频帧数
 	nTotalVideoFrames = 0;//录像视频总帧数
 
-	strcpy(m_szShareMediaURL,szShareMediaURL);
- 	netBaseNetType = NetBaseNetType_RecordFile_TS;
+	strcpy(m_szShareMediaURL, szShareMediaURL);
+	netBaseNetType = NetBaseNetType_RecordFile_TS;
 	nMediaClient = 0;
-  
+
 	nClient = hClient;
 	hls_init_segmentFlag = false;
 	audioDts = 0;
 	videoDts = 0;
-  
+
 	strcpy(szClientIP, szIP);
 	nClientPort = nPort;
 
- 	m_videoFifo.InitFifo(MaxLiveingVideoFifoBufferLength);
+	m_videoFifo.InitFifo(MaxLiveingVideoFifoBufferLength);
 	m_audioFifo.InitFifo(MaxLiveingAudioFifoBufferLength);
 
- 	nCreateDateTime = GetTickCount64();
+	nCreateDateTime = GetTickCount64();
 
 	if (tsPacketHandle == NULL)
 	{
 		tshandler.alloc = record_ts_alloc;
 		tshandler.write = record_ts_write;
 		tshandler.free = record_ts_free;
-  
+
 		tsPacketHandle = mpeg_ts_create(&tshandler, (void*)this);
- 	}
+	}
 
 	WriteLog(Log_Debug, "CStreamRecordTS 构造 = %X nClient = %llu ", this, nClient);
 }
 
 CStreamRecordTS::~CStreamRecordTS()
 {
-	bRunFlag = false ;
+	bRunFlag = false;
 	std::lock_guard<std::mutex> lock(mediaMP4MapLock);
 
 	if (tsPacketHandle != NULL)
@@ -223,14 +224,14 @@ CStreamRecordTS::~CStreamRecordTS()
 		mpeg_ts_destroy(tsPacketHandle);
 		tsPacketHandle = NULL;
 	}
- 
+
 	m_videoFifo.FreeFifo();
 	m_audioFifo.FreeFifo();
- 
+
 	if (fTSFileWrite)
 	{
 		fflush(fTSFileWrite);
- 		fclose(fTSFileWrite);
+		fclose(fTSFileWrite);
 		fTSFileWrite = NULL;
 
 		//完成一个fmp4切片文件通知 
@@ -253,16 +254,16 @@ int CStreamRecordTS::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, char* 
 	if (!bRunFlag)
 		return -1;
 	nRecvDataTimerBySecond = 0;
-	nCurrentVideoFrames ++;//当前视频帧数
-	nTotalVideoFrames ++ ;//录像视频总帧数
+	nCurrentVideoFrames++;//当前视频帧数
+	nTotalVideoFrames++;//录像视频总帧数
 
 	m_videoFifo.push(pVideoData, nDataLength);
 
-	if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nClientRecordProgress > 0 && (GetTickCount64() - nCreateDateTime ) >= 1000 )
+	if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nClientRecordProgress > 0 && (GetTickCount64() - nCreateDateTime) >= 1000)
 	{
 		MessageNoticeStruct msgNotice;
 		msgNotice.nClient = ABL_MediaServerPort.nClientRecordProgress;
-		sprintf(msgNotice.szMsg, "{\"app\":\"%s\",\"stream\":\"%s\",\"mediaServerId\":\"%s\",\"networkType\":%d,\"key\":%d,\"fileName\":\"%s\",\"currentFileDuration\":%llu,\"TotalVideoDuration\":%llu}", app, stream, ABL_MediaServerPort.mediaServerID, netBaseNetType,key, szFileNameOrder, (nCurrentVideoFrames / mediaCodecInfo.nVideoFrameRate), (nTotalVideoFrames / mediaCodecInfo.nVideoFrameRate));
+		sprintf(msgNotice.szMsg, "{\"app\":\"%s\",\"stream\":\"%s\",\"mediaServerId\":\"%s\",\"networkType\":%d,\"key\":%d,\"fileName\":\"%s\",\"currentFileDuration\":%llu,\"TotalVideoDuration\":%llu}", app, stream, ABL_MediaServerPort.mediaServerID, netBaseNetType, key, szFileNameOrder, (nCurrentVideoFrames / mediaCodecInfo.nVideoFrameRate), (nTotalVideoFrames / mediaCodecInfo.nVideoFrameRate));
 		pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
 		nCreateDateTime = GetTickCount64();
 	}
@@ -282,23 +283,23 @@ int CStreamRecordTS::PushAudio(uint8_t* pAudioData, uint32_t nDataLength, char* 
 
 int CStreamRecordTS::SendVideo()
 {
- 	std::lock_guard<std::mutex> lock(mediaMP4MapLock);
+	std::lock_guard<std::mutex> lock(mediaMP4MapLock);
 
 	nRecvDataTimerBySecond = 0;
 
-	nVideoStampAdd = 1000 / mediaCodecInfo.nVideoFrameRate;
-
-	videoDts += nVideoStampAdd;
+	if (ABL_MediaServerPort.nEnableAudio == 0)
+		nVideoStampAdd = 1000 / mediaCodecInfo.nVideoFrameRate;
 
 	unsigned char* pData = NULL;
 	int            nLength = 0;
 	if ((pData = m_videoFifo.pop(&nLength)) != NULL)
 	{
-		 if (tsPacketHandle != NULL )
- 		  H264H265FrameToTSFile(pData, nLength);
+		if (tsPacketHandle != NULL)
+			H264H265FrameToTSFile(pData, nLength);
 
 		m_videoFifo.pop_front();
 	}
+	videoDts += nVideoStampAdd;
 
 	return 0;
 }
@@ -306,13 +307,13 @@ int CStreamRecordTS::SendVideo()
 int CStreamRecordTS::SendAudio()
 {
 	std::lock_guard<std::mutex> lock(mediaMP4MapLock);
- 	if (ABL_MediaServerPort.nEnableAudio == 0)
-		return 0 ;
-   
- 	unsigned char* pData = NULL;
+	if (ABL_MediaServerPort.nEnableAudio == 0)
+		return 0;
+
+	unsigned char* pData = NULL;
 	int            nLength = 0;
 	int            nRet;
-	if ((pData = m_audioFifo.pop(&nLength)) != NULL && tsPacketHandle != NULL )
+	if ((pData = m_audioFifo.pop(&nLength)) != NULL && tsPacketHandle != NULL)
 	{
 
 		if (strcmp(mediaCodecInfo.szAudioName, "AAC") == 0)
@@ -323,20 +324,23 @@ int CStreamRecordTS::SendAudio()
 			audioType = PSI_STREAM_AUDIO_G711U;
 
 		nRet = mpeg_ts_write(tsPacketHandle, ts_stream(tsPacketHandle, audioType), 0, audioDts * 90, audioDts * 90, pData, nLength);
-		
+
 		if (strcmp(mediaCodecInfo.szAudioName, "AAC") == 0)
 			audioDts += mediaCodecInfo.nBaseAddAudioTimeStamp;
 		else if (strcmp(mediaCodecInfo.szAudioName, "G711_A") == 0 || strcmp(mediaCodecInfo.szAudioName, "G711_U") == 0)
-			audioDts += nLength ;
+			audioDts += nLength / 8;
 
 		m_audioFifo.pop_front();
+
+		//同步音视频 
+		SyncVideoAudioTimestamp();
 	}
 	return 0;
 }
 
 int CStreamRecordTS::InputNetData(NETHANDLE nServerHandle, NETHANDLE nClientHandle, uint8_t* pData, uint32_t nDataLength, void* address)
 {
-	
+
 	return 0;
 }
 
@@ -349,7 +353,7 @@ int CStreamRecordTS::ProcessNetData()
 int CStreamRecordTS::SendFirstRequst()
 {
 
-	 return 0;
+	return 0;
 }
 
 //请求m3u8文件
