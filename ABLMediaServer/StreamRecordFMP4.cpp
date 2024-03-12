@@ -1,7 +1,7 @@
 /*
 功能：
-    负责把码流保存为mp4(fmp4格式) 
-	 
+	负责把码流保存为mp4(fmp4格式)
+
 日期    2022-01-09
 作者    罗家兄弟
 QQ      79941308
@@ -51,9 +51,9 @@ static int StreamRecordFMP4_hls_segment(void* param, const void* data, size_t by
 	CStreamRecordFMP4* pNetServerHttpMp4 = (CStreamRecordFMP4*)param;
 	if (pNetServerHttpMp4 == NULL)
 		return 0;
-	
-	if(!pNetServerHttpMp4->bCheckHttpMP4Flag || !pNetServerHttpMp4->bRunFlag)
-		return -1 ;
+
+	if (!pNetServerHttpMp4->bCheckHttpMP4Flag || !pNetServerHttpMp4->bRunFlag)
+		return -1;
 
 	if (bytes > 0)
 	{
@@ -63,7 +63,7 @@ static int StreamRecordFMP4_hls_segment(void* param, const void* data, size_t by
 	return 0;
 }
 
-CStreamRecordFMP4::CStreamRecordFMP4(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort,char* szShareMediaURL)
+CStreamRecordFMP4::CStreamRecordFMP4(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort, char* szShareMediaURL)
 {
 	memset((char*)&avc, 0x00, sizeof(avc));
 	memset((char*)&hevc, 0x00, sizeof(hevc));
@@ -71,8 +71,8 @@ CStreamRecordFMP4::CStreamRecordFMP4(NETHANDLE hServer, NETHANDLE hClient, char*
 	nCurrentVideoFrames = 0;//当前视频帧数
 	nTotalVideoFrames = 0;//录像视频总帧数
 
-	strcpy(m_szShareMediaURL,szShareMediaURL);
- 	netBaseNetType = NetBaseNetType_RecordFile_FMP4;
+	strcpy(m_szShareMediaURL, szShareMediaURL);
+	netBaseNetType = NetBaseNetType_RecordFile_FMP4;
 	nMediaClient = 0;
 	bAddSendThreadToolFlag = false;
 	bWaitIFrameSuccessFlag = false;
@@ -88,7 +88,7 @@ CStreamRecordFMP4::CStreamRecordFMP4(NETHANDLE hServer, NETHANDLE hClient, char*
 	strcpy(szClientIP, szIP);
 	nClientPort = nPort;
 
-	memset(netDataCache ,0x00,sizeof(netDataCache));
+	memset(netDataCache, 0x00, sizeof(netDataCache));
 	MaxNetDataCacheCount = sizeof(netDataCache);
 	netDataCacheLength = data_Length = nNetStart = nNetEnd = 0;//网络数据缓存大小
 	bFindMP4NameFlag = false;
@@ -104,7 +104,7 @@ CStreamRecordFMP4::CStreamRecordFMP4(NETHANDLE hServer, NETHANDLE hClient, char*
 
 CStreamRecordFMP4::~CStreamRecordFMP4()
 {
-	bCheckHttpMP4Flag = bRunFlag = false ;
+	bCheckHttpMP4Flag = bRunFlag = false;
 	std::lock_guard<std::mutex> lock(mediaMP4MapLock);
 
 	//删除fmp4切片句柄
@@ -112,14 +112,14 @@ CStreamRecordFMP4::~CStreamRecordFMP4()
 	{
 		hls_fmp4_destroy(hlsFMP4);
 		hlsFMP4 = NULL;
-    }
- 
+	}
+
 	m_videoFifo.FreeFifo();
 	m_audioFifo.FreeFifo();
- 
+
 	if (fWriteMP4)
 	{
- 		fclose(fWriteMP4);
+		fclose(fWriteMP4);
 		fWriteMP4 = NULL;
 
 		//完成一个fmp4切片文件通知 
@@ -141,16 +141,16 @@ int CStreamRecordFMP4::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, char
 	if (!bRunFlag)
 		return -1;
 	nRecvDataTimerBySecond = 0;
-	nCurrentVideoFrames ++;//当前视频帧数
-	nTotalVideoFrames ++ ;//录像视频总帧数
+	nCurrentVideoFrames++;//当前视频帧数
+	nTotalVideoFrames++;//录像视频总帧数
 
 	m_videoFifo.push(pVideoData, nDataLength);
 
-	if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nClientRecordProgress > 0 && (GetTickCount64() - nCreateDateTime ) >= 1000 )
+	if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nClientRecordProgress > 0 && (GetTickCount64() - nCreateDateTime) >= 1000)
 	{
 		MessageNoticeStruct msgNotice;
 		msgNotice.nClient = ABL_MediaServerPort.nClientRecordProgress;
-		sprintf(msgNotice.szMsg, "{\"app\":\"%s\",\"stream\":\"%s\",\"mediaServerId\":\"%s\",\"networkType\":%d,\"key\":%d,\"fileName\":\"%s\",\"currentFileDuration\":%llu,\"TotalVideoDuration\":%llu}", app, stream, ABL_MediaServerPort.mediaServerID, netBaseNetType,key, szFileNameOrder, (nCurrentVideoFrames / mediaCodecInfo.nVideoFrameRate), (nTotalVideoFrames / mediaCodecInfo.nVideoFrameRate));
+		sprintf(msgNotice.szMsg, "{\"app\":\"%s\",\"stream\":\"%s\",\"mediaServerId\":\"%s\",\"networkType\":%d,\"key\":%d,\"fileName\":\"%s\",\"currentFileDuration\":%llu,\"TotalVideoDuration\":%llu}", app, stream, ABL_MediaServerPort.mediaServerID, netBaseNetType, key, szFileNameOrder, (nCurrentVideoFrames / mediaCodecInfo.nVideoFrameRate), (nTotalVideoFrames / mediaCodecInfo.nVideoFrameRate));
 		pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
 		nCreateDateTime = GetTickCount64();
 	}
@@ -161,9 +161,6 @@ int CStreamRecordFMP4::PushAudio(uint8_t* pAudioData, uint32_t nDataLength, char
 {
 	if (ABL_MediaServerPort.nEnableAudio == 0 || !bRunFlag)
 		return -1;
-
-	if (strcmp(mediaCodecInfo.szAudioName, "AAC") != 0)
-		return 0;
 
 	m_audioFifo.push(pAudioData, nDataLength);
 
@@ -182,7 +179,8 @@ int CStreamRecordFMP4::SendVideo()
 	if (!bCheckHttpMP4Flag)
 		return -1;
 
-	nVideoStampAdd = 1000 / mediaCodecInfo.nVideoFrameRate;
+	if (ABL_MediaServerPort.nEnableAudio == 0)
+		nVideoStampAdd = 1000 / mediaCodecInfo.nVideoFrameRate;
 
 	videoDts += nVideoStampAdd;
 
@@ -201,10 +199,10 @@ int CStreamRecordFMP4::SendAudio()
 {
 	std::lock_guard<std::mutex> lock(mediaMP4MapLock);
 
-	if (ABL_MediaServerPort.nEnableAudio == 0 || strcmp(mediaCodecInfo.szAudioName, "AAC") != 0 || !bCheckHttpMP4Flag)
-		return 0 ;
-   
- 	unsigned char* pData = NULL;
+	if (ABL_MediaServerPort.nEnableAudio == 0 || !bCheckHttpMP4Flag)
+		return 0;
+
+	unsigned char* pData = NULL;
 	int            nLength = 0;
 	if ((pData = m_audioFifo.pop(&nLength)) != NULL)
 	{
@@ -215,7 +213,7 @@ int CStreamRecordFMP4::SendAudio()
 
 			avtype = PSI_STREAM_AAC;
 
-			if (hlsFMP4 != NULL )
+			if (hlsFMP4 != NULL)
 			{
 				if (track_aac == -1)
 				{
@@ -244,38 +242,28 @@ int CStreamRecordFMP4::SendAudio()
 
 			audioDts += mediaCodecInfo.nBaseAddAudioTimeStamp;
 
-			//500毫秒同步一次 
-			if (GetTickCount() - nAsyncAudioStamp >= 500)
-			{
-				if (videoDts < audioDts)
-				{
-					nVideoStampAdd = (1000 / mediaCodecInfo.nVideoFrameRate) + 5;
-				}
-				else if (videoDts > audioDts)
-				{
-					nVideoStampAdd = (1000 / mediaCodecInfo.nVideoFrameRate) - 5;
-				}
-				nAsyncAudioStamp = GetTickCount();
-			}
 		}
 		else if (ABL_MediaServerPort.nEnableAudio == 1 && strcmp(mediaCodecInfo.szAudioName, "G711_A") == 0 || strcmp(mediaCodecInfo.szAudioName, "G711_U") == 0)
 		{
-			if (track_aac == -1 && hlsFMP4 != NULL )
+			if (track_aac == -1 && hlsFMP4 != NULL)
 			{
-				if(strcmp(mediaCodecInfo.szAudioName, "G711_A") == 0 )
-				  track_aac = hls_fmp4_add_audio(hlsFMP4, MOV_OBJECT_G711a, mediaCodecInfo.nChannels, 16, mediaCodecInfo.nSampleRate, NULL, 0);
-				else 
-				  track_aac = hls_fmp4_add_audio(hlsFMP4, MOV_OBJECT_G711u, mediaCodecInfo.nChannels, 16, mediaCodecInfo.nSampleRate, NULL, 0);
+				if (strcmp(mediaCodecInfo.szAudioName, "G711_A") == 0)
+					track_aac = hls_fmp4_add_audio(hlsFMP4, MOV_OBJECT_G711a, mediaCodecInfo.nChannels, 16, mediaCodecInfo.nSampleRate, NULL, 0);
+				else
+					track_aac = hls_fmp4_add_audio(hlsFMP4, MOV_OBJECT_G711u, mediaCodecInfo.nChannels, 16, mediaCodecInfo.nSampleRate, NULL, 0);
 			}
 
 			//必须hls_init_segment 初始化完成才能写音频段，在回调函数里面做标志 
-			if (track_aac >= 0 && hls_init_segmentFlag && hlsFMP4 != NULL )
+			if (track_aac >= 0 && hls_init_segmentFlag && hlsFMP4 != NULL)
 			{
-				hls_fmp4_input(hlsFMP4, track_aac, pData, nLength , audioDts, audioDts, 0);
+				hls_fmp4_input(hlsFMP4, track_aac, pData, nLength, audioDts, audioDts, 0);
 			}
 
-			audioDts += nLength / 8 ;
+			audioDts += nLength / 8;
 		}
+
+		//同步音视频 
+		SyncVideoAudioTimestamp();
 
 		m_audioFifo.pop_front();
 	}
@@ -284,7 +272,7 @@ int CStreamRecordFMP4::SendAudio()
 
 int CStreamRecordFMP4::InputNetData(NETHANDLE nServerHandle, NETHANDLE nClientHandle, uint8_t* pData, uint32_t nDataLength, void* address)
 {
-	
+
 	return 0;
 }
 
@@ -297,7 +285,7 @@ int CStreamRecordFMP4::ProcessNetData()
 int CStreamRecordFMP4::SendFirstRequst()
 {
 
-	 return 0;
+	return 0;
 }
 
 //请求m3u8文件
@@ -328,31 +316,31 @@ static int fmp4_hls_init_segment(hls_fmp4_t* hls, void* param)
 #else
 		time_t now;
 		time(&now);
-		struct tm *local;
+		struct tm* local;
 		local = localtime(&now);
 		sprintf(pNetServerHttpMp4->szFileName, "%s%04d%02d%02d%02d%02d%02d.mp4", pNetServerHttpMp4->szRecordPath, local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);
 		sprintf(pNetServerHttpMp4->szFileNameOrder, "%04d%02d%02d%02d%02d%02d.mp4", local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);;
 #endif
-			auto pRecord = GetRecordFileSource(pNetServerHttpMp4->m_szShareMediaURL);
-			if (pRecord)
+		boost::shared_ptr<CRecordFileSource> pRecord = GetRecordFileSource(pNetServerHttpMp4->m_szShareMediaURL);
+		if (pRecord)
+		{
+			bUpdateFlag = pRecord->UpdateExpireRecordFile(pNetServerHttpMp4->szFileName);
+			if (bUpdateFlag)
 			{
-				bUpdateFlag = pRecord->UpdateExpireRecordFile(pNetServerHttpMp4->szFileName);
-				if (bUpdateFlag)
-				{
-					pNetServerHttpMp4->fWriteMP4 = fopen(pNetServerHttpMp4->szFileName, "r+b");
-					if (pNetServerHttpMp4->fWriteMP4)
-						fseek(pNetServerHttpMp4->fWriteMP4, 0, SEEK_SET);
-				}
-				else
-				   pNetServerHttpMp4->fWriteMP4 = fopen(pNetServerHttpMp4->szFileName, "wb");
-
+				pNetServerHttpMp4->fWriteMP4 = fopen(pNetServerHttpMp4->szFileName, "r+b");
 				if (pNetServerHttpMp4->fWriteMP4)
-				{
-				   pRecord->AddRecordFile(pNetServerHttpMp4->szFileNameOrder);
-				   WriteLog(Log_Debug, "CStreamRecordFMP4 = %X %s 增加录像文件 nClient = %llu ,nMediaClient = %llu szFileNameOrder %s ", pNetServerHttpMp4, pNetServerHttpMp4->m_szShareMediaURL, pNetServerHttpMp4->nClient, pNetServerHttpMp4->nMediaClient, pNetServerHttpMp4->szFileNameOrder);
- 		         }
-  			}
- 	}
+					fseek(pNetServerHttpMp4->fWriteMP4, 0, SEEK_SET);
+			}
+			else
+				pNetServerHttpMp4->fWriteMP4 = fopen(pNetServerHttpMp4->szFileName, "wb");
+
+			if (pNetServerHttpMp4->fWriteMP4)
+			{
+				pRecord->AddRecordFile(pNetServerHttpMp4->szFileNameOrder);
+				WriteLog(Log_Debug, "CStreamRecordFMP4 = %X %s 增加录像文件 nClient = %llu ,nMediaClient = %llu szFileNameOrder %s ", pNetServerHttpMp4, pNetServerHttpMp4->m_szShareMediaURL, pNetServerHttpMp4->nClient, pNetServerHttpMp4->nMediaClient, pNetServerHttpMp4->szFileNameOrder);
+			}
+		}
+	}
 
 	if (pNetServerHttpMp4->fWriteMP4)
 	{
@@ -368,12 +356,12 @@ static int fmp4_hls_init_segment(hls_fmp4_t* hls, void* param)
 
 bool  CStreamRecordFMP4::VideoFrameToFMP4File(unsigned char* szVideoData, int nLength)
 {
-	if (track_video < 0 )
+	if (track_video < 0)
 	{
 		int n;
 		//vcl 、 update 都要赋值为 0 ，否则容易崩溃 
 		vcl = 0;
-		update = 0;        
+		update = 0;
 		if (memcmp(mediaCodecInfo.szVideoName, "H264", 4) == 0)
 		{
 			n = h264_annexbtomp4(&avc, szVideoData, nLength, pH265Buffer, MediaStreamSource_VideoFifoLength, &vcl, &update);
@@ -392,7 +380,7 @@ bool  CStreamRecordFMP4::VideoFrameToFMP4File(unsigned char* szVideoData, int nL
 			{//H264 等待 SPS、PPS 的方法 
 				if (avc.nb_sps < 1 || avc.nb_pps < 1)
 				{
- 					return false  ; // waiting for sps/pps
+					return false; // waiting for sps/pps
 				}
 				extra_data_size = mpeg4_avc_decoder_configuration_record_save(&avc, szExtenVideoData, sizeof(szExtenVideoData));
 			}
@@ -400,9 +388,9 @@ bool  CStreamRecordFMP4::VideoFrameToFMP4File(unsigned char* szVideoData, int nL
 			{//H265 等待SPS、PPS的方法 
 				if (hevc.numOfArrays < 1)
 				{
- 					return false ; // waiting for vps/sps/pps
+					return false; // waiting for vps/sps/pps
 				}
-			    extra_data_size = mpeg4_hevc_decoder_configuration_record_save(&hevc, szExtenVideoData, sizeof(szExtenVideoData));
+				extra_data_size = mpeg4_hevc_decoder_configuration_record_save(&hevc, szExtenVideoData, sizeof(szExtenVideoData));
 			}
 			else
 				return false;
@@ -415,9 +403,9 @@ bool  CStreamRecordFMP4::VideoFrameToFMP4File(unsigned char* szVideoData, int nL
 			if (extra_data_size > 0)
 			{
 				if (strcmp(mediaCodecInfo.szVideoName, "H264") == 0)
-				  track_video = hls_fmp4_add_video(hlsFMP4, MOV_OBJECT_H264, mediaCodecInfo.nWidth, mediaCodecInfo.nHeight, szExtenVideoData, extra_data_size);
+					track_video = hls_fmp4_add_video(hlsFMP4, MOV_OBJECT_H264, mediaCodecInfo.nWidth, mediaCodecInfo.nHeight, szExtenVideoData, extra_data_size);
 				else if (strcmp(mediaCodecInfo.szVideoName, "H265") == 0)
-				  track_video = hls_fmp4_add_video(hlsFMP4, MOV_OBJECT_HEVC, mediaCodecInfo.nWidth, mediaCodecInfo.nHeight, szExtenVideoData, extra_data_size);
+					track_video = hls_fmp4_add_video(hlsFMP4, MOV_OBJECT_HEVC, mediaCodecInfo.nWidth, mediaCodecInfo.nHeight, szExtenVideoData, extra_data_size);
 			}
 
 			if (nExtenAudioDataLength > 0)
@@ -427,7 +415,7 @@ bool  CStreamRecordFMP4::VideoFrameToFMP4File(unsigned char* szVideoData, int nL
 		}
 	}
 
-	if (track_video >= 0 && hlsFMP4 != NULL )
+	if (track_video >= 0 && hlsFMP4 != NULL)
 	{
 		if (CheckVideoIsIFrame(mediaCodecInfo.szVideoName, szVideoData, nLength) == true)
 		{
@@ -439,10 +427,10 @@ bool  CStreamRecordFMP4::VideoFrameToFMP4File(unsigned char* szVideoData, int nL
 			flags = 0;
 
 		if (!bWaitIFrameSuccessFlag)
-			return false ;
+			return false;
 
 		vcl = 0;
-		update = 0;        
+		update = 0;
 
 		if (strcmp(mediaCodecInfo.szVideoName, "H264") == 0)
 			nMp4BufferLength = h264_annexbtomp4(&avc, szVideoData, nLength, pH265Buffer, MediaStreamSource_VideoFifoLength, &vcl, &update);
@@ -481,7 +469,7 @@ bool CStreamRecordFMP4::writeTSBufferToMP4File(unsigned char* pTSData, int nLeng
 			fclose(fWriteMP4);
 
 			//完成一个fmp4切片文件通知 
-			if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nClientRecordMp4 > 0 )
+			if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nClientRecordMp4 > 0)
 			{
 				MessageNoticeStruct msgNotice;
 				msgNotice.nClient = ABL_MediaServerPort.nClientRecordMp4;
@@ -494,20 +482,20 @@ bool CStreamRecordFMP4::writeTSBufferToMP4File(unsigned char* pTSData, int nLeng
 			SYSTEMTIME st;
 			GetLocalTime(&st);
 			sprintf(szFileName, "%s%04d%02d%02d%02d%02d%02d.mp4", szRecordPath, st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
-		    sprintf(szFileNameOrder,"%04d%02d%02d%02d%02d%02d.mp4", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);;
+			sprintf(szFileNameOrder, "%04d%02d%02d%02d%02d%02d.mp4", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);;
 #else
 			time_t now;
 			time(&now);
-			struct tm *local;
+			struct tm* local;
 			local = localtime(&now);
-			sprintf(szFileName, "%s%04d%02d%02d%02d%02d%02d.mp4", szRecordPath, local->tm_year + 1900, local->tm_mon+1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);
-		    sprintf(szFileNameOrder, "%04d%02d%02d%02d%02d%02d.mp4", local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);;
+			sprintf(szFileName, "%s%04d%02d%02d%02d%02d%02d.mp4", szRecordPath, local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);
+			sprintf(szFileNameOrder, "%04d%02d%02d%02d%02d%02d.mp4", local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);;
 #endif
-  				
+
 			auto pRecord = GetRecordFileSource(m_szShareMediaURL);
 			if (pRecord)
 			{
- 				bUpdateFlag = pRecord->UpdateExpireRecordFile(szFileName);
+				bUpdateFlag = pRecord->UpdateExpireRecordFile(szFileName);
 				if (bUpdateFlag)
 				{
 					fWriteMP4 = fopen(szFileName, "r+b");
@@ -525,8 +513,8 @@ bool CStreamRecordFMP4::writeTSBufferToMP4File(unsigned char* pTSData, int nLeng
 				}
 				pRecord->AddRecordFile(szFileNameOrder);
 				WriteLog(Log_Debug, "CStreamRecordFMP4 = %X %s 增加录像文件 nClient = %llu ,nMediaClient = %llu szFileNameOrder %s ", this, m_szShareMediaURL, nClient, nMediaClient, szFileNameOrder);
- 			}				
- 
+			}
+
 			nCreateDateTime = GetTickCount64();
 		}
 
