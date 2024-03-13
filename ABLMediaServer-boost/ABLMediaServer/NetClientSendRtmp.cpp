@@ -162,7 +162,7 @@ CNetClientSendRtmp::CNetClientSendRtmp(NETHANDLE hServer, NETHANDLE hClient, cha
 	flvMuxer = NULL;
 	nWriteRet = 0;
 	nWriteErrorCount = 0;
-	flvPS = flvAACDts= 0;
+	videoDts = 0;
 	nAsyncAudioStamp = -1;
 
 #ifdef  WriteFlvFileByDebug
@@ -233,8 +233,9 @@ int CNetClientSendRtmp::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, cha
 		return -1;
 	std::lock_guard<std::mutex> lock(businessProcMutex);
 
-	//没有音频时，才启用计算视频帧速度生成时间戳 ，否则用音频同步后的时间戳
-    nVideoStampAdd = 1000 / mediaCodecInfo.nVideoFrameRate;
+	//只有视频，或者屏蔽音频
+	if (ABL_MediaServerPort.nEnableAudio == 0 || strcmp(mediaCodecInfo.szAudioName, "G711_A") == 0 || strcmp(mediaCodecInfo.szAudioName, "G711_U") == 0)
+		nVideoStampAdd = 1000 / mediaCodecInfo.nVideoFrameRate;
 
 	if (rtmp == NULL || flvMuxer == NULL)
 		return -2;
@@ -252,16 +253,16 @@ int CNetClientSendRtmp::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, cha
 	if (strcmp(szVideoCodec, "H264") == 0)
 	{
 		if (flvMuxer)
-			flv_muxer_avc(flvMuxer, pVideoData, nDataLength, flvPS, flvPS);
+			flv_muxer_avc(flvMuxer, pVideoData, nDataLength, videoDts, videoDts);
 	}
 	else if (strcmp(szVideoCodec, "H265") == 0)
 	{
 		if (flvMuxer)
-			flv_muxer_hevc(flvMuxer, pVideoData, nDataLength, flvPS, flvPS);
+			flv_muxer_hevc(flvMuxer, pVideoData, nDataLength, videoDts, videoDts);
 	}
 
-	//printf("flvPS = %d \r\n", flvPS);
-	flvPS += nVideoStampAdd;
+	//printf("flvPS = %d \r\n", videoDts);
+	videoDts += nVideoStampAdd;
 
 	return 0;
 }
@@ -282,21 +283,19 @@ int CNetClientSendRtmp::PushAudio(uint8_t* pAudioData, uint32_t nDataLength, cha
 	if (strcmp(szAudioCodec, "AAC") == 0)
 	{
 		if (flvMuxer)
-			flv_muxer_aac(flvMuxer, pAudioData, nDataLength, flvAACDts, flvAACDts);
+			flv_muxer_aac(flvMuxer, pAudioData, nDataLength, audioDts, audioDts);
 
 		if (bUserNewAudioTimeStamp == false)
-			flvAACDts += mediaCodecInfo.nBaseAddAudioTimeStamp;
+			audioDts += mediaCodecInfo.nBaseAddAudioTimeStamp;
 		else
 		{
 			nUseNewAddAudioTimeStamp --;
-			flvAACDts += nNewAddAudioTimeStamp;
+			audioDts += nNewAddAudioTimeStamp;
 			if (nUseNewAddAudioTimeStamp <= 0)
 			{
 				bUserNewAudioTimeStamp = false;
 			}
 		}
-		//AAC 的时间增量计算 ，以海康的16K采样为例，AAC每1024字节编码一次，那么(1024 / 16000 * 2) * 1000 = 32 毫秒 ，但是海康往往2帧发送一次 ，那么两帧递增 32 * 2 = 64 毫秒 ，64 就是海康摄像头 DTS ,PTS 的增量 
-		// 以大华的8K采样为例，AAC每1024字节编码一次，那么(1024 / 8000 * 2) * 1000 = 64 毫秒 ，但是大华往往2帧发送一次 ，那么两帧递增 64 * 2 = 128 毫秒 ，128 就是大华摄像头 DTS ,PTS 的增量 
 	}
 
 	//同步音视频 

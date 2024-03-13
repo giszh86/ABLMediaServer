@@ -151,9 +151,6 @@ int CStreamRecordMP4::PushAudio(uint8_t* pAudioData, uint32_t nDataLength, char*
 	if (ABL_MediaServerPort.nEnableAudio == 0 || !bRunFlag )
 		return -1;
 
- 	if (strcmp(mediaCodecInfo.szAudioName, "AAC") != 0)
-		return 0;
-
 	m_audioFifo.push(pAudioData, nDataLength);
 
 	return 0;
@@ -325,6 +322,9 @@ bool CStreamRecordMP4::AddVideo(char* szVideoName, unsigned char* pVideoData, in
 	if (!m_bOpenFlag || !bRunFlag )
 		return false;
 
+	if (ABL_MediaServerPort.nEnableAudio == 0)
+		nVideoStampAdd = 1000 / mediaCodecInfo.nVideoFrameRate;
+
 	nVideoFrameCount++;
 	vcl = 0; //要赋值0初始值，否则写出来的mp4文件播放不了
 	update = 0; //要赋值0初始值，否则写出来的mp4文件播放不了
@@ -387,12 +387,10 @@ bool CStreamRecordMP4::AddVideo(char* szVideoName, unsigned char* pVideoData, in
 	//如果没有音频，直接开始写视频，如果有音频则需要等待音频句柄有效
 	if (nSize > 0 && (ABL_MediaServerPort.nEnableAudio == 0 || strcmp(mediaCodecInfo.szAudioName, "AAC") != 0 || (strcmp(mediaCodecInfo.szAudioName, "AAC") == 0 && ctx.trackAudio >= 0)))
 	{
-		mov_writer_write(ctx.mov, ctx.track, s_buffer, nSize, ctx.pts, ctx.pts, 1 == vcl ? MOV_AV_FLAG_KEYFREAME : 0);
+		mov_writer_write(ctx.mov, ctx.track, s_buffer, nSize, videoDts, videoDts, 1 == vcl ? MOV_AV_FLAG_KEYFREAME : 0);
 
-		//计算真实的时间戳，不能固定25帧每秒
-  		ctx.pts += (1000 / mediaCodecInfo.nVideoFrameRate);
-		ctx.dts += (1000 / mediaCodecInfo.nVideoFrameRate);
- 	}
+		videoDts += nVideoStampAdd;
+  	}
 
 	return true;
 }
@@ -403,7 +401,7 @@ bool CStreamRecordMP4::AddAudio(char* szAudioName, unsigned char* pAudioData, in
 	std::lock_guard<std::mutex> lock(writeMp4Lock);
 
 	//保证视频到达后，再加入音频 【】
-	if (!m_bOpenFlag || !bRunFlag || strcmp(mediaCodecInfo.szAudioName, "AAC") != 0)
+	if (!m_bOpenFlag || !bRunFlag )
 		return false;
 
 	if (strcmp(szAudioName, "AAC") == 0)
@@ -420,9 +418,8 @@ bool CStreamRecordMP4::AddAudio(char* szAudioName, unsigned char* pAudioData, in
 
 		if (ctx.trackAudio >= 0 && ctx.track >= 0 && mediaCodecInfo.nSampleRate > 0 )
 		{//必须有视频轨道才能开始写入音频
-			mov_writer_write(ctx.mov, ctx.trackAudio, pAudioData + 7, nAudioDataLength - 7, ctx.ptsAudio, ctx.ptsAudio, 0);
-			ctx.ptsAudio += 1024 * 1000 / mediaCodecInfo.nSampleRate ;
-		}
+			mov_writer_write(ctx.mov, ctx.trackAudio, pAudioData + 7, nAudioDataLength - 7, audioDts, audioDts, 0);
+ 		}
 	}
 	else if (strcmp(szAudioName, "G711_A") == 0 || strcmp(szAudioName, "G711_U") == 0)
 	{
@@ -432,10 +429,17 @@ bool CStreamRecordMP4::AddAudio(char* szAudioName, unsigned char* pAudioData, in
 			if (nAudioDataLength > 320)
 				nAudioDataLength = 320;
 
-			mov_writer_write(ctx.mov, ctx.trackAudio, pAudioData, nAudioDataLength, ctx.ptsAudio, ctx.ptsAudio, 0);
-			ctx.ptsAudio += nAudioDataLength / 8;
-		}
+			mov_writer_write(ctx.mov, ctx.trackAudio, pAudioData, nAudioDataLength, audioDts, audioDts, 0);
+ 		}
 	}
+
+	if (strcmp(mediaCodecInfo.szAudioName, "AAC") == 0)
+		audioDts += mediaCodecInfo.nBaseAddAudioTimeStamp;
+	else if (strcmp(mediaCodecInfo.szAudioName, "G711_A") == 0 || strcmp(mediaCodecInfo.szAudioName, "G711_U") == 0)
+		audioDts += nAudioDataLength / 8;
+
+	//同步音视频 
+	SyncVideoAudioTimestamp();
 
 	return true;
 }

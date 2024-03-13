@@ -74,6 +74,11 @@ public:
    uint64_t           nWebRtcPushStreamID;//给webRTC推流提供者 
    boost::atomic_bool bCreateWebRtcPlaySourceFlag;//创建webrtc源标志 
 
+   bool            CopyAudioFrameBufer();
+   bool            CopyVideoGopFrameBufer();//拷贝一个gop视频帧 
+
+   CMediaFifo      pCacheAudioFifo;
+   CMediaFifo      pCopyCacheAudioFifo;
    char            szSnapPicturePath[string_length_512];
    uint64_t        iFrameArriveNoticCount;
    uint64_t        nCreateDateTime;
@@ -90,8 +95,6 @@ public:
    int                    nWriteYUVCount;
    FILE*                  fCudaWriteYUVFile;
 #endif
-   unsigned char          szSPSPPSBuffer[4096];
-   int                    nSPSPPSBufferLength;
    int                    nSrcWidth, nSrcHeight;//输入原始视频宽、高 
 
    H265ConvertH264Struct  m_h265ConvertH264Struct;
@@ -108,7 +111,8 @@ public:
    unsigned int           nVideoBitrate;//视频码流
    unsigned int           nAudioBitrate;//音频码流
    volatile uint64_t      nCalcBitrateTimestamp;//计算码流时间戳
-   unsigned char*         pIDRFrameBuffer;//保存最新的一个I帧
+   CMediaFifo             pVideoGopFrameBuffer;//保存最近的一个Gop所有视频帧
+   CMediaFifo             pCopyVideoGopFrameBuffer;//拷贝保存最近的一个Gop所有视频帧
    int                    nIDRFrameLengh;//最新的一个I帧长度 
    int                    nCudaWidth, nCudaHeight;
    uint64_t               nCudaDecodeChan;//cuda解码通道
@@ -199,7 +203,7 @@ public:
    bool                  H264H265FrameToTSFile(unsigned char* szVideo, int nLength);
  
    int                   nVideoStampAdd;//视频时间戳增量
-   int                   nAsyncAudioStamp;//同步的时间点
+   int64_t               nAsyncAudioStamp;//同步的时间点
 
    bool                  GetRtspSDPContent(RtspSDPContentStruct* sdpContent);
    RtspSDPContentStruct  rtspSDPContent;
@@ -240,7 +244,6 @@ public:
    unsigned char        szExtenAudioData[string_length_2048];
    int                  nExtenAudioDataLength;
    int                  nAACLength;
-   int64_t              nFmp4AudioDTS;
 
    int64_t              s_dts ;
    int                  nTsFileCount;

@@ -51,14 +51,6 @@ struct RtspProtect
 	int   nRtspSDPLength;
 };
 
-//rtsp 中 rtp 网络传输类型
-enum RtspNetworkType
-{
-	RtspNetworkType_Unknow = -1, //未知
-	RtspNetworkType_TCP    = 1,//TCP
-	RtspNetworkType_UDP    = 2,//UDP 
-};
-
 class CNetRtspServer : public CNetRevcBase
 {
 public:
@@ -76,6 +68,11 @@ public:
    virtual int SendFirstRequst();//发送第一个请求
    virtual bool RequestM3u8File();//请求m3u8文件
 
+   uint32_t        nVdeoFrameNumber ;
+   uint32_t        nAudioFrameNumber ;
+   bool            responseUdpSetup();
+   bool            createTcpRtpDecode();//创建rtp解包
+   char            responseTransport[string_length_512];
    int             nRecvRtpPacketCount;
    unsigned short  nMaxRtpLength;
    unsigned char   szFullMp3Buffer[2048];
@@ -99,7 +96,6 @@ public:
    unsigned short         nVideoClientPort[MaxRtpHandleCount];
    unsigned short         nAudioClientPort[MaxRtpHandleCount];
    unsigned short         nSetupOrder;
-   RtspNetworkType        m_RtspNetworkType;
 
    int                     nRtspPlayCount;//play的次数
    bool                    FindRtpPacketFlag();

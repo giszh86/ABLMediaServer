@@ -509,7 +509,7 @@ int CReadRecordFileInput::ProcessNetData()
 #ifdef  OS_System_Windows
 				nWaitTime = ((1000 / mediaCodecInfo.nVideoFrameRate)) - 8;
 #else 
-				nWaitTime = ((1000 / mediaCodecInfo.nVideoFrameRate)) - 3 ;
+				nWaitTime = ((1000 / mediaCodecInfo.nVideoFrameRate)) ;
 #endif   
 			}
 			else
@@ -521,7 +521,7 @@ int CReadRecordFileInput::ProcessNetData()
 #ifdef  OS_System_Windows
 				nWaitTime = ((1000 / mediaCodecInfo.nVideoFrameRate)) / 2 - 5 ;
  #else 
-				nWaitTime = ((1000 / mediaCodecInfo.nVideoFrameRate)) / 2 - 3;
+				nWaitTime = ((1000 / mediaCodecInfo.nVideoFrameRate)) / 2 ;
 #endif   
 	        }
 		    else

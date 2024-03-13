@@ -372,10 +372,10 @@ bool   CNetClientRecvRtmp::GetAppStreamByURL(char* app, char* stream)
 		return false;
 	string strURL = szClientIP;
 	nPos1 = strURL.find("/", 8);
-	if (nPos1 > 0)
+	if (nPos1 > 0 && nPos1 != string::npos)
 	{
 		nPos2 = strURL.find("/", nPos1 + 1);
-		if (nPos2 > 0)
+		if (nPos2 > 0 && nPos2 != string::npos)
 		{
 			memcpy(app, szClientIP + nPos1 + 1, nPos2 - nPos1 - 1);
 			memcpy(stream, szClientIP + nPos2 + 1, strlen(szClientIP) - nPos2 - 1);
@@ -423,7 +423,7 @@ int CNetClientRecvRtmp::SendFirstRequst()
 	//rtmp客户端连接，需要去掉第2级路径 
 	string strRtmpURL = szClientIP;
 	int nPos = strRtmpURL.rfind("/", strlen(szClientIP));
-	if (nPos <= 0)
+	if (nPos <= 0 && nPos != string::npos)
 	{
 		WriteLog(Log_Debug, "CNetClientRecvRtmp = %X rtmp中的url有误 ,url = %s, nClient = %llu \r\n", this, szClientIP, nClient);
 		pDisconnectBaseNetFifo.push((unsigned char*)&hParent, sizeof(hParent));

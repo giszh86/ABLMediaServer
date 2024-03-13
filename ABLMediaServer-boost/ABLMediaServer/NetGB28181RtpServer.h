@@ -35,6 +35,7 @@ public:
 #ifdef WriteJt1078VideoFlag
    FILE*                        fWrite1078File;
 #endif
+   int                          nRecvChannels, nRecvSampleRate;
    int                          nRecvRtpPacketCount;
    int                          nMaxRtpLength;
    int                          Find1078HeadFromCacheBuffer(unsigned char* pData, int nLength);
@@ -88,6 +89,7 @@ public:
    uint32_t                nSendRet;
 
    volatile bool addThreadPoolFlag;
+   uint64_t      nAddSend_app_streamDatetime;//回复码流时间戳
    void          CreateSendRtpByPS();
    char*         s_buffer;
    int           nVideoStreamID, nAudioStreamID;

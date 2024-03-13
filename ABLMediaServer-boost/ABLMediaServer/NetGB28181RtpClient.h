@@ -36,6 +36,7 @@ public:
    virtual int SendFirstRequst();//发送第一个请求
    virtual bool RequestM3u8File();//请求m3u8文件
 
+   int                     nRecvSampleRate, nRecvChannels;
    //1078 数据发送 
    Jt1078VideoRtpPacket_T  jt1078VideoHead;
    Jt1078AudioRtpPacket_T  jt1078AudioHead;

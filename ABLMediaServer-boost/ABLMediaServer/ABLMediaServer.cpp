@@ -66,6 +66,7 @@ volatile bool                                                    ABL_bExitMediaS
 CMediaFifo                                                       pDisconnectBaseNetFifo;             //清理断裂的链接 
 CMediaFifo                                                       pReConnectStreamProxyFifo;          //需要重新连接代理ID 
 CMediaFifo                                                       pMessageNoticeFifo;          //消息通知FIFO
+CMediaFifo                                                       pNetBaseObjectFifo;          //存储基类对象ID
 char                                                             ABL_MediaSeverRunPath[256] = { 0 }; //当前路径
 char                                                             ABL_wwwMediaPath[256] = { 0 }; //www 子路径
 uint64_t                                                         ABL_nBaseCookieNumber = 100; //Cookie 序号 
@@ -77,6 +78,7 @@ int                                                              ABL_nCudaCount 
 volatile bool                                                    ABL_bRestartServerFlag = false;
 volatile bool                                                    ABL_bInitXHNetSDKFlag = false;
 volatile bool                                                    ABL_bInitCudaSDKFlag = false;
+char                                                             szConfigFileName[512] = { 0 };
 
 #ifdef OS_System_Windows
 //cuda 解码 
@@ -172,7 +174,7 @@ uint64_t GetCurrentSecondByTime(char* szDateTime)
 }
 
 #ifdef OS_System_Windows
-CConfigFile                                                      ABL_ConfigFile;
+CSimpleIniA        ABL_ConfigFile;
 uint64_t GetCurrentSecond()
 {
 	time_t clock;
@@ -221,7 +223,7 @@ BOOL GBK2UTF8(char *szGbk, char *szUtf8, int Len)
 }
 
 #else
-CIni                                                             ABL_ConfigFile;
+CSimpleIniA                                                      ABL_ConfigFile;
 #endif
 
 MediaServerPort                                                  ABL_MediaServerPort; 
@@ -409,7 +411,7 @@ CMediaStreamSource_ptr GetMediaStreamSource(char* szURL,bool bNoticeStreamNoFoun
 			string   strMediaSource = szURL;
 
 			nPos2 =  strMediaSource.find("/", 1);
-			if (nPos2 > 0 && strlen(szURL) < 512 )
+			if (nPos2 > 0 && nPos2 != string::npos && strlen(szURL) < 512 )
 			{
  				memcpy(szApp, szURL + 1, nPos2 - 1);
 				memcpy(szStream, szURL + nPos2 + 1, strlen(szURL) - nPos2 - 1);
@@ -501,20 +503,12 @@ int  CloseMediaStreamSource(closeStreamsStruct closeStruct)
 	{
 		pClient = (*iterator1).second;
  
-		//代理拉流对象也要删除
-		CNetRevcBase_ptr pParend = GetNetRevcBaseClient(pClient->nClient);
-
 		if (closeStruct.force == 1 && strlen(closeStruct.app) > 0 && strlen(closeStruct.stream) > 0)
 		{//强制关闭
 			if (strcmp(pClient->app, closeStruct.app) == 0 && strcmp(pClient->stream, closeStruct.stream) == 0)
 			{
-				nDeleteCount ++;
+ 				nDeleteCount ++;
 				pDisconnectBaseNetFifo.push((unsigned char*)&pClient->nClient, sizeof(pClient->nClient));
-				if (pParend)
-				{
-				   pDisconnectBaseNetFifo.push((unsigned char*)&pParend->hParent, sizeof(pParend->hParent));
-				   WriteLog(Log_Debug, "CloseMediaStreamSource = %s,准备删除媒体源 app = %s ,stream = %s ,nClient = %llu,nParent = %llu ", pClient->m_szURL, pClient->app, pClient->stream, pParend->nClient, pParend->hParent);
-				}
 			}
 		}
 		else if (closeStruct.force == 1 && strlen(closeStruct.app) > 0 && strlen(closeStruct.stream) == 0)
@@ -523,11 +517,6 @@ int  CloseMediaStreamSource(closeStreamsStruct closeStruct)
 			{
 				nDeleteCount++;
  				pDisconnectBaseNetFifo.push((unsigned char*)&pClient->nClient, sizeof(pClient->nClient));
-				if (pParend)
-				{
-					pDisconnectBaseNetFifo.push((unsigned char*)&pParend->hParent, sizeof(pParend->hParent));
-					WriteLog(Log_Debug, "CloseMediaStreamSource = %s,准备删除媒体源 app = %s ,stream = %s ,nClient = %llu,nParent = %llu ", pClient->m_szURL, pClient->app, pClient->stream, pParend->nClient, pParend->hParent);
-				}
 			}
 		}
 		else if (closeStruct.force == 1 && strlen(closeStruct.app) == 0 && strlen(closeStruct.stream) > 0)
@@ -536,34 +525,19 @@ int  CloseMediaStreamSource(closeStreamsStruct closeStruct)
 			{
 				nDeleteCount++;
 				pDisconnectBaseNetFifo.push((unsigned char*)&pClient->nClient, sizeof(pClient->nClient));
-				if (pParend)
-				{
-					pDisconnectBaseNetFifo.push((unsigned char*)&pParend->hParent, sizeof(pParend->hParent));
-					WriteLog(Log_Debug, "CloseMediaStreamSource = %s,准备删除媒体源 app = %s ,stream = %s ,nClient = %llu,nParent = %llu ", pClient->m_szURL, pClient->app, pClient->stream, pParend->nClient, pParend->hParent);
-				}
 			}
 		}
 		else if (closeStruct.force == 1 && strlen(closeStruct.app) == 0 && strlen(closeStruct.stream) == 0)
 		{//强制关闭
   				nDeleteCount++;
- 				pDisconnectBaseNetFifo.push((unsigned char*)&pClient->nClient, sizeof(pClient->nClient));
-				if (pParend)
-				{
-					pDisconnectBaseNetFifo.push((unsigned char*)&pParend->hParent, sizeof(pParend->hParent));
-					WriteLog(Log_Debug, "CloseMediaStreamSource = %s,准备删除媒体源 app = %s ,stream = %s ,nClient = %llu,nParent = %llu ", pClient->m_szURL, pClient->app, pClient->stream, pParend->nClient, pParend->hParent);
-				}
+				pDisconnectBaseNetFifo.push((unsigned char*)&pClient->nClient, sizeof(pClient->nClient));
 		}
 		else if (closeStruct.force == 0 && strlen(closeStruct.app) > 0 && strlen(closeStruct.stream) > 0)
 		{//不强制关闭
 			if (pClient->mediaSendMap.size() == 0 && strcmp(pClient->app, closeStruct.app) == 0 && strcmp(pClient->stream, closeStruct.stream) == 0)
 			{
 				nDeleteCount ++;
- 				pDisconnectBaseNetFifo.push((unsigned char*)&pClient->nClient, sizeof(pClient->nClient));
-				if (pParend)
-				{
-					pDisconnectBaseNetFifo.push((unsigned char*)&pParend->hParent, sizeof(pParend->hParent));
-					WriteLog(Log_Debug, "CloseMediaStreamSource = %s,准备删除媒体源 app = %s ,stream = %s ,nClient = %llu,nParent = %llu ", pClient->m_szURL, pClient->app, pClient->stream, pParend->nClient, pParend->hParent);
-				}
+				pDisconnectBaseNetFifo.push((unsigned char*)&pClient->nClient, sizeof(pClient->nClient));
 			}
 		}
 		else if (closeStruct.force == 0 && strlen(closeStruct.app) > 0 && strlen(closeStruct.stream) == 0)
@@ -572,11 +546,6 @@ int  CloseMediaStreamSource(closeStreamsStruct closeStruct)
 			{
 				nDeleteCount++;
  				pDisconnectBaseNetFifo.push((unsigned char*)&pClient->nClient, sizeof(pClient->nClient));
-				if (pParend)
-				{
-					pDisconnectBaseNetFifo.push((unsigned char*)&pParend->hParent, sizeof(pParend->hParent));
-					WriteLog(Log_Debug, "CloseMediaStreamSource = %s,准备删除媒体源 app = %s ,stream = %s ,nClient = %llu,nParent = %llu ", pClient->m_szURL, pClient->app, pClient->stream, pParend->nClient, pParend->hParent);
-				}
 			}
 		}
 		else if (closeStruct.force == 0 && strlen(closeStruct.app) == 0 && strlen(closeStruct.stream) > 0)
@@ -585,50 +554,63 @@ int  CloseMediaStreamSource(closeStreamsStruct closeStruct)
 			{
 				nDeleteCount++;
 				pDisconnectBaseNetFifo.push((unsigned char*)&pClient->nClient, sizeof(pClient->nClient));
-				if (pParend)
-				{
-					pDisconnectBaseNetFifo.push((unsigned char*)&pParend->hParent, sizeof(pParend->hParent));
-					WriteLog(Log_Debug, "CloseMediaStreamSource = %s,准备删除媒体源 app = %s ,stream = %s ,nClient = %llu,nParent = %llu ", pClient->m_szURL, pClient->app, pClient->stream, pParend->nClient, pParend->hParent);
-				}
 			}
 		}
 	}
 	return nDeleteCount ;
 }
 
+//先把基类的视频接入对象ID全部装入FIFO，这样减少一个lock，杜绝外部混乱调用http api 函数造成死锁 
+int   GetAllNetBaseObjectToFifo()
+{
+	std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
+	CNetRevcBase_ptrMap::iterator iterator1;
+	pNetBaseObjectFifo.Reset();
+
+	for (iterator1 = xh_ABLNetRevcBaseMap.begin(); iterator1 != xh_ABLNetRevcBaseMap.end(); ++iterator1)
+	{
+		CNetRevcBase_ptr pClient = (*iterator1).second; 
+		if (pClient->netBaseNetType == NetBaseNetType_WebSocektRecvAudio || pClient->netBaseNetType == NetBaseNetType_addStreamProxyControl || pClient->netBaseNetType == NetBaseNetType_RtspServerRecvPush || pClient->netBaseNetType == NetBaseNetType_RtmpServerRecvPush ||
+			pClient->netBaseNetType == NetBaseNetType_NetGB28181RtpServerUDP || pClient->netBaseNetType == NetBaseNetType_NetGB28181RtpServerTCP_Server || pClient->netBaseNetType == ReadRecordFileInput_ReadFMP4File || pClient->netBaseNetType == NetBaseNetType_NetGB28181UDPTSStreamInput || pClient->netBaseNetType == NetBaseNetType_NetGB28181RtpServerTCP_Active ||
+			pClient->netBaseNetType == NetBaseNetType_NetGB28181UDPPSStreamInput || (pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpUDP && strlen(pClient->m_startSendRtpStruct.recv_app) > 0 && strlen(pClient->m_startSendRtpStruct.recv_stream) > 0) || (pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Connect  && strlen(pClient->m_startSendRtpStruct.recv_app) > 0 && strlen(pClient->m_startSendRtpStruct.recv_stream) > 0) ||
+			(pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Passive && strlen(pClient->m_startSendRtpStruct.recv_app) > 0 && strlen(pClient->m_startSendRtpStruct.recv_stream) > 0) || pClient->netBaseNetType == NetBaseNetType_GB28181TcpPSInputStream)
+		{//代理拉流（rtsp,rtmp,flv,hls ）,rtsp推流，rtmp推流，gb28181，webrtc 
+			pNetBaseObjectFifo.push((unsigned char*)&(*iterator1).second->nClient, sizeof((*iterator1).second->nClient));
+		}
+	}
+
+	return pNetBaseObjectFifo.GetSize();
+}
+
 //获取媒体源
 int GetAllMediaStreamSource(char* szMediaSourceInfo, getMediaListStruct mediaListStruct)
 {
-	std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
+	int              nMediaCount = 0;
+	char             szTemp2[1024*48] = { 0 };
+	char             szShareMediaURL[string_length_2048];
+	bool             bAddFlag = false;
+	uint64_t         nNoneReadDuration = 0;
+	unsigned short   nClientPort;
+	char             szApp[string_length_256] = { 0 };
+	char             szStream[string_length_512] = { 0 };
+	unsigned char*   pData;
+	uint64_t         nClient;
+	int              nLength;
 
-	CNetRevcBase_ptrMap::iterator iterator1;
-	int   nMediaCount = 0;
-	char  szTemp2[1024*32] = { 0 };
-	char  szShareMediaURL[string_length_2048];
-	bool  bAddFlag = false;
-	uint64_t nNoneReadDuration = 0;
-	unsigned short  nClientPort;
-	char   szApp[string_length_256] = { 0 };
-	char   szStream[string_length_512] = { 0 };
+	//获取基类的视频接入对象ID
+	GetAllNetBaseObjectToFifo();
 
 	if (xh_ABLMediaStreamSourceMap.size() > 0)
+ 		strcpy(szMediaSourceInfo, "{\"code\":0,\"memo\":\"success\",\"mediaList\":[");
+ 
+	while ((pData = pNetBaseObjectFifo.pop(&nLength)) != NULL)
 	{
-		strcpy(szMediaSourceInfo, "{\"code\":0,\"memo\":\"success\",\"mediaList\":[");
-	}
+		memcpy((char*)&nClient, pData, sizeof(uint64_t));
+		CNetRevcBase_ptr pClient = GetNetRevcBaseClient(nClient);
 
- 	for (iterator1 = xh_ABLNetRevcBaseMap.begin();iterator1 != xh_ABLNetRevcBaseMap.end();++iterator1)
-	{
-		CNetRevcBase_ptr pClient = (*iterator1).second;
-
-		//WriteLog(Log_Debug, "nClient = %llu , nType = %d  ", pClient->nClient, pClient->netBaseNetType); 
-
-		if (pClient->netBaseNetType == NetBaseNetType_WebSocektRecvAudio || pClient->netBaseNetType == NetBaseNetType_addStreamProxyControl || pClient->netBaseNetType == NetBaseNetType_RtspServerRecvPush || pClient->netBaseNetType == NetBaseNetType_RtmpServerRecvPush ||
-			pClient->netBaseNetType == NetBaseNetType_NetGB28181RtpServerUDP || pClient->netBaseNetType == NetBaseNetType_NetGB28181RtpServerTCP_Server || pClient->netBaseNetType == ReadRecordFileInput_ReadFMP4File || pClient->netBaseNetType == NetBaseNetType_NetGB28181UDPTSStreamInput || pClient->netBaseNetType == NetBaseNetType_NetGB28181RtpServerTCP_Active ||
-			pClient->netBaseNetType == NetBaseNetType_NetGB28181UDPPSStreamInput || (pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpUDP && strlen(pClient->m_startSendRtpStruct.recv_app) > 0 && strlen(pClient->m_startSendRtpStruct.recv_stream) > 0)|| (pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Connect  && strlen(pClient->m_startSendRtpStruct.recv_app) > 0 && strlen(pClient->m_startSendRtpStruct.recv_stream) > 0) ||
-			(pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Passive && strlen(pClient->m_startSendRtpStruct.recv_app) > 0 && strlen(pClient->m_startSendRtpStruct.recv_stream) > 0) || pClient->netBaseNetType == NetBaseNetType_GB28181TcpPSInputStream )
-		{//代理拉流（rtsp,rtmp,flv,hls ）,rtsp推流，rtmp推流，gb28181，webrtc 
-
- 			if (pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpUDP || pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Connect || pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Passive)
+		if (pClient != NULL)
+		{
+			if (pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpUDP || pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Connect || pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Passive)
 			{
 				sprintf(szShareMediaURL, "/%s/%s", pClient->m_startSendRtpStruct.recv_app, pClient->m_startSendRtpStruct.recv_stream); //国标全双工
 				strcpy(szApp, pClient->m_startSendRtpStruct.recv_app);
@@ -645,8 +627,8 @@ int GetAllMediaStreamSource(char* szMediaSourceInfo, getMediaListStruct mediaLis
 
 			if (strlen(mediaListStruct.app) == 0 && strlen(mediaListStruct.stream) == 0 && tmpMediaSource != NULL)
 			{
-				  bAddFlag = true;
- 			}
+				bAddFlag = true;
+			}
 			else if (strlen(mediaListStruct.app) > 0 && strlen(mediaListStruct.stream) > 0 && tmpMediaSource != NULL)
 			{
 				if (strcmp(mediaListStruct.app, tmpMediaSource->app) == 0 && strcmp(mediaListStruct.stream, tmpMediaSource->stream) == 0)
@@ -659,15 +641,15 @@ int GetAllMediaStreamSource(char* szMediaSourceInfo, getMediaListStruct mediaLis
 			}
 			else if (strlen(mediaListStruct.app) == 0 && strlen(mediaListStruct.stream) > 0 && tmpMediaSource != NULL)
 			{
-				if ( strcmp(mediaListStruct.stream, tmpMediaSource->stream) == 0)
+				if (strcmp(mediaListStruct.stream, tmpMediaSource->stream) == 0)
 					bAddFlag = true;
 			}
 			else
-				bAddFlag = false ;
+				bAddFlag = false;
 
-			if (bAddFlag == true && tmpMediaSource != NULL )
+			if (bAddFlag == true && tmpMediaSource != NULL)
 			{
-				if (strlen(tmpMediaSource->m_mediaCodecInfo.szVideoName) > 0 || strlen(tmpMediaSource->m_mediaCodecInfo.szAudioName) > 0 )
+				if (strlen(tmpMediaSource->m_mediaCodecInfo.szVideoName) > 0 || strlen(tmpMediaSource->m_mediaCodecInfo.szAudioName) > 0)
 				{
 					memset(szTemp2, 0x00, sizeof(szTemp2));
 					if (tmpMediaSource->mediaSendMap.size() > 0)
@@ -678,7 +660,7 @@ int GetAllMediaStreamSource(char* szMediaSourceInfo, getMediaListStruct mediaLis
 					nClientPort = pClient->nClientPort;
 					if (pClient->netBaseNetType == NetBaseNetType_NetGB28181RtpServerTCP_Server)//国标TCP接入，需要替换为绑定的端口 
 					{
-						CNetRevcBase_ptr pParent = GetNetRevcBaseClientNoLock(pClient->hParent);
+						CNetRevcBase_ptr pParent = GetNetRevcBaseClient(pClient->hParent);
 						if (pParent != NULL)
 						{
 							nClientPort = pParent->nClientPort;
@@ -714,7 +696,9 @@ int GetAllMediaStreamSource(char* szMediaSourceInfo, getMediaListStruct mediaLis
 					nMediaCount++;
 				}
  			}
-		}
+	     }//if (pClient != NULL)
+
+		pNetBaseObjectFifo.pop_front();
 	}
 
 	if (nMediaCount > 0)
@@ -724,10 +708,8 @@ int GetAllMediaStreamSource(char* szMediaSourceInfo, getMediaListStruct mediaLis
 	}
 
 	if (nMediaCount == 0)
-	{
-		sprintf(szMediaSourceInfo, "{\"code\":%d,\"memo\":\"MediaSource [app: %s , stream: %s] Not Found .\"}", IndexApiCode_RequestFileNotFound, mediaListStruct.app, mediaListStruct.stream);
-	}
-
+ 		sprintf(szMediaSourceInfo, "{\"code\":%d,\"memo\":\"MediaSource [app: %s , stream: %s] Not Found .\"}", IndexApiCode_RequestFileNotFound, mediaListStruct.app, mediaListStruct.stream);
+ 
 	return nMediaCount;
 }
 
@@ -830,7 +812,7 @@ int GetAllOutList(char* szMediaSourceInfo, char* szOutType)
 		if (pClient->netBaseNetType == NetBaseNetType_RtmpServerSendPush || pClient->netBaseNetType == NetBaseNetType_RtspServerSendPush || pClient->netBaseNetType == NetBaseNetType_HttpFLVServerSendPush ||
 			pClient->netBaseNetType == NetBaseNetType_HttpHLSServerSendPush || pClient->netBaseNetType == NetBaseNetType_WsFLVServerSendPush || pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpUDP || 
 			pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Connect || pClient->netBaseNetType == NetBaseNetType_RtspClientPush || pClient->netBaseNetType == NetBaseNetType_RtmpClientPush ||
-			pClient->netBaseNetType == NetBaseNetType_HttpMP4ServerSendPush || pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Passive)
+			pClient->netBaseNetType == NetBaseNetType_HttpMP4ServerSendPush || pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Passive || pClient->netBaseNetType == NetBaseNetType_NetClientWebrtcPlayer)
 		{
 			if (pClient->netBaseNetType >= NetBaseNetType_RtspClientRecv && pClient->netBaseNetType <= NetBaseNetType_GB28181ClientPushUDP)
 				nClient = pClient->hParent;//有代理类的都需要 返回父类ID 
@@ -1733,6 +1715,24 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType,NETHANDLE serverHandl
 					pXHClient->netBaseNetType = NetBaseNetType_NetGB28181RtpSendListen;
 				}
 			}
+			else if (netClientType == NetBaseNetType_RtspServerRecvPushVideo)
+			{//接收rtsp推流udp方式视频码流
+				pXHClient = boost::make_shared<CNetRtspServerUDP>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+				if (pXHClient)
+				{
+					CltHandle = pXHClient->nClient;
+					pXHClient->netBaseNetType = NetBaseNetType_RtspServerRecvPushVideo;
+				}
+			}
+			else if (netClientType == NetBaseNetType_RtspServerRecvPushAudio)
+			{//接收rtsp推流udp方式音频码流
+				pXHClient = boost::make_shared<CNetRtspServerUDP>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+				if (pXHClient)
+				{
+					CltHandle = pXHClient->nClient;
+					pXHClient->netBaseNetType = NetBaseNetType_RtspServerRecvPushAudio;
+				}
+			}
 			else if (netClientType == NetBaseNetType_NetClientWebrtcPlayer)
 			{//webrtc播放 
 			  CltHandle = XHNetSDK_GenerateIdentifier();
@@ -1819,6 +1819,10 @@ bool  DeleteNetRevcBaseClient(NETHANDLE CltHandle)
 		else //在此处关闭，确保boost:asio 单线程状态下 close(pSocket) ;
  		  XHNetSDK_Disconnect((*iterator1).second->nClient);
 
+		//把依赖的父类删除掉
+		if((*iterator1).second->hParent > 0 )
+		  pDisconnectBaseNetFifo.push((unsigned char*)&(*iterator1).second->hParent, sizeof((*iterator1).second->hParent));
+
  		xh_ABLNetRevcBaseMap.erase(iterator1);
   		return true;
 	}
@@ -1901,6 +1905,38 @@ bool  CheckSSRCAlreadyUsed(int nSSRC, bool bLockFlag)
 		}
  	}
 	WriteLog(Log_Debug, "CheckSSRCAlreadyUsed() bRet = %d  ", bRet);
+	return bRet;
+}
+
+/*
+功能：
+检查 dst_url 、 dst_port 是否已经使用
+参数：
+char  dst_url,    目标IP
+int   dst_port    目标端口
+bool  bLockFlag   是否锁住
+*/
+bool  CheckDst_url_portAlreadyUsed(char* dst_url,int dst_port, bool bLockFlag)
+{
+	if (bLockFlag)
+		std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
+
+	CNetRevcBase_ptrMap::iterator iterator1;
+	bool                 bRet = false;
+	CNetRevcBase_ptr     pClient = NULL;
+
+	for (iterator1 = xh_ABLNetRevcBaseMap.begin(); iterator1 != xh_ABLNetRevcBaseMap.end(); iterator1++)
+	{
+		pClient = (*iterator1).second;
+		if ((pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpUDP || pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Connect) &&
+ 			atoi(pClient->m_startSendRtpStruct.dst_port) == dst_port && strcmp(pClient->m_startSendRtpStruct.dst_url,dst_url) == 0 
+			)
+		{//已经占用了 nPort;
+			bRet = true;
+			break;
+		}
+	}
+	WriteLog(Log_Debug, "CheckDst_url_portAlreadyUsed() bRet = %d  ", bRet);
 	return bRet;
 }
 
@@ -2025,7 +2061,9 @@ int  CheckNetRevcBaseClientDisconnect()
 		  pDisconnectBaseNetFifo.push((unsigned char*)&((*iterator1).second)->nClient, sizeof((unsigned char*)&((*iterator1).second)->nClient));
 
  		if (((*iterator1).second)->netBaseNetType == NetBaseNetType_HttpHLSServerSendPush || //HLS　发送
-			((*iterator1).second)->netBaseNetType == NetBaseNetType_RtspServerRecvPush ||   //接收rtsp推流上来
+			(((*iterator1).second)->netBaseNetType == NetBaseNetType_RtspServerRecvPush && ((*iterator1).second)->m_RtspNetworkType == RtspNetworkType_TCP) ||   //接收rtsp推流上来(tcp）方式
+			((*iterator1).second)->netBaseNetType == NetBaseNetType_RtspServerRecvPushVideo || //rtsp 接收视频
+			((*iterator1).second)->netBaseNetType == NetBaseNetType_RtspServerRecvPushAudio || //rtsp 接收音频
 			((*iterator1).second)->netBaseNetType == NetBaseNetType_RtspServerSendPush ||   //rtsp 发送
 			((*iterator1).second)->netBaseNetType == NetBaseNetType_RtmpServerRecvPush ||   //接收RTMP推流
 
@@ -2108,7 +2146,10 @@ int  CheckNetRevcBaseClientDisconnect()
 			   pDisconnectBaseNetFifo.push((unsigned char*)&((*iterator1).second)->nClient, sizeof((unsigned char*)&((*iterator1).second)->nClient));
 		   }
 
-		   ((*iterator1).second)->nRecvDataTimerBySecond ++;
+		   if (((*iterator1).second)->m_bPauseFlag == false)
+			   ((*iterator1).second)->nRecvDataTimerBySecond ++;  //不是暂停，计时
+		   else
+			   ((*iterator1).second)->nRecvDataTimerBySecond = 0;//已经暂停，不再计时
 		}
 		else if (((*iterator1).second)->netBaseNetType == NetBaseNetType_NetGB28181RtpServerListen && ((*iterator1).second)->bUpdateVideoFrameSpeedFlag == false )
 		{//检测国标代理拉流 TCP 
@@ -2282,7 +2323,7 @@ void LIBNET_CALLMETHOD onread(NETHANDLE srvhandle,
 	if (pBasePtr != NULL)
 	{
 		pBasePtr->InputNetData(srvhandle, clihandle, data, datasize,address);
-		NetBaseThreadPool->InsertIntoTask(clihandle);
+		pBasePtr->ProcessNetData();
 	}
 }
 
@@ -2400,7 +2441,7 @@ void*  ABLMedisServerProcessThread(void* lpVoid)
 	while (ABL_bMediaServerRunFlag)
 	{
 		//检查消息通知 
-		if (ABL_MediaServerPort.hook_enable == 1 && ( nCreateHttpClientTimer >= 30 || pMessageNoticeFifo.GetSize() > 0 ) )
+		if (ABL_MediaServerPort.hook_enable == 1 && ( nCreateHttpClientTimer >= 2 || pMessageNoticeFifo.GetSize() > 0 ) )
 		{//5秒检查一下
 			nCreateHttpClientTimer = 0;
 			CreateHttpClientFunc();
@@ -2423,7 +2464,10 @@ void*  ABLMedisServerProcessThread(void* lpVoid)
 
 				boost::shared_ptr<CNetRevcBase> pHttpClient = GetNetRevcBaseClient(msgNotice.nClient);
 				if (pHttpClient != NULL)
+				{
   					pHttpClient->PushVideo((unsigned char*)msgNotice.szMsg, strlen(msgNotice.szMsg), "JSON");
+					pHttpClient->ProcessNetData();
+				}
  			}
  			pMessageNoticeFifo.pop_front();
 		}
@@ -3034,7 +3078,6 @@ int main(int argc, char* argv[])
 ABL_Restart:
 	unsigned char nGet;
 	int nBindHttp, nBindRtsp, nBindRtmp,nBindWsFlv,nBindHttpFlv, nBindHls,nBindMp4,nBindRecvAudio,nBingPS10000;
-	char szConfigFileName[256] = { 0 };
 
 	memset(ABL_MediaSeverRunPath, 0x00, sizeof(ABL_MediaSeverRunPath));
 	memset(ABL_wwwMediaPath, 0x00, sizeof(ABL_wwwMediaPath));
@@ -3068,7 +3111,7 @@ ABL_Restart:
 
 	GetMediaServerCurrentPath(ABL_MediaSeverRunPath);
 	sprintf(szConfigFileName, "%s%s", ABL_MediaSeverRunPath, "ABLMediaServer.ini");
-	if (ABL_ConfigFile.FindFile(szConfigFileName) == false)
+	if (ABL_ConfigFile.LoadFile(szConfigFileName) != SI_OK)
 	{
 		WriteLog(Log_Error, "没有找到配置文件 ：%s ", szConfigFileName);
 		Sleep(3000);
@@ -3076,7 +3119,7 @@ ABL_Restart:
 	}
 
 	//获取用户配置的IP地址 
-	strcpy(ABL_szLocalIP, ABL_ConfigFile.ReadConfigString("ABLMediaServer", "localipAddress", ""));
+	strcpy(ABL_szLocalIP, ABL_ConfigFile.GetValue("ABLMediaServer", "localipAddress", ""));
 
 	//自动获取IP地址
 	if (strlen(ABL_szLocalIP) == 0)
@@ -3092,95 +3135,95 @@ ABL_Restart:
 	strcpy(ABL_MediaServerPort.ABL_szLocalIP, ABL_szLocalIP);
 	WriteLog(Log_Debug, "本机IP地址 ABL_szLocalIP : %s ", ABL_szLocalIP);
 
-	strcpy(ABL_MediaServerPort.secret, ABL_ConfigFile.ReadConfigString("ABLMediaServer", "secret", "035c73f7-bb6b-4889-a715-d9eb2d1925cc111"));
-	ABL_MediaServerPort.nHttpServerPort = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "httpServerPort", "8081"));
-	ABL_MediaServerPort.nRtspPort = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "rtspPort", "554"));
-	ABL_MediaServerPort.nRtmpPort = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "rtmpPort", "1935"));
-	ABL_MediaServerPort.nHttpFlvPort = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "httpFlvPort", "8088"));
-	ABL_MediaServerPort.nWSFlvPort = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "wsFlvPort", "6088"));
-	ABL_MediaServerPort.nHttpMp4Port = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "httpMp4Port", "8089"));
-	ABL_MediaServerPort.ps_tsRecvPort = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "ps_tsRecvPort", "10000"));
- 	ABL_MediaServerPort.nHlsPort = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "hlsPort", "9081"));
-	ABL_MediaServerPort.WsRecvPcmPort = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "WsRecvPcmPort", "9298"));
-	ABL_MediaServerPort.nHlsEnable = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "hls_enable", "5"));
-	ABL_MediaServerPort.nHLSCutType = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "hlsCutType", "1"));
-	ABL_MediaServerPort.nH265CutType = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "h265CutType", "1"));
-	ABL_MediaServerPort.hlsCutTime = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "hlsCutTime", "1"));
-	ABL_MediaServerPort.nMaxTsFileCount = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "maxTsFileCount", "10"));
-	strcpy(ABL_MediaServerPort.wwwPath, ABL_ConfigFile.ReadConfigString("ABLMediaServer", "wwwPath", ""));
+	strcpy(ABL_MediaServerPort.secret, ABL_ConfigFile.GetValue("ABLMediaServer", "secret", "035c73f7-bb6b-4889-a715-d9eb2d1925cc111"));
+	ABL_MediaServerPort.nHttpServerPort = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "httpServerPort", "8081"));
+	ABL_MediaServerPort.nRtspPort = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "rtspPort", "554"));
+	ABL_MediaServerPort.nRtmpPort = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "rtmpPort", "1935"));
+	ABL_MediaServerPort.nHttpFlvPort = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "httpFlvPort", "8088"));
+	ABL_MediaServerPort.nWSFlvPort = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "wsFlvPort", "6088"));
+	ABL_MediaServerPort.nHttpMp4Port = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "httpMp4Port", "8089"));
+	ABL_MediaServerPort.ps_tsRecvPort = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "ps_tsRecvPort", "10000"));
+ 	ABL_MediaServerPort.nHlsPort = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "hlsPort", "9081"));
+	ABL_MediaServerPort.WsRecvPcmPort = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "WsRecvPcmPort", "9298"));
+	ABL_MediaServerPort.nHlsEnable = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "hls_enable", "5"));
+	ABL_MediaServerPort.nHLSCutType = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "hlsCutType", "1"));
+	ABL_MediaServerPort.nH265CutType = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "h265CutType", "1"));
+	ABL_MediaServerPort.hlsCutTime = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "hlsCutTime", "1"));
+	ABL_MediaServerPort.nMaxTsFileCount = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "maxTsFileCount", "10"));
+	strcpy(ABL_MediaServerPort.wwwPath, ABL_ConfigFile.GetValue("ABLMediaServer", "wwwPath", ""));
 
-	ABL_MediaServerPort.nRecvThreadCount = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "RecvThreadCount", "64"));
-	ABL_MediaServerPort.nSendThreadCount = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "SendThreadCount", "64"));
-	ABL_MediaServerPort.nRecordReplayThread = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "RecordReplayThread", "32"));
-	ABL_MediaServerPort.nGBRtpTCPHeadType = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "GB28181RtpTCPHeadType", "0"));
-	ABL_MediaServerPort.nEnableAudio = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "enable_audio", "0"));
-	ABL_MediaServerPort.nIOContentNumber = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "IOContentNumber", "16"));
-	ABL_MediaServerPort.nThreadCountOfIOContent = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "ThreadCountOfIOContent", "16"));
-	ABL_MediaServerPort.nReConnectingCount = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "ReConnectingCount", "48000"));
+	ABL_MediaServerPort.nRecvThreadCount = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "RecvThreadCount", "64"));
+	ABL_MediaServerPort.nSendThreadCount = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "SendThreadCount", "64"));
+	ABL_MediaServerPort.nRecordReplayThread = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "RecordReplayThread", "32"));
+	ABL_MediaServerPort.nGBRtpTCPHeadType = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "GB28181RtpTCPHeadType", "0"));
+	ABL_MediaServerPort.nEnableAudio = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "enable_audio", "0"));
+	ABL_MediaServerPort.nIOContentNumber = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "IOContentNumber", "16"));
+	ABL_MediaServerPort.nThreadCountOfIOContent = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "ThreadCountOfIOContent", "16"));
+	ABL_MediaServerPort.nReConnectingCount = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "ReConnectingCount", "48000"));
 
-	strcpy(ABL_MediaServerPort.recordPath, ABL_ConfigFile.ReadConfigString("ABLMediaServer", "recordPath", ""));
-	ABL_MediaServerPort.pushEnable_mp4 = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "pushEnable_mp4", "0"));
-	ABL_MediaServerPort.fileSecond = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "fileSecond", "180"));
-	ABL_MediaServerPort.videoFileFormat = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "videoFileFormat", "1"));
-	ABL_MediaServerPort.fileKeepMaxTime = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "fileKeepMaxTime", "12"));
-	ABL_MediaServerPort.enable_GetFileDuration = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "enable_GetFileDuration", "0"));
- 	ABL_MediaServerPort.fileRepeat = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "fileRepeat", "0"));
-	ABL_MediaServerPort.httpDownloadSpeed = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "httpDownloadSpeed", "6"));
+	strcpy(ABL_MediaServerPort.recordPath, ABL_ConfigFile.GetValue("ABLMediaServer", "recordPath", ""));
+	ABL_MediaServerPort.pushEnable_mp4 = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "pushEnable_mp4", "0"));
+	ABL_MediaServerPort.fileSecond = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "fileSecond", "180"));
+	ABL_MediaServerPort.videoFileFormat = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "videoFileFormat", "1"));
+	ABL_MediaServerPort.fileKeepMaxTime = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "fileKeepMaxTime", "12"));
+	ABL_MediaServerPort.enable_GetFileDuration = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "enable_GetFileDuration", "0"));
+ 	ABL_MediaServerPort.fileRepeat = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "fileRepeat", "0"));
+	ABL_MediaServerPort.httpDownloadSpeed = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "httpDownloadSpeed", "6"));
 
-	ABL_MediaServerPort.maxTimeNoOneWatch = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "maxTimeNoOneWatch", "2"));
-	ABL_MediaServerPort.nG711ConvertAAC = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "G711ConvertAAC", "0"));
+	ABL_MediaServerPort.maxTimeNoOneWatch = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "maxTimeNoOneWatch", "2"));
+	ABL_MediaServerPort.nG711ConvertAAC = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "G711ConvertAAC", "0"));
 
-	strcpy(ABL_MediaServerPort.picturePath, ABL_ConfigFile.ReadConfigString("ABLMediaServer", "picturePath", ""));
-	ABL_MediaServerPort.pictureMaxCount = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "pictureMaxCount", "30"));
-	ABL_MediaServerPort.captureReplayType = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "captureReplayType", "1"));
-	ABL_MediaServerPort.deleteSnapPicture = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "deleteSnapPicture", "0"));
-	ABL_MediaServerPort.iframeArriveNoticCount = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "iframeArriveNoticCount", "30"));
- 	ABL_MediaServerPort.maxSameTimeSnap = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "maxSameTimeSnap", "16"));
-	ABL_MediaServerPort.snapObjectDestroy = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "snapObjectDestroy", "1"));
-	ABL_MediaServerPort.snapObjectDuration = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "snapObjectDuration", "120"));
-	ABL_MediaServerPort.snapOutPictureWidth = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "snapOutPictureWidth", "0"));
-	ABL_MediaServerPort.snapOutPictureHeight = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "snapOutPictureHeight", "0"));
+	strcpy(ABL_MediaServerPort.picturePath, ABL_ConfigFile.GetValue("ABLMediaServer", "picturePath", ""));
+	ABL_MediaServerPort.pictureMaxCount = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "pictureMaxCount", "30"));
+	ABL_MediaServerPort.captureReplayType = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "captureReplayType", "1"));
+	ABL_MediaServerPort.deleteSnapPicture = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "deleteSnapPicture", "0"));
+	ABL_MediaServerPort.iframeArriveNoticCount = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "iframeArriveNoticCount", "30"));
+ 	ABL_MediaServerPort.maxSameTimeSnap = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "maxSameTimeSnap", "16"));
+	ABL_MediaServerPort.snapObjectDestroy = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "snapObjectDestroy", "1"));
+	ABL_MediaServerPort.snapObjectDuration = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "snapObjectDuration", "120"));
+	ABL_MediaServerPort.snapOutPictureWidth = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "snapOutPictureWidth", "0"));
+	ABL_MediaServerPort.snapOutPictureHeight = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "snapOutPictureHeight", "0"));
 	
-	ABL_MediaServerPort.H265ConvertH264_enable = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "H265ConvertH264_enable", "1"));
-	ABL_MediaServerPort.H265DecodeCpuGpuType = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "H265DecodeCpuGpuType", "0"));
-	ABL_MediaServerPort.convertOutWidth = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "convertOutWidth", "7210"));
-	ABL_MediaServerPort.convertOutHeight = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "convertOutHeight", "1480"));
-	ABL_MediaServerPort.convertMaxObject = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "convertMaxObject", "214"));
-	ABL_MediaServerPort.convertOutBitrate = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "convertOutBitrate", "123"));
-	ABL_MediaServerPort.H264DecodeEncode_enable = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "H264DecodeEncode_enable", "0"));
-	ABL_MediaServerPort.filterVideo_enable = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "filterVideo_enable", "0"));
-	strcpy(ABL_MediaServerPort.filterVideoText, ABL_ConfigFile.ReadConfigString("ABLMediaServer", "filterVideo_text", ""));
-	ABL_MediaServerPort.nFilterFontSize = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "FilterFontSize", "12"));
-	strcpy(ABL_MediaServerPort.nFilterFontColor, ABL_ConfigFile.ReadConfigString("ABLMediaServer", "FilterFontColor", "red"));
-	ABL_MediaServerPort.nFilterFontLeft = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "FilterFontLeft", "5"));
-	ABL_MediaServerPort.nFilterFontTop = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "FilterFontTop", "5"));
-	ABL_MediaServerPort.nFilterFontAlpha = atof(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "FilterFontAlpha", "0.5"));
-	ABL_MediaServerPort.MaxDiconnectTimeoutSecond = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "MaxDiconnectTimeoutSecond", "18"));
-	ABL_MediaServerPort.ForceSendingIFrame = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "ForceSendingIFrame", "0"));
-	ABL_MediaServerPort.gb28181LibraryUse = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "gb28181LibraryUse", "1"));
-	ABL_MediaServerPort.httqRequstClose = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "httqRequstClose", "0"));
-	ABL_MediaServerPort.flvPlayAddMute = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "flvPlayAddMute", "1"));
- 
+	ABL_MediaServerPort.H265ConvertH264_enable = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "H265ConvertH264_enable", "1"));
+	ABL_MediaServerPort.H265DecodeCpuGpuType = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "H265DecodeCpuGpuType", "0"));
+	ABL_MediaServerPort.convertOutWidth = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "convertOutWidth", "7210"));
+	ABL_MediaServerPort.convertOutHeight = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "convertOutHeight", "1480"));
+	ABL_MediaServerPort.convertMaxObject = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "convertMaxObject", "214"));
+	ABL_MediaServerPort.convertOutBitrate = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "convertOutBitrate", "123"));
+	ABL_MediaServerPort.H264DecodeEncode_enable = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "H264DecodeEncode_enable", "0"));
+	ABL_MediaServerPort.filterVideo_enable = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "filterVideo_enable", "0"));
+	strcpy(ABL_MediaServerPort.filterVideoText, ABL_ConfigFile.GetValue("ABLMediaServer", "filterVideo_text", ""));
+	ABL_MediaServerPort.nFilterFontSize = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "FilterFontSize", "12"));
+	strcpy(ABL_MediaServerPort.nFilterFontColor, ABL_ConfigFile.GetValue("ABLMediaServer", "FilterFontColor", "red"));
+	ABL_MediaServerPort.nFilterFontLeft = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "FilterFontLeft", "5"));
+	ABL_MediaServerPort.nFilterFontTop = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "FilterFontTop", "5"));
+	ABL_MediaServerPort.nFilterFontAlpha = atof(ABL_ConfigFile.GetValue("ABLMediaServer", "FilterFontAlpha", "0.5"));
+	ABL_MediaServerPort.MaxDiconnectTimeoutSecond = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "MaxDiconnectTimeoutSecond", "18"));
+	ABL_MediaServerPort.ForceSendingIFrame = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "ForceSendingIFrame", "0"));
+	ABL_MediaServerPort.gb28181LibraryUse = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "gb28181LibraryUse", "1"));
+	ABL_MediaServerPort.httqRequstClose = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "httqRequstClose", "0"));
+	ABL_MediaServerPort.flvPlayAddMute = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "flvPlayAddMute", "1"));
+	
 	//读取事件通知配置
-	ABL_MediaServerPort.hook_enable = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "hook_enable", "0"));
-	ABL_MediaServerPort.noneReaderDuration = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "noneReaderDuration", "32"));
-	strcpy(ABL_MediaServerPort.on_server_started, ABL_ConfigFile.ReadConfigString("ABLMediaServer", "on_server_started", ""));
-	strcpy(ABL_MediaServerPort.on_server_keepalive, ABL_ConfigFile.ReadConfigString("ABLMediaServer", "on_server_keepalive", ""));
-	strcpy(ABL_MediaServerPort.on_stream_arrive, ABL_ConfigFile.ReadConfigString("ABLMediaServer", "on_stream_arrive", ""));
-	strcpy(ABL_MediaServerPort.on_stream_not_arrive, ABL_ConfigFile.ReadConfigString("ABLMediaServer", "on_stream_not_arrive", ""));
-	strcpy(ABL_MediaServerPort.on_stream_none_reader, ABL_ConfigFile.ReadConfigString("ABLMediaServer", "on_stream_none_reader", ""));
-	strcpy(ABL_MediaServerPort.on_stream_disconnect, ABL_ConfigFile.ReadConfigString("ABLMediaServer", "on_stream_disconnect", ""));
-	strcpy(ABL_MediaServerPort.on_stream_not_found, ABL_ConfigFile.ReadConfigString("ABLMediaServer", "on_stream_not_found", ""));
-	strcpy(ABL_MediaServerPort.on_record_mp4, ABL_ConfigFile.ReadConfigString("ABLMediaServer", "on_record_mp4", ""));
-	strcpy(ABL_MediaServerPort.on_delete_record_mp4, ABL_ConfigFile.ReadConfigString("ABLMediaServer", "on_delete_record_mp4", ""));
-	strcpy(ABL_MediaServerPort.on_record_progress, ABL_ConfigFile.ReadConfigString("ABLMediaServer", "on_record_progress", ""));
-	strcpy(ABL_MediaServerPort.on_record_ts, ABL_ConfigFile.ReadConfigString("ABLMediaServer", "on_record_ts", ""));
-	strcpy(ABL_MediaServerPort.mediaServerID, ABL_ConfigFile.ReadConfigString("ABLMediaServer", "mediaServerID", "ABLMediaServer_00001"));
-	strcpy(ABL_MediaServerPort.on_play, ABL_ConfigFile.ReadConfigString("ABLMediaServer", "on_play", ""));
-	strcpy(ABL_MediaServerPort.on_publish, ABL_ConfigFile.ReadConfigString("ABLMediaServer", "on_publish", ""));
-	strcpy(ABL_MediaServerPort.on_stream_iframe_arrive, ABL_ConfigFile.ReadConfigString("ABLMediaServer", "on_stream_iframe_arrive", ""));
-	ABL_MediaServerPort.keepaliveDuration = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "keepaliveDuration", "20"));
-	ABL_MediaServerPort.nWebRtcPort = atoi(ABL_ConfigFile.ReadConfigString("ABLMediaServer", "webrtcPort", "8000"));
+	ABL_MediaServerPort.hook_enable = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "hook_enable", "0"));
+	ABL_MediaServerPort.noneReaderDuration = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "noneReaderDuration", "32"));
+	strcpy(ABL_MediaServerPort.on_server_started, ABL_ConfigFile.GetValue("ABLMediaServer", "on_server_started", ""));
+	strcpy(ABL_MediaServerPort.on_server_keepalive, ABL_ConfigFile.GetValue("ABLMediaServer", "on_server_keepalive", ""));
+	strcpy(ABL_MediaServerPort.on_stream_arrive, ABL_ConfigFile.GetValue("ABLMediaServer", "on_stream_arrive", ""));
+	strcpy(ABL_MediaServerPort.on_stream_not_arrive, ABL_ConfigFile.GetValue("ABLMediaServer", "on_stream_not_arrive", ""));
+	strcpy(ABL_MediaServerPort.on_stream_none_reader, ABL_ConfigFile.GetValue("ABLMediaServer", "on_stream_none_reader", ""));
+	strcpy(ABL_MediaServerPort.on_stream_disconnect, ABL_ConfigFile.GetValue("ABLMediaServer", "on_stream_disconnect", ""));
+	strcpy(ABL_MediaServerPort.on_stream_not_found, ABL_ConfigFile.GetValue("ABLMediaServer", "on_stream_not_found", ""));
+	strcpy(ABL_MediaServerPort.on_record_mp4, ABL_ConfigFile.GetValue("ABLMediaServer", "on_record_mp4", ""));
+	strcpy(ABL_MediaServerPort.on_delete_record_mp4, ABL_ConfigFile.GetValue("ABLMediaServer", "on_delete_record_mp4", ""));
+	strcpy(ABL_MediaServerPort.on_record_progress, ABL_ConfigFile.GetValue("ABLMediaServer", "on_record_progress", ""));
+	strcpy(ABL_MediaServerPort.on_record_ts, ABL_ConfigFile.GetValue("ABLMediaServer", "on_record_ts", ""));
+	strcpy(ABL_MediaServerPort.mediaServerID, ABL_ConfigFile.GetValue("ABLMediaServer", "mediaServerID", "ABLMediaServer_00001"));
+	strcpy(ABL_MediaServerPort.on_play, ABL_ConfigFile.GetValue("ABLMediaServer", "on_play", ""));
+	strcpy(ABL_MediaServerPort.on_publish, ABL_ConfigFile.GetValue("ABLMediaServer", "on_publish", ""));
+	strcpy(ABL_MediaServerPort.on_stream_iframe_arrive, ABL_ConfigFile.GetValue("ABLMediaServer", "on_stream_iframe_arrive", ""));
+	ABL_MediaServerPort.keepaliveDuration = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "keepaliveDuration", "20"));
+	ABL_MediaServerPort.nWebRtcPort = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "webrtcPort", "8000"));
 	
 	if (ABL_MediaServerPort.httpDownloadSpeed > 10)
 		ABL_MediaServerPort.httpDownloadSpeed = 10;
@@ -3327,7 +3370,7 @@ ABL_Restart:
 	InitLogFile();
     if(argc >= 3)
       WriteLog(Log_Debug, "argc = %d, argv[0] = %s ,argv[1] = %s ,argv[2] = %s ", argc,argv[0],argv[1],argv[2]);
-
+ 
 	strcpy(ABL_MediaSeverRunPath, get_current_dir_name());
 	if(argc >=3 && strcmp(argv[1],"-c") == 0)
 	{//带配置文件启动
@@ -3340,14 +3383,14 @@ ABL_Restart:
 		WriteLog(Log_Debug, "当前路径 %s 没有配置文件 ABLMediaServer.ini，请检查。", ABL_MediaSeverRunPath);
 		return -1;
 	}
-	if (ABL_ConfigFile.OpenFile(szConfigFileName, "r") != INI_SUCCESS)
+	if (ABL_ConfigFile.LoadFile(szConfigFileName) != SI_OK)
 	{
 		WriteLog(Log_Debug, "读取配置文件 %s 失败 ！", szConfigFileName);
 		return -1;
 	}
 	
 	//获取用户配置的IP地址 
-	strcpy(ABL_szLocalIP, ABL_ConfigFile.GetStr("ABLMediaServer", "localipAddress"));
+	strcpy(ABL_szLocalIP, ABL_ConfigFile.GetValue("ABLMediaServer", "localipAddress",""));
 	WriteLog(Log_Debug, "读取到配置文件的IP : %s ", ABL_szLocalIP);
 
 	//获取IP地址 
@@ -3364,96 +3407,96 @@ ABL_Restart:
 	strcpy(ABL_MediaServerPort.ABL_szLocalIP, ABL_szLocalIP);
 	WriteLog(Log_Debug, "本机IP地址 ABL_szLocalIP : %s ", ABL_szLocalIP);
 	
-	strcpy(ABL_MediaServerPort.secret, ABL_ConfigFile.GetStr("ABLMediaServer", "secret"));
-	ABL_MediaServerPort.nHttpServerPort = ABL_ConfigFile.GetInt("ABLMediaServer", "httpServerPort");
-	ABL_MediaServerPort.nRtspPort = ABL_ConfigFile.GetInt("ABLMediaServer", "rtspPort");
-	ABL_MediaServerPort.nRtmpPort = ABL_ConfigFile.GetInt("ABLMediaServer", "rtmpPort");
-	ABL_MediaServerPort.nHttpFlvPort = ABL_ConfigFile.GetInt("ABLMediaServer", "httpFlvPort");
-	ABL_MediaServerPort.nWSFlvPort = ABL_ConfigFile.GetInt("ABLMediaServer", "wsFlvPort");
-	ABL_MediaServerPort.nHttpMp4Port = ABL_ConfigFile.GetInt("ABLMediaServer", "httpMp4Port");
-	ABL_MediaServerPort.ps_tsRecvPort = ABL_ConfigFile.GetInt("ABLMediaServer", "ps_tsRecvPort");
-	ABL_MediaServerPort.nHlsPort = ABL_ConfigFile.GetInt("ABLMediaServer", "hlsPort");
-	ABL_MediaServerPort.WsRecvPcmPort = ABL_ConfigFile.GetInt("ABLMediaServer", "WsRecvPcmPort");
-	ABL_MediaServerPort.nHlsEnable = ABL_ConfigFile.GetInt("ABLMediaServer", "hls_enable");
-	ABL_MediaServerPort.nHLSCutType = ABL_ConfigFile.GetInt("ABLMediaServer", "hlsCutType");
-	ABL_MediaServerPort.nH265CutType = ABL_ConfigFile.GetInt("ABLMediaServer", "h265CutType");
-	ABL_MediaServerPort.hlsCutTime = ABL_ConfigFile.GetInt("ABLMediaServer", "hlsCutTime");
-	ABL_MediaServerPort.nMaxTsFileCount = ABL_ConfigFile.GetInt("ABLMediaServer", "maxTsFileCount");
-	strcpy(ABL_MediaServerPort.wwwPath, ABL_ConfigFile.GetStr("ABLMediaServer", "wwwPath"));
+	strcpy(ABL_MediaServerPort.secret, ABL_ConfigFile.GetValue("ABLMediaServer", "secret",""));
+	ABL_MediaServerPort.nHttpServerPort = ABL_ConfigFile.GetLongValue("ABLMediaServer", "httpServerPort",0);
+	ABL_MediaServerPort.nRtspPort = ABL_ConfigFile.GetLongValue("ABLMediaServer", "rtspPort",0);
+	ABL_MediaServerPort.nRtmpPort = ABL_ConfigFile.GetLongValue("ABLMediaServer", "rtmpPort",0);
+	ABL_MediaServerPort.nHttpFlvPort = ABL_ConfigFile.GetLongValue("ABLMediaServer", "httpFlvPort",0);
+	ABL_MediaServerPort.nWSFlvPort = ABL_ConfigFile.GetLongValue("ABLMediaServer", "wsFlvPort",0);
+	ABL_MediaServerPort.nHttpMp4Port = ABL_ConfigFile.GetLongValue("ABLMediaServer", "httpMp4Port",0);
+	ABL_MediaServerPort.ps_tsRecvPort = ABL_ConfigFile.GetLongValue("ABLMediaServer", "ps_tsRecvPort",0);
+	ABL_MediaServerPort.nHlsPort = ABL_ConfigFile.GetLongValue("ABLMediaServer", "hlsPort",0);
+	ABL_MediaServerPort.WsRecvPcmPort = ABL_ConfigFile.GetLongValue("ABLMediaServer", "WsRecvPcmPort",0);
+	ABL_MediaServerPort.nHlsEnable = ABL_ConfigFile.GetLongValue("ABLMediaServer", "hls_enable",0);
+	ABL_MediaServerPort.nHLSCutType = ABL_ConfigFile.GetLongValue("ABLMediaServer", "hlsCutType",0);
+	ABL_MediaServerPort.nH265CutType = ABL_ConfigFile.GetLongValue("ABLMediaServer", "h265CutType",0);
+	ABL_MediaServerPort.hlsCutTime = ABL_ConfigFile.GetLongValue("ABLMediaServer", "hlsCutTime",0);
+	ABL_MediaServerPort.nMaxTsFileCount = ABL_ConfigFile.GetLongValue("ABLMediaServer", "maxTsFileCount",0);
+	strcpy(ABL_MediaServerPort.wwwPath, ABL_ConfigFile.GetValue("ABLMediaServer", "wwwPath",""));
 
-	ABL_MediaServerPort.nRecvThreadCount = ABL_ConfigFile.GetInt("ABLMediaServer", "RecvThreadCount");
-	ABL_MediaServerPort.nSendThreadCount = ABL_ConfigFile.GetInt("ABLMediaServer", "SendThreadCount");
-	ABL_MediaServerPort.nRecordReplayThread = ABL_ConfigFile.GetInt("ABLMediaServer", "RecordReplayThread");
-	ABL_MediaServerPort.nGBRtpTCPHeadType = ABL_ConfigFile.GetInt("ABLMediaServer", "GB28181RtpTCPHeadType");
-	ABL_MediaServerPort.nEnableAudio = ABL_ConfigFile.GetInt("ABLMediaServer", "enable_audio");
-	ABL_MediaServerPort.nIOContentNumber = ABL_ConfigFile.GetInt("ABLMediaServer", "IOContentNumber");
-	ABL_MediaServerPort.nThreadCountOfIOContent = ABL_ConfigFile.GetInt("ABLMediaServer", "ThreadCountOfIOContent");
-	ABL_MediaServerPort.nReConnectingCount = ABL_ConfigFile.GetInt("ABLMediaServer", "ReConnectingCount");
+	ABL_MediaServerPort.nRecvThreadCount = ABL_ConfigFile.GetLongValue("ABLMediaServer", "RecvThreadCount",0);
+	ABL_MediaServerPort.nSendThreadCount = ABL_ConfigFile.GetLongValue("ABLMediaServer", "SendThreadCount",0);
+	ABL_MediaServerPort.nRecordReplayThread = ABL_ConfigFile.GetLongValue("ABLMediaServer", "RecordReplayThread",0);
+	ABL_MediaServerPort.nGBRtpTCPHeadType = ABL_ConfigFile.GetLongValue("ABLMediaServer", "GB28181RtpTCPHeadType",0);
+	ABL_MediaServerPort.nEnableAudio = ABL_ConfigFile.GetLongValue("ABLMediaServer", "enable_audio",0);
+	ABL_MediaServerPort.nIOContentNumber = ABL_ConfigFile.GetLongValue("ABLMediaServer", "IOContentNumber",0);
+	ABL_MediaServerPort.nThreadCountOfIOContent = ABL_ConfigFile.GetLongValue("ABLMediaServer", "ThreadCountOfIOContent",0);
+	ABL_MediaServerPort.nReConnectingCount = ABL_ConfigFile.GetLongValue("ABLMediaServer", "ReConnectingCount",0);
 
-	strcpy(ABL_MediaServerPort.recordPath, ABL_ConfigFile.GetStr("ABLMediaServer", "recordPath"));
-	ABL_MediaServerPort.fileSecond = ABL_ConfigFile.GetInt("ABLMediaServer", "fileSecond");
-	ABL_MediaServerPort.videoFileFormat = ABL_ConfigFile.GetInt("ABLMediaServer", "videoFileFormat");
-	ABL_MediaServerPort.pushEnable_mp4 = ABL_ConfigFile.GetInt("ABLMediaServer", "pushEnable_mp4");
-	ABL_MediaServerPort.fileKeepMaxTime = ABL_ConfigFile.GetInt("ABLMediaServer", "fileKeepMaxTime");
-	ABL_MediaServerPort.fileRepeat = ABL_ConfigFile.GetInt("ABLMediaServer", "fileRepeat");
-	ABL_MediaServerPort.enable_GetFileDuration = ABL_ConfigFile.GetInt("ABLMediaServer", "enable_GetFileDuration");
-	ABL_MediaServerPort.httpDownloadSpeed = ABL_ConfigFile.GetInt("ABLMediaServer", "httpDownloadSpeed");
+	strcpy(ABL_MediaServerPort.recordPath, ABL_ConfigFile.GetValue("ABLMediaServer", "recordPath",""));
+	ABL_MediaServerPort.fileSecond = ABL_ConfigFile.GetLongValue("ABLMediaServer", "fileSecond",0);
+	ABL_MediaServerPort.videoFileFormat = ABL_ConfigFile.GetLongValue("ABLMediaServer", "videoFileFormat",0);
+	ABL_MediaServerPort.pushEnable_mp4 = ABL_ConfigFile.GetLongValue("ABLMediaServer", "pushEnable_mp4",0);
+	ABL_MediaServerPort.fileKeepMaxTime = ABL_ConfigFile.GetLongValue("ABLMediaServer", "fileKeepMaxTime",0);
+	ABL_MediaServerPort.fileRepeat = ABL_ConfigFile.GetLongValue("ABLMediaServer", "fileRepeat",0);
+	ABL_MediaServerPort.enable_GetFileDuration = ABL_ConfigFile.GetLongValue("ABLMediaServer", "enable_GetFileDuration",0);
+	ABL_MediaServerPort.httpDownloadSpeed = ABL_ConfigFile.GetLongValue("ABLMediaServer", "httpDownloadSpeed",0);
 
-	ABL_MediaServerPort.maxTimeNoOneWatch = ABL_ConfigFile.GetInt("ABLMediaServer", "maxTimeNoOneWatch");
-	ABL_MediaServerPort.nG711ConvertAAC = ABL_ConfigFile.GetInt("ABLMediaServer", "G711ConvertAAC"); 
+	ABL_MediaServerPort.maxTimeNoOneWatch = ABL_ConfigFile.GetLongValue("ABLMediaServer", "maxTimeNoOneWatch",0);
+	ABL_MediaServerPort.nG711ConvertAAC = ABL_ConfigFile.GetLongValue("ABLMediaServer", "G711ConvertAAC",0); 
 
-	strcpy(ABL_MediaServerPort.picturePath, ABL_ConfigFile.GetStr("ABLMediaServer", "picturePath"));
-	ABL_MediaServerPort.pictureMaxCount = ABL_ConfigFile.GetInt("ABLMediaServer", "pictureMaxCount");
-	ABL_MediaServerPort.captureReplayType = ABL_ConfigFile.GetInt("ABLMediaServer", "captureReplayType");
-	ABL_MediaServerPort.maxSameTimeSnap = ABL_ConfigFile.GetInt("ABLMediaServer", "maxSameTimeSnap");
-	ABL_MediaServerPort.snapObjectDestroy = ABL_ConfigFile.GetInt("ABLMediaServer", "snapObjectDestroy");
-	ABL_MediaServerPort.deleteSnapPicture = ABL_ConfigFile.GetInt("ABLMediaServer", "deleteSnapPicture");
-	ABL_MediaServerPort.iframeArriveNoticCount = ABL_ConfigFile.GetInt("ABLMediaServer", "iframeArriveNoticCount");
-	ABL_MediaServerPort.snapObjectDuration = ABL_ConfigFile.GetInt("ABLMediaServer", "snapObjectDuration");
-	ABL_MediaServerPort.snapOutPictureWidth = ABL_ConfigFile.GetInt("ABLMediaServer", "snapOutPictureWidth");
-	ABL_MediaServerPort.snapOutPictureHeight = ABL_ConfigFile.GetInt("ABLMediaServer", "snapOutPictureHeight");
+	strcpy(ABL_MediaServerPort.picturePath, ABL_ConfigFile.GetValue("ABLMediaServer", "picturePath",""));
+	ABL_MediaServerPort.pictureMaxCount = ABL_ConfigFile.GetLongValue("ABLMediaServer", "pictureMaxCount",0);
+	ABL_MediaServerPort.captureReplayType = ABL_ConfigFile.GetLongValue("ABLMediaServer", "captureReplayType",0);
+	ABL_MediaServerPort.maxSameTimeSnap = ABL_ConfigFile.GetLongValue("ABLMediaServer", "maxSameTimeSnap",0);
+	ABL_MediaServerPort.snapObjectDestroy = ABL_ConfigFile.GetLongValue("ABLMediaServer", "snapObjectDestroy",0);
+	ABL_MediaServerPort.deleteSnapPicture = ABL_ConfigFile.GetLongValue("ABLMediaServer", "deleteSnapPicture",0);
+	ABL_MediaServerPort.iframeArriveNoticCount = ABL_ConfigFile.GetLongValue("ABLMediaServer", "iframeArriveNoticCount",0);
+	ABL_MediaServerPort.snapObjectDuration = ABL_ConfigFile.GetLongValue("ABLMediaServer", "snapObjectDuration",0);
+	ABL_MediaServerPort.snapOutPictureWidth = ABL_ConfigFile.GetLongValue("ABLMediaServer", "snapOutPictureWidth",0);
+	ABL_MediaServerPort.snapOutPictureHeight = ABL_ConfigFile.GetLongValue("ABLMediaServer", "snapOutPictureHeight",0);
 	
-	ABL_MediaServerPort.H265ConvertH264_enable = ABL_ConfigFile.GetInt("ABLMediaServer", "H265ConvertH264_enable");
-	ABL_MediaServerPort.H265DecodeCpuGpuType = ABL_ConfigFile.GetInt("ABLMediaServer", "H265DecodeCpuGpuType");
-	ABL_MediaServerPort.convertOutWidth = ABL_ConfigFile.GetInt("ABLMediaServer", "convertOutWidth");
-	ABL_MediaServerPort.convertOutHeight = ABL_ConfigFile.GetInt("ABLMediaServer", "convertOutHeight");
-	ABL_MediaServerPort.convertMaxObject = ABL_ConfigFile.GetInt("ABLMediaServer", "convertMaxObject");
-	ABL_MediaServerPort.convertOutBitrate = ABL_ConfigFile.GetInt("ABLMediaServer", "convertOutBitrate");
-	ABL_MediaServerPort.H264DecodeEncode_enable = ABL_ConfigFile.GetInt("ABLMediaServer", "H264DecodeEncode_enable");
-	ABL_MediaServerPort.filterVideo_enable = ABL_ConfigFile.GetInt("ABLMediaServer", "filterVideo_enable");
-	strcpy(ABL_MediaServerPort.filterVideoText, ABL_ConfigFile.GetStr("ABLMediaServer", "filterVideo_text"));
-	ABL_MediaServerPort.nFilterFontSize = ABL_ConfigFile.GetInt("ABLMediaServer", "FilterFontSize");
-	strcpy(ABL_MediaServerPort.nFilterFontColor, ABL_ConfigFile.GetStr("ABLMediaServer", "FilterFontColor"));
-	ABL_MediaServerPort.nFilterFontLeft = ABL_ConfigFile.GetInt("ABLMediaServer", "FilterFontLeft");
-	ABL_MediaServerPort.nFilterFontTop = ABL_ConfigFile.GetInt("ABLMediaServer", "FilterFontTop");
-	ABL_MediaServerPort.nFilterFontAlpha = atof(ABL_ConfigFile.GetStr("ABLMediaServer", "FilterFontAlpha"));
-	ABL_MediaServerPort.httqRequstClose = ABL_ConfigFile.GetInt("ABLMediaServer", "httqRequstClose");
+	ABL_MediaServerPort.H265ConvertH264_enable = ABL_ConfigFile.GetLongValue("ABLMediaServer", "H265ConvertH264_enable",0);
+	ABL_MediaServerPort.H265DecodeCpuGpuType = ABL_ConfigFile.GetLongValue("ABLMediaServer", "H265DecodeCpuGpuType",0);
+	ABL_MediaServerPort.convertOutWidth = ABL_ConfigFile.GetLongValue("ABLMediaServer", "convertOutWidth",0);
+	ABL_MediaServerPort.convertOutHeight = ABL_ConfigFile.GetLongValue("ABLMediaServer", "convertOutHeight",0);
+	ABL_MediaServerPort.convertMaxObject = ABL_ConfigFile.GetLongValue("ABLMediaServer", "convertMaxObject",0);
+	ABL_MediaServerPort.convertOutBitrate = ABL_ConfigFile.GetLongValue("ABLMediaServer", "convertOutBitrate",0);
+	ABL_MediaServerPort.H264DecodeEncode_enable = ABL_ConfigFile.GetLongValue("ABLMediaServer", "H264DecodeEncode_enable",0);
+	ABL_MediaServerPort.filterVideo_enable = ABL_ConfigFile.GetLongValue("ABLMediaServer", "filterVideo_enable",0);
+	strcpy(ABL_MediaServerPort.filterVideoText, ABL_ConfigFile.GetValue("ABLMediaServer", "filterVideo_text",""));
+	ABL_MediaServerPort.nFilterFontSize = ABL_ConfigFile.GetLongValue("ABLMediaServer", "FilterFontSize",0);
+	strcpy(ABL_MediaServerPort.nFilterFontColor, ABL_ConfigFile.GetValue("ABLMediaServer", "FilterFontColor",""));
+	ABL_MediaServerPort.nFilterFontLeft = ABL_ConfigFile.GetLongValue("ABLMediaServer", "FilterFontLeft",0);
+	ABL_MediaServerPort.nFilterFontTop = ABL_ConfigFile.GetLongValue("ABLMediaServer", "FilterFontTop",0);
+	ABL_MediaServerPort.nFilterFontAlpha = atof(ABL_ConfigFile.GetValue("ABLMediaServer", "FilterFontAlpha",""));
+	ABL_MediaServerPort.httqRequstClose = ABL_ConfigFile.GetLongValue("ABLMediaServer", "httqRequstClose",0);
  
 	//读取事件通知配置
-	ABL_MediaServerPort.hook_enable = ABL_ConfigFile.GetInt("ABLMediaServer", "hook_enable");
-	ABL_MediaServerPort.noneReaderDuration = ABL_ConfigFile.GetInt("ABLMediaServer", "noneReaderDuration");
-	strcpy(ABL_MediaServerPort.on_server_started, ABL_ConfigFile.GetStr("ABLMediaServer", "on_server_started"));
-	strcpy(ABL_MediaServerPort.on_server_keepalive, ABL_ConfigFile.GetStr("ABLMediaServer", "on_server_keepalive"));
-	strcpy(ABL_MediaServerPort.on_stream_arrive, ABL_ConfigFile.GetStr("ABLMediaServer", "on_stream_arrive"));
-	strcpy(ABL_MediaServerPort.on_stream_not_arrive, ABL_ConfigFile.GetStr("ABLMediaServer", "on_stream_not_arrive"));
-	strcpy(ABL_MediaServerPort.on_stream_none_reader, ABL_ConfigFile.GetStr("ABLMediaServer", "on_stream_none_reader"));
-	strcpy(ABL_MediaServerPort.on_stream_disconnect, ABL_ConfigFile.GetStr("ABLMediaServer", "on_stream_disconnect"));
-	strcpy(ABL_MediaServerPort.on_stream_not_found, ABL_ConfigFile.GetStr("ABLMediaServer", "on_stream_not_found"));
-	strcpy(ABL_MediaServerPort.on_record_mp4, ABL_ConfigFile.GetStr("ABLMediaServer", "on_record_mp4")); 
-	strcpy(ABL_MediaServerPort.on_record_progress, ABL_ConfigFile.GetStr("ABLMediaServer", "on_record_progress"));
-	strcpy(ABL_MediaServerPort.on_record_ts, ABL_ConfigFile.GetStr("ABLMediaServer", "on_record_ts"));
-	strcpy(ABL_MediaServerPort.on_delete_record_mp4, ABL_ConfigFile.GetStr("ABLMediaServer", "on_delete_record_mp4"));
-	strcpy(ABL_MediaServerPort.mediaServerID, ABL_ConfigFile.GetStr("ABLMediaServer", "mediaServerID"));
-	strcpy(ABL_MediaServerPort.on_play, ABL_ConfigFile.GetStr("ABLMediaServer", "on_play"));
-	strcpy(ABL_MediaServerPort.on_publish, ABL_ConfigFile.GetStr("ABLMediaServer", "on_publish"));
-	strcpy(ABL_MediaServerPort.on_stream_iframe_arrive, ABL_ConfigFile.GetStr("ABLMediaServer", "on_stream_iframe_arrive"));
+	ABL_MediaServerPort.hook_enable = ABL_ConfigFile.GetLongValue("ABLMediaServer", "hook_enable",0);
+	ABL_MediaServerPort.noneReaderDuration = ABL_ConfigFile.GetLongValue("ABLMediaServer", "noneReaderDuration",0);
+	strcpy(ABL_MediaServerPort.on_server_started, ABL_ConfigFile.GetValue("ABLMediaServer", "on_server_started",""));
+	strcpy(ABL_MediaServerPort.on_server_keepalive, ABL_ConfigFile.GetValue("ABLMediaServer", "on_server_keepalive",""));
+	strcpy(ABL_MediaServerPort.on_stream_arrive, ABL_ConfigFile.GetValue("ABLMediaServer", "on_stream_arrive",""));
+	strcpy(ABL_MediaServerPort.on_stream_not_arrive, ABL_ConfigFile.GetValue("ABLMediaServer", "on_stream_not_arrive",""));
+	strcpy(ABL_MediaServerPort.on_stream_none_reader, ABL_ConfigFile.GetValue("ABLMediaServer", "on_stream_none_reader",""));
+	strcpy(ABL_MediaServerPort.on_stream_disconnect, ABL_ConfigFile.GetValue("ABLMediaServer", "on_stream_disconnect",""));
+	strcpy(ABL_MediaServerPort.on_stream_not_found, ABL_ConfigFile.GetValue("ABLMediaServer", "on_stream_not_found",""));
+	strcpy(ABL_MediaServerPort.on_record_mp4, ABL_ConfigFile.GetValue("ABLMediaServer", "on_record_mp4","")); 
+	strcpy(ABL_MediaServerPort.on_record_progress, ABL_ConfigFile.GetValue("ABLMediaServer", "on_record_progress",""));
+	strcpy(ABL_MediaServerPort.on_record_ts, ABL_ConfigFile.GetValue("ABLMediaServer", "on_record_ts",""));
+	strcpy(ABL_MediaServerPort.on_delete_record_mp4, ABL_ConfigFile.GetValue("ABLMediaServer", "on_delete_record_mp4",""));
+	strcpy(ABL_MediaServerPort.mediaServerID, ABL_ConfigFile.GetValue("ABLMediaServer", "mediaServerID",""));
+	strcpy(ABL_MediaServerPort.on_play, ABL_ConfigFile.GetValue("ABLMediaServer", "on_play",""));
+	strcpy(ABL_MediaServerPort.on_publish, ABL_ConfigFile.GetValue("ABLMediaServer", "on_publish",""));
+	strcpy(ABL_MediaServerPort.on_stream_iframe_arrive, ABL_ConfigFile.GetValue("ABLMediaServer", "on_stream_iframe_arrive",""));
  	
-	ABL_MediaServerPort.MaxDiconnectTimeoutSecond = ABL_ConfigFile.GetInt("ABLMediaServer", "MaxDiconnectTimeoutSecond");
-	ABL_MediaServerPort.ForceSendingIFrame = ABL_ConfigFile.GetInt("ABLMediaServer", "ForceSendingIFrame");
-	ABL_MediaServerPort.gb28181LibraryUse = ABL_ConfigFile.GetInt("ABLMediaServer", "gb28181LibraryUse");
-	ABL_MediaServerPort.keepaliveDuration = ABL_ConfigFile.GetInt("ABLMediaServer", "keepaliveDuration");
-	ABL_MediaServerPort.flvPlayAddMute = ABL_ConfigFile.GetInt("ABLMediaServer", "flvPlayAddMute");
-	ABL_MediaServerPort.nWebRtcPort = ABL_ConfigFile.GetInt("ABLMediaServer", "webrtcPort");
+	ABL_MediaServerPort.MaxDiconnectTimeoutSecond = ABL_ConfigFile.GetLongValue("ABLMediaServer", "MaxDiconnectTimeoutSecond",0);
+	ABL_MediaServerPort.ForceSendingIFrame = ABL_ConfigFile.GetLongValue("ABLMediaServer", "ForceSendingIFrame",0);
+	ABL_MediaServerPort.gb28181LibraryUse = ABL_ConfigFile.GetLongValue("ABLMediaServer", "gb28181LibraryUse",0);
+	ABL_MediaServerPort.keepaliveDuration = ABL_ConfigFile.GetLongValue("ABLMediaServer", "keepaliveDuration",0);
+	ABL_MediaServerPort.flvPlayAddMute = ABL_ConfigFile.GetLongValue("ABLMediaServer", "flvPlayAddMute",0);
+	ABL_MediaServerPort.nWebRtcPort = ABL_ConfigFile.GetLongValue("ABLMediaServer", "webrtcPort",8289);
 
 	if (ABL_MediaServerPort.httpDownloadSpeed > 10)
 		ABL_MediaServerPort.httpDownloadSpeed = 10;
@@ -3662,6 +3705,7 @@ ABL_Restart:
 	pDisconnectBaseNetFifo.InitFifo(1024 * 1024 * 4);
 	pReConnectStreamProxyFifo.InitFifo(1024 * 1024 * 4);
 	pMessageNoticeFifo.InitFifo(1024 * 1024 * 4);
+	pNetBaseObjectFifo.InitFifo(1024 * 1024 * 2);
 
 	//创建www子路径 
 #ifdef OS_System_Windows
@@ -3847,6 +3891,7 @@ ABL_Restart:
 	pDisconnectBaseNetFifo.FreeFifo();
 	pReConnectStreamProxyFifo.FreeFifo();
 	pMessageNoticeFifo.FreeFifo();
+	pNetBaseObjectFifo.FreeFifo();
 
 	xh_ABLRecordFileSourceMap.clear();
 	xh_ABLPictureFileSourceMap.clear();
@@ -3856,7 +3901,6 @@ ABL_Restart:
 	StopLogFile();
 #else
 	ExitLogFile();
-	ABL_ConfigFile.CloseFile();
 #endif
 	WebRtcEndpoint::getInstance().Uninit();
 

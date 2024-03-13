@@ -24,14 +24,19 @@ extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltH
 extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClientNoLock(NETHANDLE CltHandle);
 extern int                                   avpriv_mpeg4audio_sample_rates[];
 extern int                                   SampleRateArray[];
-unsigned char                                muteAACBuffer1[] = { 0xff,0xf1,0x60,0x40,0x0a,0x7f,0xfc,0xde,0x04,0x00,0x00,0x6c,0x69,0x62,0x66,0x61,0x61,0x63,0x20,0x31,0x2e,0x33,0x30,0x00,0x00,0x02,0x75,0x3b,0x18,0x7e,0x2c,0xb1,0x25,0xbd,0xd9,0x62,0x84,0xb0,0x1d,0x96,0x43,0xe6,0xa1,0xdf,0xab,0x8d,0x4d,0x5e,0xbf,0x30,0x0a,0xff,0xfb,0x90,0x0b,0xbc,0x7a,0x0f,0x2a,0x2a,0xaa,0x56,0x3c,0x5b,0xcd,0xe1,0xff,0x2b,0xe3,0xe3,0xe3,0xe3,0xe3,0xe3,0xe3,0x85,0x30,0x70,0xa6,0x0e,0x14,0xc1,0xc0 };
-unsigned char                                muteAACBuffer2[] = { 0xff,0xf1,0x60,0x40,0x06,0xbf,0xfc,0x01,0x4c,0xd4,0xac,0x34,0x14,0x11,0x0b,0x7e,0x45,0xda,0x1e,0x2d,0x4b,0xa9,0x35,0x2a,0x69,0x52,0x42,0xd1,0x22,0x49,0x24,0x96,0x09,0x65,0x0e,0x48,0xe2,0xf9,0xae,0x2e,0xe8,0x59,0x52,0xa2,0x86,0xff,0xc5,0xf8,0xab,0x2f,0xfc,0x7c,0x0e };
-unsigned char                                muteAACBuffer3[] = { 0xff,0xf1,0x60,0x40,0x02,0x7f,0xfc,0x01,0x38,0x14,0xac,0x21,0xf4,0x87,0x0b,0xe2,0x30,0x00,0xe0 };
-unsigned char                                muteAACBuffer4[] = { 0xff,0xf1,0x60,0x40,0x02,0x7f,0xfc,0x01,0x2c,0x14,0xac,0x21,0xf4,0x87,0x0b,0xf1,0xec,0x00,0x38 };
+unsigned char                                muteAACBuffer1[] = {0x00,0x00,0x00,0x00,0xff,0xf1,0x60,0x40,0x0a,0x7f,0xfc,0xde,0x04,0x00,0x00,0x6c,0x69,0x62,0x66,0x61,0x61,0x63,0x20,0x31,0x2e,0x33,0x30,0x00,0x00,0x02,0x75,0x3b,0x18,0x7e,0x2c,0xb1,0x25,0xbd,0xd9,0x62,0x84,0xb0,0x1d,0x96,0x43,0xe6,0xa1,0xdf,0xab,0x8d,0x4d,0x5e,0xbf,0x30,0x0a,0xff,0xfb,0x90,0x0b,0xbc,0x7a,0x0f,0x2a,0x2a,0xaa,0x56,0x3c,0x5b,0xcd,0xe1,0xff,0x2b,0xe3,0xe3,0xe3,0xe3,0xe3,0xe3,0xe3,0x85,0x30,0x70,0xa6,0x0e,0x14,0xc1,0xc0 };
+unsigned char                                muteAACBuffer2[] = {0x00,0x00,0x00,0x00,0xff,0xf1,0x60,0x40,0x06,0xbf,0xfc,0x01,0x4c,0xd4,0xac,0x34,0x14,0x11,0x0b,0x7e,0x45,0xda,0x1e,0x2d,0x4b,0xa9,0x35,0x2a,0x69,0x52,0x42,0xd1,0x22,0x49,0x24,0x96,0x09,0x65,0x0e,0x48,0xe2,0xf9,0xae,0x2e,0xe8,0x59,0x52,0xa2,0x86,0xff,0xc5,0xf8,0xab,0x2f,0xfc,0x7c,0x0e };
+unsigned char                                muteAACBuffer3[] = {0x00,0x00,0x00,0x00,0xff,0xf1,0x60,0x40,0x02,0x7f,0xfc,0x01,0x38,0x14,0xac,0x21,0xf4,0x87,0x0b,0xe2,0x30,0x00,0xe0 };
+unsigned char                                muteAACBuffer4[] = {0x00,0x00,0x00,0x00,0xff,0xf1,0x60,0x40,0x02,0x7f,0xfc,0x01,0x2c,0x14,0xac,0x21,0xf4,0x87,0x0b,0xf1,0xec,0x00,0x38 };
 
 CNetRevcBase::CNetRevcBase()
 {
-	bAddMuteFlag = false;
+	nMediaClient = nMediaClient2 = 0;
+	m_bSendCacheAudioFlag = false;
+	nSpeedCount[0] = nSpeedCount[1] = 0;
+	m_nVideoFrameSpeed = 3;
+	m_RtspNetworkType = RtspNetworkType_Unknow;
+ 	bAddMuteFlag = false;
 	nAddMuteAACBufferOrder = 0;
 	memcpy(muteAACBuffer[0].pAACBuffer, muteAACBuffer1, sizeof(muteAACBuffer1));
 	muteAACBuffer[0].nAACLength = sizeof(muteAACBuffer1);
@@ -82,12 +87,12 @@ CNetRevcBase::CNetRevcBase()
 	psHeadFlag[2] = 0x01;
 	psHeadFlag[3] = 0xBA;
 
-	nVideoStampAdd = 0 ;
+	nVideoStampAdd = 40  ;
 	nAsyncAudioStamp = GetTickCount64() ;
 	nCreateDateTime = nProxyDisconnectTime  = GetTickCount64();
 	bRecordProxyDisconnectTimeFlag = false;
 
-	flvPS = flvAACDts = 0;
+	videoDts = audioDts = 0;
 	bUserNewAudioTimeStamp = false;
 	hParent = 0;
 	nPrintTime = GetTickCount64();
@@ -360,19 +365,22 @@ bool  CNetRevcBase::CheckVideoIsIFrame(char* szVideoName,unsigned char* szPVideo
 void  CNetRevcBase::SyncVideoAudioTimestamp()
 {
 	//500毫秒同步一次 
-	if (GetTickCount() - nAsyncAudioStamp >= 500)
+	if (GetTickCount() - nAsyncAudioStamp >= 500 )
 	{
-		if (flvPS < flvAACDts)
+		if (videoDts / 1000 > audioDts / 1000 )
 		{
-			nVideoStampAdd = (1000 / mediaCodecInfo.nVideoFrameRate ) + 5 ;
+			nVideoStampAdd = (1000 / mediaCodecInfo.nVideoFrameRate ) - 10  ;
 		}
-		else if (flvPS > flvAACDts)
+		else if (videoDts / 1000  < audioDts / 1000 )
 		{
-			nVideoStampAdd = (1000 / mediaCodecInfo.nVideoFrameRate) - 5 ;
+			nVideoStampAdd = (1000 / mediaCodecInfo.nVideoFrameRate) + 10 ;
 		}
+		else
+			nVideoStampAdd = 1000 / mediaCodecInfo.nVideoFrameRate;
+
 		nAsyncAudioStamp = GetTickCount();
 
-		//WriteLog(Log_Debug, "CMediaStreamSource = %X flvPS = %d ,flvAACDts = %d ", this, flvPS, flvAACDts);
+		//WriteLog(Log_Debug, "CNetRevcBase = %X ,nClient = %llu videoDts = %d ,audioDts = %d ", this,nClient, videoDts / 1000, audioDts / 1000 );
 	}
 }
 
@@ -383,66 +391,52 @@ int  CNetRevcBase::CalcVideoFrameSpeed(unsigned char* pRtpData, int nLength)
 		return -1 ;
 	
 	int nVideoFrameSpeed = 25 ;
- 	memcpy((char*)&rtp_header, pRtpData, sizeof(rtp_header));
+	rtp_header = (_rtp_header*)pRtpData ;
 	if (oldVideoTimestamp == 0)
 	{
-		oldVideoTimestamp = ntohl(rtp_header.timestamp);
+		oldVideoTimestamp = ntohl(rtp_header->timestamp);
 	}
 	else
 	{
-		if (ntohl(rtp_header.timestamp) != oldVideoTimestamp && ntohl(rtp_header.timestamp) > oldVideoTimestamp)
+		if (ntohl(rtp_header->timestamp) != oldVideoTimestamp && ntohl(rtp_header->timestamp) > oldVideoTimestamp)
 		{
-			//WriteLog(Log_Debug, "this = %X ,nVideoFrameSpeed = %llu ", this,(90000 / (ntohl(rtp_header.timestamp) - oldVideoTimestamp)) );
-
-			nVideoFrameSpeed = 90000 / (ntohl(rtp_header.timestamp) - oldVideoTimestamp);
+			//WriteLog(Log_Debug, "this = %X ,nVideoFrameSpeed = %llu ", this,(90000 / (ntohl(rtp_header->timestamp) - oldVideoTimestamp)) );
+ 			nVideoFrameSpeed = 90000 / (ntohl(rtp_header->timestamp) - oldVideoTimestamp);
 			if (nVideoFrameSpeed > 120 )
 				nVideoFrameSpeed = 120 ;
 
-			//妈的，有些时间戳乱搞打包，强制赋值为25帧每秒 
-			if (nVideoFrameSpeed <= 5)
-				nVideoFrameSpeed = 25;
-
-			oldVideoTimestamp = ntohl(rtp_header.timestamp);
+			oldVideoTimestamp = ntohl(rtp_header->timestamp);
 
 			nVideoFrameSpeedOrder++;
 			//WriteLog(Log_Debug, "this = %X ,nVideoFrameSpeed = %llu ", this, nVideoFrameSpeed );
-			if (nVideoFrameSpeedOrder < 3)
+			if (nVideoFrameSpeedOrder < 10)
 				return -1;
 			else
 			{
-				if (nCalcVideoFrameCount >= CalcMaxVideoFrameSpeed)
-					return m_nVideoFrameSpeed;
+ 				nCalcVideoFrameCount++; //计算次数
+				if (nVideoFrameSpeed == 6)
+					nSpeedCount[0] ++;
+				else if (nVideoFrameSpeed == 7)
+					nSpeedCount[1] ++;
 
-				nVideoFrameSpeedArray[nCalcVideoFrameCount] = nVideoFrameSpeed;//视频帧速度数组
-				nCalcVideoFrameCount++; //计算次数
-
+				if (nVideoFrameSpeed > m_nVideoFrameSpeed)
+					m_nVideoFrameSpeed = nVideoFrameSpeed;
+				 
 				if (nCalcVideoFrameCount >= CalcMaxVideoFrameSpeed)
 				{
-					double dCount = 0;
-					int    nSmallFrameCount = 0;
-					double dArrayCount = CalcMaxVideoFrameSpeed;
-					for (int i = 0; i < CalcMaxVideoFrameSpeed; i++)
-					{
-						dCount += nVideoFrameSpeedArray[i];
-						if (nVideoFrameSpeedArray[i] < 10)
-							nSmallFrameCount ++;
-					}
-
-					double dDec = dCount / dArrayCount;
-					m_nVideoFrameSpeed = dCount / dArrayCount;
-					double dJian = dDec - m_nVideoFrameSpeed;
-
-					if (dJian > 0.5)
-						m_nVideoFrameSpeed += 1;
-					if (nSmallFrameCount >= 10)
+					if (m_nVideoFrameSpeed == 6 )
+						m_nVideoFrameSpeed = 25;
+					else if (m_nVideoFrameSpeed == 7)
+						m_nVideoFrameSpeed = 30;
+					else if (m_nVideoFrameSpeed > 30)
 						m_nVideoFrameSpeed = 30;
 
-					if (m_nVideoFrameSpeed >= 24 && m_nVideoFrameSpeed <= 29)
-						m_nVideoFrameSpeed = 25;
-					else if (m_nVideoFrameSpeed >= 120)
-						m_nVideoFrameSpeed = 120;
+					if(nSpeedCount[0] > 10 )
+						m_nVideoFrameSpeed = 25; 
+					if (nSpeedCount[1] > 10)
+						m_nVideoFrameSpeed = 30;
 
-					return m_nVideoFrameSpeed;
+ 					return m_nVideoFrameSpeed;
 				}
 				else
 					return -1;
@@ -475,39 +469,30 @@ int   CNetRevcBase::CalcFlvVideoFrameSpeed(int nVideoPTS, int nMaxValue)
 				return -1;
 			else
 			{
-				if (nCalcVideoFrameCount >= CalcMaxVideoFrameSpeed)
-					return m_nVideoFrameSpeed;
+				nCalcVideoFrameCount ++ ; //计算次数
+				if (nVideoFrameSpeed == 6)
+					nSpeedCount[0] ++;
+				else if (nVideoFrameSpeed == 7)
+					nSpeedCount[1] ++;
 
- 				nVideoFrameSpeedArray[nCalcVideoFrameCount] = nVideoFrameSpeed;//视频帧速度数组
- 				nCalcVideoFrameCount ++ ; //计算次数
-
+ 				if (nVideoFrameSpeed > m_nVideoFrameSpeed)
+					m_nVideoFrameSpeed = nVideoFrameSpeed;
+ 
 				if (nCalcVideoFrameCount >= CalcMaxVideoFrameSpeed)
 				{
-					double dCount = 0;
-					int    nSmallFrameCount = 0;
-					double dArrayCount = CalcMaxVideoFrameSpeed;
-					for (int i = 0; i < CalcMaxVideoFrameSpeed; i++)
-					{
-						dCount += nVideoFrameSpeedArray[i];
-						if (nVideoFrameSpeedArray[i] < 10)
-							nSmallFrameCount++;
- 					}
-
-					double dDec = dCount / dArrayCount ;
-					m_nVideoFrameSpeed = dCount / dArrayCount;
-					double dJian = dDec - m_nVideoFrameSpeed;
-					
-					if (dJian > 0.5)
-						m_nVideoFrameSpeed += 1;
-					if (nSmallFrameCount >= 10)
+					if (m_nVideoFrameSpeed == 6 )
+						m_nVideoFrameSpeed = 25;
+					else if (m_nVideoFrameSpeed == 7)
+						m_nVideoFrameSpeed = 30;
+					else if(m_nVideoFrameSpeed > 30)
 						m_nVideoFrameSpeed = 30;
 
-					if (m_nVideoFrameSpeed >= 24 && m_nVideoFrameSpeed <= 29)
+					if (nSpeedCount[0] > 10)
 						m_nVideoFrameSpeed = 25;
-					else if (m_nVideoFrameSpeed >= 120)
-						m_nVideoFrameSpeed = 120;
+					if (nSpeedCount[1] > 10)
+						m_nVideoFrameSpeed = 30;
 
-					return m_nVideoFrameSpeed;
+ 					return m_nVideoFrameSpeed;
 				}
 				else
 					return -1;
@@ -864,30 +849,25 @@ bool CNetRevcBase::InsertUUIDtoJson(char* szSrcJSON,char* szUUID)
 		return false;
 }
 
-//根据AAC音频数据获取AAC媒体信息
-void CNetRevcBase::GetAACAudioInfo(unsigned char* nAudioData, int nLength)
+//根据AAC音频数据获取AAC媒体信息,原来对象已经存在音频,所以需要新增一个函数重新获取另外一个接入对象音频 
+void CNetRevcBase::GetAACAudioInfo2(unsigned char* nAudioData, int nLength, int* nSampleRate, int* nChans)
 {
-	if (mediaCodecInfo.nChannels == 0 && mediaCodecInfo.nSampleRate == 0)
-	{
-		unsigned char nSampleIndex = 1;
+ 		unsigned char nSampleIndex = 1;
 		unsigned char  nChannels = 1;
 
 		nSampleIndex = ((nAudioData[2] & 0x3c) >> 2) & 0x0F;  //从 szAudio[2] 中获取采样频率的序号
 		if (nSampleIndex >= 15)
 			nSampleIndex = 8;
-		mediaCodecInfo.nSampleRate = SampleRateArray[nSampleIndex];
+		*nSampleRate = SampleRateArray[nSampleIndex];
 
 		//通道数量计算 pAVData[2]  中有2个位，在最后2位，根 0x03 与运算，得到两位，左移动2位 ，再 或 上 pAVData[3] 的左边最高2位
 		//pAVData[3] 左边最高2位获取方法 先 和 0xc0 与运算，再右移6位，为什么要右移6位？因为这2位是在最高位，所以要往右边移动6位
 		nChannels = ((nAudioData[2] & 0x03) << 2) | ((nAudioData[3] & 0xc0) >> 6);
 		if (nChannels > 2)
 			nChannels = 1;
-		mediaCodecInfo.nChannels = nChannels;
-
-		strcpy(mediaCodecInfo.szAudioName, "AAC");
-
-		WriteLog(Log_Debug, "CNetRevcBase = %X ,媒体接入 AAC信息 szAudioName = %s,nChannels = %d ,nSampleRate = %d ", this, mediaCodecInfo.szAudioName, mediaCodecInfo.nChannels, mediaCodecInfo.nSampleRate);
-	}
+		*nChans = nChannels;
+  
+		WriteLog(Log_Debug, "CNetRevcBase = %X ,媒体接入 AAC信息 szAudioName = %s,nChannels = %d ,nSampleRate = %d ", this, "AAC", *nChans, *nSampleRate);
 }
 
 int CNetRevcBase::sdp_h264_load(uint8_t* data, int bytes, const char* config)
@@ -971,9 +951,19 @@ bool  CNetRevcBase::GetH265VPSSPSPPS(char* szSDPString,int  nVideoPayload)
 void   CNetRevcBase::AddMuteAACBuffer()
 {
 	if (nAddMuteAACBufferOrder <= 3)
-		m_audioFifo.push(muteAACBuffer[nAddMuteAACBufferOrder].pAACBuffer, muteAACBuffer[nAddMuteAACBufferOrder].nAACLength);
+	{
+		if(nMediaSourceType == MediaSourceType_LiveMedia)
+		   m_audioFifo.push(muteAACBuffer[nAddMuteAACBufferOrder].pAACBuffer + 4 , muteAACBuffer[nAddMuteAACBufferOrder].nAACLength - 4);
+		else 
+		   m_audioFifo.push(muteAACBuffer[nAddMuteAACBufferOrder].pAACBuffer , muteAACBuffer[nAddMuteAACBufferOrder].nAACLength);
+	}
 	else
-		m_audioFifo.push(muteAACBuffer[3].pAACBuffer, muteAACBuffer[3].nAACLength);
+	{
+		if (nMediaSourceType == MediaSourceType_LiveMedia)
+		  m_audioFifo.push(muteAACBuffer[3].pAACBuffer + 4 , muteAACBuffer[3].nAACLength - 4);
+		else 
+		  m_audioFifo.push(muteAACBuffer[3].pAACBuffer, muteAACBuffer[3].nAACLength);
+	}
 
 	if(nAddMuteAACBufferOrder < 64 )
 	  nAddMuteAACBufferOrder ++;

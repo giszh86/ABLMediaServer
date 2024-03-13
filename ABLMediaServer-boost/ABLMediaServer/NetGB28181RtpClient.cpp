@@ -154,6 +154,8 @@ void  CNetGB28181RtpClient::GB28181SentRtpVideoData(unsigned char* pRtpVideo, in
 
 CNetGB28181RtpClient::CNetGB28181RtpClient(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort,char* szShareMediaURL)
 {
+	hRtpHandle = 0;
+	nRecvSampleRate =  nRecvChannels = 0;
 	nPFrameCount = 0;
 	memset((char*)&gbDstAddr, 0x00, sizeof(gbDstAddr));
 	memset((char*)&jt1078VideoHead, 0x00, sizeof(jt1078VideoHead));
@@ -216,20 +218,6 @@ CNetGB28181RtpClient::CNetGB28181RtpClient(NETHANDLE hServer, NETHANDLE hClient,
 	m_videoFifo.InitFifo(MaxLiveingVideoFifoBufferLength);
 	m_audioFifo.InitFifo(MaxLiveingAudioFifoBufferLength);
 
-	if (nPort == 0) 
-	{//作为udp 使用，当为tcp时， 在SendFirstRequst() 这函数调用 
-		
-		boost::shared_ptr<CMediaStreamSource> pMediaSource = GetMediaStreamSource(m_szShareMediaURL);
-		if (pMediaSource != NULL)
-		{
-			memcpy((char*)&mediaCodecInfo,(char*)&pMediaSource->m_mediaCodecInfo, sizeof(MediaCodecInfo));
-			pMediaSource->AddClientToMap(nClient);
-		}
-
-		//把nClient 加入Video ,audio 发送线程
-		pMediaSendThreadPool->AddClientToThreadPool(nClient);
-	}
-
 #ifdef  WriteGB28181PSFileFlag
 	char    szFileName[256] = { 0 };
 	sprintf(szFileName, "%s%X.ps", ABL_MediaSeverRunPath,this);
@@ -243,6 +231,7 @@ CNetGB28181RtpClient::CNetGB28181RtpClient(NETHANDLE hServer, NETHANDLE hClient,
 	sprintf(szFileName, "%s%1078_X.264", ABL_MediaSeverRunPath, this);
 	fWrite1078SrcFile = fopen(szFileName, "wb");
 #endif
+
  	WriteLog(Log_Debug, "CNetGB28181RtpClient 构造 = %X  nClient = %llu ", this, nClient);
 }
 
@@ -287,6 +276,7 @@ CNetGB28181RtpClient::~CNetGB28181RtpClient()
 #ifdef WriteJtt1078SrcVideoFlag
 	fclose(fWrite1078SrcFile);
 #endif
+
 	WriteLog(Log_Debug, "CNetGB28181RtpClient 析构 = %X  nClient = %llu ,nMediaClient = %llu\r\n", this, nClient, nMediaClient);
 	malloc_trim(0);
 }
@@ -803,9 +793,11 @@ void RTP_DEPACKET_CALL_METHOD NetGB28181RtpClient_rtppacket_callback_recv(_rtp_d
 				pThis->pRecvMediaSource->PushAudio(cb->data, cb->datasize, "G711_A", 1, 8000);
 			else if (cb->payload == 97)//aac
 			{
-				pThis->GetAACAudioInfo(cb->data, cb->datasize);//获取AAC媒体信息
+				//获取AAC媒体信息
+				if(pThis->nRecvSampleRate == 0 && pThis->nRecvChannels == 0)
+				   pThis->GetAACAudioInfo2(cb->data, cb->datasize, &pThis->nRecvSampleRate , &pThis->nRecvChannels);
 				if (cb->datasize > 0 && cb->datasize < 2048)
-					pThis->pRecvMediaSource->PushAudio((unsigned char*)cb->data, cb->datasize, pThis->mediaCodecInfo.szAudioName, pThis->mediaCodecInfo.nChannels, pThis->mediaCodecInfo.nSampleRate);
+					pThis->pRecvMediaSource->PushAudio((unsigned char*)cb->data, cb->datasize, "AAC", pThis->nRecvChannels, pThis->nRecvSampleRate);
 			}
 		}
 	}
@@ -848,8 +840,11 @@ static int NetGB28181RtpClient_on_gb28181_unpacket(void* param, int stream, int 
 	{
 		if (PSI_STREAM_AAC == avtype)
 		{//aac
-			pThis->GetAACAudioInfo((unsigned char*)data, bytes);//获取AAC媒体信息
-			pThis->pRecvMediaSource->PushAudio((unsigned char*)data, bytes, pThis->mediaCodecInfo.szAudioName, pThis->mediaCodecInfo.nChannels, pThis->mediaCodecInfo.nSampleRate);
+		    //获取AAC媒体信息
+			if (pThis->nRecvSampleRate == 0 && pThis->nRecvChannels == 0)
+  				pThis->GetAACAudioInfo2((unsigned char*)data, bytes, &pThis->nRecvSampleRate, &pThis->nRecvChannels);
+
+ 			pThis->pRecvMediaSource->PushAudio((unsigned char*)data, bytes, "AAC", pThis->nRecvChannels, pThis->nRecvSampleRate);
 		}
 		else if (PSI_STREAM_AUDIO_G711A == avtype)
 		{// G711A  

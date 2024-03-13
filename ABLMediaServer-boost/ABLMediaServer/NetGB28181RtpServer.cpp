@@ -131,9 +131,12 @@ void RTP_DEPACKET_CALL_METHOD GB28181_rtppacket_callback_recv(_rtp_depacket_cb* 
 						 fflush(pThis->fWriteRecvAACFile);
 					 }
 #endif
-					 pThis->GetAACAudioInfo(cb->data, cb->datasize);//获取AAC媒体信息
+					 //获取AAC格式
+ 					 if (pThis->nRecvChannels == 0 && pThis->nRecvSampleRate == 0)
+						 pThis->GetAACAudioInfo2(cb->data, cb->datasize, &pThis->nRecvSampleRate, &pThis->nRecvChannels);
+
  					 if(cb->datasize > 0 &&  cb->datasize < 2048 )
-					    pThis->pMediaSource->PushAudio((unsigned char*)cb->data, cb->datasize, pThis->mediaCodecInfo.szAudioName, pThis->mediaCodecInfo.nChannels, pThis->mediaCodecInfo.nSampleRate);
+					    pThis->pMediaSource->PushAudio((unsigned char*)cb->data, cb->datasize,"AAC", pThis->nRecvChannels, pThis->nRecvSampleRate);
 				 }
 			}
   		}
@@ -255,8 +258,15 @@ void  CNetGB28181RtpServer::SplitterJt1078CacheBuffer()
 					pMediaSource->PushAudio((unsigned char*)(netDataCache + (sizeof(Jt1078AudioRtpPacket_T) + n1078Pos)), nPayloadSize, "G711_A", 1,8000);
 				else if(nAudioPT == 7)
 					pMediaSource->PushAudio((unsigned char*)(netDataCache + (sizeof(Jt1078AudioRtpPacket_T) + n1078Pos)), nPayloadSize, "G711_U", 1, 8000);
-				else if (nAudioPT == 19)//aac 的通道数、采样频率 一定要准确 ，现在暂时固定 1、16000 
-					pMediaSource->PushAudio((unsigned char*)(netDataCache + (sizeof(Jt1078AudioRtpPacket_T) + n1078Pos)), nPayloadSize, "AAC", 1,16000);
+				else if (nAudioPT == 19) 
+				{//准确计算aac音频格式 
+					
+					//获取AAC格式
+					if (nRecvChannels == 0 && nRecvSampleRate == 0)
+						GetAACAudioInfo2((netDataCache + (sizeof(Jt1078AudioRtpPacket_T) + n1078Pos)), nPayloadSize, &nRecvSampleRate, &nRecvChannels);
+ 
+					pMediaSource->PushAudio((unsigned char*)(netDataCache + (sizeof(Jt1078AudioRtpPacket_T) + n1078Pos)), nPayloadSize, "AAC", nRecvChannels, nRecvSampleRate);
+				}
 
 				n1078CacheBufferLength -= sizeof(Jt1078AudioRtpPacket_T) + nPayloadSize;
 				n1078Pos += sizeof(Jt1078AudioRtpPacket_T) + nPayloadSize;
@@ -390,9 +400,15 @@ void  CNetGB28181RtpServer::SplitterJt1078CacheBuffer2019()
 					pMediaSource->PushAudio((unsigned char*)(netDataCache + (sizeof(Jt1078AudioRtpPacket2019_T) + n1078Pos)), nPayloadSize, "G711_A", 1, 8000);
 				else if (nAudioPT == 7)
 					pMediaSource->PushAudio((unsigned char*)(netDataCache + (sizeof(Jt1078AudioRtpPacket2019_T) + n1078Pos)), nPayloadSize, "G711_U", 1, 8000);
-				else if (nAudioPT == 19)//aac 的通道数、采样频率 一定要准确 ，现在暂时固定 1、16000 
-					pMediaSource->PushAudio((unsigned char*)(netDataCache + (sizeof(Jt1078AudioRtpPacket2019_T) + n1078Pos)), nPayloadSize, "AAC", 1, 16000);
-
+				else if (nAudioPT == 19)
+				{//准确计算aac音频格式 
+					//获取AAC格式
+					if (nRecvChannels == 0 && nRecvSampleRate == 0)
+						GetAACAudioInfo2((netDataCache + (sizeof(Jt1078AudioRtpPacket2019_T) + n1078Pos)), nPayloadSize, &nRecvSampleRate, &nRecvChannels);
+ 
+					pMediaSource->PushAudio((unsigned char*)(netDataCache + (sizeof(Jt1078AudioRtpPacket2019_T) + n1078Pos)), nPayloadSize, "AAC", nRecvChannels, nRecvSampleRate);
+				}
+ 
 				n1078CacheBufferLength -= sizeof(Jt1078AudioRtpPacket2019_T) + nPayloadSize;
 				n1078Pos += sizeof(Jt1078AudioRtpPacket2019_T) + nPayloadSize;
 			}
@@ -449,8 +465,11 @@ static int on_gb28181_unpacket(void* param, int stream, int avtype, int flags, i
 	{
 		if (PSI_STREAM_AAC == avtype)
 		{//aac
-			pThis->GetAACAudioInfo((unsigned char*)data, bytes);//获取AAC媒体信息
-			pThis->pMediaSource->PushAudio((unsigned char*)data, bytes, pThis->mediaCodecInfo.szAudioName, pThis->mediaCodecInfo.nChannels, pThis->mediaCodecInfo.nSampleRate);
+		    //获取AAC媒体信息
+			if (pThis->nRecvChannels == 0 && pThis->nRecvSampleRate == 0)
+				pThis->GetAACAudioInfo2((unsigned char*)data, bytes, &pThis->nRecvSampleRate, &pThis->nRecvChannels);
+ 
+			pThis->pMediaSource->PushAudio((unsigned char*)data, bytes, "AAC", pThis->nRecvChannels, pThis->nRecvSampleRate);
 		}
 		else if (PSI_STREAM_AUDIO_G711A == avtype)
 		{// G711A  
@@ -580,8 +599,12 @@ void PS_DEMUX_CALL_METHOD GB28181_RtpRecv_demux_callback(_ps_demux_cb* cb)
 		{//音频没有过滤
 			if (cb->streamtype == e_rtpdepkt_st_aac)
 			{//aac
-				pThis->GetAACAudioInfo(cb->data, cb->datasize);//获取AAC媒体信息
-				pThis->pMediaSource->PushAudio(cb->data, cb->datasize, pThis->mediaCodecInfo.szAudioName, pThis->mediaCodecInfo.nChannels, pThis->mediaCodecInfo.nSampleRate);
+			     //获取AAC格式信息 
+				if(pThis->nRecvChannels == 0 && pThis->nRecvSampleRate == 0)
+				  pThis->GetAACAudioInfo2(cb->data, cb->datasize, &pThis->nRecvSampleRate,&pThis->nRecvChannels);
+
+				if (pThis->nRecvChannels > 0 && pThis->nRecvSampleRate > 0)
+				  pThis->pMediaSource->PushAudio(cb->data, cb->datasize, "AAC", pThis->nRecvChannels, pThis->nRecvSampleRate);
 			}
 			else if (cb->streamtype == e_rtpdepkt_st_g711a)
 			{// G711A  
@@ -621,6 +644,8 @@ CNetGB28181RtpServer::CNetGB28181RtpServer(NETHANDLE hServer, NETHANDLE hClient,
 	sprintf(szFileName, "%s%X.264", ABL_MediaSeverRunPath, this);
 	fWrite1078File = fopen(szFileName, "wb");
 #endif
+	nAddSend_app_streamDatetime = GetTickCount64();
+	nRecvChannels =  nRecvSampleRate = 0;
 	nRecvRtpPacketCount = 0;
 	nMaxRtpLength = 0;
 
@@ -1029,7 +1054,7 @@ int CNetGB28181RtpServer::ProcessNetData()
 		//主动发送rtcp 包
 		if (GetTickCount64() - nSendRtcpTime >= 5 * 1000 && psBeiJingLaoChenMuxer == NULL ) // psBeiJingLaoChenMuxer == NULL 时 ，没有回复 /send_app/send_stream 
 		{
-			nSendRtcpTime = ::GetTickCount64();
+			nSendRtcpTime = GetTickCount64();
 
 			memset(szRtcpSRBuffer, 0x00, sizeof(szRtcpSRBuffer));
 			rtcpSRBufferLength = sizeof(szRtcpSRBuffer);
@@ -1117,7 +1142,7 @@ int CNetGB28181RtpServer::ProcessNetData()
 		//主动发送rtcp 包
 		if (GetTickCount64() - nSendRtcpTime >= 5 * 1000 && psBeiJingLaoChenMuxer == NULL && netBaseNetType != NetBaseNetType_GB28181TcpPSInputStream)  // psBeiJingLaoChenMuxer == NULL 时 ，没有回复 /send_app/send_stream 
 		{
-			nSendRtcpTime = ::GetTickCount64();
+			nSendRtcpTime = GetTickCount64();
 
 			memset(szRtcpSRBuffer, 0x00, sizeof(szRtcpSRBuffer));
 			rtcpSRBufferLength = sizeof(szRtcpSRBuffer);
@@ -1305,16 +1330,46 @@ void  CNetGB28181RtpServer::CreateSendRtpByPS()
 {
 	if (strlen(m_openRtpServerStruct.send_app) > 0 && strlen(m_openRtpServerStruct.send_stream_id) > 0 && addThreadPoolFlag == false  )
 	{//保证加入线程池只有一次
-		addThreadPoolFlag = true;
+		if (m_openRtpServerStruct.detectSendAppStream[0] == 0x30)
+		{//openRtpServer 不检测
+			if (GetTickCount64() - nAddSend_app_streamDatetime > 1000 )
+			{
+				nAddSend_app_streamDatetime = GetTickCount64(); 
 
-		char szMediaSource[string_length_1024] = { 0 };
-		sprintf(szMediaSource, "/%s/%s", m_openRtpServerStruct.send_app, m_openRtpServerStruct.send_stream_id);
-		boost::shared_ptr<CMediaStreamSource> pMediaSource = GetMediaStreamSource(szMediaSource);
+				char szMediaSource[string_length_1024] = { 0 };
+				sprintf(szMediaSource, "/%s/%s", m_openRtpServerStruct.send_app, m_openRtpServerStruct.send_stream_id);
+				boost::shared_ptr<CMediaStreamSource> pMediaSource = GetMediaStreamSource(szMediaSource);
 
-		if (pMediaSource != NULL)
-		{//把客户端 加入源流媒体拷贝队列
-			pMediaSource->AddClientToMap(nClient);
-		}	
+				if (pMediaSource != NULL)
+				{//把客户端 加入源流媒体拷贝队列
+					if ((GetTickCount64() - pMediaSource->tsCreateTime > 3000) || (strlen(pMediaSource->m_mediaCodecInfo.szVideoName) > 0 && strlen(pMediaSource->m_mediaCodecInfo.szAudioName) > 0) )
+					{
+					   addThreadPoolFlag = true;
+					   pMediaSource->AddClientToMap(nClient);
+					   WriteLog(Log_Debug, "CNetGB28181RtpClient = %X ，给 nClient = %llu, 回复码流 %s 成功 ", this, nClient, szMediaSource);
+ 					}
+				}else 
+					WriteLog(Log_Debug, "CNetGB28181RtpClient = %X ，nClient = %llu, 码流 %s 尚未接入，请尽快接入才能回复成功 ", this, nClient, szMediaSource);
+			} 
+		}
+		else
+		{//接入时已经检测
+			char szMediaSource[string_length_1024] = { 0 };
+			sprintf(szMediaSource, "/%s/%s", m_openRtpServerStruct.send_app, m_openRtpServerStruct.send_stream_id);
+			boost::shared_ptr<CMediaStreamSource> pMediaSource = GetMediaStreamSource(szMediaSource);
+
+			if (pMediaSource != NULL)
+			{//把客户端 加入源流媒体拷贝队列
+				if (GetTickCount64() - pMediaSource->nCreateDateTime > 500 && (strlen(pMediaSource->m_mediaCodecInfo.szVideoName) > 0 || strlen(pMediaSource->m_mediaCodecInfo.szAudioName) > 0))
+				{
+					addThreadPoolFlag = true;
+					pMediaSource->AddClientToMap(nClient);
+					WriteLog(Log_Debug, "CNetGB28181RtpClient = %X ，给 nClient = %llu, 回复码流 %s 成功 ", this, nClient, szMediaSource);
+				}
+			}
+			else
+				WriteLog(Log_Debug, "CNetGB28181RtpClient = %X ，nClient = %llu, 码流 %s 尚未接入，请尽快接入才能回复成功 ", this, nClient, szMediaSource);
+		}
 	}
  
 	if (strlen(m_openRtpServerStruct.send_app) > 0 && strlen(m_openRtpServerStruct.send_stream_id) > 0 &&  mediaCodecInfo.nVideoFrameRate > 0 && hRtpPS == 0 )

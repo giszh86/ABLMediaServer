@@ -213,6 +213,12 @@ int CNetServerHLS::ProcessNetData()
 	if (!bRunFlag)
 		return -1;
 
+	if (netDataCacheLength > 512)
+	{
+		WriteLog(Log_Debug, "CNetServerHLS = %X , nClient = %llu ,netDataCacheLength = %d, 发送过来的url数据长度非法 ,立即删除 ", this, nClient, netDataCacheLength);
+		DeleteNetRevcBaseClient(nClient);
+	}
+
   	if (ReadHttpRequest() == false )
 	{
 		WriteLog(Log_Debug, "CNetServerHLS = %X ,nClient = %llu , 数据尚未接收完整 ",this,nClient);

@@ -168,7 +168,7 @@ CNetClientRecvHttpHLS::CNetClientRecvHttpHLS(NETHANDLE hServer, NETHANDLE hClien
 	int nPos;
 	string strRequestUrl = szIP;
 	nPos = strRequestUrl.find("/", 8);
-	if (nPos > 0)
+	if (nPos > 0 && nPos != string::npos)
 	{
 		memcpy(szRequestM3u8File, szIP + nPos , strlen(szIP) - nPos );
 		requestFileFifo.push((unsigned char*)szRequestM3u8File,strlen(szRequestM3u8File));
@@ -185,7 +185,7 @@ CNetClientRecvHttpHLS::CNetClientRecvHttpHLS(NETHANDLE hServer, NETHANDLE hClien
 	nContentLength = 0; //实际长度
 	nRecvContentLength = 0;//已经收到的长度
 	bRecvHttpHeadFlag = false ;//尚未接收完毕Http 头
-	nSendTsFileTime = ::GetTickCount();
+	nSendTsFileTime = GetTickCount();
 	netBaseNetType = NetBaseNetType_HttpHLSClientRecv;//HLS 主动拉流
 	nHLSRequestFileStatus = HLSRequestFileStatus_NoRequsetFile;
 	bCanRequestM3u8File = true;
@@ -517,7 +517,7 @@ int CNetClientRecvHttpHLS::SendFirstRequst()
 	int            nLength;
 	int            nWriteRet;
 
-	nSendTsFileTime = ::GetTickCount();
+	nSendTsFileTime = GetTickCount();
 	nContentLength = 0; //实际长度
 	nRecvContentLength = 0;//已经收到的长度
  	nNetStart = nNetEnd = netDataCacheLength = nRecvContentLength = 0;
@@ -581,7 +581,7 @@ bool   CNetClientRecvHttpHLS::AddM3u8ToFifo(char* szM3u8Data, int nDataLength)
 	{
 		nPos = strM3u8Data.find("\n", nStart);
 		memset(szLine, 0x00, sizeof(szLine));
-		if (nPos > 0)
+		if (nPos > 0 && nPos != string::npos)
 		{
 			memcpy(szLine, szM3u8Data + nStart, nPos - nStart);
 			nStart = nPos + 1;
@@ -597,7 +597,7 @@ bool   CNetClientRecvHttpHLS::AddM3u8ToFifo(char* szM3u8Data, int nDataLength)
 			memset(szTemp, 0x00, sizeof(szTemp));
 			strLine = szLine;
 			nPos2 = strLine.find("SEQUENCE:", 0);
-			if (nPos2 > 0)
+			if (nPos2 > 0 && nPos2 != string::npos)
 			{
 				memcpy(szTemp, szLine + nPos2 + strlen("SEQUENCE:"), strlen(szLine) - nPos2);
 				nNumberTemp = atoi(szTemp);
@@ -605,7 +605,7 @@ bool   CNetClientRecvHttpHLS::AddM3u8ToFifo(char* szM3u8Data, int nDataLength)
 			else
 			{
 				nPos2 = strLine.find("#EXT", 0);
-				if (nPos2 < 0)
+				if (nPos2 < 0 && nPos2 != string::npos)
 				{
  					if (nOldRequestM3u8Number != nNumberTemp)
 					{
@@ -613,7 +613,7 @@ bool   CNetClientRecvHttpHLS::AddM3u8ToFifo(char* szM3u8Data, int nDataLength)
 
 					  string strOldPath = szRequestM3u8File;
 					  nPos3 = strOldPath.rfind("/", strlen(szRequestM3u8File));
-					  if (nPos3 > 0 && strlen(szSubPath) == 0)
+					  if (nPos3 > 0 && nPos3 != string::npos && strlen(szSubPath) == 0)
 					  {
 						  memset(szSubPath, 0x00, sizeof(szSubPath));
 						  memcpy(szSubPath, szRequestM3u8File, nPos3);

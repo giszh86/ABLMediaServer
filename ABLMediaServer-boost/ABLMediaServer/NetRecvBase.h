@@ -25,6 +25,12 @@ public:
 
    virtual int   SendFirstRequst() = 0;//发送第一个请求
    virtual bool  RequestM3u8File() = 0 ;
+
+   volatile bool          m_bSendCacheAudioFlag;
+   int                    nSpeedCount[2];//速度统计 
+   RtspNetworkType        m_RtspNetworkType;
+   pauseResumeRtpServer   m_pauseResumeRtpServer;
+
    muteAACBufferStruct    muteAACBuffer[8];
    uint64_t               nAddMuteAACBufferOrder;//增加静音的包数量
    void                   AddMuteAACBuffer(); //增加aac静音
@@ -34,7 +40,7 @@ public:
 
    WebRtcCallStruct       webRtcCallStruct;
 
-   void                   GetAACAudioInfo(unsigned char* nAudioData, int nLength);
+   void                   GetAACAudioInfo2(unsigned char* nAudioData, int nLength,int* nSampleRate,int* nChans);
 
    bool                   InsertUUIDtoJson(char* szSrcJSON, char* szUUID);
    char                   szTemp2[string_length_512];
@@ -62,7 +68,7 @@ public:
    volatile uint32_t      m_bWaitIFrameCount;//等待I帧总帧数
    volatile bool          m_bIsRtspRecordURL;//代理拉流时是录像回放的url 
 
-   volatile bool          m_bPauseFlag;//在录像回放时，是否暂停状态
+   volatile bool          m_bPauseFlag;//在录像回放、国标接入时，是否暂停状态
    int                    m_nScale; 
    bool                   ConvertDemainToIPAddress();
    char                   domainName[256]; //域名
@@ -96,20 +102,20 @@ public:
    int                     CalcVideoFrameSpeed(unsigned char* pRtpData,int nLength);//计算视频帧速度
    int                     CalcFlvVideoFrameSpeed(int nVideoPTS,int nMaxValue);
    uint32_t                oldVideoTimestamp;//上一个视频时间戳
-   _rtp_header             rtp_header;//视频时间戳 
+   _rtp_header*            rtp_header;//视频时间戳 
    int                     nVideoFrameSpeedOrder;//视频帧速度序号，要后面的速度才是平稳的帧速度
    volatile bool           bUpdateVideoFrameSpeedFlag;//是否跟新视频帧速度 
 
    int64_t                 nPrintTime;
    void                    SyncVideoAudioTimestamp(); //同步音视频，针对 rtmp ,flv ,ws-flv 
-   int32_t                 flvPS, flvAACDts;
+   int64_t                 videoDts, audioDts;
    int32_t                 nNewAddAudioTimeStamp;
    int                     nUseNewAddAudioTimeStamp;//使用新的音频时间戳次数
    bool                    bUserNewAudioTimeStamp;
 
    char                    m_szShareMediaURL[string_length_2048];//分享出去的地址，比如 /Media/Camera_00001  /live/test_00001 等等 
    int                     nVideoStampAdd;//视频时间戳增量
-   int                     nAsyncAudioStamp;//同步的时间点
+   int64_t                 nAsyncAudioStamp;//同步的时间点
 
    volatile bool           bPushMediaSuccessFlag; //是否成功推流，成功推流了，才能从媒体库中删除
   
@@ -221,8 +227,8 @@ public:
    char                  szReponseTemp[string_length_1024];
 
    bool                    m_bHaveSPSPPSFlag;
-   char                    m_szSPSPPSBuffer[string_length_2048];
-   char                    m_pSpsPPSBuffer[string_length_2048];
+   char                    m_szSPSPPSBuffer[string_length_4096];
+   char                    m_pSpsPPSBuffer[string_length_4096];
    unsigned int            m_nSpsPPSLength;
    int                     sdp_h264_load(uint8_t* data, int bytes, const char* config);
    int                     GetSubFromString(char* szString, char* szStringFlag1, char* szStringFlag2,char* szOutString);

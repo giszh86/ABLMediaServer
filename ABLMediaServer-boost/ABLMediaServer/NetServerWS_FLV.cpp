@@ -79,7 +79,7 @@ CNetServerWS_FLV::CNetServerWS_FLV(NETHANDLE hServer, NETHANDLE hClient, char* s
 	memset(szFlvName, 0x00, sizeof(szFlvName));
 	flvMuxer = NULL;
 
-	flvPS = flvAACDts = 0;
+	videoDts =  0;
 	flvWrite  = NULL ;
 	nWriteRet = 0;
 	nWriteErrorCount = 0;
@@ -157,22 +157,23 @@ int CNetServerWS_FLV::PushAudio(uint8_t* pAudioData, uint32_t nDataLength, char*
 
 void  CNetServerWS_FLV::MuxerVideoFlV(char* codeName, unsigned char* pVideo, int nLength)
 {
-	//没有音频时，才启用计算视频帧速度生成时间戳 ，否则用音频同步后的时间戳
-	nVideoStampAdd = 1000 / mediaCodecInfo.nVideoFrameRate;
+	//只有视频，或者屏蔽音频
+	if (ABL_MediaServerPort.nEnableAudio == 0 || strcmp(mediaCodecInfo.szAudioName, "G711_A") == 0 || strcmp(mediaCodecInfo.szAudioName, "G711_U") == 0)
+		nVideoStampAdd = 1000 / mediaCodecInfo.nVideoFrameRate;
 
 	if (strcmp(codeName, "H264") == 0)
 	{
 		if (flvMuxer)
-			flv_muxer_avc(flvMuxer, pVideo, nLength, flvPS, flvPS);
+			flv_muxer_avc(flvMuxer, pVideo, nLength, videoDts, videoDts);
 	}
 	else if (strcmp(codeName, "H265") == 0)
 	{
 		if (flvMuxer)
-			flv_muxer_hevc(flvMuxer, pVideo, nLength, flvPS, flvPS);
+			flv_muxer_hevc(flvMuxer, pVideo, nLength, videoDts, videoDts);
 	}
 
-	//printf("flvPS = %d \r\n", flvPS);
-	flvPS += nVideoStampAdd;
+	//printf("flvPS = %d \r\n", videoDts);
+	videoDts += nVideoStampAdd;
 }
 
 void  CNetServerWS_FLV::MuxerAudioFlV(char* codeName, unsigned char* pAudio, int nLength)
@@ -180,25 +181,22 @@ void  CNetServerWS_FLV::MuxerAudioFlV(char* codeName, unsigned char* pAudio, int
 	if (flvMuxer)
 	{
 		if (strcmp(mediaCodecInfo.szAudioName, "AAC") == 0)
-			flv_muxer_aac(flvMuxer, pAudio, nLength, flvAACDts, flvAACDts);
+			flv_muxer_aac(flvMuxer, pAudio, nLength, audioDts, audioDts);
 		else if (strcmp(mediaCodecInfo.szAudioName, "MP3") == 0)
-			flv_muxer_mp3(flvMuxer, pAudio, nLength, flvAACDts, flvAACDts);
+			flv_muxer_mp3(flvMuxer, pAudio, nLength, audioDts, audioDts);
 	}
 
 	if (bUserNewAudioTimeStamp == false)
-		flvAACDts += mediaCodecInfo.nBaseAddAudioTimeStamp;
+		audioDts += mediaCodecInfo.nBaseAddAudioTimeStamp;
 	else
 	{
 		nUseNewAddAudioTimeStamp --;
-		flvAACDts += nNewAddAudioTimeStamp;
+		audioDts += nNewAddAudioTimeStamp;
 		if (nUseNewAddAudioTimeStamp <= 0)
 		{
 			bUserNewAudioTimeStamp = false;
 		}
 	}
-
-	//AAC 的时间增量计算 ，以海康的16K采样为例，AAC每1024字节编码一次，那么(1024 / 16000 * 2) * 1000 = 32 毫秒 ，但是海康往往2帧发送一次 ，那么两帧递增 32 * 2 = 64 毫秒 ，64 就是海康摄像头 DTS ,PTS 的增量 
-	// 以大华的8K采样为例，AAC每1024字节编码一次，那么(1024 / 8000 * 2) * 1000 = 64 毫秒 ，但是大华往往2帧发送一次 ，那么两帧递增 64 * 2 = 128 毫秒 ，128 就是大华摄像头 DTS ,PTS 的增量 
  
 	//同步音视频 
 	SyncVideoAudioTimestamp();
@@ -319,6 +317,12 @@ int CNetServerWS_FLV::ProcessNetData()
 	unsigned short nLength;
 	unsigned char  nCommand = 0x00 ;
 	unsigned char szPong[4] = { 0x8A,0x80,0x00,0x00 };
+
+	if (netDataCacheLength > 512)
+	{
+		WriteLog(Log_Debug, "CNetServerWS_FLV = %X , nClient = %llu ,netDataCacheLength = %d, 发送过来的url数据长度非法 ,立即删除 ", this, nClient, netDataCacheLength);
+		DeleteNetRevcBaseClient(nClient);
+	}
 
 	if (nWebSocketCommStatus == WebSocketCommStatus_Connect)
 	{//WebSocket协议握手，检查
@@ -487,7 +491,7 @@ bool  CNetServerWS_FLV::Create_WS_FLV_Handle()
 
 		//记下媒体源
 		SplitterAppStream(szFlvName);
-		sprintf(m_addStreamProxyStruct.url, "ws://localhost:%d/%s/%s.flv", ABL_MediaServerPort.nWSFlvPort, m_addStreamProxyStruct.app, m_addStreamProxyStruct.stream);
+		sprintf(m_addStreamProxyStruct.url, "ws://%s:%d/%s/%s.flv", ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.nWSFlvPort, m_addStreamProxyStruct.app, m_addStreamProxyStruct.stream);
 
 		wsParse.ParseSipString((char*)netDataCache);
 		char szWebSocket[64] = { 0 };

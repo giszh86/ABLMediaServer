@@ -47,7 +47,7 @@ CNetClientHttp::CNetClientHttp(NETHANDLE hServer, NETHANDLE hClient, char* szIP,
 	string strResponeURL = szClientIP;
 	int nPos = 0;
 	nPos = strResponeURL.find("/", 10);
-	if (nPos > 0)
+	if (nPos > 0 && nPos != string::npos)
 	{
 		memset(szResponseURL, 0x00, sizeof(szResponseURL));
 		memcpy(szResponseURL, szClientIP + nPos, strlen(szClientIP) - nPos);
@@ -120,9 +120,6 @@ int CNetClientHttp::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, char* s
 	std::lock_guard<std::mutex> lock(NetClientHTTPLock);
 
 	m_videoFifo.push(pVideoData, nDataLength);
-
-	//加入线程池，请求执行
-	MessageSendThreadPool->InsertIntoTask(nClient);
 
 	return 0;
 }

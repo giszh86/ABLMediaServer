@@ -143,9 +143,6 @@ int CStreamRecordFMP4::PushAudio(uint8_t* pAudioData, uint32_t nDataLength, char
 	if (ABL_MediaServerPort.nEnableAudio == 0 || !bRunFlag)
 		return -1;
 
-	if (strcmp(mediaCodecInfo.szAudioName, "AAC") != 0)
-		return 0;
-
 	m_audioFifo.push(pAudioData, nDataLength);
 
 	return 0;
@@ -163,7 +160,8 @@ int CStreamRecordFMP4::SendVideo()
 	if (!bCheckHttpMP4Flag)
 		return -1;
 
-	nVideoStampAdd = 1000 / mediaCodecInfo.nVideoFrameRate;
+  if (ABL_MediaServerPort.nEnableAudio == 0)
+	 nVideoStampAdd = 1000 / mediaCodecInfo.nVideoFrameRate;
 
 	videoDts += nVideoStampAdd;
 
@@ -182,7 +180,7 @@ int CStreamRecordFMP4::SendAudio()
 {
 	std::lock_guard<std::mutex> lock(mediaMP4MapLock);
 
-	if (ABL_MediaServerPort.nEnableAudio == 0 || strcmp(mediaCodecInfo.szAudioName, "AAC") != 0 || !bCheckHttpMP4Flag)
+	if (ABL_MediaServerPort.nEnableAudio == 0 || !bCheckHttpMP4Flag)
 		return 0 ;
    
  	unsigned char* pData = NULL;
@@ -225,19 +223,6 @@ int CStreamRecordFMP4::SendAudio()
 
 			audioDts += mediaCodecInfo.nBaseAddAudioTimeStamp;
 
-			//500毫秒同步一次 
-			if (GetTickCount() - nAsyncAudioStamp >= 500)
-			{
-				if (videoDts < audioDts)
-				{
-					nVideoStampAdd = (1000 / mediaCodecInfo.nVideoFrameRate) + 5;
-				}
-				else if (videoDts > audioDts)
-				{
-					nVideoStampAdd = (1000 / mediaCodecInfo.nVideoFrameRate) - 5;
-				}
-				nAsyncAudioStamp = GetTickCount();
-			}
 		}
 		else if (ABL_MediaServerPort.nEnableAudio == 1 && strcmp(mediaCodecInfo.szAudioName, "G711_A") == 0 || strcmp(mediaCodecInfo.szAudioName, "G711_U") == 0)
 		{
@@ -257,6 +242,9 @@ int CStreamRecordFMP4::SendAudio()
 
 			audioDts += nLength / 8 ;
 		}
+
+		//同步音视频 
+		SyncVideoAudioTimestamp();
 
 		m_audioFifo.pop_front();
 	}

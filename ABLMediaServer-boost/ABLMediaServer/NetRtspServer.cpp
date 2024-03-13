@@ -4,6 +4,7 @@
 	   1 、RTSP服务器端的接收码流、
 	   2 、RTSP码流发送 TCP 方式发送 rtp 
 	   3、增加支持UDP方式发送 rtp 数据 2023-04-14
+	   4、增加支持UDP方式推流接入rtp码流 2024-02-14 
 日期    2021-03-29
 作者    罗家兄弟
 QQ      79941308
@@ -53,19 +54,14 @@ void RTP_DEPACKET_CALL_METHOD rtppacket_callback(_rtp_depacket_cb* cb)
 		{
 			if (pUserHandle->netBaseNetType == NetBaseNetType_RtspServerRecvPush && pUserHandle->pMediaSource != NULL)
 			{
-				if (pUserHandle->m_bHaveSPSPPSFlag && pUserHandle->m_nSpsPPSLength > 0)
+				if (pUserHandle->pMediaSource->nSPSPPSLength == 0 && pUserHandle->m_bHaveSPSPPSFlag && pUserHandle->m_nSpsPPSLength > 0)
 				{
-					if (pUserHandle->CheckVideoIsIFrame(pUserHandle->szVideoName, cb->data, cb->datasize))
-					{
-						memmove(cb->data + pUserHandle->m_nSpsPPSLength, cb->data, cb->datasize);
-						memcpy(cb->data, pUserHandle->m_pSpsPPSBuffer, pUserHandle->m_nSpsPPSLength);
-						pUserHandle->pMediaSource->PushVideo(cb->data, cb->datasize + pUserHandle->m_nSpsPPSLength, pUserHandle->szVideoName);
-
-						//WriteLog(Log_Debug, "CNetRtspServer=%X ,nClient = %llu, rtppacket_callback() 回调I帧  ", pUserHandle, pUserHandle->nClient);
-					}else
-						pUserHandle->pMediaSource->PushVideo(cb->data, cb->datasize, pUserHandle->szVideoName);
-				}else 
- 				  pUserHandle->pMediaSource->PushVideo(cb->data, cb->datasize, pUserHandle->szVideoName);
+					pUserHandle->pMediaSource->nSPSPPSLength = pUserHandle->m_nSpsPPSLength;
+					memcpy(pUserHandle->pMediaSource->pSPSPPSBuffer, pUserHandle->m_pSpsPPSBuffer, pUserHandle->m_nSpsPPSLength);
+   					pUserHandle->pMediaSource->PushVideo((unsigned char*)pUserHandle->m_pSpsPPSBuffer, pUserHandle->m_nSpsPPSLength, pUserHandle->szVideoName);
+				}
+				 
+ 				pUserHandle->pMediaSource->PushVideo(cb->data, cb->datasize, pUserHandle->szVideoName);
 
 				 // WriteLog(Log_Debug, "CNetRtspServer=%X ,nClient = %llu, rtp 解包回调 %02X %02X %02X %02X %02X, timeStamp = %d ,datasize = %d ", pUserHandle, pUserHandle->nClient, cb->data[0], cb->data[1], cb->data[2], cb->data[3], cb->data[4],cb->timestamp,cb->datasize);
 
@@ -242,6 +238,9 @@ void  CNetRtspServer::AddADTSHeadToAAC(unsigned char* szData, int nAACLength)
 
 CNetRtspServer::CNetRtspServer(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort,char* szShareMediaURL)
 {
+	nVdeoFrameNumber = 0;
+	nAudioFrameNumber = 0;
+
 	nRecvRtpPacketCount = nMaxRtpLength = 0;
 	memset(szAudioName,0x00,sizeof(szAudioName));
 	currentSession = Session;
@@ -382,6 +381,11 @@ CNetRtspServer::~CNetRtspServer()
 	m_videoFifo.FreeFifo();
 	m_audioFifo.FreeFifo();
 
+	if(nServerVideoUDP[0] > 0 )
+	  pDisconnectBaseNetFifo.push((unsigned char*)&nServerVideoUDP[0], sizeof(nServerVideoUDP[0]));
+	if (nServerAudioUDP[0] > 0)
+		pDisconnectBaseNetFifo.push((unsigned char*)&nServerAudioUDP[0], sizeof(nServerAudioUDP[0]));
+
 	if (bPushMediaSuccessFlag && netBaseNetType == NetBaseNetType_RtspServerRecvPush && pMediaSource != NULL )
 		DeleteMediaStreamSource(szMediaSourceURL);
 
@@ -436,9 +440,10 @@ int CNetRtspServer::SendVideo()
 {
 	nRecvDataTimerBySecond = 0;
 
+  	nVideoStampAdd = 90000 / mediaCodecInfo.nVideoFrameRate;
+
 	unsigned char* pData = NULL;
 	int            nLength = 0;
-	uint32_t       nVdeoFrameNumber = 0;
 	if ((pData = m_videoFifo.pop(&nLength)) != NULL)
 	{
  		inputVideo.data = pData;
@@ -449,10 +454,14 @@ int CNetRtspServer::SendVideo()
 			inputVideo.data = pData + 4;
 			inputVideo.datasize = nLength - 4;
 			memcpy((char*)&nVdeoFrameNumber, pData, sizeof(uint32_t));
-			inputVideo.timestamp = nVdeoFrameNumber * 3600 ;
+			inputVideo.timestamp = nVdeoFrameNumber * nVideoStampAdd;
+		}
+		else
+		{//实时流
+			nVdeoFrameNumber ++;
+			inputVideo.timestamp = nVdeoFrameNumber * nVideoStampAdd;
 		}
 		rtp_packet_input(&inputVideo);
-
 		m_videoFifo.pop_front();
 	}
 
@@ -464,7 +473,6 @@ int CNetRtspServer::SendAudio()
 	nRecvDataTimerBySecond = 0;
 	unsigned char* pData = NULL;
 	int            nLength = 0;
-	uint32_t       nAudioFrameNumber = 0;
 	if ((pData = m_audioFifo.pop(&nLength)) != NULL)
 	{
 		inputAudio.data = pData;
@@ -490,6 +498,15 @@ int CNetRtspServer::SendAudio()
 			else
 			  inputAudio.timestamp = nAudioFrameNumber * 320;
 		}
+		else
+		{//实况
+			nAudioFrameNumber ++;
+			if (strcmp(mediaCodecInfo.szAudioName, "AAC") == 0)
+				inputAudio.timestamp = nAudioFrameNumber * 1024;
+			else if(strcmp(mediaCodecInfo.szAudioName,"G711_A") == 0 || strcmp(mediaCodecInfo.szAudioName, "G711_U") == 0)
+				inputAudio.timestamp = nAudioFrameNumber * 320;
+		}
+
 		rtp_packet_input(&inputAudio);
 
 		m_audioFifo.pop_front();
@@ -1096,6 +1113,48 @@ bool CNetRtspServer::GetRtspSDPFromMediaStreamSource(RtspSDPContentStruct sdpCon
 	return true;
 }
 
+//创建rtp解包
+bool   CNetRtspServer::createTcpRtpDecode()
+{
+	if (hRtpHandle[0] != 0 || hRtpHandle[1] != 0)
+		return false;
+
+	int nRet2 = 0;
+	if (strlen(szVideoName) > 0)
+	{
+		nRet2 = rtp_depacket_start(rtppacket_callback, (void*)this, (uint32_t*)&hRtpHandle[0]);
+		if (strcmp(szVideoName, "H264") == 0)
+			rtp_depacket_setpayload(hRtpHandle[0], nVideoPayload, e_rtpdepkt_st_h264);
+		else if (strcmp(szVideoName, "H265") == 0)
+			rtp_depacket_setpayload(hRtpHandle[0], nVideoPayload, e_rtpdepkt_st_h265);
+	}
+
+	nRet2 = rtp_depacket_start(rtppacket_callback, (void*)this, (uint32_t*)&hRtpHandle[1]);
+
+	if (strcmp(szAudioName, "G711_A") == 0)
+	{
+		rtp_depacket_setpayload(hRtpHandle[1], nAudioPayload, e_rtpdepkt_st_g711a);
+	}
+	else if (strcmp(szAudioName, "G711_U") == 0)
+	{
+		rtp_depacket_setpayload(hRtpHandle[1], nAudioPayload, e_rtpdepkt_st_g711u);
+	}
+	else if (strcmp(szAudioName, "AAC") == 0)
+	{
+		rtp_depacket_setpayload(hRtpHandle[1], nAudioPayload, e_rtpdepkt_st_aac);
+	}
+	else if (strstr(szAudioName, "G726LE") != NULL)
+	{
+		rtp_depacket_setpayload(hRtpHandle[1], nAudioPayload, e_rtpdepkt_st_g726le);
+	}
+	else if (strstr(szAudioName, "MP3") != NULL)
+	{
+		rtp_depacket_setpayload(hRtpHandle[1], nAudioPayload, e_rtpdepkt_st_mp3);
+	}
+
+	return true;
+}
+
 //处理rtsp数据
 void  CNetRtspServer::InputRtspData(unsigned char* pRecvData, int nDataLength)
 {
@@ -1195,41 +1254,13 @@ void  CNetRtspServer::InputRtspData(unsigned char* pRecvData, int nDataLength)
  			memcpy(pMediaSource->pSPSPPSBuffer, m_pSpsPPSBuffer, m_nSpsPPSLength);
 			pMediaSource->nSPSPPSLength = m_nSpsPPSLength;
  		}
- 
-		int nRet2 = 0;
-		if (strlen(szVideoName) > 0)
-		{
-		   nRet2 = rtp_depacket_start(rtppacket_callback, (void*)this, (uint32_t*)&hRtpHandle[0]);
-		   if (strcmp(szVideoName, "H264") == 0)
-			 rtp_depacket_setpayload(hRtpHandle[0], nVideoPayload, e_rtpdepkt_st_h264);
-		   else if (strcmp(szVideoName, "H265") == 0)
-			 rtp_depacket_setpayload(hRtpHandle[0], nVideoPayload, e_rtpdepkt_st_h265);
- 		}
 
-		nRet2 = rtp_depacket_start(rtppacket_callback, (void*)this, (uint32_t*)&hRtpHandle[1]);
+		if (strcmp(szVideoName, "H265") == 0)
+		{//获取h265的VPS、SPS、PPS 
+			GetH265VPSSPSPPS(szRtspContentSDP, nVideoPayload);
+		}
 
-		if (strcmp(szAudioName, "G711_A") == 0)
-		{
-			rtp_depacket_setpayload(hRtpHandle[1], nAudioPayload, e_rtpdepkt_st_g711a);
-		}
-		else if (strcmp(szAudioName, "G711_U") == 0)
-		{
-			rtp_depacket_setpayload(hRtpHandle[1], nAudioPayload, e_rtpdepkt_st_g711u);
-		}
-		else if (strcmp(szAudioName, "AAC") == 0)
-		{
-			rtp_depacket_setpayload(hRtpHandle[1], nAudioPayload, e_rtpdepkt_st_aac);
-		}
-		else if (strstr(szAudioName, "G726LE") != NULL)
-		{
-			rtp_depacket_setpayload(hRtpHandle[1], nAudioPayload, e_rtpdepkt_st_g726le);
-		}
-		else if (strstr(szAudioName, "MP3") != NULL)
-		{
-			rtp_depacket_setpayload(hRtpHandle[1], nAudioPayload, e_rtpdepkt_st_mp3);
-		}		
-
-		//确定ADTS头相关参数
+		//确定 AAC 音频采样频率的序号
 		sample_index = 11;
 		for (int i = 0; i < 13; i++)
 		{
@@ -1238,11 +1269,6 @@ void  CNetRtspServer::InputRtspData(unsigned char* pRecvData, int nDataLength)
 				sample_index = i;
 				break;
 			}
-		} 
-
-		if (strcmp(szVideoName, "H265") == 0)
-		{//获取h265的VPS、SPS、PPS 
-			GetH265VPSSPSPPS(szRtspContentSDP, nVideoPayload);
 		}
 
 		//把视频，音频相关信息拷贝给媒体源
@@ -1256,6 +1282,7 @@ void  CNetRtspServer::InputRtspData(unsigned char* pRecvData, int nDataLength)
 	else if (memcmp(pRecvData, "DESCRIBE", 8) == 0 && strstr((char*)pRecvData, "\r\n\r\n") != NULL)
 	{
 		netBaseNetType = NetBaseNetType_RtspServerSendPush; //RTSP 服务器，转发客户端的推上来的码流  
+		nVideoStampAdd = 90000 / 25;
 
 		memset(szCSeq, 0x00, sizeof(szCSeq));
 		GetFieldValue("CSeq", szCSeq);
@@ -1329,7 +1356,7 @@ void  CNetRtspServer::InputRtspData(unsigned char* pRecvData, int nDataLength)
 			DeleteNetRevcBaseClient(nClient);
 			return;
 		}
-		sprintf(szResponseBuffer, "RTSP/1.0 200 OK\r\nContent-Length: %d\r\nContent-Type: application/sdp\r\nServer: %s\r\nCSeq: %s\r\nSession: ABLMeidaServer_%llu\r\nx-Accept-Dynamic-Rate: 1\r\nx-Accept-Retransmit: our-retransmit\r\n\r\n%s", strlen(szRtspSDPContent), MediaServerVerson, szCSeq, currentSession, szRtspSDPContent);
+		sprintf(szResponseBuffer, "RTSP/1.0 200 OK\r\nContent-Length: %d\r\nContent-Type: application/sdp\r\nContent-Base: %s/\r\nServer: %s\r\nCSeq: %s\r\nSession: ABLMeidaServer_%llu\r\nx-Accept-Dynamic-Rate: 1\r\nx-Accept-Retransmit: our-retransmit\r\n\r\n%s", strlen(szRtspSDPContent), RtspProtectArray[0].szRtspURL,MediaServerVerson, szCSeq, currentSession, szRtspSDPContent);
 		nSendRet = XHNetSDK_Write(nClient, (unsigned char*)szResponseBuffer, strlen(szResponseBuffer), 1);
 		if (nSendRet != 0)
 		{
@@ -1348,10 +1375,7 @@ void  CNetRtspServer::InputRtspData(unsigned char* pRecvData, int nDataLength)
 
 		if ((strlen(szTransport) > 0 && strstr(szTransport, "RTP/AVP/TCP") != NULL) )
 		{//TCP
-			if (netBaseNetType == NetBaseNetType_RtspServerSendPush)
-			{
-			  m_RtspNetworkType = RtspNetworkType_TCP;
- 			}
+ 			  m_RtspNetworkType = RtspNetworkType_TCP;
 		}else if ( (strlen(szTransport) > 0 && strstr(szTransport, "RTP/AVP/UDP") != NULL) || (strlen(szTransport) > 0 && strstr(szTransport, "RTP/AVP") != NULL))
 		{//UDP
 			if (netBaseNetType == NetBaseNetType_RtspServerSendPush)
@@ -1361,97 +1385,85 @@ void  CNetRtspServer::InputRtspData(unsigned char* pRecvData, int nDataLength)
 			}
 			else if (netBaseNetType == NetBaseNetType_RtspServerRecvPush)
 			{//udp 方式推流
-				sprintf(szResponseBuffer, "RTSP/1.0 461 Unsupported transport\r\nServer: %s\r\nCSeq: %s\r\n\r\n", MediaServerVerson, szCSeq);
-				nSendRet = XHNetSDK_Write(nClient, (unsigned char*)szResponseBuffer, strlen(szResponseBuffer), 1);
-				WriteLog(Log_Debug, "rtsp推流不支持UDP方式，只支持TCP方式推流 %s ", RtspProtectArray[RtspProtectArrayOrder].szRtspURL);
-
-				DeleteNetRevcBaseClient(nClient);
-				return;
+				m_RtspNetworkType = RtspNetworkType_UDP;
+				GetAVClientPortByTranspot(szTransport);
 			}
 		}
  
-		if(netBaseNetType == NetBaseNetType_RtspServerRecvPush)//rtsp 的tcp方式推流
-		  sprintf(szResponseBuffer, "RTSP/1.0 200 OK\r\nServer: %s\r\nCSeq: %s\r\nCache-Control: no-cache\r\nSession: ABLMediaServer_%llu\r\nDate: Tue, 13 Nov 2019 02:49:48 GMT\r\nExpires: Tue, 13 Nov 2018 02:49:48 GMT\r\nTransport: %s\r\n\r\n", MediaServerVerson, szCSeq, currentSession, szTransport);
+		if (netBaseNetType == NetBaseNetType_RtspServerRecvPush)//rtsp 的tcp、udp 方式推流
+		{
+			if (m_RtspNetworkType == RtspNetworkType_TCP)//tcp方式推流
+			{
+			  createTcpRtpDecode();
+		      sprintf(szResponseBuffer, "RTSP/1.0 200 OK\r\nServer: %s\r\nCSeq: %s\r\nCache-Control: no-cache\r\nSession: ABLMediaServer_%llu\r\nDate: Tue, 13 Nov 2019 02:49:48 GMT\r\nExpires: Tue, 13 Nov 2018 02:49:48 GMT\r\nTransport: %s\r\n\r\n", MediaServerVerson, szCSeq, currentSession, szTransport);
+			}
+			else if (m_RtspNetworkType = RtspNetworkType_UDP)
+			{//udp 方式推流
+				responseUdpSetup();
+				CNetRtspServerUDP* pNetRtspServerUDP = NULL;
+				if (nSetupOrder == 1)
+				{
+				    if(strlen(szVideoName) > 0 && nServerVideoUDP[0] > 0 )
+					{//有视频
+						boost::shared_ptr<CNetRevcBase> pClientVideo = CreateNetRevcBaseClient(NetBaseNetType_RtspServerRecvPushVideo,0, nServerVideoUDP[0], "", 0, szMediaSourceURL);
+						if (pClientVideo != NULL )
+						{
+							if (m_bHaveSPSPPSFlag && m_nSpsPPSLength > 0)
+							{//拷贝sps\pps
+								memcpy(pClientVideo->m_pSpsPPSBuffer, m_pSpsPPSBuffer, m_nSpsPPSLength);
+								pClientVideo->m_nSpsPPSLength = m_nSpsPPSLength;
+								pClientVideo->m_bHaveSPSPPSFlag = true;
+							}
+							pClientVideo->hParent = nClient;
+							pNetRtspServerUDP = (CNetRtspServerUDP*)pClientVideo.get();
+							if (pNetRtspServerUDP && pMediaSource != NULL)
+								pNetRtspServerUDP->CreateVideoRtpDecode(pMediaSource,szVideoName, nVideoPayload);
+						}
+					}
+					else if (strlen(szVideoName) == 0 && strlen(szAudioName) > 0 && nServerAudioUDP[0] > 0)
+					{//只有音频
+						boost::shared_ptr<CNetRevcBase> pClientAudio = CreateNetRevcBaseClient(NetBaseNetType_RtspServerRecvPushAudio, 0, nServerAudioUDP[0], "", 0, szMediaSourceURL);
+						if (pClientAudio != NULL)
+						{
+							pClientAudio->hParent = nClient;
+							pNetRtspServerUDP = (CNetRtspServerUDP*)pClientAudio.get();
+							if (pNetRtspServerUDP && pMediaSource )
+								pNetRtspServerUDP->CreateAudioRtpDecode(pMediaSource,szAudioName, nAudioPayload, nChannels, nSampleRate, sample_index);
+						}
+					}
+				}
+				else if (nSetupOrder == 2)
+				{
+					if (strlen(szAudioName) > 0 && nServerAudioUDP[0] > 0 )
+					{
+						boost::shared_ptr<CNetRevcBase> pClientAudio = CreateNetRevcBaseClient(NetBaseNetType_RtspServerRecvPushAudio,0, nServerAudioUDP[0], "", 0, szMediaSourceURL);
+						if (pClientAudio != NULL)
+						{
+							pClientAudio->hParent = nClient;
+							pNetRtspServerUDP = (CNetRtspServerUDP*)pClientAudio.get();
+							if (pNetRtspServerUDP && pMediaSource)
+								pNetRtspServerUDP->CreateAudioRtpDecode(pMediaSource,szAudioName, nAudioPayload, nChannels, nSampleRate, sample_index);
+						}
+					}
+				}
+			}
+		}
 		else if (netBaseNetType == NetBaseNetType_RtspServerSendPush)
-		{//rtps 播放 
+		{//rtsp 播放 
 			if (m_RtspNetworkType == RtspNetworkType_TCP)
 			{
  				sprintf(szResponseBuffer, "RTSP/1.0 200 OK\r\nServer: %s\r\nCSeq: %s\r\nCache-Control: no-cache\r\nSession: ABLMediaServer_%llu\r\nDate: Tue, 13 Nov 2019 02:49:48 GMT\r\nExpires: Tue, 13 Nov 2018 02:49:48 GMT\r\nTransport: %s\r\n\r\n", MediaServerVerson, szCSeq, currentSession, szTransport);
  			}
 			else if (m_RtspNetworkType == RtspNetworkType_UDP)
 			{
-				int nRet1 = 0 , nRet2 = 0;
-				while (true)
-				{
-				  nRtpPort += 2;
-				  if (nSetupOrder == 1)
-				  {//第一次Setup
-					  if (strlen(mediaCodecInfo.szVideoName) > 0)
-					  {//有视频
-						  nRet1 = XHNetSDK_BuildUdp(NULL, nRtpPort, NULL, &nServerVideoUDP[0], onread, 1);//rtp
-						  nRet2 = XHNetSDK_BuildUdp(NULL, nRtpPort + 1, NULL, &nServerVideoUDP[1], onread, 1);//rtcp
-						  if (nRet1 == 0 && nRet2 == 0)
-							  break;
-						  if (nRet1 != 0)
-							  XHNetSDK_DestoryUdp(nServerVideoUDP[0]);
-						  if (nRet2 != 0)
-							  XHNetSDK_DestoryUdp(nServerVideoUDP[1]);
-					  }
-					  else
-					  {//只有音频
-						  nRet1 = XHNetSDK_BuildUdp(NULL, nRtpPort, NULL, &nServerAudioUDP[0], onread, 1);//rtp
-						  nRet2 = XHNetSDK_BuildUdp(NULL, nRtpPort + 1, NULL, &nServerAudioUDP[1], onread, 1);//rtcp
-						  if (nRet1 == 0 && nRet2 == 0)
-							  break;
-						  if (nRet1 != 0)
-							  XHNetSDK_DestoryUdp(nServerAudioUDP[0]);
-						  if (nRet2 != 0)
-							  XHNetSDK_DestoryUdp(nServerAudioUDP[1]);
-					  }
-				  }
-				  else if (nSetupOrder == 2)
-				  {//音频
-					  nRet1 = XHNetSDK_BuildUdp(NULL, nRtpPort , NULL, &nServerAudioUDP[0], onread, 1);//rtp
-					  nRet2 = XHNetSDK_BuildUdp(NULL, nRtpPort + 1, NULL, &nServerAudioUDP[1], onread, 1);//rtcp
-					  if (nRet1 == 0 && nRet2 == 0)
-						  break;
-					  if (nRet1 != 0)
-						  XHNetSDK_DestoryUdp(nServerAudioUDP[0]);
-					  if (nRet2 != 0)
-						  XHNetSDK_DestoryUdp(nServerAudioUDP[1]);
-				  }
-				}
-
-				if (nSetupOrder == 1)
-				{//第一次Setup
-					if (strlen(mediaCodecInfo.szVideoName) > 0)
-					{//有视频
-					  nVideoServerPort[0] = nRtpPort;
-					  nVideoServerPort[1] = nRtpPort + 1;
-					  sprintf(szResponseBuffer, "RTSP/1.0 200 OK\r\nServer: %s\r\nCSeq: %s\r\nCache-Control: no-cache\r\nSession: ABLMediaServer_%llu\r\nDate: Tue, 13 Nov 2019 02:49:48 GMT\r\nExpires: Tue, 13 Nov 2018 02:49:48 GMT\r\nTransport: RTP/AVP;unicast;client_port=%d-%d;server_port=%d-%d\r\n\r\n", MediaServerVerson, szCSeq, currentSession, nVideoClientPort[0], nVideoClientPort[1], nVideoServerPort[0], nVideoServerPort[1]);
-					}
-					else
-					{//只有音频 
-						nAudiServerPort[0] = nRtpPort;
-						nAudiServerPort[1] = nRtpPort + 1;
-						sprintf(szResponseBuffer, "RTSP/1.0 200 OK\r\nServer: %s\r\nCSeq: %s\r\nCache-Control: no-cache\r\nSession: ABLMediaServer_%llu\r\nDate: Tue, 13 Nov 2019 02:49:48 GMT\r\nExpires: Tue, 13 Nov 2018 02:49:48 GMT\r\nTransport: RTP/AVP;unicast;client_port=%d-%d;server_port=%d-%d\r\n\r\n", MediaServerVerson, szCSeq, currentSession, nAudioClientPort[0], nAudioClientPort[1], nAudiServerPort[0], nAudiServerPort[1]);
-					}
-				}
-				else if (nSetupOrder == 2)
-				{//有音频
-					nAudiServerPort[0] = nRtpPort;
-					nAudiServerPort[1] = nRtpPort + 1;
-					sprintf(szResponseBuffer, "RTSP/1.0 200 OK\r\nServer: %s\r\nCSeq: %s\r\nCache-Control: no-cache\r\nSession: ABLMediaServer_%llu\r\nDate: Tue, 13 Nov 2019 02:49:48 GMT\r\nExpires: Tue, 13 Nov 2018 02:49:48 GMT\r\nTransport: RTP/AVP;unicast;client_port=%d-%d;server_port=%d-%d\r\n\r\n", MediaServerVerson, szCSeq, currentSession, nAudioClientPort[0], nAudioClientPort[1], nAudiServerPort[0], nAudiServerPort[1]);
-				}
-
-				//rtp、rtcp 端口 翻转
-				if (nRtpPort >= 64000)
-					nRtpPort = 55000;
+				responseUdpSetup();
  			}
 		}
 		nSendRet = XHNetSDK_Write(nClient, (unsigned char*)szResponseBuffer, strlen(szResponseBuffer), 1);
 		if (nSendRet != 0)
 			pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
+
+		WriteLog(Log_Debug, "Setup 回复 nClient = %llu , szResponseBuffer = \r\n%s", nClient, szResponseBuffer);
   	}
 	else if (memcmp(pRecvData, "RECORD", 6) == 0 && strstr((char*)pRecvData, "\r\n\r\n") != NULL)
 	{
@@ -2079,6 +2091,13 @@ bool  CNetRtspServer::GetAVClientPortByTranspot(char* szTransport)
 	char   szPort1[string_length_512] = { 0 };
 	char   szPort2[string_length_512] = { 0 };
 	nPos1 = strTransport.find("client_port=", 0);
+	char   szVideoName2[256] = { 0 };
+
+	if (netBaseNetType == NetBaseNetType_RtspServerSendPush)
+		strcpy(szVideoName2, mediaCodecInfo.szVideoName);
+	else
+		strcpy(szVideoName2, szVideoName);
+
 	if (nPos1 > 0)
 	{
 		nPos2 = strTransport.find("-", nPos1);
@@ -2088,7 +2107,7 @@ bool  CNetRtspServer::GetAVClientPortByTranspot(char* szTransport)
 			memcpy(szPort2, szTransport + nPos2 + 1, strlen(szTransport) - nPos2 - 1);
 			if (nSetupOrder == 0)
 			{//第一次Setup
-				if (strlen(mediaCodecInfo.szVideoName) > 0)
+  				if (strlen(szVideoName2) > 0)
 				{//有视频
 					nVideoClientPort[0] = atoi(szPort1);
 					nVideoClientPort[1] = atoi(szPort2);
@@ -2119,4 +2138,85 @@ bool  CNetRtspServer::GetAVClientPortByTranspot(char* szTransport)
 		return true ;
 	else 
 	    return false;
+}
+
+bool  CNetRtspServer::responseUdpSetup()
+{
+	char szVideoName2[256] = { 0 };
+	int nRet1 = 0, nRet2 = 0;
+	if (netBaseNetType == NetBaseNetType_RtspServerRecvPush)
+		strcpy(szVideoName2, szVideoName);
+	else if (netBaseNetType == NetBaseNetType_RtspServerSendPush)
+		strcpy(szVideoName2, mediaCodecInfo.szVideoName);
+	else
+		return false;
+
+	while (true)
+	{
+		nRtpPort += 2;
+		if (nSetupOrder == 1)
+		{//第一次Setup
+			if (strlen(szVideoName2) > 0)
+			{//有视频
+				nRet1 = XHNetSDK_BuildUdp(NULL, nRtpPort, NULL, &nServerVideoUDP[0], onread, 1);//rtp
+				nRet2 = XHNetSDK_BuildUdp(NULL, nRtpPort + 1, NULL, &nServerVideoUDP[1], onread, 1);//rtcp
+				if (nRet1 == 0 && nRet2 == 0)
+					break;
+				if (nRet1 != 0)
+					XHNetSDK_DestoryUdp(nServerVideoUDP[0]);
+				if (nRet2 != 0)
+					XHNetSDK_DestoryUdp(nServerVideoUDP[1]);
+			}
+			else
+			{//只有音频
+				nRet1 = XHNetSDK_BuildUdp(NULL, nRtpPort, NULL, &nServerAudioUDP[0], onread, 1);//rtp
+				nRet2 = XHNetSDK_BuildUdp(NULL, nRtpPort + 1, NULL, &nServerAudioUDP[1], onread, 1);//rtcp
+				if (nRet1 == 0 && nRet2 == 0)
+					break;
+				if (nRet1 != 0)
+					XHNetSDK_DestoryUdp(nServerAudioUDP[0]);
+				if (nRet2 != 0)
+					XHNetSDK_DestoryUdp(nServerAudioUDP[1]);
+			}
+		}
+		else if (nSetupOrder == 2)
+		{//音频
+			nRet1 = XHNetSDK_BuildUdp(NULL, nRtpPort, NULL, &nServerAudioUDP[0], onread, 1);//rtp
+			nRet2 = XHNetSDK_BuildUdp(NULL, nRtpPort + 1, NULL, &nServerAudioUDP[1], onread, 1);//rtcp
+			if (nRet1 == 0 && nRet2 == 0)
+				break;
+			if (nRet1 != 0)
+				XHNetSDK_DestoryUdp(nServerAudioUDP[0]);
+			if (nRet2 != 0)
+				XHNetSDK_DestoryUdp(nServerAudioUDP[1]);
+		}
+	}
+
+	if (nSetupOrder == 1)
+	{//第一次Setup
+		if (strlen(szVideoName2) > 0)
+		{//有视频
+			nVideoServerPort[0] = nRtpPort;
+			nVideoServerPort[1] = nRtpPort + 1;
+			sprintf(szResponseBuffer, "RTSP/1.0 200 OK\r\nServer: %s\r\nCSeq: %s\r\nCache-Control: no-cache\r\nSession: ABLMediaServer_%llu\r\nDate: Tue, 13 Nov 2019 02:49:48 GMT\r\nExpires: Tue, 13 Nov 2018 02:49:48 GMT\r\nTransport: RTP/AVP;unicast;client_port=%d-%d;server_port=%d-%d\r\n\r\n", MediaServerVerson, szCSeq, currentSession, nVideoClientPort[0], nVideoClientPort[1], nVideoServerPort[0], nVideoServerPort[1]);
+		}
+		else
+		{//只有音频 
+			nAudiServerPort[0] = nRtpPort;
+			nAudiServerPort[1] = nRtpPort + 1;
+			sprintf(szResponseBuffer, "RTSP/1.0 200 OK\r\nServer: %s\r\nCSeq: %s\r\nCache-Control: no-cache\r\nSession: ABLMediaServer_%llu\r\nDate: Tue, 13 Nov 2019 02:49:48 GMT\r\nExpires: Tue, 13 Nov 2018 02:49:48 GMT\r\nTransport: RTP/AVP;unicast;client_port=%d-%d;server_port=%d-%d\r\n\r\n", MediaServerVerson, szCSeq, currentSession, nAudioClientPort[0], nAudioClientPort[1], nAudiServerPort[0], nAudiServerPort[1]);
+		}
+	}
+	else if (nSetupOrder == 2)
+	{//有音频
+		nAudiServerPort[0] = nRtpPort;
+		nAudiServerPort[1] = nRtpPort + 1;
+		sprintf(szResponseBuffer, "RTSP/1.0 200 OK\r\nServer: %s\r\nCSeq: %s\r\nCache-Control: no-cache\r\nSession: ABLMediaServer_%llu\r\nDate: Tue, 13 Nov 2019 02:49:48 GMT\r\nExpires: Tue, 13 Nov 2018 02:49:48 GMT\r\nTransport: RTP/AVP;unicast;client_port=%d-%d;server_port=%d-%d\r\n\r\n", MediaServerVerson, szCSeq, currentSession, nAudioClientPort[0], nAudioClientPort[1], nAudiServerPort[0], nAudiServerPort[1]);
+	}
+
+	//rtp、rtcp 端口 翻转
+	if (nRtpPort >= 64000)
+		nRtpPort = 55000;
+
+	return true;
 }

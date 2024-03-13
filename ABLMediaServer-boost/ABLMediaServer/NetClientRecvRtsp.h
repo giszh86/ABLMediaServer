@@ -52,6 +52,7 @@ public:
    virtual int SendFirstRequst();//发送第一个请求
    virtual bool RequestM3u8File();//请求m3u8文件
 
+   char           m_szContentBaseURL[string_length_1024];//如果Describe 命令返回有 Content-Base 字段，则使用该URL
    int            nRecvRtpPacketCount;
    unsigned short nMaxRtpLength;
    uint64_t       nSendOptionsHeartbeatTimer;
@@ -83,7 +84,7 @@ public:
    int                        CSeq;
    unsigned int               nMediaCount;
    unsigned int               nSendSetupCount;
-   char                       szWww_authenticate[384];//摘要认证参数，由服务器发送过来的
+   char                       szWww_authenticate[string_length_2048];//摘要认证参数，由服务器发送过来的
    WWW_AuthenticateType       AuthenticateType;//rtsp是什么类型验证
    char                       szBasic[string_length_2048];//用于rtsp基础验证
    char                       szSessionID[string_length_2048];//sessionID 

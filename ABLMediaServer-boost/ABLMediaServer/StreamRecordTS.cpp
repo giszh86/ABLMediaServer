@@ -155,6 +155,7 @@ bool  CStreamRecordTS::H264H265FrameToTSFile(unsigned char* szVideo, int nLength
 
 CStreamRecordTS::CStreamRecordTS(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort,char* szShareMediaURL)
 {
+	nVideoStampAdd = 1000 / 25 ;
 	nVideoOrder = 0;
 	fTSFileWrite = NULL;
 	fTSFileWriteByteCount = 0;
@@ -268,10 +269,9 @@ int CStreamRecordTS::SendVideo()
 
 	nRecvDataTimerBySecond = 0;
 
-	nVideoStampAdd = 1000 / mediaCodecInfo.nVideoFrameRate;
-
-	videoDts += nVideoStampAdd;
-
+	if(ABL_MediaServerPort.nEnableAudio == 0)
+	  nVideoStampAdd = 1000 / mediaCodecInfo.nVideoFrameRate;
+ 
 	unsigned char* pData = NULL;
 	int            nLength = 0;
 	if ((pData = m_videoFifo.pop(&nLength)) != NULL)
@@ -281,6 +281,7 @@ int CStreamRecordTS::SendVideo()
 
 		m_videoFifo.pop_front();
 	}
+	videoDts += nVideoStampAdd;
 
 	return 0;
 }
@@ -309,9 +310,12 @@ int CStreamRecordTS::SendAudio()
 		if (strcmp(mediaCodecInfo.szAudioName, "AAC") == 0)
 			audioDts += mediaCodecInfo.nBaseAddAudioTimeStamp;
 		else if (strcmp(mediaCodecInfo.szAudioName, "G711_A") == 0 || strcmp(mediaCodecInfo.szAudioName, "G711_U") == 0)
-			audioDts += nLength ;
+			audioDts += nLength / 8  ;
 
 		m_audioFifo.pop_front();
+
+		//Õ¨≤Ω“Ù ”∆µ 
+		SyncVideoAudioTimestamp();
 	}
 	return 0;
 }

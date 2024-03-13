@@ -61,10 +61,7 @@ public:
    std::mutex            mediaMP4MapLock;
 
    int                  nAACLength;
-   int64_t              nFmp4AudioDTS;
    int                   flags;
-   int64_t              videoDts;
-   int64_t              audioDts;
    volatile      bool     hls_init_segmentFlag;
    int                    nFmp4SPSPPSLength;
 

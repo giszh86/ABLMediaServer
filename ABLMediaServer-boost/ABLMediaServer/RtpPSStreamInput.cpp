@@ -80,8 +80,10 @@ void PS_DEMUX_CALL_METHOD RTP10000_RtpRecv_demux_callback(_ps_demux_cb* cb)
 	{
 		if (cb->streamtype == e_rtpdepkt_st_aac)
 		{//aac
-			pThis->GetAACAudioInfo(cb->data, cb->datasize);//获取AAC媒体信息
-			pThis->pMediaSource->PushAudio(cb->data, cb->datasize, pThis->mediaCodecInfo.szAudioName, pThis->mediaCodecInfo.nChannels, pThis->mediaCodecInfo.nSampleRate);
+			if(pThis->nRecvSampleRate == 0 &&  pThis->nRecvChannels == 0 )
+			  pThis->GetAACAudioInfo2(cb->data, cb->datasize, &pThis->nRecvSampleRate,&pThis->nRecvChannels);//获取AAC媒体信息
+			if (pThis->nRecvSampleRate > 0 && pThis->nRecvChannels > 0)
+			  pThis->pMediaSource->PushAudio(cb->data, cb->datasize,"AAC", pThis->nRecvChannels, pThis->nRecvSampleRate);
 		}
 		else if (cb->streamtype == e_rtpdepkt_st_g711a)
 		{// G711A  
@@ -104,8 +106,11 @@ static int on_gb28181_10000_unpacket(void* param, int stream, int avtype, int fl
 	{
 		if (PSI_STREAM_AAC == avtype)
 		{//aac
-			pThis->GetAACAudioInfo((unsigned char*)data, bytes);//获取AAC媒体信息
-			pThis->pMediaSource->PushAudio((unsigned char*)data, bytes, pThis->mediaCodecInfo.szAudioName, pThis->mediaCodecInfo.nChannels, pThis->mediaCodecInfo.nSampleRate);
+ 			if (pThis->nRecvSampleRate == 0 && pThis->nRecvChannels == 0)
+				pThis->GetAACAudioInfo2((unsigned char*)data, bytes, &pThis->nRecvSampleRate, &pThis->nRecvChannels);//获取AAC媒体信息
+
+			if(pThis->nRecvSampleRate > 0 && pThis->nRecvChannels > 0)
+			  pThis->pMediaSource->PushAudio((unsigned char*)data, bytes,"AAC", pThis->nRecvChannels, pThis->nRecvSampleRate);
 		}
 		else if (PSI_STREAM_AUDIO_G711A == avtype)
 		{// G711A  
@@ -165,6 +170,7 @@ static void mpeg_ps_dec_testonstream_10000(void* param, int stream, int codecid,
 
 CRtpPSStreamInput::CRtpPSStreamInput(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort,char* szShareMediaURL)
 {
+	nRecvSampleRate = nRecvChannels = 0;
  	netBaseNetType = NetBaseNetType_NetGB28181UDPPSStreamInput;
 	strcpy(m_szShareMediaURL, szShareMediaURL);
 	nClient = hClient;

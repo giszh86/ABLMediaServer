@@ -362,10 +362,10 @@ int CNetClientRecvFLV::SendFirstRequst()
 	int nPos1, nPos2;
 	char    szSubPath[string_length_2048] = { 0 };
 	nPos1 = strHttpFlvURL.find("//", 0);
-	if (nPos1 > 0)
+	if (nPos1 > 0 && nPos1 != string::npos)
 	{
 		nPos2 = strHttpFlvURL.find("/", nPos1 + 2);
-		if (nPos2 > 0)
+		if (nPos2 > 0 && nPos2 != string::npos)
 		{
 			flvDemuxer = flv_demuxer_create(NetClientRecvFLVCallBack, this);
 

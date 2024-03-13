@@ -47,7 +47,7 @@ public:
    rtmp_client_t*               rtmp;
    volatile bool                bCheckRtspVersionFlag;
 
-   int                          nAsyncAudioStamp;
+   int64_t                      nAsyncAudioStamp;
 
    flv_muxer_t*                 flvMuxer;
    char                         szURL[string_length_2048];

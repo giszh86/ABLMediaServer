@@ -25,6 +25,7 @@ public:
    virtual int SendFirstRequst();//发送第一个请求
    virtual bool RequestM3u8File();//请求m3u8文件
 
+   int                                   nRecvSampleRate, nRecvChannels;
    ps_demuxer_t*                         psBeiJingLaoChen;
 
    std::mutex                            psRecvLock;

@@ -24,8 +24,8 @@ enum HLSRequestFileStatus
 
 struct HistoryM3u8
 {
-	int   nRecvTime;
-	char  szM3u8Data[512];
+	int64_t nRecvTime;
+	char   szM3u8Data[512];
 
 	HistoryM3u8()
 	{
@@ -78,8 +78,8 @@ private :
 	bool                    FindTsFileAtHistoryList(char* szTsFile);
 
 	volatile   int          nHLSRequestFileStatus;//请求文件状态
-	int                     nRequestM3u8Time;//最后一次发送m3u8文件时间
-	int                     nSendTsFileTime;//最后一次请求视频文件时间
+	int64_t                 nRequestM3u8Time;//最后一次发送m3u8文件时间
+	int64_t                 nSendTsFileTime;//最后一次请求视频文件时间
     volatile  bool          bCanRequestM3u8File;//允许请求m3u8文件 
 
 	bool                    AddM3u8ToFifo(char* szM3u8Data, int nDataLength);

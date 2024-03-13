@@ -173,9 +173,9 @@ int CNetServerHTTP_MP4::SendVideo()
 	if (!bCheckHttpMP4Flag)
 		return -1;
 
-	nVideoStampAdd = 1000 / mediaCodecInfo.nVideoFrameRate;
- 
-	videoDts += nVideoStampAdd;
+	//只有视频，或者屏蔽音频
+	if (ABL_MediaServerPort.nEnableAudio == 0 || strcmp(mediaCodecInfo.szAudioName, "G711_A") == 0 || strcmp(mediaCodecInfo.szAudioName, "G711_U") == 0)
+		nVideoStampAdd = 1000 / mediaCodecInfo.nVideoFrameRate;
 
 	unsigned char* pData = NULL;
 	int            nLength = 0;
@@ -191,6 +191,8 @@ int CNetServerHTTP_MP4::SendVideo()
 
 		m_videoFifo.pop_front();
 	}
+
+	videoDts += nVideoStampAdd;
 }
 
 int CNetServerHTTP_MP4::SendAudio()
@@ -249,20 +251,9 @@ int CNetServerHTTP_MP4::SendAudio()
 
 			audioDts += mediaCodecInfo.nBaseAddAudioTimeStamp;
 
-			//500毫秒同步一次 
-			if (GetTickCount() - nAsyncAudioStamp >= 500)
-			{
-				if (videoDts < audioDts)
-				{
-					nVideoStampAdd = (1000 / mediaCodecInfo.nVideoFrameRate) + 5;
-				}
-				else if (videoDts > audioDts)
-				{
-					nVideoStampAdd = (1000 / mediaCodecInfo.nVideoFrameRate) - 5;
-				}
-				nAsyncAudioStamp = GetTickCount();
-			}
-		}
+		    //同步音视频 
+		    SyncVideoAudioTimestamp();
+ 		}
 		m_audioFifo.pop_front();
 	}
 	return 0;
@@ -314,6 +305,12 @@ int CNetServerHTTP_MP4::ProcessNetData()
 
 	if (!bFindMP4NameFlag)
 	{
+		if (netDataCacheLength > 512)
+		{
+			WriteLog(Log_Debug, "CNetServerHTTP_MP4 = %X , nClient = %llu ,netDataCacheLength = %d, 发送过来的url数据长度非法 ,立即删除 ", this, nClient, netDataCacheLength);
+			DeleteNetRevcBaseClient(nClient);
+		}
+
 		if (strstr((char*)netDataCache, "\r\n\r\n") == NULL)
 		{
 			WriteLog(Log_Debug, "数据尚未接收完整 ");
@@ -332,10 +329,10 @@ int CNetServerHTTP_MP4::ProcessNetData()
 		string  strHttpHead = (char*)netDataCache;
 		int     nPos1, nPos2;
 		nPos1 = strHttpHead.find("GET ", 0);
-		if (nPos1 >= 0)
+		if (nPos1 >= 0 && nPos1 != string::npos)
 		{
 			nPos2 = strHttpHead.find(" HTTP/", 0);
-			if (nPos2 > 0)
+			if (nPos2 > 0 && nPos2 != string::npos)
 			{
 				if ((nPos2 - nPos1 - 4) > string_length_2048)
 				{
@@ -373,7 +370,7 @@ int CNetServerHTTP_MP4::ProcessNetData()
 		//去掉？后面参数字符串
 		string strMP4Name = szMP4Name;
 		int    nPos = strMP4Name.find("?", 0);
-		if (nPos > 0 && strlen(szMP4Name) > 0)
+		if (nPos > 0 && nPos != string::npos && strlen(szMP4Name) > 0)
 		{
 			if (strlen(szPlayParams) == 0)//拷贝鉴权参数
 				memcpy(szPlayParams, szMP4Name + (nPos + 1), strlen(szMP4Name) - nPos - 1);
@@ -491,7 +488,7 @@ int CNetServerHTTP_MP4::ProcessNetData()
 
 		//记下媒体源
 		SplitterAppStream(szMP4Name);
-		sprintf(m_addStreamProxyStruct.url, "http://localhost:%d/%s/%s.mp4", ABL_MediaServerPort.nHttpFlvPort, m_addStreamProxyStruct.app, m_addStreamProxyStruct.stream);
+		sprintf(m_addStreamProxyStruct.url, "http://%s:%d/%s/%s.mp4", ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.nHttpFlvPort, m_addStreamProxyStruct.app, m_addStreamProxyStruct.stream);
 
 		sprintf(httpResponseData, "HTTP/1.1 200 OK\r\nAccess-Control-Allow-Credentials: true\r\nAccess-Control-Allow-Origin: %s\r\nConnection: keep-alive\r\nContent-Type: video/mp4; charset=utf-8\r\nDate: Thu, Feb 18 2021 01:57:15 GMT\r\nKeep-Alive: timeout=30, max=100\r\nServer: %s\r\n\r\n", szOrigin, MediaServerVerson);
 		nWriteRet = XHNetSDK_Write(nClient, (unsigned char*)httpResponseData, strlen(httpResponseData), 1);

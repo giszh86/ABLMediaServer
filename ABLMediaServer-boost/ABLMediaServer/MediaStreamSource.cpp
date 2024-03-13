@@ -82,8 +82,8 @@ CMediaStreamSource::CMediaStreamSource(char* szURL, uint64_t nClientTemp, MediaS
 	sprintf(szFileName, "%s_%X.264", ABL_MediaSeverRunPath, this);
 	fWriteInputVideoFile = fopen(szFileName, "wb");
 #endif
-	memset(szSPSPPSBuffer, 0x00, sizeof(szSPSPPSBuffer));
-	nSPSPPSBufferLength = 0;
+	memset(pSPSPPSBuffer, 0x00, sizeof(pSPSPPSBuffer));
+	nSPSPPSLength = 0;
 
 	nSrcWidth = nSrcHeight = 0;
 	nEncodeBufferLengthCount = nCudaDecodeFrameCount  = 0;
@@ -190,7 +190,6 @@ CMediaStreamSource::CMediaStreamSource(char* szURL, uint64_t nClientTemp, MediaS
 	pH265Buffer = NULL;
 	nFmp4SPSPPSLength = 0; 
 	nExtenAudioDataLength = 0;
-	nFmp4AudioDTS = 0;
 	hls_init_segmentFlag = false;
 
 	//获取app ,stream ;
@@ -229,10 +228,12 @@ CMediaStreamSource::CMediaStreamSource(char* szURL, uint64_t nClientTemp, MediaS
 	//add by zxt
 	nIDRFrameLengh = 0;//最新的一个I帧长度 
 	if (ABL_MediaServerPort.ForceSendingIFrame == 1)
-		pIDRFrameBuffer = new unsigned char[IDRFrameMaxBufferLength];//保存最新的一个I帧
-	else
-		pIDRFrameBuffer = NULL;
-
+	{//保存最近的一个Gop所有视频帧
+		pVideoGopFrameBuffer.InitFifo(IDRFrameMaxBufferLength); 
+		pCopyVideoGopFrameBuffer.InitFifo(IDRFrameMaxBufferLength);
+		pCacheAudioFifo.InitFifo(1024 * 256);
+		pCopyCacheAudioFifo.InitFifo(1024 * 256);
+	}
 #ifdef  OS_System_Windows
 	if(ABL_MediaServerPort.picturePath[strlen(ABL_MediaServerPort.picturePath) - 1] == '\\')
 	  sprintf(szSnapPicturePath, "%s%s\\%s\\", ABL_MediaServerPort.picturePath, app, stream);
@@ -417,8 +418,10 @@ CMediaStreamSource::~CMediaStreamSource()
 	}
 
 	SAFE_ARRAY_DELETE(pOutEncodeBuffer);
-	if(ABL_MediaServerPort.ForceSendingIFrame == 1)
-	  SAFE_ARRAY_DELETE(pIDRFrameBuffer);
+	pVideoGopFrameBuffer.FreeFifo();
+	pCacheAudioFifo.FreeFifo();
+	pCopyVideoGopFrameBuffer.FreeFifo();
+	pCopyCacheAudioFifo.FreeFifo();
 
 #ifdef OS_System_Windows
 	if (nCudaDecodeChan > 0)
@@ -862,7 +865,7 @@ bool  CMediaStreamSource::H265ConvertH264(unsigned char* szVideo, int nLength, c
 			return false;
 
 		 //修改转码宽、高 为 -1 或者 大于等于原尺寸，则原尺寸大小输出
-		if ( (m_h265ConvertH264Struct.convertOutWidth == -1 && m_h265ConvertH264Struct.convertOutHeight == -1 ) || (m_h265ConvertH264Struct.convertOutWidth >= videoDecode.m_nWidth))
+		if ( (m_h265ConvertH264Struct.convertOutWidth == -1 && m_h265ConvertH264Struct.convertOutHeight == -1 ) )
 		{
 			m_h265ConvertH264Struct.convertOutWidth  =  videoDecode.m_nWidth;
 			m_h265ConvertH264Struct.convertOutHeight =  videoDecode.m_nHeight;
@@ -935,7 +938,7 @@ bool  CMediaStreamSource::H265ConvertH264(unsigned char* szVideo, int nLength, c
 						cudaCreateVideoDecode(cudaCodecVideo_HEVC, cudaCodecVideo_YV12, m_mediaCodecInfo.nWidth, m_mediaCodecInfo.nHeight, nCudaDecodeChan);
 
 					//修改转码宽、高 或者 转换输出的宽、高 大于原始视频宽、高 ，强制为原尺寸输出
-					if ((m_h265ConvertH264Struct.convertOutWidth == -1 && m_h265ConvertH264Struct.convertOutHeight == -1) || (m_h265ConvertH264Struct.convertOutWidth >= nSrcWidth))
+					if ((m_h265ConvertH264Struct.convertOutWidth == -1 && m_h265ConvertH264Struct.convertOutHeight == -1))
 					{//原尺寸输出
 						m_h265ConvertH264Struct.convertOutWidth = nSrcWidth;
 						m_h265ConvertH264Struct.convertOutHeight = nSrcHeight;
@@ -1044,7 +1047,7 @@ bool  CMediaStreamSource::H265ConvertH264(unsigned char* szVideo, int nLength, c
 					}
 
 					//修改转码宽、高 或者 转换输出的宽、高 大于原始视频宽、高 ，强制为原尺寸输出
-					if ((m_h265ConvertH264Struct.convertOutWidth == -1 && m_h265ConvertH264Struct.convertOutHeight == -1) || (m_h265ConvertH264Struct.convertOutWidth >= nSrcWidth))
+					if ((m_h265ConvertH264Struct.convertOutWidth == -1 && m_h265ConvertH264Struct.convertOutHeight == -1))
 					{//原尺寸输出
 						m_h265ConvertH264Struct.convertOutWidth = nSrcWidth;
 						m_h265ConvertH264Struct.convertOutHeight = nSrcHeight;
@@ -1052,7 +1055,9 @@ bool  CMediaStreamSource::H265ConvertH264(unsigned char* szVideo, int nLength, c
 				}
  		    }
 			
-	        if(m_mediaCodecInfo.nWidth > 0 && m_mediaCodecInfo.nWidth < 1280 )
+	        /* 
+		     //暂时屏蔽 Linux 平台对低分辨率265的转码  
+			if(m_mediaCodecInfo.nWidth > 0 && m_mediaCodecInfo.nWidth < 1280 )
 			{//Linux 平台硬件转码704 X 576 造成崩溃，所有这些分辨率都不转码，直接输出，否则造成崩溃
  				H265ConvertH264_enable = true ;
 				
@@ -1065,7 +1070,7 @@ bool  CMediaStreamSource::H265ConvertH264(unsigned char* szVideo, int nLength, c
 				}
 				memcpy(pOutEncodeBuffer,szVideo,nLength);
 				return true ;
-			}
+			}*/
  		}
 		 
 		if (nCudaDecodeChan > 0)
@@ -1224,7 +1229,10 @@ bool CMediaStreamSource::PushVideo(unsigned char* szVideo, int nLength, char* sz
 
 			boost::shared_ptr<CNetRevcBase> pHttpClient = GetNetRevcBaseClient(ABL_MediaServerPort.nPublish);
 			if (pHttpClient != NULL)
+			{//快速通知 
 				pHttpClient->PushVideo((unsigned char*)szMsg, strlen(szMsg), "JSON");
+				pHttpClient->ProcessNetData();
+			}
 
 			m_bNoticeOnPublish = true;
 		}
@@ -1476,19 +1484,23 @@ bool CMediaStreamSource::PushVideo(unsigned char* szVideo, int nLength, char* sz
 	{
 		if (H265ConvertH264_enable)
 		{//转码
-			if (CheckVideoIsIFrame(m_mediaCodecInfo.szVideoName, pOutEncodeBuffer, 100) && nOutLength > 0 && nOutLength > 256 &&  nOutLength <= IDRFrameMaxBufferLength)
+			if (CheckVideoIsIFrame(m_mediaCodecInfo.szVideoName, pOutEncodeBuffer, nOutLength) && nOutLength > 0 && nOutLength > 256 && nOutLength <= IDRFrameMaxBufferLength)
 			{
-				memcpy(pIDRFrameBuffer, pOutEncodeBuffer, nOutLength);
-				nIDRFrameLengh = nOutLength;
+				pVideoGopFrameBuffer.Reset();
+				pCacheAudioFifo.Reset();
 			}
-		}
+
+			pVideoGopFrameBuffer.push(pOutEncodeBuffer, nOutLength);
+  		}
 		else
 		{//不转码
-			if (CheckVideoIsIFrame(m_mediaCodecInfo.szVideoName, szVideo, 100) && nLength <= IDRFrameMaxBufferLength )
+			if (CheckVideoIsIFrame(m_mediaCodecInfo.szVideoName, szVideo, nLength) && nLength <= IDRFrameMaxBufferLength)
 			{
-				memcpy(pIDRFrameBuffer, szVideo, nLength);
-				nIDRFrameLengh = nLength;
+				pVideoGopFrameBuffer.Reset();
+				pCacheAudioFifo.Reset();
 			}
+
+			pVideoGopFrameBuffer.push(szVideo, nLength);
 		}
 	}
 
@@ -1587,86 +1599,53 @@ bool CMediaStreamSource::PushVideo(unsigned char* szVideo, int nLength, char* sz
 					pClient->bPushSPSPPSFrameFlag = true;
 				}
 			}
+ 			
+			if (ABL_MediaServerPort.ForceSendingIFrame == 1 && pClient->bSendFirstIDRFrameFlag == false)
+			{//尚未发送最新I帧 
+				//拷贝
+				CopyVideoGopFrameBufer();
+
+				unsigned char* pData;
+				int            nPopLength = 0;
+				while ((pData = pCopyVideoGopFrameBuffer.pop(&nPopLength)) != NULL)
+				{
+					if(nPopLength > 0)
+						pClient->PushVideo(pData, nPopLength, m_mediaCodecInfo.szVideoName);
+
+					pCopyVideoGopFrameBuffer.pop_front();
+					Sleep(5);
+				}
+					   
+				pClient->bSendFirstIDRFrameFlag = true;
+				it++; //最后一帧（即当前帧）已经发送完毕
+				continue;
+ 			}
 
 			if (H265ConvertH264_enable)
 			{//转码
-				if (ABL_MediaServerPort.ForceSendingIFrame == 1 && pClient->bSendFirstIDRFrameFlag == false)
-				{//尚未发送最新I帧
-					if (CheckVideoIsIFrame(m_mediaCodecInfo.szVideoName, pOutEncodeBuffer, nOutLength) == false && nIDRFrameLengh > 0)
-					{
-					   if(nSPSPPSBufferLength > 0 )
-					     pClient->PushVideo(szSPSPPSBuffer, nSPSPPSBufferLength, m_mediaCodecInfo.szVideoName);//先发送SPS、PPS帧
- 					   pClient->PushVideo(pIDRFrameBuffer, nIDRFrameLengh, m_mediaCodecInfo.szVideoName);
-					}
-					pClient->bSendFirstIDRFrameFlag = true;
- 				}
-
-				if (pClient->m_bSendMediaWaitForIFrame == false)
-				{//尚未等待I帧
-					if (CheckVideoIsIFrame(m_mediaCodecInfo.szVideoName, pOutEncodeBuffer, nOutLength))
-						pClient->m_bSendMediaWaitForIFrame = true;
-
-					pClient->m_bWaitIFrameCount ++;
-					if (pClient->m_bWaitIFrameCount >= 30) //等待超过30帧 ，就不再等待I帧
-					{
-						pClient->m_bSendMediaWaitForIFrame = true; 
-						WriteLog(Log_Debug, "app = %s ,stream = %s 等待超过30帧 ，就不再等待I帧 ，给 nClient = %llu 开始发送视频帧 ", app, stream, pClient->nClient );
-					}
-				}
-				if (pClient->m_bSendMediaWaitForIFrame)
+				if (nCudaDecodeFrameCount == 1) //只有1帧
+					pClient->PushVideo(pOutEncodeBuffer, nOutLength, m_mediaCodecInfo.szVideoName);
+				else
 				{
- 					if(nCudaDecodeFrameCount == 1) //只有1帧
-					  pClient->PushVideo(pOutEncodeBuffer, nOutLength, m_mediaCodecInfo.szVideoName);
-					else
+					if (pOutEncodeBuffer != NULL && nEncodeBufferLengthCount > 0)
 					{
-						if (pOutEncodeBuffer != NULL && nEncodeBufferLengthCount > 0 )
-						{
-							nOneFrameLength = nGetFrameCountLength = 0;
-							for (int i = 0; i<nCudaDecodeFrameCount; i++)
-							{//多帧
-						       if(nGetFrameCountLength < CudaDecodeH264EncodeH264FIFOBufferLength)
-							   {
-								 memcpy((char*)&nOneFrameLength, pOutEncodeBuffer + nGetFrameCountLength, sizeof(nOneFrameLength));
- 								 pClient->PushVideo(pOutEncodeBuffer + (nGetFrameCountLength + sizeof(nOneFrameLength)), nOneFrameLength, m_mediaCodecInfo.szVideoName);
+						nOneFrameLength = nGetFrameCountLength = 0;
+						for (int i = 0; i < nCudaDecodeFrameCount; i++)
+						{//多帧
+							if (nGetFrameCountLength < CudaDecodeH264EncodeH264FIFOBufferLength)
+							{
+								memcpy((char*)&nOneFrameLength, pOutEncodeBuffer + nGetFrameCountLength, sizeof(nOneFrameLength));
+								pClient->PushVideo(pOutEncodeBuffer + (nGetFrameCountLength + sizeof(nOneFrameLength)), nOneFrameLength, m_mediaCodecInfo.szVideoName);
 
-								 nGetFrameCountLength += nOneFrameLength + sizeof(nOneFrameLength);
-							   }
+								nGetFrameCountLength += nOneFrameLength + sizeof(nOneFrameLength);
 							}
 						}
 					}
 				}
-			}
-			else
-			{//不转码
-				if (ABL_MediaServerPort.ForceSendingIFrame == 1 && pClient->bSendFirstIDRFrameFlag == false)
-				{//尚未等待I帧
-					if (CheckVideoIsIFrame(m_mediaCodecInfo.szVideoName, szVideo, nLength) == false && nIDRFrameLengh > 0)
-					{
-						if (nSPSPPSBufferLength > 0)
-							pClient->PushVideo(szSPSPPSBuffer, nSPSPPSBufferLength, m_mediaCodecInfo.szVideoName);//先发送SPS、PPS帧
+			}else //不转码
+ 				pClient->PushVideo(szVideo, nLength, m_mediaCodecInfo.szVideoName);
 
-						pClient->PushVideo(pIDRFrameBuffer, nIDRFrameLengh, m_mediaCodecInfo.szVideoName);
-					}
-				    pClient->bSendFirstIDRFrameFlag = true;
-				}
-
-				if (pClient->m_bSendMediaWaitForIFrame == false)
-				{//尚未等待I帧
-					if (CheckVideoIsIFrame(m_mediaCodecInfo.szVideoName, szVideo, nLength))
-						pClient->m_bSendMediaWaitForIFrame = true;
-
-					pClient->m_bWaitIFrameCount++;
-					if (pClient->m_bWaitIFrameCount >= 30) //等待超过30帧 ，就不再等待I帧
-					{
-						pClient->m_bSendMediaWaitForIFrame = true;
-						WriteLog(Log_Debug, "app = %s ,stream = %s 等待超过30帧 ，就不再等待I帧 ，给 nClient = %llu 开始发送视频帧 ", app, stream, pClient->nClient);
-					}
-				}
-				if (pClient->m_bSendMediaWaitForIFrame)
-					pClient->PushVideo(szVideo, nLength,m_mediaCodecInfo.szVideoName);
- 			}
-
-			it++;
+  			it++;
 		}
 		else
 		{//加入失败，证明该链接已经断开 
@@ -1729,7 +1708,13 @@ bool CMediaStreamSource::PushAudio(unsigned char* szAudio, int nLength, char* sz
 		m_mediaCodecInfo.nSampleRate = SampleRate;
 	}
 
-	if (ABL_MediaServerPort.nG711ConvertAAC == 1)
+ 	if (ABL_MediaServerPort.nG711ConvertAAC == 0 && strcmp(m_mediaCodecInfo.szAudioName, szAudioCodec) != 0)
+	{//不转码
+		strcpy(m_mediaCodecInfo.szAudioName, szAudioCodec);
+		m_mediaCodecInfo.nChannels = nChannels;
+		m_mediaCodecInfo.nSampleRate = SampleRate;
+	}
+	else if (ABL_MediaServerPort.nG711ConvertAAC == 1)
 	{//修改g711a、g711u 为　AAC
 		if (strcmp(m_mediaCodecInfo.szAudioName, "G711_A") == 0 || strcmp(m_mediaCodecInfo.szAudioName, "G711_U") == 0)
 			strcpy(m_mediaCodecInfo.szAudioName, "AAC");
@@ -1763,13 +1748,16 @@ bool CMediaStreamSource::PushAudio(unsigned char* szAudio, int nLength, char* sz
 	{
 		if (ConvertG711ToAAC(FLV_AUDIO_G711A, szAudio, nLength, pOutAACData, nOutAACDataLength) == false)
 			return  false;
+		pCacheAudioFifo.push(pOutAACData, nOutAACDataLength);
 	}
 	else if (ABL_MediaServerPort.nG711ConvertAAC == 1 && strcmp(szAudioCodec, "G711_U") == 0)
 	{
 		if (ConvertG711ToAAC(FLV_AUDIO_G711U, szAudio, nLength, pOutAACData, nOutAACDataLength) == false)
 			return false;
-	}
-
+		pCacheAudioFifo.push(pOutAACData, nOutAACDataLength);
+	}else
+ 		pCacheAudioFifo.push(szAudio, nLength);
+ 
 	if (enable_hls == true && strcmp(m_mediaCodecInfo.szAudioName,"AAC") == 0 && nMediaSourceType == MediaSourceType_LiveMedia)
 	{
 		if (nAsyncAudioStamp == -1)
@@ -1823,18 +1811,20 @@ bool CMediaStreamSource::PushAudio(unsigned char* szAudio, int nLength, char* sz
 		//500毫秒同步一次 
 		if (GetTickCount() - nAsyncAudioStamp >= 500)
 		{
-			if (videoDts < audioDts)
+			if (videoDts / 1000 > audioDts / 1000)
 			{
-				nVideoStampAdd = (1000 / m_mediaCodecInfo.nVideoFrameRate) + 5 ;
+				nVideoStampAdd = (1000 / m_mediaCodecInfo.nVideoFrameRate) - 10 ;
 			}
-			else if (videoDts > audioDts)
+			else if (videoDts / 1000 < audioDts / 1000 )
 			{
-				nVideoStampAdd = (1000 / m_mediaCodecInfo.nVideoFrameRate) - 5 ;
-			}
+				nVideoStampAdd = (1000 / m_mediaCodecInfo.nVideoFrameRate) + 10 ;
+			}else
+				nVideoStampAdd = 1000 / m_mediaCodecInfo.nVideoFrameRate;
+
 			nAsyncAudioStamp = GetTickCount();
 
-			//WriteLog(Log_Debug, "CMediaStreamSource = %X videoDts = %d ,audioDts = %d ", this, videoDts, audioDts);
-		}/**/
+			//WriteLog(Log_Debug, "CMediaStreamSource = %X videoDts = %d ,audioDts = %d ", this, videoDts / 1000 , audioDts / 1000);
+		} 
 	}
 
 	if (mediaSendMap.size() <= 0)
@@ -1883,6 +1873,25 @@ bool CMediaStreamSource::PushAudio(unsigned char* szAudio, int nLength, char* sz
 			{//恢复发流
 				if (pClient->m_bPauseFlag)
 					pClient->m_bPauseFlag = false ;
+			}
+
+			if (!pClient->m_bSendCacheAudioFlag)
+			{
+				//拷贝音频
+				CopyAudioFrameBufer();
+
+				unsigned char* pData;
+				int            nPopLength = 0;
+				while ((pData = pCopyCacheAudioFifo.pop(&nPopLength)) != NULL)
+				{
+					if (nPopLength > 0)
+						pClient->PushAudio(pData, nPopLength, m_mediaCodecInfo.szAudioName, nChannels, SampleRate);
+					pCopyCacheAudioFifo.pop_front();
+				}
+				pClient->m_bSendCacheAudioFlag = true;
+
+				it++; 
+				continue;
 			}
 
 			if (strcmp(szAudioCodec, "AAC") == 0 || strcmp(szAudioCodec, "MP3") == 0)
@@ -1984,7 +1993,7 @@ void  CMediaStreamSource::CreateSubPathByURL(char* szMediaURL)
 	{
 		memset(szTemp, 0x00, sizeof(szTemp));
 		nFind = strMediaURL.find("/", nPos + 1);
-		if (nFind > 0)
+		if (nFind > 0 && nFind != string::npos)
 		{
 			memcpy(szTemp, szMediaURL + nPos, nFind - nPos);
 			nPos = nFind ;
@@ -2141,7 +2150,7 @@ bool  CMediaStreamSource::CheckVideoIsIFrame(char* szVideoCodecName, unsigned ch
 				nFrameType = (szPVideoData[i+4] & 0x1F);
 				if (nFrameType == 7 || nFrameType == 8 || nFrameType == 5)
 				{//SPS   PPS   IDR 
-					if (nSPSPPSBufferLength == 0)
+					if (nSPSPPSLength == 0)
 					{
 						if(nFrameType == 7 && nPosSPS == -1)
 						   nPosSPS = i;
@@ -2151,45 +2160,50 @@ bool  CMediaStreamSource::CheckVideoIsIFrame(char* szVideoCodecName, unsigned ch
 
 						if (nPosSPS >= 0 && nPosIDR >= 0 && nPosIDR < 4096 )
 						{
-							memcpy(szSPSPPSBuffer, szPVideoData, nPosIDR);
-						    nSPSPPSBufferLength = nPosIDR;
+							memcpy(pSPSPPSBuffer, szPVideoData, nPosIDR);
+							nSPSPPSLength = nPosIDR;
 							bVideoIsIFrameFlag = true;
 							break;
 					     }
 					}
 					else
 					{
-					  bVideoIsIFrameFlag = true;
-					  break;
- 					}
+ 						bVideoIsIFrameFlag = true;
+						break;
+  					}
  				}
  			}
 			else if (strcmp(szVideoCodecName, "H265") == 0)
 			{
 				nFrameType = (szPVideoData[i+4] & 0x7E) >> 1;
-				if ((nFrameType >= 16 && nFrameType <= 21) || (nFrameType >= 32 && nFrameType <= 34))
+				//WriteLog(Log_Debug, " nFrameType = %d ", nFrameType);
+				if ((nFrameType >= 16 && nFrameType <= 23) || (nFrameType >= 32 && nFrameType <= 34))
 				{//SPS   PPS   IDR 
-					if (nSPSPPSBufferLength == 0)
+					if (nSPSPPSLength == 0)
 					{
 						if (nFrameType >= 32 && nFrameType <= 34 && nPosSPS == -1)
 							nPosSPS = i;
 
-						if (nFrameType == 19 && nPosIDR == -1)
+						if ((nFrameType >= 16 && nFrameType <= 23) && nPosIDR == -1)
 							nPosIDR = i;
 
 						if (nPosSPS >= 0 && nPosIDR >= 0 && nPosIDR < 4096)
 						{
-							memcpy(szSPSPPSBuffer, szPVideoData, nPosIDR);
-							nSPSPPSBufferLength = nPosIDR;
+							memcpy(pSPSPPSBuffer, szPVideoData, nPosIDR);
+							nSPSPPSLength = nPosIDR;
 							bVideoIsIFrameFlag = true;
+
 							break;
 						}
 					}
 					else
 					{
-						bVideoIsIFrameFlag = true;
-						break;
-					}
+						if (nFrameType >= 16 && nFrameType <= 23)
+						{
+							bVideoIsIFrameFlag = true;
+							break;
+						}
+ 					}
 				}
 			}
 		}
@@ -2199,17 +2213,17 @@ bool  CMediaStreamSource::CheckVideoIsIFrame(char* szVideoCodecName, unsigned ch
 			return false;
 	}
 
-	if (nSPSPPSBufferLength == 0)
+	if (nSPSPPSLength == 0)
 	{
 		if (nPosSPS >= 0 && nPosIDR < 0 && nPVideoLength <= 4096)
 		{
-			memcpy(szSPSPPSBuffer, szPVideoData, nPVideoLength);
-			nSPSPPSBufferLength = nPVideoLength;
+			memcpy(pSPSPPSBuffer, szPVideoData, nPVideoLength);
+			nSPSPPSLength = nPVideoLength;
 			return true;
 		}
 	}
 
-	return bVideoIsIFrameFlag;
+	return bVideoIsIFrameFlag; 
 }
 
 bool  CMediaStreamSource::GetRtspSDPContent(RtspSDPContentStruct* sdpContent)
@@ -2482,6 +2496,14 @@ bool   CMediaStreamSource::ConvertG711ToAAC(int nCodec, unsigned char* pG711, in
 	if ( pG711 == NULL || nBytes <= 0)
 		return false;
 
+	if (aacEnc.hEncoder == NULL)
+	{//初始化AAC编码库
+		aacEnc.InitAACEncodec(64000, 8000, 1, &nAACEncodeLength);
+		strcpy(m_mediaCodecInfo.szAudioName, "AAC");
+		m_mediaCodecInfo.nChannels = 1;
+		m_mediaCodecInfo.nSampleRate = 8000;
+	}
+
 	bool bRet = false;
 	if (nBytes < 320)
 	{//需要拼接
@@ -2518,7 +2540,7 @@ bool   CMediaStreamSource::ConvertG711ToAAC(int nCodec, unsigned char* pG711, in
 		nG711ToPCMCacheLength += 640;
 	}
 
-	if (nG711ToPCMCacheLength >= nAACEncodeLength)
+	if (nG711ToPCMCacheLength >= nAACEncodeLength && aacEnc.pbPCMBuffer != NULL )
 	{
 		memcpy(aacEnc.pbPCMBuffer, g711ToPCMCache, nAACEncodeLength);
 		aacEnc.EncodecAAC(&nRetunEncodeLength);
@@ -2564,5 +2586,43 @@ bool CMediaStreamSource::SetPause(bool bFlag)
 {
 	m_bPauseFlag = bFlag;
 	WriteLog(Log_Debug, "CMediaStreamSource = %X, app = %s ,stream = %s SetPause() m_bPauseFlag = %d ", this, app,stream , m_bPauseFlag);
+	return true;
+}
+
+//拷贝一个gop视频帧 
+bool CMediaStreamSource::CopyVideoGopFrameBufer()
+{
+	if (pVideoGopFrameBuffer.GetSize() <= 0)
+		return false;
+
+	pCopyVideoGopFrameBuffer.nFifoStart = pVideoGopFrameBuffer.nFifoStart;
+	pCopyVideoGopFrameBuffer.nFifoEnd = pVideoGopFrameBuffer.nFifoEnd;
+	pCopyVideoGopFrameBuffer.nMediaBufferLength = pVideoGopFrameBuffer.nMediaBufferLength;
+
+	memcpy(pCopyVideoGopFrameBuffer.pMediaBuffer, pVideoGopFrameBuffer.pMediaBuffer, pVideoGopFrameBuffer.nMediaBufferLength);
+
+	MediaFifoLengthList::iterator it;
+	for (it = pVideoGopFrameBuffer.LengthList.begin();it != pVideoGopFrameBuffer.LengthList.end();++it)
+		pCopyVideoGopFrameBuffer.LengthList.push_back(*it);
+ 
+	return true;
+}
+
+//拷贝音频缓存
+bool CMediaStreamSource::CopyAudioFrameBufer()
+{
+	if (pCacheAudioFifo.GetSize() <= 0)
+		return false;
+
+	pCopyCacheAudioFifo.nFifoStart = pCacheAudioFifo.nFifoStart;
+	pCopyCacheAudioFifo.nFifoEnd = pCacheAudioFifo.nFifoEnd;
+	pCopyCacheAudioFifo.nMediaBufferLength = pCacheAudioFifo.nMediaBufferLength;
+
+	memcpy(pCopyCacheAudioFifo.pMediaBuffer, pCacheAudioFifo.pMediaBuffer, pCacheAudioFifo.nMediaBufferLength);
+
+	MediaFifoLengthList::iterator it;
+	for (it = pCacheAudioFifo.LengthList.begin(); it != pCacheAudioFifo.LengthList.end(); ++it)
+		pCopyCacheAudioFifo.LengthList.push_back(*it);
+
 	return true;
 }
