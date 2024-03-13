@@ -77,7 +77,7 @@ static int NetClientRecvFLVCallBack(void* param, int codec, const void* data, si
 
 		if (pClient->pMediaSource)
 			pClient->pMediaSource->PushAudio((unsigned char*)data, bytes, pClient->pMediaSource->m_mediaCodecInfo.szAudioName, pClient->pMediaSource->m_mediaCodecInfo.nChannels, pClient->pMediaSource->m_mediaCodecInfo.nSampleRate);
-
+	
 		//assert(bytes == get_adts_length((const uint8_t*)data, bytes));
 	}
 	else if (FLV_VIDEO_H264 == codec || FLV_VIDEO_H265 == codec)
@@ -90,7 +90,7 @@ static int NetClientRecvFLVCallBack(void* param, int codec, const void* data, si
 		//WriteLog(Log_Debug, "CNetClientRecvRtmp=%X ,nClient = %llu, rtmp 解包回调 %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X , timeStamp = %d ,datasize = %d ", pClient, pClient->nClient, (unsigned char*)pVideoData[0], pVideoData[1], pVideoData[2], pVideoData[3], pVideoData[4], pVideoData[5], pVideoData[6], pVideoData[7], pVideoData[8], pVideoData[9], pVideoData[10], pVideoData[11], pVideoData[12],dts,bytes);
 		if (!pClient->bUpdateVideoFrameSpeedFlag)
 		{//更新视频源的帧速度
-			int nVideoSpeed = pClient->CalcFlvVideoFrameSpeed(pts, 1000);
+			int nVideoSpeed = pClient->CalcFlvVideoFrameSpeed(pts,1000);
 			if (nVideoSpeed > 0 && pClient->pMediaSource != NULL)
 			{
 				pClient->bUpdateVideoFrameSpeedFlag = true;
@@ -106,7 +106,7 @@ static int NetClientRecvFLVCallBack(void* param, int codec, const void* data, si
 		{
 			if (FLV_VIDEO_H264 == codec)
 				pClient->pMediaSource->PushVideo((unsigned char*)data, bytes, "H264");
-			else if (FLV_VIDEO_H265 == codec)
+			else if(FLV_VIDEO_H265 == codec)
 				pClient->pMediaSource->PushVideo((unsigned char*)data, bytes, "H265");
 		}
 
@@ -114,10 +114,10 @@ static int NetClientRecvFLVCallBack(void* param, int codec, const void* data, si
 		//WriteLog(Log_Debug, "CNetRtspServer=%X ,nClient = %llu, rtmp 解包回调 %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X , timeStamp = %d ,datasize = %d ", pClient, pClient->nClient, (unsigned char*)pVideoData[0], pVideoData[1], pVideoData[2], pVideoData[3], pVideoData[4], pVideoData[5], pVideoData[6], pVideoData[7], pVideoData[8], pVideoData[9], pVideoData[10], pVideoData[11], pVideoData[12],dts,bytes);
 
 #ifdef  WriteHTTPFlvToEsFileFlag
-		if (pClient != NULL)
+ 		if (pClient != NULL)
 		{
-			if (pClient->bStartWriteFlag == false && pClient->CheckVideoIsIFrame("H264", (unsigned char*)data, bytes))
-				pClient->bStartWriteFlag = true;
+			if (pClient->bStartWriteFlag == false && pClient->CheckVideoIsIFrame("H264",(unsigned char*)data, bytes))
+ 				pClient->bStartWriteFlag = true;
 
 			if (pClient->bStartWriteFlag)
 			{
@@ -126,7 +126,7 @@ static int NetClientRecvFLVCallBack(void* param, int codec, const void* data, si
 			}
 		}
 #endif
-
+		 
 	}
 	else if (FLV_AUDIO_MP3 == codec)
 	{
@@ -145,9 +145,9 @@ static int NetClientRecvFLVCallBack(void* param, int codec, const void* data, si
 		//assert(0);
 	}
 	return 0;
-}
+} 
 
-CNetClientRecvFLV::CNetClientRecvFLV(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort, char* szShareMediaURL)
+CNetClientRecvFLV::CNetClientRecvFLV(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort,char* szShareMediaURL)
 {
 	bCheckRtspVersionFlag = false;
 	bDeleteRtmpPushH265Flag = false;
@@ -179,7 +179,7 @@ CNetClientRecvFLV::CNetClientRecvFLV(NETHANDLE hServer, NETHANDLE hClient, char*
 
 CNetClientRecvFLV::~CNetClientRecvFLV()
 {
-	bRunFlag = false;
+	bRunFlag = false ;
 	std::lock_guard<std::mutex> lock(NetClientRecvFLVLock);
 
 	//服务器异常断开
@@ -195,9 +195,9 @@ CNetClientRecvFLV::~CNetClientRecvFLV()
 	if (flvDemuxer)
 		flv_demuxer_destroy(flvDemuxer);
 
-	//如果是接收推流，并且成功接收推流的，则需要删除媒体数据源 szURL ，比如 /Media/Camera_00001 
-	if (strlen(m_szShareMediaURL) > 0 && pMediaSource != NULL)
-		DeleteMediaStreamSource(m_szShareMediaURL);
+	 //如果是接收推流，并且成功接收推流的，则需要删除媒体数据源 szURL ，比如 /Media/Camera_00001 
+	if(strlen(m_szShareMediaURL) >0 && pMediaSource != NULL )
+   	  DeleteMediaStreamSource(m_szShareMediaURL);
 
 #ifdef  SaveNetDataToFlvFile
 	if (fileFLV != NULL)
@@ -205,11 +205,11 @@ CNetClientRecvFLV::~CNetClientRecvFLV()
 #endif
 
 #ifdef  WriteHTTPFlvToEsFileFlag
-	fclose(fWriteVideo);
+	 fclose(fWriteVideo); 
 #endif
 
 	WriteLog(Log_Debug, "CNetClientRecvFLV 析构 = %X nClient = %llu \r\n", this, nClient);
-
+	
 	malloc_trim(0);
 }
 
@@ -236,9 +236,9 @@ int CNetClientRecvFLV::SendAudio()
 int CNetClientRecvFLV::InputNetData(NETHANDLE nServerHandle, NETHANDLE nClientHandle, uint8_t* pData, uint32_t nDataLength, void* address)
 {
 	std::lock_guard<std::mutex> lock(NetClientRecvFLVLock);
-	if (!bRunFlag)
-		return -1;
-
+	if(!bRunFlag)
+		return -1 ;
+	
 #ifdef  SaveNetDataToFlvFile
 	nNetPacketNumber++;
 	if (nNetPacketNumber > 1 && fileFLV && nDataLength > 0)
@@ -249,7 +249,7 @@ int CNetClientRecvFLV::InputNetData(NETHANDLE nServerHandle, NETHANDLE nClientHa
 #endif
 
 	nRecvDataTimerBySecond = 0;
-
+ 
 	if (bRecvHttp200OKFlag == false)
 	{//去掉http回复的包头
 		unsigned char szHttpEndFlag[4] = { 0x0d,0x0a,0x0d,0x0a };
@@ -262,14 +262,14 @@ int CNetClientRecvFLV::InputNetData(NETHANDLE nServerHandle, NETHANDLE nClientHa
 				break;
 			}
 		}
-		if (nPos > 0)
+ 		if (nPos > 0)
 		{
 			bRecvHttp200OKFlag = true;
-			if (nDataLength - (nPos + 4) > 0)
+ 			if (nDataLength - (nPos + 4) > 0)
 			{
-				memcpy(netDataCache + nNetEnd, pData + (nPos + 4), nDataLength - (nPos + 4));
-				netDataCacheLength += nDataLength - (nPos + 4);
-				nNetEnd += nDataLength - (nPos + 4);
+				memcpy(netDataCache + nNetEnd, pData+(nPos + 4), nDataLength - (nPos + 4));
+				netDataCacheLength  += nDataLength - (nPos + 4);
+				nNetEnd            += nDataLength - (nPos + 4);
 			}
 			else
 				return 0;
@@ -309,7 +309,7 @@ int CNetClientRecvFLV::InputNetData(NETHANDLE nServerHandle, NETHANDLE nClientHa
 		nNetEnd += nDataLength;
 	}
 
-	return 0;
+    return 0;
 }
 
 //模拟文件读取回调函数 
@@ -324,7 +324,7 @@ static int http_flv_netRead(void* param, void* buf, int len)
 		memcpy(buf, pHttpFlv->netDataCache + pHttpFlv->nNetStart, len);
 		pHttpFlv->nNetStart += len;
 		pHttpFlv->netDataCacheLength -= len;
-
+ 
 		return len;
 	}
 	else
@@ -334,31 +334,31 @@ static int http_flv_netRead(void* param, void* buf, int len)
 int CNetClientRecvFLV::ProcessNetData()
 {
 	std::lock_guard<std::mutex> lock(NetClientRecvFLVLock);
-	if (!bRunFlag)
+    if(!bRunFlag)
 		return -1;
-
-	if (netDataCacheLength > (1024 * 1024 * 1.256))
+ 
+	if (netDataCacheLength > (1024 * 1024 * 1.256) )
 	{//缓存1.256 M数据
-		if (reader == NULL)
-			reader = flv_reader_create2(http_flv_netRead, this);
-
-		//创建失败 
+ 		if (reader == NULL)
+ 		   reader = flv_reader_create2(http_flv_netRead, this);
+	   
+		 //创建失败 
 		if (reader == NULL)
 		{
 			bRunFlag = false;
-			WriteLog(Log_Debug, "CNetClientRecvFLV = %X nClient = %llu flv_reader_create2 创建失败 ,执行删除 ", this, nClient);
-			pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
+			WriteLog(Log_Debug, "CNetClientRecvFLV = %X nClient = %llu flv_reader_create2 创建失败 ,执行删除 ", this,nClient);
+			pDisconnectBaseNetFifo.push((unsigned char*)&nClient,sizeof(nClient));
 			return -1;
 		}
-
-		while (flv_reader_read(reader, &type, &timestamp, &taglen, packet, sizeof(packet)) == 1)
+		
+ 		while (flv_reader_read(reader, &type, &timestamp, &taglen, packet, sizeof(packet)) == 1 )
 		{//当剩余 1024 * 1024 时，需要退出 
 			flv_demuxer_input(flvDemuxer, type, packet, taglen, timestamp);
 
 			//要剩余些数据，否则当读取到包头时，包头所指的数据长度 大于 缓冲区剩余的数据，就会报错 ,最好大于i帧的长度
 			if (netDataCacheLength < 1024 * 768)
 				break;
-		}
+ 		}
 	}
 
 	return 0;
@@ -371,17 +371,17 @@ int CNetClientRecvFLV::SendFirstRequst()
 	int nPos1, nPos2;
 	char    szSubPath[string_length_2048] = { 0 };
 	nPos1 = strHttpFlvURL.find("//", 0);
-	if (nPos1 > 0)
+	if (nPos1 > 0 && nPos1 != string::npos)
 	{
 		nPos2 = strHttpFlvURL.find("/", nPos1 + 2);
-		if (nPos2 > 0)
+		if (nPos2 > 0 && nPos2 != string::npos)
 		{
 			flvDemuxer = flv_demuxer_create(NetClientRecvFLVCallBack, this);
 
 			//创建媒体分发资源
 			if (strlen(m_szShareMediaURL) > 0)
 			{
-				pMediaSource = CreateMediaStreamSource(m_szShareMediaURL, hParent, MediaSourceType_LiveMedia, 0, m_h265ConvertH264Struct);
+				pMediaSource = CreateMediaStreamSource(m_szShareMediaURL, hParent, MediaSourceType_LiveMedia,0, m_h265ConvertH264Struct);
 				if (pMediaSource)
 				{
 					pMediaSource->netBaseNetType = netBaseNetType;
@@ -393,16 +393,14 @@ int CNetClientRecvFLV::SendFirstRequst()
 					DeleteNetRevcBaseClient(nClient);
 					return -1;
 				}
-			}
+  			}
 
 			memcpy(szSubPath, m_rtspStruct.szSrcRtspPullUrl + nPos2, strlen(m_rtspStruct.szSrcRtspPullUrl) - nPos2);
 			sprintf(szRequestFLVFile, "GET %s HTTP/1.1\r\nUser-Agent: %s\r\nAccept: */*\r\nRange: bytes=0-\r\nConnection: keep-alive\r\nHost: 190.15.240.11:8088\r\nIcy-MetaData: 1\r\n\r\n", szSubPath, MediaServerVerson);
 			XHNetSDK_Write(nClient, (unsigned char*)szRequestFLVFile, strlen(szRequestFLVFile), 1);
-		}
-		else
+		}else
 			pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
-	}
-	else
+	}else
 		pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
 
 #ifdef  SaveNetDataToFlvFile

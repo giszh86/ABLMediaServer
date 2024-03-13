@@ -35,7 +35,6 @@ public:
    bool            pop_front(); 
    unsigned char*  pMediaBuffer;
 
-private:
    MediaFifoLengthList   LengthList;
    std::mutex            MediaFifoMutex;
    int                   nMediaBufferLength;

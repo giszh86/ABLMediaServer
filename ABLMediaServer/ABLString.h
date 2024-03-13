@@ -49,6 +49,7 @@ namespace ABL {
 
 	std::string GetCurrentWorkingDirectory();
 
+	std::string IniToJson();
 
-
+	std::string JsonToIni();
 }

@@ -24,10 +24,10 @@ extern bool                                  DeleteMediaStreamSource(char* szURL
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 #endif
 
-
 extern CMediaSendThreadPool*                 pMediaSendThreadPool;
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
 extern char                                  ABL_MediaSeverRunPath[256]; //当前路径
+extern MediaServerPort                       ABL_MediaServerPort;
 
 #include "../webrtc-streamer/inc/rtc_obj_sdk.h"
 
@@ -67,6 +67,8 @@ CNetClientWebrtcPlayer::CNetClientWebrtcPlayer(NETHANDLE hServer, NETHANDLE hCli
 	}
 	pMediaSource->AddClientToMap(nClient);
 	pMediaSource->nWebRtcPushStreamID = nClient;
+	SplitterAppStream(szShareMediaURL);
+	sprintf(m_addStreamProxyStruct.url, "http://%s:%d/webrtc-streamer.html?video=/%s/%s", ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.nWebRtcPort, m_addStreamProxyStruct.app, m_addStreamProxyStruct.stream);
 	WriteLog(Log_Debug, "CNetClientWebrtcPlayer 构造 = %X  nClient = %llu ", this, nClient);
 }
 

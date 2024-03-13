@@ -62,7 +62,7 @@ bool CABLSipParse::ParseSipString(char* szSipString)
 	//查找出body数据
 	memset(szSipBodyContent, 0x00, sizeof(szSipBodyContent));
 	nPosBody = strSipStringFull.find("\r\n\r\n", 0);
-	if (nPosBody > 0 && strlen(szSipString) - (nPosBody + 4) > 0 && strlen(szSipString) - (nPosBody + 4) < MaxSipBodyContentLength)
+	if (nPosBody > 0 && nPosBody != string::npos && strlen(szSipString) - (nPosBody + 4) > 0 && strlen(szSipString) - (nPosBody + 4) < MaxSipBodyContentLength)
 	{//把body拷贝出来
 		memcpy(szSipBodyContent, szSipString + nPosBody + 4, strlen(szSipString) - (nPosBody + 4));
 		szSipString[nPosBody + 4] = 0x00;
@@ -78,7 +78,7 @@ bool CABLSipParse::ParseSipString(char* szSipString)
 	while (true)
 	{
 		nPos2 = strSipString.find("\r\n", nPos1);
-		if (nPos2 > 0 && nPos2 - nPos1 > 0 )
+		if (nPos2 > 0 && nPos2 != string::npos && nPos2 - nPos1 > 0 )
 		{
 			memset(szLineString, 0x00, sizeof(szLineString));
 			memcpy(szLineString, szSipString + nPos1, nPos2 - nPos1);
@@ -92,7 +92,7 @@ bool CABLSipParse::ParseSipString(char* szSipString)
 			if (nLineCount == 0)
 			{
 				nPos3 = strLineSting.find(" ", 0);
-				if (nPos3 > 0)
+				if (nPos3 > 0 && nPos3 != string::npos)
 				{
 					memcpy(sipKey->szKey, szLineString, nPos3);
 					memcpy(sipKey->szValue, szLineString + nPos3 + 1, strlen(szLineString) - (nPos3 + 1));
@@ -101,7 +101,7 @@ bool CABLSipParse::ParseSipString(char* szSipString)
 			else
 			{
 				nPos3 = strLineSting.find(":", 0);
-				if (nPos3 > 0)
+				if (nPos3 > 0 && nPos3 != string::npos)
 				{
 					memcpy(sipKey->szKey, szLineString, nPos3);
 					memcpy(sipKey->szValue, szLineString + nPos3 + 1, strlen(szLineString) - (nPos3 + 1));
@@ -148,14 +148,14 @@ bool CABLSipParse::ParseSipString(char* szSipString)
 					while (true)
 					{
 						nPos5 = strFieldValue.find(szSplitStr[i], nPos4);
-						if (nPos5 > 0 && nPos5 - nPos4 > 0)
+						if (nPos5 > 0 && nPos5 != string::npos && nPos5 - nPos4 > 0)
 						{
 							memset(subKeyValue, 0x00, sizeof(subKeyValue));
 							memcpy(subKeyValue, sipKey->szValue + nPos4, nPos5 - nPos4);
 
 							strSubKeyValue = subKeyValue;
 							nPos6 = strSubKeyValue.find("=", 0);
-							if (nPos6 > 0)
+							if (nPos6 > 0 && nPos6 != string::npos)
 							{
 							   do
 							   {
@@ -204,7 +204,7 @@ bool CABLSipParse::ParseSipString(char* szSipString)
 
 								strSubKeyValue = subKeyValue;
 								nPos6 = strSubKeyValue.find("=", 0);
-								if (nPos6 > 0)
+								if (nPos6 > 0 && nPos6 != string::npos)
 								{
 									do
 									{

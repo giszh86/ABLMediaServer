@@ -16,16 +16,16 @@
 
 enum HLSRequestFileStatus
 {
-	HLSRequestFileStatus_NoRequsetFile = 0, //未执行请求
-	HLSRequestFileStatus_SendRequest = 1,//已经发出请求
-	HLSRequestFileStatus_RecvHttpHead = 2,//收到Http头
-	HLSRequestFileStatus_RequestSuccess = 3,//接收完整
+	HLSRequestFileStatus_NoRequsetFile   = 0, //未执行请求
+	HLSRequestFileStatus_SendRequest     = 1,//已经发出请求
+	HLSRequestFileStatus_RecvHttpHead    = 2,//收到Http头
+	HLSRequestFileStatus_RequestSuccess  = 3,//接收完整
 };
 
 struct HistoryM3u8
 {
-	int   nRecvTime;
-	char  szM3u8Data[512];
+	int64_t nRecvTime;
+	char   szM3u8Data[512];
 
 	HistoryM3u8()
 	{
@@ -39,26 +39,26 @@ typedef list<HistoryM3u8> HistoryM3u8List;
 class CNetClientRecvHttpHLS : public CNetRevcBase
 {
 public:
-	CNetClientRecvHttpHLS(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort, char* szShareMediaURL);
+	CNetClientRecvHttpHLS(NETHANDLE hServer,NETHANDLE hClient,char* szIP,unsigned short nPort, char* szShareMediaURL);
 	~CNetClientRecvHttpHLS();
+   
+    virtual int InputNetData(NETHANDLE nServerHandle, NETHANDLE nClientHandle, uint8_t* pData, uint32_t nDataLength, void* address) ;
+	virtual int ProcessNetData() ;
 
-	virtual int InputNetData(NETHANDLE nServerHandle, NETHANDLE nClientHandle, uint8_t* pData, uint32_t nDataLength, void* address);
-	virtual int ProcessNetData();
+	virtual int PushVideo(uint8_t* pVideoData, uint32_t nDataLength, char* szVideoCodec) ;//塞入视频数据
+	virtual int PushAudio(uint8_t* pAudioData, uint32_t nDataLength, char* szAudioCodec, int nChannels, int SampleRate) ;//塞入音频数据
 
-	virtual int PushVideo(uint8_t* pVideoData, uint32_t nDataLength, char* szVideoCodec);//塞入视频数据
-	virtual int PushAudio(uint8_t* pAudioData, uint32_t nDataLength, char* szAudioCodec, int nChannels, int SampleRate);//塞入音频数据
+	virtual int SendVideo() ;//发送视频数据
+	virtual int SendAudio() ;//发送音频数据
 
-	virtual int SendVideo();//发送视频数据
-	virtual int SendAudio();//发送音频数据
-
-	virtual int  SendFirstRequst();//发送第一个请求
+	virtual int  SendFirstRequst() ;//发送第一个请求
 	virtual bool RequestM3u8File();//请求m3u8文件
 
 	void         AddAdtsToAACData(unsigned char* szData, int nAACLength);
 
 	int64_t         nOldPTS;
 	uint64_t        nCallBackVideoTime;
-	ts_demuxer_t* ts;
+	ts_demuxer_t *   ts;
 	char             szSourceURL[string_length_2048];
 #ifdef USE_BOOST
 	boost::shared_ptr<CMediaStreamSource> pMediaSource;
@@ -69,12 +69,12 @@ public:
 	CMediaFifo       hlsVideoFifo;
 	CMediaFifo       hlsAudioFifo;
 
-	volatile bool    bExitCallbackThreadFlag;
-	unsigned char    aacData[string_length_2048];
+	volatile bool    bExitCallbackThreadFlag ;
+	unsigned char    aacData[string_length_2048]; 
 #ifdef SaveAudioToAACFile
-	FILE* fileSaveAAC;
+	FILE*           fileSaveAAC;
 #endif
-private:
+private :
 #ifdef  SaveTSBufferToFile
 	int64_t                 nTsFileOrder;
 #endif
@@ -82,9 +82,9 @@ private:
 	bool                    FindTsFileAtHistoryList(char* szTsFile);
 
 	volatile   int          nHLSRequestFileStatus;//请求文件状态
-	int                     nRequestM3u8Time;//最后一次发送m3u8文件时间
-	int                     nSendTsFileTime;//最后一次请求视频文件时间
-	volatile  bool          bCanRequestM3u8File;//允许请求m3u8文件 
+	int64_t                 nRequestM3u8Time;//最后一次发送m3u8文件时间
+	int64_t                 nSendTsFileTime;//最后一次请求视频文件时间
+    volatile  bool          bCanRequestM3u8File;//允许请求m3u8文件 
 
 	bool                    AddM3u8ToFifo(char* szM3u8Data, int nDataLength);
 	CABLSipParse            httpParse;
@@ -95,7 +95,7 @@ private:
 	int                     nContentLength; //实际长度
 	int                     nRecvContentLength;//已经收到的长度
 	volatile  bool          bRecvHttpHeadFlag;//已经接收完毕Http 头
-	unsigned   char* pContentBody;//内容 
+	unsigned   char*        pContentBody;//内容 
 	int                     nContentBodyLength;//ContentBody Buffer  长度 
 
 	unsigned char           netDataCache[MaxHttp_HLSCNetCacheBufferLength + 4]; //网络数据缓存

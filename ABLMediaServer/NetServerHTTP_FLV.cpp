@@ -1,6 +1,6 @@
 /*
 功能：
-	   实现http-flv服务器的媒体数据发送功能
+       实现http-flv服务器的媒体数据发送功能 
 日期    2021-03-29
 作者    罗家兄弟
 QQ      79941308
@@ -44,7 +44,7 @@ static int NetServerHTTP_FLV_MuxerCB(void* flv, int type, const void* data, size
 
 #ifdef WriteHttp_FlvFileFlag
 	if (pHttpFLV)
-		return flv_writer_input(pHttpFLV->flvWrite, type, data, bytes, timestamp);
+ 		return flv_writer_input(pHttpFLV->flvWrite, type, data, bytes, timestamp);
 #else 
 	if (pHttpFLV)
 		return flv_writer_input(pHttpFLV->flvWrite, type, data, bytes, timestamp);
@@ -55,14 +55,14 @@ int  NetServerHTTP_FLV_OnWrite_CB(void* param, const struct flv_vec_t* vec, int 
 {
 	CNetServerHTTP_FLV* pHttpFLV = (CNetServerHTTP_FLV*)param;
 
-	if (pHttpFLV != NULL && pHttpFLV->bRunFlag)
+	if (pHttpFLV != NULL && pHttpFLV->bRunFlag )
 	{
 		for (int i = 0; i < n; i++)
 		{
-			pHttpFLV->nWriteRet = XHNetSDK_Write(pHttpFLV->nClient, (unsigned char*)vec[i].ptr, vec[i].len, true);
+			pHttpFLV->nWriteRet = XHNetSDK_Write(pHttpFLV->nClient,(unsigned char*)vec[i].ptr, vec[i].len,true);
 			if (pHttpFLV->nWriteRet != 0)
 			{
-				pHttpFLV->nWriteErrorCount++;//发送出错累计 
+				pHttpFLV->nWriteErrorCount ++;//发送出错累计 
 				if (pHttpFLV->nWriteErrorCount >= 30)
 				{
 					pHttpFLV->bRunFlag = false;
@@ -72,13 +72,14 @@ int  NetServerHTTP_FLV_OnWrite_CB(void* param, const struct flv_vec_t* vec, int 
 			}
 			else
 				pHttpFLV->nWriteErrorCount = 0;//复位 
-		}
+  		}
 	}
 	return 0;
 }
 
-CNetServerHTTP_FLV::CNetServerHTTP_FLV(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort, char* szShareMediaURL)
+CNetServerHTTP_FLV::CNetServerHTTP_FLV(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort,char* szShareMediaURL)
 {
+	memset(netDataCache, 0x00, sizeof(netDataCache));
 	nServer = hServer;
 	nClient = hClient;
 	strcpy(szClientIP, szIP);
@@ -92,52 +93,52 @@ CNetServerHTTP_FLV::CNetServerHTTP_FLV(NETHANDLE hServer, NETHANDLE hClient, cha
 	memset(szFlvName, 0x00, sizeof(szFlvName));
 	flvMuxer = NULL;
 
-	flvWrite = NULL;
+	flvWrite  = NULL ;
 	nWriteRet = 0;
 	nWriteErrorCount = 0;
 
-	netBaseNetType = NetBaseNetType_HttpFLVServerSendPush;
+	netBaseNetType = NetBaseNetType_HttpFLVServerSendPush ;
 	bRunFlag = true;
 
-	nNewAddAudioTimeStamp = 64;
+    nNewAddAudioTimeStamp = 64;
 	bUserNewAudioTimeStamp = false;
 	nUseNewAddAudioTimeStamp = 0;
 	nPrintTime = GetTickCount64();
-
-	WriteLog(Log_Debug, "CNetServerHTTP_FLV 构造 = %X, nClient = %llu ", this, nClient);
+ 
+	WriteLog(Log_Debug, "CNetServerHTTP_FLV 构造 = %X, nClient = %llu ",this, nClient);
 }
 
 CNetServerHTTP_FLV::~CNetServerHTTP_FLV()
 {
 	std::lock_guard<std::mutex> lock(NetServerHTTP_FLVLock);
 
-	WriteLog(Log_Debug, "CNetServerHTTP_FLV =%X Step 1 nClient = %llu ", this, nClient);
+	WriteLog(Log_Debug, "CNetServerHTTP_FLV =%X Step 1 nClient = %llu ",this, nClient);
 
-	WriteLog(Log_Debug, "CNetServerHTTP_FLV =%X Step 2 nClient = %llu ", this, nClient);
-
+	WriteLog(Log_Debug, "CNetServerHTTP_FLV =%X Step 2 nClient = %llu ",this, nClient);
+	
 	if (flvMuxer)
 	{
 		flv_muxer_destroy(flvMuxer);
 		flvMuxer = NULL;
 	}
-	WriteLog(Log_Debug, "CNetServerHTTP_FLV =%X Step 3 nClient = %llu ", this, nClient);
+	WriteLog(Log_Debug, "CNetServerHTTP_FLV =%X Step 3 nClient = %llu ",this, nClient);
 
 	if (flvWrite)
 	{
 		flv_writer_destroy(flvWrite);
 		flvWrite = NULL;
 	}
-	WriteLog(Log_Debug, "CNetServerHTTP_FLV =%X Step 4 nClient = %llu ", this, nClient);
+	WriteLog(Log_Debug, "CNetServerHTTP_FLV =%X Step 4 nClient = %llu ",this, nClient);
 
 	m_videoFifo.FreeFifo();
 	m_audioFifo.FreeFifo();
-
+	
 	//从静音链表删除 
 	if (bAddMuteFlag)
-		DelClientToMapFromMutePacketList(nClient);
-
+	  DelClientToMapFromMutePacketList(nClient);
+	
 	WriteLog(Log_Debug, "CNetServerHTTP_FLV 析构 =%X szFlvName = %s, nClient = %llu \r\n", this, szFlvName, nClient);
-
+	
 	malloc_trim(0);
 }
 
@@ -145,7 +146,7 @@ int CNetServerHTTP_FLV::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, cha
 {
 	nRecvDataTimerBySecond = 0;
 	m_videoFifo.push(pVideoData, nDataLength);
-	return 0;
+	return 0 ;
 }
 
 int CNetServerHTTP_FLV::PushAudio(uint8_t* pAudioData, uint32_t nDataLength, char* szAudioCodec, int nChannels, int SampleRate)
@@ -155,7 +156,7 @@ int CNetServerHTTP_FLV::PushAudio(uint8_t* pAudioData, uint32_t nDataLength, cha
 	if (ABL_MediaServerPort.nEnableAudio == 0)
 		return -1;
 
-	if (!(strcmp(szAudioCodec, "AAC") == 0 || strcmp(szAudioCodec, "MP3") == 0))
+	if ( !(strcmp(szAudioCodec, "AAC") == 0 ||  strcmp(szAudioCodec,"MP3") == 0 ))
 		return 0;
 
 	m_audioFifo.push(pAudioData, nDataLength);
@@ -165,28 +166,27 @@ int CNetServerHTTP_FLV::PushAudio(uint8_t* pAudioData, uint32_t nDataLength, cha
 
 void  CNetServerHTTP_FLV::MuxerVideoFlV(char* codeName, unsigned char* pVideo, int nLength)
 {
-	nVideoStampAdd = 1000 / mediaCodecInfo.nVideoFrameRate;
+	//只有视频，或者屏蔽音频
+	if(ABL_MediaServerPort.nEnableAudio == 0 || strcmp(mediaCodecInfo.szAudioName,"G711_A") == 0 || strcmp(mediaCodecInfo.szAudioName, "G711_U") == 0)
+	   nVideoStampAdd = 1000 / mediaCodecInfo.nVideoFrameRate;
 
 	if (strcmp(codeName, "H264") == 0)
 	{
 		if (flvMuxer)
-			flv_muxer_avc(flvMuxer, pVideo, nLength, flvPS, flvPS);
+			flv_muxer_avc(flvMuxer, pVideo, nLength, videoDts, videoDts);
 	}
 	else if (strcmp(codeName, "H265") == 0)
 	{
 		if (flvMuxer)
-			flv_muxer_hevc(flvMuxer, pVideo, nLength, flvPS, flvPS);
+			flv_muxer_hevc(flvMuxer, pVideo, nLength, videoDts, videoDts);
 	}
 
-	//printf("flvPS = %d \r\n", flvPS);
-	flvPS += nVideoStampAdd;
+	//printf("flvPS = %d \r\n", videoDts);
+	videoDts += nVideoStampAdd;
 }
 
 void  CNetServerHTTP_FLV::MuxerAudioFlV(char* codeName, unsigned char* pAudio, int nLength)
 {
-	//if (dwAudioFirstTime == 0)
-	//	dwAudioFirstTime = GetTickCount();
-	//flvAACDts = GetTickCount() - dwAudioFirstTime;
 	if (ABL_MediaServerPort.nEnableAudio == 0)
 		return;
 
@@ -196,24 +196,22 @@ void  CNetServerHTTP_FLV::MuxerAudioFlV(char* codeName, unsigned char* pAudio, i
 	if (flvMuxer)
 	{
 		if (strcmp(mediaCodecInfo.szAudioName, "AAC") == 0)
-			flv_muxer_aac(flvMuxer, pAudio, nLength, flvAACDts, flvAACDts);
-		else if (strcmp(mediaCodecInfo.szAudioName, "MP3") == 0)
-			flv_muxer_mp3(flvMuxer, pAudio, nLength, flvAACDts, flvAACDts);
-	}
+			flv_muxer_aac(flvMuxer, pAudio, nLength, audioDts, audioDts);
+ 		else if (strcmp(mediaCodecInfo.szAudioName, "MP3") == 0)
+			flv_muxer_mp3(flvMuxer, pAudio, nLength, audioDts, audioDts);
+ 	}
 
-	if (bUserNewAudioTimeStamp == false)
-		flvAACDts += mediaCodecInfo.nBaseAddAudioTimeStamp;
+	if(bUserNewAudioTimeStamp == false)
+		audioDts += mediaCodecInfo.nBaseAddAudioTimeStamp ;
 	else
 	{
-		nUseNewAddAudioTimeStamp--;
-		flvAACDts += nNewAddAudioTimeStamp;
+		nUseNewAddAudioTimeStamp --;
+		audioDts += nNewAddAudioTimeStamp;
 		if (nUseNewAddAudioTimeStamp <= 0)
 		{
 			bUserNewAudioTimeStamp = false;
 		}
 	}
-	//AAC 的时间增量计算 ，以海康的16K采样为例，AAC每1024字节编码一次，那么(1024 / 16000 * 2) * 1000 = 32 毫秒 ，但是海康往往2帧发送一次 ，那么两帧递增 32 * 2 = 64 毫秒 ，64 就是海康摄像头 DTS ,PTS 的增量 
-	// 以大华的8K采样为例，AAC每1024字节编码一次，那么(1024 / 8000 * 2) * 1000 = 64 毫秒 ，但是大华往往2帧发送一次 ，那么两帧递增 64 * 2 = 128 毫秒 ，128 就是大华摄像头 DTS ,PTS 的增量 
 
 	//同步音视频 
 	SyncVideoAudioTimestamp();
@@ -222,24 +220,24 @@ void  CNetServerHTTP_FLV::MuxerAudioFlV(char* codeName, unsigned char* pAudio, i
 int CNetServerHTTP_FLV::SendVideo()
 {
 	std::lock_guard<std::mutex> lock(NetServerHTTP_FLVLock);
-
+	
 	if (nWriteErrorCount >= 30)
 	{
-		WriteLog(Log_Debug, "发送flv 失败,nClient = %llu ", nClient);
+		WriteLog(Log_Debug, "发送flv 失败,nClient = %llu ",nClient);
 		DeleteNetRevcBaseClient(nClient);
-		return -1;
+ 		return -1;
 	}
 
 	unsigned char* pData = NULL;
 	int            nLength = 0;
-	if ((pData = m_videoFifo.pop(&nLength)) != NULL)
+	if((pData = m_videoFifo.pop(&nLength)) != NULL )
 	{
 		if (nMediaSourceType == MediaSourceType_LiveMedia)
 		{
 			MuxerVideoFlV(mediaCodecInfo.szVideoName, pData, nLength);
-		}
+ 		}
 		else
-			MuxerVideoFlV(mediaCodecInfo.szVideoName, pData + 4, nLength - 4);
+			MuxerVideoFlV(mediaCodecInfo.szVideoName, pData+4, nLength-4);
 		m_videoFifo.pop_front();
 	}
 
@@ -255,7 +253,7 @@ int CNetServerHTTP_FLV::SendVideo()
 int CNetServerHTTP_FLV::SendAudio()
 {
 	std::lock_guard<std::mutex> lock(NetServerHTTP_FLVLock);
-
+	
 	if (nWriteErrorCount >= 30)
 	{
 		WriteLog(Log_Debug, "发送flv 失败,nClient = %llu ", nClient);
@@ -269,7 +267,7 @@ int CNetServerHTTP_FLV::SendAudio()
 
 	unsigned char* pData = NULL;
 	int            nLength = 0;
-	if ((pData = m_audioFifo.pop(&nLength)) != NULL)
+	if((pData = m_audioFifo.pop(&nLength)) != NULL)
 	{
 		if (nMediaSourceType == MediaSourceType_LiveMedia)
 			MuxerAudioFlV(mediaCodecInfo.szAudioName, pData, nLength);
@@ -277,7 +275,7 @@ int CNetServerHTTP_FLV::SendAudio()
 			MuxerAudioFlV(mediaCodecInfo.szAudioName, pData + 4, nLength - 4);
 
 		m_audioFifo.pop_front();
-	}
+  	}
 	if (nWriteErrorCount >= 30)
 	{
 		DeleteNetRevcBaseClient(nClient);
@@ -310,13 +308,13 @@ int CNetServerHTTP_FLV::InputNetData(NETHANDLE nServerHandle, NETHANDLE nClientH
 				DeleteNetRevcBaseClient(nClient);
 				return 0;
 			}
-		}
+ 		}
 		else
 		{//没有剩余，那么 首，尾指针都要复位 
 			nNetStart = 0;
 			nNetEnd = 0;
 			netDataCacheLength = 0;
-		}
+ 		}
 		memcpy(netDataCache + nNetEnd, pData, nDataLength);
 		netDataCacheLength += nDataLength;
 		nNetEnd += nDataLength;
@@ -331,6 +329,12 @@ int CNetServerHTTP_FLV::ProcessNetData()
 {
 	if (!bFindFlvNameFlag)
 	{
+		if (netDataCacheLength > 512)
+		{
+			WriteLog(Log_Debug, "CNetServerHTTP_FLV = %X , nClient = %llu ,netDataCacheLength = %d, 发送过来的url数据长度非法 ,立即删除 ", this, nClient, netDataCacheLength);
+			DeleteNetRevcBaseClient(nClient);
+		}
+
 		if (strstr((char*)netDataCache, "\r\n\r\n") == NULL)
 		{
 			WriteLog(Log_Debug, "数据尚未接收完整 ");
@@ -340,7 +344,7 @@ int CNetServerHTTP_FLV::ProcessNetData()
 				DeleteNetRevcBaseClient(nClient);
 			}
 			return -1;
-		}
+ 		}
 	}
 
 	if (!bCheckHttpFlvFlag)
@@ -352,7 +356,7 @@ int CNetServerHTTP_FLV::ProcessNetData()
 		string  strHttpHead = (char*)netDataCache;
 		int     nPos1, nPos2;
 		nPos1 = strHttpHead.find("GET ", 0);
-		if (nPos1 >= 0 && nPos1 != string::npos)
+		if (nPos1 >= 0 && nPos1 != string::npos )
 		{
 			nPos2 = strHttpHead.find(" HTTP/", 0);
 			if (nPos2 > 0 && nPos2 != string::npos)
@@ -362,7 +366,7 @@ int CNetServerHTTP_FLV::ProcessNetData()
 					WriteLog(Log_Debug, "CNetServerHTTP_FLV=%X,请求文件名称长度非法 nClient = %llu ", this, nClient);
 					DeleteNetRevcBaseClient(nClient);
 					return -1;
-				}
+ 				}
 
 				bFindFlvNameFlag = true;
 				memset(szTempName, 0x00, sizeof(szTempName));
@@ -372,8 +376,8 @@ int CNetServerHTTP_FLV::ProcessNetData()
 				nPos2 = strFlvName.find("?", 0);
 				if (nPos2 > 0)
 				{//有？，需要去掉？后面的字符串 
-					if (strlen(szPlayParams) == 0)//拷贝鉴权参数
-						memcpy(szPlayParams, szTempName + (nPos2 + 1), strlen(szTempName) - nPos2 - 1);
+					if(strlen(szPlayParams) == 0)//拷贝鉴权参数
+					  memcpy(szPlayParams, szTempName + (nPos2 + 1), strlen(szTempName) - nPos2 - 1);
 
 					memset(szFlvName, 0x00, sizeof(szFlvName));
 					memcpy(szFlvName, szTempName, nPos2);
@@ -381,8 +385,8 @@ int CNetServerHTTP_FLV::ProcessNetData()
 				else//没有？，直接拷贝 
 					strcpy(szFlvName, szTempName);
 
-				if (strlen(szFlvName) < 512)
-					WriteLog(Log_Debug, "CNetServerHTTP_FLV=%X ,nClient = %llu ,拷贝出FLV 文件名字 %s ", this, nClient, szFlvName);
+				if(strlen(szFlvName) < 512 )
+				   WriteLog(Log_Debug, "CNetServerHTTP_FLV=%X ,nClient = %llu ,拷贝出FLV 文件名字 %s ", this, nClient, szFlvName);
 			}
 		}
 
@@ -403,7 +407,7 @@ int CNetServerHTTP_FLV::ProcessNetData()
 
 		//根据FLV文件，进行查找推流对象 
 		if (strstr(szFlvName, ".flv") != NULL || strstr(szFlvName, ".FLV") != NULL)
-			szFlvName[strlen(szFlvName) - 4] = 0x00;
+ 			szFlvName[strlen(szFlvName) - 4] = 0x00;
 
 		strcpy(szMediaSourceURL, szFlvName);
 #ifdef USE_BOOST
@@ -414,7 +418,7 @@ int CNetServerHTTP_FLV::ProcessNetData()
  	
 		if (strstr(szFlvName, RecordFileReplaySplitter) == NULL)
 		{//实况点播
-			pushClient = GetMediaStreamSource(szFlvName, true);
+		     pushClient = GetMediaStreamSource(szFlvName, true);
 			if (pushClient == NULL)
 			{
 				WriteLog(Log_Debug, "CNetServerHTTP_FLV=%X, 没有推流对象的地址 %s nClient = %llu ", this, szFlvName, nClient);
@@ -428,22 +432,22 @@ int CNetServerHTTP_FLV::ProcessNetData()
 		}
 		else
 		{//录像点播
-			//查询点播的录像是否存在
+		    //查询点播的录像是否存在
 			if (QueryRecordFileIsExiting(szFlvName) == false)
 			{
 				WriteLog(Log_Debug, "CNetServerHTTP_FLV = %X, 没有点播的录像文件 %s nClient = %llu ", this, szFlvName, nClient);
-				sprintf(httpResponseData, "HTTP/1.1 404 Not Found\r\nConnection: keep-alive\r\nDate: Thu, Feb 18 2021 01:57:15 GMT\r\nKeep-Alive: timeout=30, max=100\r\nAccess-Control-Allow-Origin: *\r\nServer: %s\r\n\r\n", MediaServerVerson);
+ 				sprintf(httpResponseData, "HTTP/1.1 404 Not Found\r\nConnection: keep-alive\r\nDate: Thu, Feb 18 2021 01:57:15 GMT\r\nKeep-Alive: timeout=30, max=100\r\nAccess-Control-Allow-Origin: *\r\nServer: %s\r\n\r\n", MediaServerVerson);
 				nWriteRet = XHNetSDK_Write(nClient, (unsigned char*)httpResponseData, strlen(httpResponseData), 1);
 				DeleteNetRevcBaseClient(nClient);
 				return -1;
-			}
+ 			}
 
 			//创建录像文件点播
 			pushClient = CreateReplayClient(szFlvName, &nReplayClient);
 			if (pushClient == NULL)
 			{
-				WriteLog(Log_Debug, "CNetServerHTTP_FLV=%X, 建录像文件点播失败 %s nClient = %llu ", this, szFlvName, nClient);
-				sprintf(httpResponseData, "HTTP/1.1 404 Not Found\r\nConnection: keep-alive\r\nDate: Thu, Feb 18 2021 01:57:15 GMT\r\nKeep-Alive: timeout=30, max=100\r\nAccess-Control-Allow-Origin: *\r\nServer: %s\r\n\r\n", MediaServerVerson);
+ 				WriteLog(Log_Debug, "CNetServerHTTP_FLV=%X, 建录像文件点播失败 %s nClient = %llu ", this, szFlvName, nClient);
+ 				sprintf(httpResponseData, "HTTP/1.1 404 Not Found\r\nConnection: keep-alive\r\nDate: Thu, Feb 18 2021 01:57:15 GMT\r\nKeep-Alive: timeout=30, max=100\r\nAccess-Control-Allow-Origin: *\r\nServer: %s\r\n\r\n", MediaServerVerson);
 				nWriteRet = XHNetSDK_Write(nClient, (unsigned char*)httpResponseData, strlen(httpResponseData), 1);
 				DeleteNetRevcBaseClient(nClient);
 				return -1;
@@ -452,8 +456,8 @@ int CNetServerHTTP_FLV::ProcessNetData()
 
 		//记下媒体源
 		SplitterAppStream(szFlvName);
-		sprintf(m_addStreamProxyStruct.url, "http://localhost:%d/%s/%s.flv", ABL_MediaServerPort.nHttpFlvPort, m_addStreamProxyStruct.app, m_addStreamProxyStruct.stream);
-
+		sprintf(m_addStreamProxyStruct.url, "http://%s:%d/%s/%s.flv", ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.nHttpFlvPort, m_addStreamProxyStruct.app, m_addStreamProxyStruct.stream);
+ 
 		char szOrigin[string_length_1024] = { 0 };
 		flvParse.ParseSipString((char*)netDataCache);
 		flvParse.GetFieldValue("Origin", szOrigin);
@@ -468,13 +472,13 @@ int CNetServerHTTP_FLV::ProcessNetData()
 			return -1;
 		}
 
-		flvMuxer = flv_muxer_create(NetServerHTTP_FLV_MuxerCB, this);
+ 		flvMuxer = flv_muxer_create(NetServerHTTP_FLV_MuxerCB, this);
 		if (flvMuxer == NULL)
 		{
 			WriteLog(Log_Debug, "创建 flv 打包器失败 ");
 			DeleteNetRevcBaseClient(nClient);
 			return -1;
-		}
+ 		}
 
 #ifdef WriteHttp_FlvFileFlag //写入FLV文件
 		char  szWriteFlvName[256] = { 0 };
@@ -484,17 +488,17 @@ int CNetServerHTTP_FLV::ProcessNetData()
 		if ((strcmp(pushClient->m_mediaCodecInfo.szVideoName, "H264") == 0 || strcmp(pushClient->m_mediaCodecInfo.szVideoName, "H265") == 0) &&
 			strcmp(pushClient->m_mediaCodecInfo.szAudioName, "AAC") == 0 && ABL_MediaServerPort.nEnableAudio == 1)
 		{//H264、H265  && AAC，创建音频，视频
-			flvWrite = flv_writer_create2(1, 1, NetServerHTTP_FLV_OnWrite_CB, (void*)this);
-			WriteLog(Log_Debug, "创建http-flv 输出格式为： 视频 %s、音频 %s  nClient = %llu ", pushClient->m_mediaCodecInfo.szVideoName, pushClient->m_mediaCodecInfo.szAudioName, nClient);
+		  flvWrite = flv_writer_create2(1, 1, NetServerHTTP_FLV_OnWrite_CB, (void*)this);
+		  WriteLog(Log_Debug, "创建http-flv 输出格式为： 视频 %s、音频 %s  nClient = %llu ", pushClient->m_mediaCodecInfo.szVideoName, pushClient->m_mediaCodecInfo.szAudioName, nClient);
 		}
-		else if (strcmp(pushClient->m_mediaCodecInfo.szVideoName, "H264") == 0 || strcmp(pushClient->m_mediaCodecInfo.szVideoName, "H265") == 0)
+		else if ( strcmp(pushClient->m_mediaCodecInfo.szVideoName, "H264") == 0 || strcmp(pushClient->m_mediaCodecInfo.szVideoName, "H265") == 0)
 		{//H264、H265 只创建视频
 			if (ABL_MediaServerPort.nEnableAudio == 0 || ABL_MediaServerPort.flvPlayAddMute == 0)
 			{//没有音频输出，或者没有开启静音
-				flvWrite = flv_writer_create2(0, 1, NetServerHTTP_FLV_OnWrite_CB, (void*)this);
-				WriteLog(Log_Debug, "创建http-flv 输出格式为： 视频 %s、音频：无音频  nClient = %llu ", pushClient->m_mediaCodecInfo.szVideoName, nClient);
+		  	   flvWrite = flv_writer_create2(0, 1, NetServerHTTP_FLV_OnWrite_CB, (void*)this);
+			   WriteLog(Log_Debug, "创建http-flv 输出格式为： 视频 %s、音频：无音频  nClient = %llu ", pushClient->m_mediaCodecInfo.szVideoName, nClient);
 			}
-			else
+			else 
 			{
 #ifdef  OS_System_Windows //window 不增加静音
 				flvWrite = flv_writer_create2(0, 1, NetServerHTTP_FLV_OnWrite_CB, (void*)this);
@@ -513,12 +517,12 @@ int CNetServerHTTP_FLV::ProcessNetData()
 		}
 		else if (strlen(pushClient->m_mediaCodecInfo.szVideoName) == 0 && (strcmp(pushClient->m_mediaCodecInfo.szAudioName, "AAC") == 0 || strcmp(pushClient->m_mediaCodecInfo.szAudioName, "MP3") == 0))
 		{//只创建音频
-			flvWrite = flv_writer_create2(1, 0, NetServerHTTP_FLV_OnWrite_CB, (void*)this);
+			flvWrite = flv_writer_create2(1,0, NetServerHTTP_FLV_OnWrite_CB, (void*)this);
 			WriteLog(Log_Debug, "创建http-flv 输出格式为： 无视频 、只有音频 %s  nClient = %llu ", pushClient->m_mediaCodecInfo.szAudioName, nClient);
 		}
 		else
 		{
-			WriteLog(Log_Debug, "视频 %s、音频 %s 格式有误，不支持http-flv 输出,即将删除 nClient = %llu ", pushClient->m_mediaCodecInfo.szVideoName, pushClient->m_mediaCodecInfo.szAudioName, nClient);
+			WriteLog(Log_Debug, "视频 %s、音频 %s 格式有误，不支持http-flv 输出,即将删除 nClient = %llu ",pushClient->m_mediaCodecInfo.szVideoName,pushClient->m_mediaCodecInfo.szAudioName,nClient);
 			DeleteNetRevcBaseClient(nClient);
 			return -1;
 		}
@@ -540,7 +544,7 @@ int CNetServerHTTP_FLV::ProcessNetData()
 		//把客户端 加入到发送线程池中
 		pMediaSendThreadPool->AddClientToThreadPool(nClient);
 	}
-
+  
 	return 0;
 }
 

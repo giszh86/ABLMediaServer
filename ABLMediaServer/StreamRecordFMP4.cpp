@@ -321,7 +321,7 @@ static int fmp4_hls_init_segment(hls_fmp4_t* hls, void* param)
 		sprintf(pNetServerHttpMp4->szFileName, "%s%04d%02d%02d%02d%02d%02d.mp4", pNetServerHttpMp4->szRecordPath, local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);
 		sprintf(pNetServerHttpMp4->szFileNameOrder, "%04d%02d%02d%02d%02d%02d.mp4", local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);;
 #endif
-		boost::shared_ptr<CRecordFileSource> pRecord = GetRecordFileSource(pNetServerHttpMp4->m_szShareMediaURL);
+		auto pRecord = GetRecordFileSource(pNetServerHttpMp4->m_szShareMediaURL);
 		if (pRecord)
 		{
 			bUpdateFlag = pRecord->UpdateExpireRecordFile(pNetServerHttpMp4->szFileName);

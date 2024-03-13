@@ -32,6 +32,8 @@ int                                          SampleRateArray[] = { 96000,88200,6
 static int NetRtmpServerRecvCallBackFLV(void* param, int codec, const void* data, size_t bytes, uint32_t pts, uint32_t dts, int flags);
 static int NetRtmpServerRec_MuxerFlv(void* flv, int type, const void* data, size_t bytes, uint32_t timestamp);
 extern MediaServerPort                      ABL_MediaServerPort;
+extern bool                                 AddClientToMapAddMutePacketList(uint64_t nClient);
+extern bool                                 DelClientToMapFromMutePacketList(uint64_t nClient);
 
 static int rtmp_server_send(void* param, const void* header, size_t len, const void* data, size_t bytes)
 {
@@ -49,8 +51,7 @@ static int rtmp_server_send(void* param, const void* header, size_t len, const v
 				{
 				   pClient->bRunFlag = false;
 				   WriteLog(Log_Debug, "rtmp_server_send 发送失败，次数 nWriteErrorCount = %d ", pClient->nWriteErrorCount);
-
-				   pDisconnectBaseNetFifo.push((unsigned char*)&pClient->nClient, sizeof(pClient->nClient));
+				   DeleteNetRevcBaseClient(pClient->nClient);
  				}
 			}
 			else
@@ -63,6 +64,7 @@ static int rtmp_server_send(void* param, const void* header, size_t len, const v
 			{
 				pClient->nWriteErrorCount ++;
 				WriteLog(Log_Debug,"rtmp_server_send 发送失败，次数 nWriteErrorCount = %d ", pClient->nWriteErrorCount);
+				DeleteNetRevcBaseClient(pClient->nClient);
 			}
 			else
 				pClient->nWriteErrorCount = 0;
@@ -99,7 +101,7 @@ static int rtmp_server_onpublish(void* param, const char* app, const char* strea
 		char   szStream[string_length_512] = { 0 };
 		strcpy(szStream, stream);
 		int    nPos = strMP4Name.find("?", 0);
-		if (nPos > 0 && strlen(stream) > 0)
+		if (nPos > 0 && nPos != string::npos && strlen(stream) > 0)
 		{//拷贝鉴权参数
 			memcpy(pClient->szPlayParams, stream + (nPos + 1), strlen(stream) - nPos - 1);
 			szStream[nPos] = 0x00;
@@ -116,7 +118,7 @@ static int rtmp_server_onpublish(void* param, const char* app, const char* strea
 		pTempSource = GetMediaStreamSource(pClient->szURL,true);
 		if (pTempSource != NULL)
 		{//推流地址已经存在 
-			WriteLog(Log_Debug, "--- 推流地址已经存在--- %s ", pClient->szURL);
+			WriteLog(Log_Debug, "--- 推流地址已经存在--- %s ",pClient->szURL );
 			DeleteNetRevcBaseClient(pClient->nClient);
 			return 0;
 		}
@@ -129,8 +131,8 @@ static int rtmp_server_onpublish(void* param, const char* app, const char* strea
 		pClient->flvDemuxer = flv_demuxer_create(NetRtmpServerRecvCallBackFLV, pClient);
 		pClient->netBaseNetType = NetBaseNetType_RtmpServerRecvPush;
 
-		pClient->bPushMediaSuccessFlag = true; //成功推流 
-		pClient->pMediaSource = CreateMediaStreamSource(pClient->szURL, pClient->nClient, MediaSourceType_LiveMedia, 0, pClient->m_h265ConvertH264Struct);
+ 		pClient->bPushMediaSuccessFlag = true; //成功推流 
+		pClient->pMediaSource =  CreateMediaStreamSource(pClient->szURL,pClient->nClient, MediaSourceType_LiveMedia, 0, pClient->m_h265ConvertH264Struct);
 		if (pClient->pMediaSource == NULL)
 		{//推流地址已经存在 
 			WriteLog(Log_Debug, "创建媒体源失败 %s ", pClient->szURL);
@@ -161,7 +163,7 @@ static int rtmp_server_onplay(void* param, const char* app, const char* stream, 
 	char   szStream[string_length_1024] = { 0 };
 	strcpy(szStream, stream);
 	int    nPos = strMP4Name.find("?", 0);
-	if (nPos > 0 && strlen(stream) > 0)
+	if (nPos > 0 && nPos != string::npos && strlen(stream) > 0)
 	{//拷贝鉴权参数
 		memcpy(pClient->szPlayParams, stream + (nPos + 1), strlen(stream) - nPos - 1);
 		szStream[nPos] = 0x00;
@@ -220,7 +222,7 @@ static int rtmp_server_onplay(void* param, const char* app, const char* stream, 
 	sprintf(pClient->szMediaSourceURL, "/%s/%s", app, szStream);
 	strcpy(pClient->m_addStreamProxyStruct.app, app);
 	strcpy(pClient->m_addStreamProxyStruct.stream, szStream);
-	sprintf(pClient->m_addStreamProxyStruct.url, "rtmp://localhost:%d/%s/%s", ABL_MediaServerPort.nRtmpPort, app, szStream);
+	sprintf(pClient->m_addStreamProxyStruct.url, "rtmp://%s:%d/%s/%s", ABL_MediaServerPort.ABL_szLocalIP,ABL_MediaServerPort.nRtmpPort, app, szStream);
  
 	//把客户端加入媒体拷贝线程 
 	if (pClient && pushClient)
@@ -583,6 +585,10 @@ CNetRtmpServerRecv::~CNetRtmpServerRecv()
 	m_videoFifo.FreeFifo();
 	m_audioFifo.FreeFifo();
 
+	//从静音链表删除 
+	if (bAddMuteFlag)
+		DelClientToMapFromMutePacketList(nClient);
+
 	//如果是接收推流，并且成功接收推流的，则需要删除媒体数据源 szURL ，比如 /Media/Camera_00001 
 	if (bPushMediaSuccessFlag && netBaseNetType == NetBaseNetType_RtmpServerRecvPush && pMediaSource !=	NULL )
 		DeleteMediaStreamSource(szURL);
@@ -598,6 +604,19 @@ int CNetRtmpServerRecv::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, cha
 	if (strlen(mediaCodecInfo.szVideoName) == 0)
 		strcpy(mediaCodecInfo.szVideoName, szVideoCodec);
 
+#ifndef  OS_System_Windows //window 不增加静音
+	if (!bAddMuteFlag && strlen(mediaCodecInfo.szAudioName) == 0)
+	{
+		bAddMuteFlag = true;
+		strcpy(mediaCodecInfo.szAudioName, "AAC");
+		mediaCodecInfo.nChannels = 1;
+		mediaCodecInfo.nSampleRate = 16000;
+		mediaCodecInfo.nBaseAddAudioTimeStamp = 64;
+		AddClientToMapAddMutePacketList(nClient);
+		WriteLog(Log_Debug, "媒体源 %s 没有音频 ，创建 Rtmp 音频输出格式为： 视频 %s、音频：AAC( chans:1,sampleRate:16000 ) nClient = %llu ", m_szShareMediaURL, mediaCodecInfo.szVideoName, nClient);
+	}
+#endif
+
 	m_videoFifo.push(pVideoData, nDataLength);
 	return 0;
 }
@@ -612,9 +631,6 @@ int CNetRtmpServerRecv::PushAudio(uint8_t* pVideoData, uint32_t nDataLength, cha
 		mediaCodecInfo.nChannels = nChannels;
 		mediaCodecInfo.nSampleRate = SampleRate;
 	}
-	if ( !(strcmp(szAudioCodec, "AAC") == 0 || strcmp(szAudioCodec, "MP3") == 0))
-		return 0;
-
 	m_audioFifo.push(pVideoData, nDataLength);
 	return 0;
 }
@@ -628,7 +644,9 @@ int CNetRtmpServerRecv::SendVideo()
 		return -1;
 	}
 
-	nVideoStampAdd = 1000 / mediaCodecInfo.nVideoFrameRate;
+	//只有视频，或者屏蔽音频
+	if (ABL_MediaServerPort.nEnableAudio == 0 )
+		nVideoStampAdd = 1000 / mediaCodecInfo.nVideoFrameRate;
 
 	unsigned char* pData = NULL;
 	int            nLength = 0;
@@ -639,20 +657,20 @@ int CNetRtmpServerRecv::SendVideo()
 			if (strcmp(mediaCodecInfo.szVideoName, "H264") == 0)
 			{
 			   if(nMediaSourceType == MediaSourceType_LiveMedia )
-			     flv_muxer_avc(flvMuxer, pData , nLength , flvPS, flvPS);
+			     flv_muxer_avc(flvMuxer, pData , nLength , videoDts, videoDts);
 			  else 
-				 flv_muxer_avc(flvMuxer, pData + 4 , nLength - 4, flvPS, flvPS);
+				 flv_muxer_avc(flvMuxer, pData + 4 , nLength - 4, videoDts, videoDts);
 			}
 			else if (strcmp(mediaCodecInfo.szVideoName, "H265") == 0)
 			{
 				if (nMediaSourceType == MediaSourceType_LiveMedia)
-					flv_muxer_hevc(flvMuxer, pData, nLength, flvPS, flvPS);
+					flv_muxer_hevc(flvMuxer, pData, nLength, videoDts, videoDts);
 				else 
-					flv_muxer_hevc(flvMuxer, pData + 4 , nLength - 4, flvPS, flvPS);
+					flv_muxer_hevc(flvMuxer, pData + 4 , nLength - 4, videoDts, videoDts);
 			}
 		}
 
-		flvPS += nVideoStampAdd ;
+		videoDts += nVideoStampAdd ;
 
 		m_videoFifo.pop_front();
 	}
@@ -673,10 +691,6 @@ int CNetRtmpServerRecv::SendAudio()
 		return -1;
 	}
 
-	//不是AAC\mp3
-	if ( !(strcmp(mediaCodecInfo.szAudioName, "AAC") == 0 || strcmp(mediaCodecInfo.szAudioName, "MP3") == 0)|| ABL_MediaServerPort.nEnableAudio == 0)
-		return -1;
-
 	unsigned char* pData = NULL;
 	int            nLength = 0;
 	if ((pData = m_audioFifo.pop(&nLength)) != NULL)
@@ -686,30 +700,42 @@ int CNetRtmpServerRecv::SendAudio()
 			if (nMediaSourceType == MediaSourceType_LiveMedia)
 			{
 			    if(strcmp(mediaCodecInfo.szAudioName, "AAC") == 0)
-				  flv_muxer_aac(flvMuxer, pData, nLength, flvAACDts, flvAACDts);
+				  flv_muxer_aac(flvMuxer, pData, nLength, audioDts, audioDts);
 				else if(strcmp(mediaCodecInfo.szAudioName, "MP3") == 0)
-				  flv_muxer_mp3(flvMuxer, pData, nLength, flvAACDts, flvAACDts);
+				  flv_muxer_mp3(flvMuxer, pData, nLength, audioDts, audioDts);
+				else if (strcmp(mediaCodecInfo.szAudioName, "G711_A") == 0)
+				{
+				  flv_muxer_g711a(flvMuxer, pData, nLength, audioDts, audioDts);
+				  audioDts += nLength / 8;
+				}
+				else if (strcmp(mediaCodecInfo.szAudioName, "G711_U") == 0)
+				{
+				  flv_muxer_g711u(flvMuxer, pData, nLength, audioDts, audioDts);
+				  audioDts += nLength / 8;
+				}
 			}
 			else
-				flv_muxer_aac(flvMuxer, pData+4, nLength-4, flvAACDts, flvAACDts);
+				flv_muxer_aac(flvMuxer, pData+4, nLength-4, audioDts, audioDts);
 		}
 
-		if (bUserNewAudioTimeStamp == false)
-			flvAACDts += mediaCodecInfo.nBaseAddAudioTimeStamp;
-		else
+		if (strcmp(mediaCodecInfo.szAudioName, "AAC") == 0 || strcmp(mediaCodecInfo.szAudioName, "MP3") == 0)
 		{
-			nUseNewAddAudioTimeStamp --;
-			flvAACDts += nNewAddAudioTimeStamp;
-			if (nUseNewAddAudioTimeStamp <= 0)
+			if (bUserNewAudioTimeStamp == false)
+				audioDts += mediaCodecInfo.nBaseAddAudioTimeStamp;
+			else
 			{
-				bUserNewAudioTimeStamp = false;
+				nUseNewAddAudioTimeStamp --;
+				audioDts += nNewAddAudioTimeStamp;
+				if (nUseNewAddAudioTimeStamp <= 0)
+				{
+					bUserNewAudioTimeStamp = false;
+				}
 			}
 		}
-
+ 
 		m_audioFifo.pop_front();
 	}
 
-	//同步音视频，针对 rtmp ,flv ,ws-flv
 	SyncVideoAudioTimestamp(); 
 
 	if (nWriteErrorCount >= 30)

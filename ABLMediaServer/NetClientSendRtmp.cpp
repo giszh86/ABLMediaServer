@@ -26,9 +26,9 @@ extern bool                                  DeleteClientMediaStreamSource(uint6
 extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
 #endif
 
-extern CMediaSendThreadPool* pMediaSendThreadPool;
+extern CMediaSendThreadPool*                 pMediaSendThreadPool;
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
-extern int                                   SampleRateArray[];
+extern int                                   SampleRateArray[] ;
 extern int64_t                               nTestRtmpPushID;
 extern MediaServerPort                       ABL_MediaServerPort;
 
@@ -48,20 +48,20 @@ static int rtmp_client_pushCB(void* param, const void* header, size_t len, const
 {
 	CNetClientSendRtmp* pClient = (CNetClientSendRtmp*)param;
 
-	if (pClient != NULL && pClient->bRunFlag)
+	if (pClient != NULL && pClient->bRunFlag )
 	{
 		if (len > 0 && header != NULL)
 		{
 			pClient->nWriteRet = XHNetSDK_Write(pClient->nClient, (uint8_t*)header, len, true);
 			if (pClient->nWriteRet != 0)
 			{
-				pClient->nWriteErrorCount++;
+				pClient->nWriteErrorCount ++;
 				if (pClient->nWriteErrorCount >= 30)
 				{
 					pClient->bRunFlag = false;
 					WriteLog(Log_Debug, "rtmp_client_pushCB 发送失败，次数 nWriteErrorCount = %d ", pClient->nWriteErrorCount);
 
-					pDisconnectBaseNetFifo.push((unsigned char*)&pClient->nClient, sizeof(pClient->nClient));
+				    pDisconnectBaseNetFifo.push((unsigned char*)&pClient->nClient, sizeof(pClient->nClient));
 				}
 			}
 			else
@@ -78,30 +78,30 @@ static int rtmp_client_pushCB(void* param, const void* header, size_t len, const
 
 				if (!pClient->bResponseHttpFlag)
 				{//推流失败回复
-					sprintf(pClient->szResponseBody, "{\"code\":%d,\"memo\":\"rtmp push Error \",\"key\":%d}", IndexApiCode_RtmpPushError, 0);
+ 					sprintf(pClient->szResponseBody, "{\"code\":%d,\"memo\":\"rtmp push Error \",\"key\":%d}", IndexApiCode_RtmpPushError, 0);
 					pClient->ResponseHttp(pClient->nClient_http, pClient->szResponseBody, false);
 				}
 
 				WriteLog(Log_Debug, "rtmp_client_pushCB 发送失败，次数 nWriteErrorCount = %d ", pClient->nWriteErrorCount);
-			}
+ 			}
 			else
 			{
 				pClient->nWriteErrorCount = 0;
 
 				//回复http 
-				if (!pClient->bResponseHttpFlag && GetTickCount64() - pClient->nPrintTime >= 1000)
+				if (!pClient->bResponseHttpFlag && GetTickCount64() - pClient->nPrintTime >= 1000 )
 				{//推流成功回复
-					sprintf(pClient->szResponseBody, "{\"code\":0,\"memo\":\"success\",\"key\":%llu}", pClient->hParent);
+  					sprintf(pClient->szResponseBody, "{\"code\":0,\"memo\":\"success\",\"key\":%llu}", pClient->hParent);
 					pClient->ResponseHttp(pClient->nClient_http, pClient->szResponseBody, false);
-				}
+ 				}
 			}
 		}
 
 		if (pClient->bAddMediaSourceFlag == false)
 		{
-			pClient->nRtmpState = rtmp_client_getstate(pClient->rtmp);
+ 			pClient->nRtmpState = rtmp_client_getstate(pClient->rtmp);
 			if (pClient->nRtmpState == 3)
-				pClient->nRtmpState3Count++;
+				pClient->nRtmpState3Count ++;
 
 			WriteLog(Log_Debug, "rtmp_client_pushCB  nRtmpState = %d ", pClient->nRtmpState);
 			if (pClient->nRtmpState3Count >= 2)
@@ -116,7 +116,7 @@ static int rtmp_client_pushCB(void* param, const void* header, size_t len, const
 				auto  pMediaSource = GetMediaStreamSource(pClient->m_szShareMediaURL, true);
 				if (pMediaSource != NULL)
 				{
-					//记下媒体源
+ 					//记下媒体源
 					pClient->SplitterAppStream(pClient->m_szShareMediaURL);
 					sprintf(pClient->m_addStreamProxyStruct.url, "rtmp://localhost:%d/%s/%s", ABL_MediaServerPort.nRtmpPort, pClient->m_addStreamProxyStruct.app, pClient->m_addStreamProxyStruct.stream);
 
@@ -125,13 +125,13 @@ static int rtmp_client_pushCB(void* param, const void* header, size_t len, const
 				}
 				else
 				{
-					WriteLog(Log_Debug, "rtmp_client_pushCB 不存在媒体源 %s ，立即删除 nClient = %llu ", pClient->m_szShareMediaURL, pClient->nClient);
+					WriteLog(Log_Debug, "rtmp_client_pushCB 不存在媒体源 %s ，立即删除 nClient = %llu ", pClient->m_szShareMediaURL,pClient->nClient);
 					pDisconnectBaseNetFifo.push((unsigned char*)&pClient->nClient, sizeof(pClient->nClient));
-				}
+ 				}
 			}
 		}
 	}
-
+ 
 	return len + bytes;
 }
 
@@ -140,12 +140,12 @@ static int NetClientSendRtmp_MuxerFlv(void* param, int type, const void* data, s
 	CNetClientSendRtmp* pClient = (CNetClientSendRtmp*)param;
 	int r;
 
-	if (pClient == NULL || pClient->rtmp == NULL || pClient->flvMuxer == NULL || !pClient->bRunFlag)
+ 	if (pClient == NULL || pClient->rtmp == NULL || pClient->flvMuxer == NULL || !pClient->bRunFlag)
 		return 0;
 
 	if (FLV_TYPE_AUDIO == type)
 	{
-		r = rtmp_client_push_audio(pClient->rtmp, data, bytes, timestamp);
+ 		r = rtmp_client_push_audio(pClient->rtmp, data, bytes, timestamp);
 	}
 	else if (FLV_TYPE_VIDEO == type)
 	{
@@ -154,9 +154,9 @@ static int NetClientSendRtmp_MuxerFlv(void* param, int type, const void* data, s
 	return 0;
 }
 
-CNetClientSendRtmp::CNetClientSendRtmp(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort, char* szShareMediaURL)
+CNetClientSendRtmp::CNetClientSendRtmp(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort,char* szShareMediaURL)
 {
-	rtmp = NULL;
+	rtmp = NULL ;
 	bCheckRtspVersionFlag = false;
 	bDeleteRtmpPushH265Flag = false;
 	nServer = hServer;
@@ -170,12 +170,12 @@ CNetClientSendRtmp::CNetClientSendRtmp(NETHANDLE hServer, NETHANDLE hClient, cha
 	flvMuxer = NULL;
 	nWriteRet = 0;
 	nWriteErrorCount = 0;
-	flvPS = flvAACDts = 0;
+	videoDts = 0;
 	nAsyncAudioStamp = -1;
 
 #ifdef  WriteFlvFileByDebug
 	char  szFlvFile[256] = { 0 };
-	sprintf(szFlvFile, ".\\%X_%d.flv", this, rand());
+	sprintf(szFlvFile,".\\%X_%d.flv", this, rand());
 	s_flv = flv_writer_create(szFlvFile);
 #endif
 #ifdef  WriteFlvToEsFileFlagSend
@@ -190,59 +190,60 @@ CNetClientSendRtmp::CNetClientSendRtmp(NETHANDLE hServer, NETHANDLE hClient, cha
 	handler.send = rtmp_client_pushCB;
 
 	if (ParseRtspRtmpHttpURL(szIP) == true)
-		uint32_t ret = XHNetSDK_Connect((int8_t*)m_rtspStruct.szIP, atoi(m_rtspStruct.szPort), (int8_t*)(NULL), 0, (uint64_t*)&nClient, onread, onclose, onconnect, 0, MaxClientConnectTimerout, 1);
+	 uint32_t ret = XHNetSDK_Connect((int8_t*)m_rtspStruct.szIP, atoi(m_rtspStruct.szPort), (int8_t*)(NULL), 0, (uint64_t*)&nClient, onread, onclose, onconnect, 0, MaxClientConnectTimerout, 1);
 
-	nVideoDTS = 0;
-	nAudioDTS = 0;
+	nVideoDTS = 0 ;
+	nAudioDTS = 0 ;
 	nRtmpState3Count = 0;
 	bAddMediaSourceFlag = false;
 	memset(szRtmpName, 0x00, sizeof(szRtmpName));
 	bRunFlag = true;
 	netBaseNetType = NetBaseNetType_RtmpClientPush;
-
-	WriteLog(Log_Debug, "CNetClientSendRtmp 构造 = %X  nClient = %llu ", this, nClient);
+ 
+	WriteLog(Log_Debug, "CNetClientSendRtmp 构造 = %X  nClient = %llu ",this, nClient);
 }
 
 CNetClientSendRtmp::~CNetClientSendRtmp()
 {
 	bRunFlag = false;
-	std::lock_guard<std::mutex> lock(businessProcMutex);
+ 	std::lock_guard<std::mutex> lock(businessProcMutex);
 
-	if (flvMuxer)
-		flv_muxer_destroy(flvMuxer);
+	if(flvMuxer)
+	  flv_muxer_destroy(flvMuxer);
 
 	if (rtmp != NULL)
 	{
-		if (nRtmpState >= 3)
-			rtmp_client_stop(rtmp);
+		if(nRtmpState >= 3)
+		  rtmp_client_stop(rtmp);
 
 		rtmp_client_destroy(rtmp);
 	}
-
+ 
 #ifdef  WriteFlvFileByDebug
 	flv_writer_destroy(s_flv);
 #endif
 #ifdef  WriteFlvToEsFileFlagSend
-	fclose(fWriteVideo);
+ 	fclose(fWriteVideo);
 	fclose(fWriteAudio);
 #endif
 
 	NetDataFifo.FreeFifo();
 
 	WriteLog(Log_Debug, "CNetClientSendRtmp 析构 = %X  nClient = %llu \r\n", this, nClient);
-
+	
 	malloc_trim(0);
 }
 
 int CNetClientSendRtmp::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, char* szVideoCodec)
 {
 	nRecvDataTimerBySecond = 0;
-	if (!bRunFlag || m_addPushProxyStruct.disableVideo[0] != 0x30)
+	if (!bRunFlag || m_addPushProxyStruct.disableVideo[0] != 0x30 )
 		return -1;
 	std::lock_guard<std::mutex> lock(businessProcMutex);
 
-	//没有音频时，才启用计算视频帧速度生成时间戳 ，否则用音频同步后的时间戳
-	nVideoStampAdd = 1000 / mediaCodecInfo.nVideoFrameRate;
+	//只有视频，或者屏蔽音频
+	if (ABL_MediaServerPort.nEnableAudio == 0 || strcmp(mediaCodecInfo.szAudioName, "G711_A") == 0 || strcmp(mediaCodecInfo.szAudioName, "G711_U") == 0)
+		nVideoStampAdd = 1000 / mediaCodecInfo.nVideoFrameRate;
 
 	if (rtmp == NULL || flvMuxer == NULL)
 		return -2;
@@ -260,16 +261,16 @@ int CNetClientSendRtmp::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, cha
 	if (strcmp(szVideoCodec, "H264") == 0)
 	{
 		if (flvMuxer)
-			flv_muxer_avc(flvMuxer, pVideoData, nDataLength, flvPS, flvPS);
+			flv_muxer_avc(flvMuxer, pVideoData, nDataLength, videoDts, videoDts);
 	}
 	else if (strcmp(szVideoCodec, "H265") == 0)
 	{
 		if (flvMuxer)
-			flv_muxer_hevc(flvMuxer, pVideoData, nDataLength, flvPS, flvPS);
+			flv_muxer_hevc(flvMuxer, pVideoData, nDataLength, videoDts, videoDts);
 	}
 
-	//printf("flvPS = %d \r\n", flvPS);
-	flvPS += nVideoStampAdd;
+	//printf("flvPS = %d \r\n", videoDts);
+	videoDts += nVideoStampAdd;
 
 	return 0;
 }
@@ -277,7 +278,7 @@ int CNetClientSendRtmp::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, cha
 int CNetClientSendRtmp::PushAudio(uint8_t* pAudioData, uint32_t nDataLength, char* szAudioCodec, int nChannels, int SampleRate)
 {
 	nRecvDataTimerBySecond = 0;
-	if (!bRunFlag || m_addPushProxyStruct.disableAudio[0] != 0x30)
+	if (!bRunFlag || m_addPushProxyStruct.disableAudio[0] != 0x30 )
 		return -1;
 	std::lock_guard<std::mutex> lock(businessProcMutex);
 
@@ -290,21 +291,19 @@ int CNetClientSendRtmp::PushAudio(uint8_t* pAudioData, uint32_t nDataLength, cha
 	if (strcmp(szAudioCodec, "AAC") == 0)
 	{
 		if (flvMuxer)
-			flv_muxer_aac(flvMuxer, pAudioData, nDataLength, flvAACDts, flvAACDts);
+			flv_muxer_aac(flvMuxer, pAudioData, nDataLength, audioDts, audioDts);
 
 		if (bUserNewAudioTimeStamp == false)
-			flvAACDts += mediaCodecInfo.nBaseAddAudioTimeStamp;
+			audioDts += mediaCodecInfo.nBaseAddAudioTimeStamp;
 		else
 		{
-			nUseNewAddAudioTimeStamp--;
-			flvAACDts += nNewAddAudioTimeStamp;
+			nUseNewAddAudioTimeStamp --;
+			audioDts += nNewAddAudioTimeStamp;
 			if (nUseNewAddAudioTimeStamp <= 0)
 			{
 				bUserNewAudioTimeStamp = false;
 			}
 		}
-		//AAC 的时间增量计算 ，以海康的16K采样为例，AAC每1024字节编码一次，那么(1024 / 16000 * 2) * 1000 = 32 毫秒 ，但是海康往往2帧发送一次 ，那么两帧递增 32 * 2 = 64 毫秒 ，64 就是海康摄像头 DTS ,PTS 的增量 
-		// 以大华的8K采样为例，AAC每1024字节编码一次，那么(1024 / 8000 * 2) * 1000 = 64 毫秒 ，但是大华往往2帧发送一次 ，那么两帧递增 64 * 2 = 128 毫秒 ，128 就是大华摄像头 DTS ,PTS 的增量 
 	}
 
 	//同步音视频 
@@ -332,17 +331,17 @@ int CNetClientSendRtmp::InputNetData(NETHANDLE nServerHandle, NETHANDLE nClientH
 
 int CNetClientSendRtmp::ProcessNetData()
 {
-	unsigned char* pData = NULL;
+ 	unsigned char* pData = NULL;
 	int            nLength;
 	int            nRet;
 
 	pData = NetDataFifo.pop(&nLength);
-	if (pData != NULL && rtmp != NULL)
+	if(pData != NULL && rtmp != NULL )
 	{
 		if (nLength > 0)
 			nRet = rtmp_client_input(rtmp, pData, nLength);
-
-		NetDataFifo.pop_front();
+ 
+ 		NetDataFifo.pop_front();
 	}
 	return 0;
 }
@@ -350,7 +349,7 @@ int CNetClientSendRtmp::ProcessNetData()
 //发送第一个请求
 int CNetClientSendRtmp::SendFirstRequst()
 {
-	int nPos1, nPos2, nPos3;
+	int nPos1, nPos2,nPos3;
 	string strURL = szClientIP;
 	char   szApp[string_length_1024] = { 0 };
 	char   szStream[string_length_1024] = { 0 };
@@ -371,10 +370,10 @@ int CNetClientSendRtmp::SendFirstRequst()
 			tcurl[nPos3] = 0x00;
 
 		rtmp = rtmp_client_create(szApp, szStream, tcurl, this, &handler);
-		if (rtmp != NULL)
+		if(rtmp != NULL)
 		{
-			int  r = rtmp_client_start(rtmp, 0);
-			r = rtmp_client_getstate(rtmp);
+		  int  r = rtmp_client_start(rtmp, 0);
+	 	  r = rtmp_client_getstate(rtmp);
 		}
 	}
 

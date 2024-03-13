@@ -1,9 +1,9 @@
 /*
 功能：
-		实现读取录像文件，往媒体源塞入视频、音频数据，形成媒体源
+        实现读取录像文件，往媒体源塞入视频、音频数据，形成媒体源
 日期    2022-01-18
 作者    罗家兄弟
-QQ      79941308
+QQ      79941308    
 E-Mail  79941308@qq.com
 */
 #include "stdafx.h"
@@ -538,7 +538,7 @@ int CReadRecordFileInput::ProcessNetData()
 #ifdef  OS_System_Windows
 				nWaitTime = ((1000 / mediaCodecInfo.nVideoFrameRate)) - 8;
 #else 
-				nWaitTime = ((1000 / mediaCodecInfo.nVideoFrameRate)) - 3 ;
+				nWaitTime = ((1000 / mediaCodecInfo.nVideoFrameRate)) ;
 #endif   
 			}
 			else
@@ -550,7 +550,7 @@ int CReadRecordFileInput::ProcessNetData()
 #ifdef  OS_System_Windows
 				nWaitTime = ((1000 / mediaCodecInfo.nVideoFrameRate)) / 2 - 5 ;
  #else 
-				nWaitTime = ((1000 / mediaCodecInfo.nVideoFrameRate)) / 2 - 3;
+				nWaitTime = ((1000 / mediaCodecInfo.nVideoFrameRate)) / 2 ;
 #endif   
 	        }
 		    else
