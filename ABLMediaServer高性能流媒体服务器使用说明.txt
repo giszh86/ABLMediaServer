@@ -857,29 +857,36 @@
 			{
 				"code": 0,
 				"params": [
+				
 					{
 						"secret": "035c73f7-bb6b-4889-a715-d9eb2d1925cc",
-						"memo": "server password"
+						"memo": "server password",				
 					},
 					{
 						"ServerIP": "44.35.33.239",
-						"memo": "ABLMediaServer ip address"
+						"memo": "ABLMediaServer ip address"				
+					},
+					{
+						"rtc.listening-ip": "192.168.2.5",
+						"memo": "Total number of video playback threads ."					
 					},
 					{
 						"mediaServerID": "ABLMediaServer_00001",
-						"memo": "media Server ID "
+						"memo": "media Server ID "			
 					},
 					{
 						"hook_enable": 0,
 						"memo": "hook_enable = 1 open notice , hook_enable = 0 close notice "
+				
 					},
 					{
 						"enable_audio": 1,
 						"memo": "enable_audio = 1 open Audio , enable_audio = 0 Close Audio "
+		
 					},
 					{
 						"httpServerPort": 7088,
-						"memo": "http api port "
+						"memo": "http api port "			
 					},
 					{
 						"rtspPort": 554,
@@ -888,22 +895,27 @@
 					{
 						"rtmpPort": 1935,
 						"memo": "rtmp port "
+		
 					},
 					{
 						"httpFlvPort": 8088,
 						"memo": "http-flv port "
+
 					},
 					{
 						"hls_enable": 0,
 						"memo": "hls whether enable "
+			
 					},
 					{
 						"hlsPort": 9088,
 						"memo": "hls port"
+
 					},
 					{
 						"wsPort": 6088,
 						"memo": "websocket flv port"
+				
 					},
 					{
 						"mp4Port": 5088,
@@ -961,6 +973,7 @@
 						"RecordReplayThread": 32,
 						"memo": "Total number of video playback threads ."
 					}
+				
 				]
 			}
 				
@@ -1646,7 +1659,7 @@
 				 http://127.0.0.1:7088/index/api/setServerConfig
 				 
 			   http Body 参数 json 格式
-				 {"secret":"035c73f7-bb6b-4889-a715-d9eb2d1925cc","noneReaderDuration":20,"iframeArriveNoticCount":30,"on_server_started":"http://10.0.0.238:4088/index/hook/on_server_started"}
+				 {"secret":"035c73f7-bb6b-4889-a715-d9eb2d1925cc","noneReaderDuration":20,"iframeArriveNoticCount":30,"on_server_started":"http://10.0.0.238:4088/index/hook/on_server_started","rtc.listening-ip":"192.168.2.5"}
 			  
 		29） 为了方便某些特殊场合，服务器支持udp的10000 端口接入国标PS码流，就是人们常说的单端口模式，url的命名规则为 /rtp/ssrc ,其中ssrc为下级rtp打包
 		     的16进制的值转换为大小的字符串，即可sprintf(url,"rtp/%X",ssrc) ,具体接入的url名字可以调用 getMediaList 查询出接入的国标流 。需要注意的是 
