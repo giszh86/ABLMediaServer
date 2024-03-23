@@ -62,7 +62,8 @@ include_directories(
     ./ABLMediaServer/packet/ps_mux
     ./ABLMediaServer/packet/rtpdepacket
     ./ABLMediaServer/packet/rtppacket
-  
+     ./ABLMediaServer/
+ 
 )
 
 # Library directories
