@@ -3150,10 +3150,8 @@ bool  CNetServerHTTP::index_api_setServerConfig()
 			  DecodeUrl(pKey->value, szTempURL, string_length_512);
 
 			std::string szSection, szKey;
-			ABL::parseString(pKey->key, szSection, szKey);
-			bool bres = false;
-
-			if (WriteParamValue("ABLMediaServer", pKey->key, szTempURL))
+			ABL::parseString(pKey->key, szSection, szKey);	
+			if (WriteParamValue((char*)szSection.c_str(), (char *)szKey.c_str(), szTempURL))
 			{
 				strcat(szSuccessParams, pKey->key);
 				strcat(szSuccessParams," ");
@@ -3359,12 +3357,25 @@ bool CNetServerHTTP::WriteParamValue(char* szSection, char* szKey, char* szValue
 		mkdir(ABL_wwwMediaPath, 777);
 #endif
 	}
+	else if (strcmp("listening-ip", szKey) == 0)
+	strcpy(ABL_MediaServerPort.listeningip, szValue);
+	else if (strcmp("external-ip", szKey) == 0)
+	strcpy(ABL_MediaServerPort.externalip, szValue);
+	else if (strcmp("realm", szKey) == 0)
+	strcpy(ABL_MediaServerPort.realm, szValue);
+	else if (strcmp("user", szKey) == 0)
+	strcpy(ABL_MediaServerPort.user, szValue);
+	else if (strcmp("listening-port", szKey) == 0)
+	ABL_MediaServerPort.listeningport = atoi(szValue);
+	else if (strcmp("min-port", szKey) == 0)
+	ABL_MediaServerPort.minport = atoi(szValue);
+	else if (strcmp("max-port", szKey) == 0)
+	ABL_MediaServerPort.maxport = atoi(szValue);
 	else
 		return false;
 	
 	ABL_ConfigFile.SetValue(szSection, szKey, szValue);
 	SI_Error  rc = ABL_ConfigFile.SaveFile(szConfigFileName);
-
 	if (rc == SI_OK)
 	{
 		return true;

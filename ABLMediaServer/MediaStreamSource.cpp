@@ -1646,7 +1646,8 @@ bool CMediaStreamSource::PushVideo(unsigned char* szVideo, int nLength, char* sz
 						pClient->PushVideo(pData, nPopLength, m_mediaCodecInfo.szVideoName);
 
 					pCopyVideoGopFrameBuffer.pop_front();
-					Sleep(5);
+					//Sleep(5);
+					std::this_thread::sleep_for(std::chrono::milliseconds(5));
 				}
 					   
 				pClient->bSendFirstIDRFrameFlag = true;

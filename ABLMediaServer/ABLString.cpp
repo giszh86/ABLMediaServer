@@ -170,9 +170,19 @@ namespace ABL {
 	}
 
 	void parseString(const std::string& input, std::string& szSection, std::string& szKey) {
-		std::stringstream ss(input);
-		std::getline(ss, szSection, '.');
-		std::getline(ss, szKey, '.');
+
+		if (input.find(".") == std::string::npos)
+		{
+			szKey = input;
+			szSection = "ABLMediaServer";
+		}
+		else
+		{
+			std::stringstream ss(input);
+			std::getline(ss, szSection, '.');
+			std::getline(ss, szKey, '.');
+		}
+	
 	}
 
 	std::string GetCurrentWorkingDirectory() {
@@ -587,12 +597,36 @@ namespace ABL {
 		listeningip.AddMember("memo", "webrtc listeningip .", allocator);
 		params.PushBack(listeningip, allocator);
 
+		Value listeningport(kObjectType);
+		listeningport.AddMember("rtc.listening-port", ABL_MediaServerPort.listeningport,  allocator);
+		listeningport.AddMember("memo", "webrtc listening port .", allocator);
+		params.PushBack(listeningport, allocator);
+
 		// 添加 externalip 参数对象
 		Value externalip(kObjectType);
 		externalip.AddMember("rtc.external-ip", Value(ABL_MediaServerPort.externalip, allocator).Move(), allocator);
 		externalip.AddMember("memo", "webrtc externalip  .", allocator);
 		params.PushBack(externalip, allocator);
 
+		// 添加 realm 参数对象
+		Value realm(kObjectType);
+		realm.AddMember("rtc.realm", Value(ABL_MediaServerPort.realm, allocator).Move(), allocator);
+		realm.AddMember("memo", "webrtc realm  .", allocator);
+		params.PushBack(realm, allocator);
+
+		// 添加 user 参数对象
+		Value user(kObjectType);
+		user.AddMember("rtc.user", Value(ABL_MediaServerPort.user, allocator).Move(), allocator);
+		user.AddMember("memo", "webrtc user  .", allocator);
+		params.PushBack(user, allocator);
+		Value minport(kObjectType);
+		minport.AddMember("rtc.min-port", ABL_MediaServerPort.minport, allocator);
+		minport.AddMember("memo", "webrtc minport port .", allocator);
+		params.PushBack(minport, allocator);
+		Value maxport(kObjectType);
+		maxport.AddMember("rtc.max-port", ABL_MediaServerPort.maxport, allocator);
+		maxport.AddMember("memo", "webrtc listening port .", allocator);
+		params.PushBack(maxport, allocator);
 
 		// 将数组对象添加到主对象中
 		document.AddMember("code", 0, allocator);

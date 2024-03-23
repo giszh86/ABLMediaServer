@@ -2,7 +2,9 @@
 #define  _MediaFifo_H
 
 #include <list>
-
+#include <memory>
+#include <mutex>
+#include <cstring>
 struct MediaNode
 {
 	int nBegin;
