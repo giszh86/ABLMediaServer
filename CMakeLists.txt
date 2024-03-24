@@ -66,18 +66,26 @@ include_directories(
  
 )
 
+   
 # 根据架构设置不同的链接目录
-if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "amd64")
-    link_directories(
+if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64")
+    set(LINK_DIRECTORIES
         ${CMAKE_CURRENT_SOURCE_DIR}/Bin
         ./3rd/ffmpeg6/lib/linux86
     )
+ 
 elseif (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "aarch64")
-    link_directories(
+    set(LINK_DIRECTORIES
         ${CMAKE_CURRENT_SOURCE_DIR}/Bin
         ./3rd/ffmpeg6/lib/arm64
-    )
+    ) 
+
 endif()
+
+       link_directories(
+        ${LINK_DIRECTORIES}
+    )
+    message("链接目录: ${LINK_DIRECTORIES}")
 
 # 添加子目录，这样子目录中的CMakeLists.txt才会被调用
 add_subdirectory(webrtc-streamer)
