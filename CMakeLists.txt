@@ -22,12 +22,35 @@ endif()
 
 #set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Bin/${SYSTEM_NAME_LOWER}/${CMAKE_BUILD_TYPE})
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Bin)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Bin)
+# 根据架构设置不同的链接目录
+if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64")
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Bin/linux)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Bin/linux)
+set(LINK_DIRECTORIES
+        ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/
+        ./3rd/ffmpeg6/lib/linux86
+    )
+    
+elseif (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "aarch64")
+  set(LINK_DIRECTORIES
+        ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/
+        ./3rd/ffmpeg6/lib/arm64
+    ) 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Bin/arm64)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Bin/arm64)
+
+endif()
+
+
+
+
+
 
 message("OUTPUT_DIR : ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
 
-
+ message("链接目录: ${LINK_DIRECTORIES}")
+ 
 # 设置 FFmpeg 版本
 set(FFMPEG_VERSION "v6.0")
 set(FAAC_PATH ${CMAKE_CURRENT_SOURCE_DIR}/3rd/faac-1.29.9.2/build)
@@ -67,25 +90,9 @@ include_directories(
 )
 
    
-# 根据架构设置不同的链接目录
-if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64")
-    set(LINK_DIRECTORIES
-        ${CMAKE_CURRENT_SOURCE_DIR}/Bin
-        ./3rd/ffmpeg6/lib/linux86
-    )
- 
-elseif (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "aarch64")
-    set(LINK_DIRECTORIES
-        ${CMAKE_CURRENT_SOURCE_DIR}/Bin
-        ./3rd/ffmpeg6/lib/arm64
-    ) 
 
-endif()
+link_directories(${LINK_DIRECTORIES}  )
 
-       link_directories(
-        ${LINK_DIRECTORIES}
-    )
-    message("链接目录: ${LINK_DIRECTORIES}")
 
 # 添加子目录，这样子目录中的CMakeLists.txt才会被调用
 add_subdirectory(webrtc-streamer)

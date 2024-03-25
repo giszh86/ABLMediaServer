@@ -208,10 +208,10 @@ namespace ABL {
 		params.PushBack(secret, allocator);
 
 		// 添加 ServerIP 参数对象
-		Value serverIP(kObjectType);
-		serverIP.AddMember("ServerIP", Value(ABL_MediaServerPort.ABL_szLocalIP, allocator).Move(), allocator);
-		serverIP.AddMember("memo", "ABLMediaServer ip address", allocator);
-		params.PushBack(serverIP, allocator);
+		Value ServerIP(kObjectType);
+		ServerIP.AddMember("ServerIP", Value(ABL_MediaServerPort.ABL_szLocalIP, allocator).Move(), allocator);
+		ServerIP.AddMember("memo", "ABLMediaServer ip address", allocator);
+		params.PushBack(ServerIP, allocator);
 
 		// 添加 mediaServerID 参数对象
 		Value mediaServerID(kObjectType);
@@ -220,16 +220,16 @@ namespace ABL {
 		params.PushBack(mediaServerID, allocator);
 
 		// 添加 hook_enable 参数对象
-		Value hookEnable(kObjectType);
-		hookEnable.AddMember("hook_enable", ABL_MediaServerPort.hook_enable, allocator);
-		hookEnable.AddMember("memo", "hook_enable = 1 open notice , hook_enable = 0 close notice", allocator);
-		params.PushBack(hookEnable, allocator);
+		Value hook_enable(kObjectType);
+		hook_enable.AddMember("hook_enable", ABL_MediaServerPort.hook_enable, allocator);
+		hook_enable.AddMember("memo", "hook_enable = 1 open notice , hook_enable = 0 close notice", allocator);
+		params.PushBack(hook_enable, allocator);
 
 		// 添加 enable_audio 参数对象
-		Value enableAudio(kObjectType);
-		enableAudio.AddMember("enable_audio", ABL_MediaServerPort.nEnableAudio, allocator);
-		enableAudio.AddMember("memo", "enable_audio = 1 open Audio , enable_audio = 0 Close Audio", allocator);
-		params.PushBack(enableAudio, allocator);
+		Value enable_audio(kObjectType);
+		enable_audio.AddMember("enable_audio", ABL_MediaServerPort.nEnableAudio, allocator);
+		enable_audio.AddMember("memo", "enable_audio = 1 open Audio , enable_audio = 0 Close Audio", allocator);
+		params.PushBack(enable_audio, allocator);
 
 		// 添加 httpServerPort 参数对象
 		Value httpServerPort(kObjectType);
@@ -249,17 +249,17 @@ namespace ABL {
 		rtmpPort.AddMember("memo", "rtmp port", allocator);
 		params.PushBack(rtmpPort, allocator);
 
-		// 添加 httpFlvPort 参数对象
+		// 添加 ht	tpFlvPort 参数对象
 		Value httpFlvPort(kObjectType);
 		httpFlvPort.AddMember("httpFlvPort", ABL_MediaServerPort.nHttpFlvPort, allocator);
 		httpFlvPort.AddMember("memo", "http-flv port", allocator);
 		params.PushBack(httpFlvPort, allocator);
 
 		// 添加 hls_enable 参数对象
-		Value hlsEnable(kObjectType);
-		hlsEnable.AddMember("hls_enable", ABL_MediaServerPort.nHlsEnable, allocator);
-		hlsEnable.AddMember("memo", "hls whether enable", allocator);
-		params.PushBack(hlsEnable, allocator);
+		Value hls_enable(kObjectType);
+		hls_enable.AddMember("hls_enable", ABL_MediaServerPort.nHlsEnable, allocator);
+		hls_enable.AddMember("memo", "hls whether enable", allocator);
+		params.PushBack(hls_enable, allocator);
 
 		// 添加 hlsPort 参数对象
 		Value hlsPort(kObjectType);
@@ -280,10 +280,10 @@ namespace ABL {
 		params.PushBack(mp4Port, allocator);
 
 		// 添加 ps_tsRecvPort 参数对象
-		Value psTsRecvPort(kObjectType);
-		psTsRecvPort.AddMember("ps_tsRecvPort", ABL_MediaServerPort.ps_tsRecvPort, allocator);
-		psTsRecvPort.AddMember("memo", "recv ts , ps Stream port", allocator);
-		params.PushBack(psTsRecvPort, allocator);
+		Value ps_tsRecvPort(kObjectType);
+		ps_tsRecvPort.AddMember("ps_tsRecvPort", ABL_MediaServerPort.ps_tsRecvPort, allocator);
+		ps_tsRecvPort.AddMember("memo", "recv ts , ps Stream port", allocator);
+		params.PushBack(ps_tsRecvPort, allocator);
 
 		// 添加 hlsCutType 参数对象
 		Value hlsCutType(kObjectType);
@@ -298,28 +298,28 @@ namespace ABL {
 		params.PushBack(h265CutType, allocator);
 
 		// 添加 RecvThreadCount 参数对象
-		Value recvThreadCount(kObjectType);
-		recvThreadCount.AddMember("RecvThreadCount", ABL_MediaServerPort.nRecvThreadCount, allocator);
-		recvThreadCount.AddMember("memo", "RecvThreadCount", allocator);
-		params.PushBack(recvThreadCount, allocator);
+		Value RecvThreadCount(kObjectType);
+		RecvThreadCount.AddMember("RecvThreadCount", ABL_MediaServerPort.nRecvThreadCount, allocator);
+		RecvThreadCount.AddMember("memo", "RecvThreadCount", allocator);
+		params.PushBack(RecvThreadCount, allocator);
 
 		// 添加 SendThreadCount 参数对象
-		Value sendThreadCount(kObjectType);
-		sendThreadCount.AddMember("SendThreadCount", ABL_MediaServerPort.nSendThreadCount, allocator);
-		sendThreadCount.AddMember("memo", "SendThreadCount", allocator);
-		params.PushBack(sendThreadCount, allocator);
+		Value SendThreadCount(kObjectType);
+		SendThreadCount.AddMember("SendThreadCount", ABL_MediaServerPort.nSendThreadCount, allocator);
+		SendThreadCount.AddMember("memo", "SendThreadCount", allocator);
+		params.PushBack(SendThreadCount, allocator);
 
 		// 添加 GB28181RtpTCPHeadType 参数对象
-		Value gb28181RtpTCPHeadType(kObjectType);
-		gb28181RtpTCPHeadType.AddMember("GB28181RtpTCPHeadType", ABL_MediaServerPort.nGBRtpTCPHeadType, allocator);
-		gb28181RtpTCPHeadType.AddMember("memo", "rtp Length Type", allocator);
-		params.PushBack(gb28181RtpTCPHeadType, allocator);
+		Value GB28181RtpTCPHeadType(kObjectType);
+		GB28181RtpTCPHeadType.AddMember("GB28181RtpTCPHeadType", ABL_MediaServerPort.nGBRtpTCPHeadType, allocator);
+		GB28181RtpTCPHeadType.AddMember("memo", "rtp Length Type", allocator);
+		params.PushBack(GB28181RtpTCPHeadType, allocator);
 
 		// 添加 ReConnectingCount 参数对象
-		Value reConnectingCount(kObjectType);
-		reConnectingCount.AddMember("ReConnectingCount", ABL_MediaServerPort.nReConnectingCount, allocator);
-		reConnectingCount.AddMember("memo", "Try reconnections times", allocator);
-		params.PushBack(reConnectingCount, allocator);
+		Value ReConnectingCount(kObjectType);
+		ReConnectingCount.AddMember("ReConnectingCount", ABL_MediaServerPort.nReConnectingCount, allocator);
+		ReConnectingCount.AddMember("memo", "Try reconnections times", allocator);
+		params.PushBack(ReConnectingCount, allocator);
 
 		// 添加 maxTimeNoOneWatch 参数对象
 		Value maxTimeNoOneWatch(kObjectType);
@@ -328,10 +328,10 @@ namespace ABL {
 		params.PushBack(maxTimeNoOneWatch, allocator);
 
 		// 添加 pushEnable_mp4 参数对象
-		Value pushEnableMp4(kObjectType);
-		pushEnableMp4.AddMember("pushEnable_mp4", ABL_MediaServerPort.pushEnable_mp4, allocator);
-		pushEnableMp4.AddMember("memo", "pushEnable_mp4", allocator);
-		params.PushBack(pushEnableMp4, allocator);
+		Value pushEnable_mp4(kObjectType);
+		pushEnable_mp4.AddMember("pushEnable_mp4", ABL_MediaServerPort.pushEnable_mp4, allocator);
+		pushEnable_mp4.AddMember("memo", "pushEnable_mp4", allocator);
+		params.PushBack(pushEnable_mp4, allocator);
 
 		// 添加 fileSecond 参数对象
 		Value fileSecond(kObjectType);
@@ -352,10 +352,10 @@ namespace ABL {
 		params.PushBack(httpDownloadSpeed, allocator);
 
 		// 添加 RecordReplayThread 参数对象
-		Value recordReplayThread(kObjectType);
-		recordReplayThread.AddMember("RecordReplayThread", ABL_MediaServerPort.nRecordReplayThread, allocator);
-		recordReplayThread.AddMember("memo", "Total number of video playback threads", allocator);
-		params.PushBack(recordReplayThread, allocator);
+		Value RecordReplayThread(kObjectType);
+		RecordReplayThread.AddMember("RecordReplayThread", ABL_MediaServerPort.nRecordReplayThread, allocator);
+		RecordReplayThread.AddMember("memo", "Total number of video playback threads", allocator);
+		params.PushBack(RecordReplayThread, allocator);
 
 		// 添加 convertMaxObject 参数对象
 		Value convertMaxObject(kObjectType);
@@ -429,7 +429,7 @@ namespace ABL {
 		on_stream_none_reader.AddMember("memo", "Send event notification when no one is watching a certain media source  .", allocator);
 		params.PushBack(on_stream_none_reader, allocator);
 
-		// 添加 on_stream_none_reader 参数对象
+		// 添加 on_stream_disconnect 参数对象
 		Value on_stream_disconnect(kObjectType);
 		on_stream_disconnect.AddMember("on_stream_disconnect", Value(ABL_MediaServerPort.on_stream_disconnect, allocator).Move(), allocator);
 		on_stream_disconnect.AddMember("memo", "Send event notification when no one is watching a certain media source  .", allocator);
@@ -437,13 +437,13 @@ namespace ABL {
 
 		// 添加 on_stream_not_found 参数对象
 		Value on_stream_not_found(kObjectType);
-		on_stream_not_found.AddMember("on_stream_disconnect", Value(ABL_MediaServerPort.on_stream_not_found, allocator).Move(), allocator);
+		on_stream_not_found.AddMember("on_stream_not_found", Value(ABL_MediaServerPort.on_stream_not_found, allocator).Move(), allocator);
 		on_stream_not_found.AddMember("memo", "Media source not found Send event notification .", allocator);
 		params.PushBack(on_stream_not_found, allocator);
 
 		// 添加 on_record_mp4 参数对象
 		Value on_record_mp4(kObjectType);
-		on_record_mp4.AddMember("on_stream_disconnect", Value(ABL_MediaServerPort.on_record_mp4, allocator).Move(), allocator);
+		on_record_mp4.AddMember("on_record_mp4", Value(ABL_MediaServerPort.on_record_mp4, allocator).Move(), allocator);
 		on_record_mp4.AddMember("memo", "Send event notification when a recording is completed .", allocator);
 		params.PushBack(on_record_mp4, allocator);
 
@@ -461,7 +461,7 @@ namespace ABL {
 
 		// 添加 on_record_ts 参数对象
 		Value on_record_ts(kObjectType);
-		on_record_ts.AddMember("on_record_progress", Value(ABL_MediaServerPort.on_record_ts, allocator).Move(), allocator);
+		on_record_ts.AddMember("on_record_ts", Value(ABL_MediaServerPort.on_record_ts, allocator).Move(), allocator);
 		on_record_ts.AddMember("memo", "Send event notification when hls slicing completes a section of ts file .", allocator);
 		params.PushBack(on_record_ts, allocator);
 
@@ -571,13 +571,13 @@ namespace ABL {
 		Value webrtcPort(kObjectType);
 		webrtcPort.AddMember("webrtcPort", ABL_MediaServerPort.nWebRtcPort, allocator);
 		webrtcPort.AddMember("memo", "WebRtc Player port  .", allocator);
-		params.PushBack(convertOutBitrate, allocator);
+		params.PushBack(webrtcPort, allocator);
 
 		// 添加 WsRecvPcmPort 参数对象
 		Value WsRecvPcmPort(kObjectType);
 		WsRecvPcmPort.AddMember("WsRecvPcmPort", ABL_MediaServerPort.WsRecvPcmPort, allocator);
 		WsRecvPcmPort.AddMember("memo", "the port for recv audio by Websocket .", allocator);
-		params.PushBack(convertOutBitrate, allocator);
+		params.PushBack(WsRecvPcmPort, allocator);
 
 		// 添加 flvPlayAddMute 参数对象
 		Value flvPlayAddMute(kObjectType);

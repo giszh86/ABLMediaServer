@@ -2268,7 +2268,7 @@ bool CNetServerHTTP::index_api_getServerConfig()
 
 		dataJson.AddMember("hook.enable", ABL_MediaServerPort.hook_enable, allocator);
 		dataJson.AddMember("hook.on_server_keepalive", Value(ABL_MediaServerPort.on_server_keepalive, allocator).Move(), allocator);
-		;	dataJson.AddMember("hook.on_play", Value(ABL_MediaServerPort.on_play, allocator).Move(), allocator);
+		dataJson.AddMember("hook.on_play", Value(ABL_MediaServerPort.on_play, allocator).Move(), allocator);
 
 		dataJson.AddMember("hook.on_publish", Value(ABL_MediaServerPort.on_publish, allocator).Move(), allocator);
 		dataJson.AddMember("hook.on_record_mp4", Value(ABL_MediaServerPort.on_record_mp4, allocator).Move(), allocator);
