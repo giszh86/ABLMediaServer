@@ -366,7 +366,7 @@ class PeerConnectionManager
 	};
 
 	public:
-		PeerConnectionManager(const std::list<std::string> & iceServerList, const Json::Value & config, webrtc::AudioDeviceModule::AudioLayer audioLayer, const std::string& publishFilter, const std::string& webrtcUdpPortRange, bool useNullCodec = true, bool usePlanB = true, int maxpc = 0);
+		PeerConnectionManager(const std::list<std::string>& iceServerList, const Json::Value& config, webrtc::AudioDeviceModule::AudioLayer audioLayer, const std::string& publishFilter, const std::string& webrtcUdpPortRange, bool useNullCodec, bool usePlanB, int maxpc, webrtc::PeerConnectionInterface::IceTransportsType transportType);
 		virtual ~PeerConnectionManager();
 
 		bool InitializePeerConnection();
@@ -432,7 +432,8 @@ class PeerConnectionManager
 		bool                                                                      m_useNullCodec;
 		bool                                                                      m_usePlanB;
 		int                                                                       m_maxpc;
-	
+		webrtc::PeerConnectionInterface::IceTransportsType                        m_transportType;
+
 public:
 		std::function<void(const char* callbackJson, void* pUserHandle)>  m_callback;
 
