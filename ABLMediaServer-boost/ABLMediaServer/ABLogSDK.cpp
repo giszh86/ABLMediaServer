@@ -61,7 +61,7 @@ bool WriteLog(LogLevel nLogLevel, char* szSQL, ...)
 	strcat(ABL_szLogText, "\r\n");
 	strcat(ABL_writeBuffer, ABL_szLogText);
 
-	if (strlen(ABL_writeBuffer) < 512)
+	if (strlen(ABL_writeBuffer) < 512 && strstr(ABL_writeBuffer,"%") == NULL )
 		printf(ABL_writeBuffer);
 
 	if (strlen(ABL_writeBuffer) < 4096 )

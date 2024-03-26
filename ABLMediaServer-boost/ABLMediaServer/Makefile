@@ -8,22 +8,23 @@ INCLUDES = -I../Linux/boost/include \
 		   -I../media-server-master/librtp/include \
 		   -I../media-server-master/libmov/include 
 LIBS = -L../bin \
+       -L../media-server-master/lib \
        -L../Linux/ffmpeg-6.0/lib \
-       -L../Linux/faac-1.29.9.2/lib/lib \
+       -L../Linux/faac-1.30/lib \
        -L../Linux/boost/lib -lboost_system -lboost_thread -lboost_log -lboost_regex -lboost_filesystem -lboost_date_time -lboost_chrono -lboost_atomic -lrtmp -lflv -lmpeg -lhls -lmov -lrtp -lfaac -lavcodec -lavutil -lavformat -lswscale -lavfilter -lpostproc -lswresample
 
-ABLMediaServer:ABLMediaServer.o ABLogFile.o ABLSipParse.o CNetRtmpServerRecv.o Ini.o DigestAuthentication.o LCbase64.o MediaFifo.o MediaSendThreadPool.o \
+ABLMediaServer:ABLMediaServer.o ABLogFile.o ABLSipParse.o CNetRtmpServerRecv.o ConvertUTF.o DigestAuthentication.o LCbase64.o MediaFifo.o MediaSendThreadPool.o \
                MediaStreamSource.o netBase64.o NetBaseThreadPool.o NetClientAddPushProxy.o NetClientAddStreamProxy.o NetClientRecvFLV.o NetClientRecvHttpHLS.o NetClientRecvRtmp.o \
                NetClientRecvRtsp.o NetClientSendRtmp.o NetClientSendRtsp.o NetGB28181RtpClient.o NetGB28181RtpServer.o NetRecvBase.o NetRtspServer.o \
 			   NetServerHLS.o NetServerHTTP.o NetServerHTTP_FLV.o ourMD5.o RtcpPacket.o strDup.o SHA1.o NetServerWS_FLV.o NetServerHTTP_MP4.o \
 			   StreamRecordFMP4.o RecordFileSource.o ReadRecordFileInput.o g711.o g711_table.o AACEncode.o NetClientHttp.o VideoDecode.o PictureFileSource.o \
-			   NetClientSnap.o AVFrameSWS.o FFVideoEncode.o FFVideoDecode.o NetServerRecvRtpTS_PS.o RtpPSStreamInput.o RtpTSStreamInput.o NetGB28181Listen.o StreamRecordMP4.o
-	g++ -std=c++11 -o ABLMediaServer ABLMediaServer.o ABLogFile.o ABLSipParse.o CNetRtmpServerRecv.o Ini.o DigestAuthentication.o LCbase64.o MediaFifo.o MediaSendThreadPool.o \
+			   NetClientSnap.o AVFrameSWS.o FFVideoEncode.o FFVideoDecode.o NetServerRecvRtpTS_PS.o RtpPSStreamInput.o RtpTSStreamInput.o NetGB28181Listen.o StreamRecordMP4.o StreamRecordTS.o NetClientReadLocalMediaFile.o NetServerRecvAudio.o  NetRtspServerUDP.o NetClientWebrtcPlayer.o
+	g++ -std=c++11 -o ABLMediaServer ABLMediaServer.o ABLogFile.o ABLSipParse.o CNetRtmpServerRecv.o ConvertUTF.o DigestAuthentication.o LCbase64.o MediaFifo.o MediaSendThreadPool.o \
 		   MediaStreamSource.o netBase64.o NetBaseThreadPool.o NetClientAddPushProxy.o NetClientAddStreamProxy.o NetClientRecvFLV.o NetClientRecvHttpHLS.o NetClientRecvRtmp.o \
 		   NetClientRecvRtsp.o NetClientSendRtmp.o NetClientSendRtsp.o NetGB28181RtpClient.o NetGB28181RtpServer.o NetRecvBase.o NetRtspServer.o NetGB28181Listen.o \
 		   NetServerHLS.o NetServerHTTP.o NetServerHTTP_FLV.o ourMD5.o RtcpPacket.o strDup.o SHA1.o NetServerWS_FLV.o NetServerHTTP_MP4.o StreamRecordFMP4.o \
 		   RecordFileSource.o ReadRecordFileInput.o g711.o g711_table.o AACEncode.o NetClientHttp.o  VideoDecode.o PictureFileSource.o NetClientSnap.o AVFrameSWS.o \
-		   FFVideoEncode.o FFVideoDecode.o NetServerRecvRtpTS_PS.o RtpPSStreamInput.o RtpTSStreamInput.o StreamRecordMP4.o $(LIBS) -lpthread -lXHNetSDK -lPsDemux -lPsMux -lRtpDepacket -lRtpPacket -ldl
+		   FFVideoEncode.o FFVideoDecode.o NetServerRecvRtpTS_PS.o RtpPSStreamInput.o RtpTSStreamInput.o StreamRecordMP4.o StreamRecordTS.o NetClientReadLocalMediaFile.o NetServerRecvAudio.o  NetRtspServerUDP.o NetClientWebrtcPlayer.o $(LIBS) -lpthread -lXHNetSDK -lPsDemux -lPsMux -lRtpDepacket -lRtpPacket -lwebrtc-streamer -ldl
 ABLMediaServer.o:ABLMediaServer.cpp
 	g++ -std=c++11 $(INCLUDES) -c ABLMediaServer.cpp
 ABLogFile.o:ABLogFile.cpp
@@ -32,8 +33,8 @@ ABLSipParse.o:ABLSipParse.cpp
 	g++ -std=c++11 $(INCLUDES) -c ABLSipParse.cpp	
 CNetRtmpServerRecv.o:CNetRtmpServerRecv.cpp
 	g++ -std=c++11 $(INCLUDES) -c CNetRtmpServerRecv.cpp	
-Ini.o:Ini.cpp
-	g++ -std=c++11 $(INCLUDES) -c Ini.cpp	
+ConvertUTF.o:ConvertUTF.c
+	g++ -std=c++11 $(INCLUDES) -c ConvertUTF.c
 DigestAuthentication.o:DigestAuthentication.cpp
 	g++ -std=c++11 $(INCLUDES) -c DigestAuthentication.cpp	
 LCbase64.o:LCbase64.cpp
@@ -126,7 +127,17 @@ RtpTSStreamInput.o:RtpTSStreamInput.cpp
 	g++ -std=c++11 $(INCLUDES) -c RtpTSStreamInput.cpp
 NetGB28181Listen.o:NetGB28181Listen.cpp
 	g++ -std=c++11 $(INCLUDES) -c NetGB28181Listen.cpp
-
+StreamRecordTS.o:StreamRecordTS.cpp
+	g++ -std=c++11 $(INCLUDES) -c StreamRecordTS.cpp
+NetClientReadLocalMediaFile.o:NetClientReadLocalMediaFile.cpp
+	g++ -std=c++11 $(INCLUDES) -c NetClientReadLocalMediaFile.cpp	
+NetServerRecvAudio.o:NetServerRecvAudio.cpp
+	g++ -std=c++11 $(INCLUDES) -c NetServerRecvAudio.cpp	
+NetRtspServerUDP.o:NetRtspServerUDP.cpp
+	g++ -std=c++11 $(INCLUDES) -c NetRtspServerUDP.cpp	
+NetClientWebrtcPlayer.o:NetClientWebrtcPlayer.cpp
+	g++ -std=c++11 $(INCLUDES) -c NetClientWebrtcPlayer.cpp	
+	
 clean:
 	rm *.o
 	rm ABLMediaServer

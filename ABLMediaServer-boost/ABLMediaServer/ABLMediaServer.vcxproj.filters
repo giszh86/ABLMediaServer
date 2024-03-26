@@ -51,9 +51,6 @@
     <ClInclude Include="MediaStreamSource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MediaSendThreadPool.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="rtp_depacket.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -70,9 +67,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="WriteAVFile.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ConfigFile.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="RtcpDef.h">
@@ -213,7 +207,25 @@
     <ClInclude Include="StreamRecordMP4.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="StreamRecordTS.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NetClientReadLocalMediaFile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="NetClientWebrtcPlayer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NetServerRecvAudio.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NetRtspServerUDP.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ConvertUTF.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SimpleIni.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -245,9 +257,6 @@
     <ClCompile Include="MediaFifo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MediaSendThreadPool.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ABLSipParse.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -258,9 +267,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="WriteAVFile.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ConfigFile.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RtcpPacket.cpp">
@@ -386,7 +392,22 @@
     <ClCompile Include="StreamRecordMP4.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="StreamRecordTS.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NetClientReadLocalMediaFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="NetClientWebrtcPlayer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NetServerRecvAudio.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NetRtspServerUDP.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ConvertUTF.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -396,11 +417,11 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Library Include="..\lib\libfaac.lib" />
     <Library Include="..\lib\PsDemux.lib" />
     <Library Include="..\lib\PsMux.lib" />
     <Library Include="..\lib\rtpdepacket.lib" />
     <Library Include="..\lib\rtppacket.lib" />
     <Library Include="..\lib\XHNetSDK.lib" />
+    <Library Include="..\lib\libfaac_dll.lib" />
   </ItemGroup>
 </Project>

@@ -23,9 +23,7 @@ extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL, b
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
-extern CMediaSendThreadPool*                 pMediaSendThreadPool;
 extern size_t base64_decode(void* target, const char *source, size_t bytes);
-extern CMediaSendThreadPool*                 pMediaSendThreadPool;
 extern MediaServerPort                       ABL_MediaServerPort;
 
 //AAC采样频率序号
@@ -849,7 +847,6 @@ void  CNetClientSendRtsp::InputRtspData(unsigned char* pRecvData, int nDataLengt
 		}
 		m_videoFifo.InitFifo(MaxLiveingVideoFifoBufferLength);
 		m_audioFifo.InitFifo(MaxLiveingAudioFifoBufferLength);
-		pMediaSendThreadPool->AddClientToThreadPool(nClient);
 		pMediaSource->AddClientToMap(nClient);
 
 		bUpdateVideoFrameSpeedFlag = true; //代表成功交互

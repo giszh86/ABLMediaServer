@@ -25,7 +25,6 @@ extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL, b
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
-extern CMediaSendThreadPool*                 pMediaSendThreadPool;
 extern size_t base64_decode(void* target, const char *source, size_t bytes);
 extern MediaServerPort                       ABL_MediaServerPort;
 extern boost::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
@@ -1494,7 +1493,6 @@ void  CNetRtspServer::InputRtspData(unsigned char* pRecvData, int nDataLength)
 			m_videoFifo.InitFifo(MaxLiveingVideoFifoBufferLength);
 			m_audioFifo.InitFifo(MaxLiveingAudioFifoBufferLength);
 			pMediaSource->AddClientToMap(nClient);//媒体拷贝
-			pMediaSendThreadPool->AddClientToThreadPool(nClient);//媒体发送线程
 
 			if(nReplayClient > 0 )
 			{

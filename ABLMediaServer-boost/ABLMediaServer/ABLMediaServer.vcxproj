@@ -28,13 +28,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -76,17 +76,16 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>D:\boost_1_73_0\boost_1_73_0;..\rapidjson-master\include;..\media-server-master\libflv\include;..\media-server-master\librtmp\include;..\media-server-master\libmpeg\include;..\media-server-master\libhls\include;..\media-server-master\libmov\include;..\media-server-master\librtp\include;..\ffmpeg-4.2.3\include;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\boost_1_73_0_Lib_VC2019-NEW\lib;..\media-server-master\x64\Release;..\ffmpeg-4.2.3\lib;..\directx9\lib\x64;..\lib\Debug;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\boost_1_73_0\boost_1_73_0;..\rapidjson-master\include;..\media-server-master\libflv\include;..\media-server-master\librtmp\include;..\media-server-master\libmpeg\include;..\media-server-master\libhls\include;..\media-server-master\libmov\include;..\media-server-master\librtp\include;..\ffmpeg-6.0\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\boost_1_73_0_Lib_VC2019-NEW\lib;..\media-server-master\x64\Release;..\ffmpeg-6.0\lib;..\directx9\lib\x64;..\lib\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>D:\boost_1_73_0\boost_1_73_0;..\rapidjson-master\include;..\media-server-master\libflv\include;..\media-server-master\librtmp\include;..\media-server-master\libmpeg\include;..\media-server-master\libhls\include;..\media-server-master\libmov\include;..\media-server-master\librtp\include;..\ffmpeg-4.2.3\include;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\boost_1_73_0_Lib_VC2019-NEW\lib;..\media-server-master\x64\Release;..\ffmpeg-4.2.3\lib;..\directx9\lib\x64;..\lib\Release;$(LibraryPath)</LibraryPath>
-    <OutDir>..\x64\Debug\</OutDir>
+    <IncludePath>../boost/include;..\rapidjson-master\include;..\media-server-master\libflv\include;..\media-server-master\librtmp\include;..\media-server-master\libmpeg\include;..\media-server-master\libhls\include;..\media-server-master\libmov\include;..\media-server-master\librtp\include;..\ffmpeg-6.0\include;$(IncludePath)</IncludePath>
+    <LibraryPath>..\boost\lib;..\media-server-master\x64\Release;..\ffmpeg-6.0\lib;..\directx9\lib\x64;..\lib\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -107,9 +106,8 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -140,12 +138,11 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <Optimization>Disabled</Optimization>
+      <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
-      <LanguageStandard>stdcpp14</LanguageStandard>
+      <SDLCheck>false</SDLCheck>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -153,7 +150,6 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>librtmp.lib;libflv.lib;libmpeg.lib;libhls.lib;libmov.lib;librtp.lib;ws2_32.lib;iphlpapi.lib;avcodec.lib;avutil.lib;avformat.lib;swscale.lib;avfilter.lib;swresample.lib;webrtc-streamer.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>..\x64\Debug\ABLMediaServer.exe</OutputFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -164,6 +160,7 @@
     <ClInclude Include="ABLogSDK.h" />
     <ClInclude Include="ABLSipParse.h" />
     <ClInclude Include="AVFrameSWS.h" />
+    <ClInclude Include="ConvertUTF.h" />
     <ClInclude Include="faac.h" />
     <ClInclude Include="faaccfg.h" />
     <ClInclude Include="FFVideoDecode.h" />
@@ -171,12 +168,11 @@
     <ClInclude Include="g711.h" />
     <ClInclude Include="g711_table.h" />
     <ClInclude Include="LCbase64.h" />
-    <ClInclude Include="ConfigFile.h" />
     <ClInclude Include="MediaFifo.h" />
-    <ClInclude Include="MediaSendThreadPool.h" />
     <ClInclude Include="MediaStreamSource.h" />
     <ClInclude Include="MyWriteLogFile.h" />
     <ClInclude Include="NetClientHttp.h" />
+    <ClInclude Include="NetClientReadLocalMediaFile.h" />
     <ClInclude Include="NetClientSnap.h" />
     <ClInclude Include="NetClientWebrtcPlayer.h" />
     <ClInclude Include="NetGB28181Listen.h" />
@@ -191,6 +187,7 @@
     <ClInclude Include="NetGB28181RtpClient.h" />
     <ClInclude Include="NetGB28181RtpServer.h" />
     <ClInclude Include="NetRecvBase.h" />
+    <ClInclude Include="NetRtspServerUDP.h" />
     <ClInclude Include="NetServerHLS.h" />
     <ClInclude Include="NetServerHTTP.h" />
     <ClInclude Include="NetServerHTTP_FLV.h" />
@@ -198,6 +195,7 @@
     <ClInclude Include="NetRtspServer.h" />
     <ClInclude Include="NetBaseThreadPool.h" />
     <ClInclude Include="NetServerHTTP_MP4.h" />
+    <ClInclude Include="NetServerRecvAudio.h" />
     <ClInclude Include="NetServerRecvRtpTS_PS.h" />
     <ClInclude Include="NetServerWS_FLV.h" />
     <ClInclude Include="PictureFileSource.h" />
@@ -219,9 +217,11 @@
     <ClInclude Include="rtspMD5\ourMD5.hh" />
     <ClInclude Include="rtspMD5\strDup.hh" />
     <ClInclude Include="SHA1.h" />
+    <ClInclude Include="SimpleIni.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="StreamRecordFMP4.h" />
     <ClInclude Include="StreamRecordMP4.h" />
+    <ClInclude Include="StreamRecordTS.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="VideoDecode.h" />
     <ClInclude Include="WriteAVFile.h" />
@@ -233,6 +233,9 @@
     <ClCompile Include="ABLogSDK.cpp" />
     <ClCompile Include="ABLSipParse.cpp" />
     <ClCompile Include="AVFrameSWS.cpp" />
+    <ClCompile Include="ConvertUTF.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="FFVideoDecode.cpp" />
     <ClCompile Include="FFVideoEncode.cpp" />
     <ClCompile Include="g711.cpp">
@@ -246,12 +249,11 @@
     <ClCompile Include="LCbase64.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="ConfigFile.cpp" />
     <ClCompile Include="MediaFifo.cpp" />
-    <ClCompile Include="MediaSendThreadPool.cpp" />
     <ClCompile Include="MediaStreamSource.cpp" />
     <ClCompile Include="MyWriteLogFile.cpp" />
     <ClCompile Include="NetClientHttp.cpp" />
+    <ClCompile Include="NetClientReadLocalMediaFile.cpp" />
     <ClCompile Include="NetClientSnap.cpp" />
     <ClCompile Include="NetClientWebrtcPlayer.cpp" />
     <ClCompile Include="NetGB28181Listen.cpp" />
@@ -266,6 +268,7 @@
     <ClCompile Include="NetGB28181RtpClient.cpp" />
     <ClCompile Include="NetGB28181RtpServer.cpp" />
     <ClCompile Include="NetRecvBase.cpp" />
+    <ClCompile Include="NetRtspServerUDP.cpp" />
     <ClCompile Include="NetServerHLS.cpp" />
     <ClCompile Include="NetServerHTTP.cpp" />
     <ClCompile Include="NetServerHTTP_FLV.cpp" />
@@ -273,6 +276,7 @@
     <ClCompile Include="NetRtspServer.cpp" />
     <ClCompile Include="NetBaseThreadPool.cpp" />
     <ClCompile Include="NetServerHTTP_MP4.cpp" />
+    <ClCompile Include="NetServerRecvAudio.cpp" />
     <ClCompile Include="NetServerRecvRtpTS_PS.cpp" />
     <ClCompile Include="NetServerWS_FLV.cpp" />
     <ClCompile Include="PictureFileSource.cpp" />
@@ -317,6 +321,7 @@
     </ClCompile>
     <ClCompile Include="StreamRecordFMP4.cpp" />
     <ClCompile Include="StreamRecordMP4.cpp" />
+    <ClCompile Include="StreamRecordTS.cpp" />
     <ClCompile Include="VideoDecode.cpp" />
     <ClCompile Include="WriteAVFile.cpp" />
   </ItemGroup>
@@ -324,7 +329,7 @@
     <ResourceCompile Include="ABLMediaServer.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="..\lib\libfaac.lib" />
+    <Library Include="..\lib\libfaac_dll.lib" />
     <Library Include="..\lib\PsDemux.lib" />
     <Library Include="..\lib\PsMux.lib" />
     <Library Include="..\lib\rtpdepacket.lib" />

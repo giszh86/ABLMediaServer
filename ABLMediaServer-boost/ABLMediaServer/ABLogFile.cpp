@@ -230,7 +230,7 @@ bool WriteLog(LogLevel nLogLevel,const char* ms, ... )
  		
 		memset(ABL_PrintBuffer,0x00,sizeof(ABL_PrintBuffer));
 		GB2312ToUTF8(ABL_LogBuffer, strlen(ABL_LogBuffer), ABL_PrintBuffer, sizeof(ABL_PrintBuffer));
-		if(strlen(ABL_PrintBuffer) < 1024)
+		if(strlen(ABL_PrintBuffer) < 1024 && strstr(ABL_PrintBuffer,"%") == NULL )
 		   printf(ABL_PrintBuffer);
 		
 	     if(ABL_fLogFile != NULL)				

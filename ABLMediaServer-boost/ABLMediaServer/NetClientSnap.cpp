@@ -18,7 +18,6 @@ extern bool                                  DeleteMediaStreamSource(char* szURL
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 extern boost::shared_ptr<CPictureFileSource> GetPictureFileSource(char* szShareURL, bool bLock);
 
-extern CMediaSendThreadPool*                 pMediaSendThreadPool;
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
 extern char                                  ABL_MediaSeverRunPath[256]; //当前路径
 extern MediaServerPort                       ABL_MediaServerPort; 
@@ -174,7 +173,6 @@ int CNetClientSnap::SendVideo()
 						   if (pMediaSouce)
 						   {//从拷贝线程，发送线程移除
 							   pMediaSouce->DeleteClientFromMap(nClient);
-							   pMediaSendThreadPool->DeleteClientToThreadPool(nClient);
 						   }
 					   }
 					}
@@ -220,7 +218,6 @@ int CNetClientSnap::SendFirstRequst()
 	}
 	bSnapSuccessFlag = false; //复位为尚未抓拍成功
 	nPrintTime = nCreateDateTime = GetTickCount64();//刷新时间
-	pMediaSendThreadPool->AddClientToThreadPool(nClient);
 	pMediaSource->AddClientToMap(nClient);
 
     return 0;

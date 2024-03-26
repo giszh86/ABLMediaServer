@@ -18,7 +18,6 @@ extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL, b
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 
-extern CMediaSendThreadPool*                 pMediaSendThreadPool;
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
 extern char                                  ABL_MediaSeverRunPath[256]; //当前路径
 extern boost::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
@@ -752,8 +751,6 @@ int CNetGB28181RtpClient::SendFirstRequst()
 		pMediaSource->AddClientToMap(nClient);
 	}
 
-	//把nClient 加入Video ,audio 发送线程
-	pMediaSendThreadPool->AddClientToThreadPool(nClient);
 	return 0;
 }
 

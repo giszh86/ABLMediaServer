@@ -17,7 +17,6 @@ extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL, b
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 
-extern CMediaSendThreadPool*                 pMediaSendThreadPool;
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
 int                                          SampleRateArray[] = { 96000,88200,64000,48000,44100,32000,24000,22050,16000,12000,11025,8000,7350 };
 static int NetRtmpServerRecvCallBackFLV(void* param, int codec, const void* data, size_t bytes, uint32_t pts, uint32_t dts, int flags);
@@ -210,7 +209,6 @@ static int rtmp_server_onplay(void* param, const char* app, const char* stream, 
  		pClient->flvMuxer = flv_muxer_create(NetRtmpServerRec_MuxerFlv, pClient);
 
 		//把客户端加入发送线程 
-		pMediaSendThreadPool->AddClientToThreadPool(pClient->nClient);
 		pClient->netBaseNetType = NetBaseNetType_RtmpServerSendPush;//RTMP 服务器，转发客户端的推上来的码流
 
 		pClient->m_videoFifo.InitFifo(MaxLiveingVideoFifoBufferLength);

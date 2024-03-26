@@ -470,7 +470,7 @@ enum NetBaseNetType
 	NetBaseNetType_NetClientWebrtcPlayer = 130,//webrtc的播放 
 };
 
-#define   MediaServerVerson                 "ABLMediaServer-6.3.6(2024-03-12)"
+#define   MediaServerVerson                 "ABLMediaServer-6.3.6(2024-03-27)"
 #define   RtspServerPublic                  "DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE, OPTIONS, ANNOUNCE, RECORD，GET_PARAMETER"
 #define   RecordFileReplaySplitter          "__ReplayFMP4RecordFile__"  //实况、录像区分的标志字符串，用于区分实况，放置在url中。
 
@@ -1392,7 +1392,6 @@ typedef list<int> LogFileVector;
 #include "FFVideoEncode.h"
 
 #include "MediaStreamSource.h"
-#include "MediaSendThreadPool.h"
 #include "rtp_depacket.h"
 #include "NetServerRecvRtpTS_PS.h"
 #include "RtpTSStreamInput.h"

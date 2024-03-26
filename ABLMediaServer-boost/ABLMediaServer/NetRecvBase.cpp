@@ -15,7 +15,6 @@ E-Mail  79941308@qq.com
 
 #include "stdafx.h"
 #include "NetRecvBase.h"
-extern CMediaSendThreadPool*                 pMediaSendThreadPool;
 extern CMediaFifo                            pDisconnectBaseNetFifo;             //清理断裂的链接 
 extern MediaServerPort                       ABL_MediaServerPort;
 extern boost::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);

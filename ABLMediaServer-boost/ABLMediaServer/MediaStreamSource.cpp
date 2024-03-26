@@ -12,7 +12,6 @@ E-Mail  79941308@qq.com
 extern boost::shared_ptr<CNetRevcBase> GetNetRevcBaseClient(NETHANDLE CltHandle);
 extern boost::shared_ptr<CNetRevcBase> GetNetRevcBaseClientNoLock(NETHANDLE CltHandle);
 extern bool                            DeleteNetRevcBaseClient(NETHANDLE CltHandle);
-extern CMediaSendThreadPool*           pMediaSendThreadPool;
 extern CMediaFifo                      pDisconnectBaseNetFifo; //清理断裂的链接 
 extern MediaServerPort                 ABL_MediaServerPort;
 extern char                            ABL_wwwMediaPath[256] ; //www 子路径
@@ -312,7 +311,6 @@ CMediaStreamSource::~CMediaStreamSource()
 	for (it = mediaSendMap.begin(); it != mediaSendMap.end(); ++it)
 	{
 		nSendClient = (*it).second;
-		pMediaSendThreadPool->DeleteClientToThreadPool((*it).second); //从发送线程移除 
 		pDisconnectBaseNetFifo.push((unsigned char*)&nSendClient, sizeof(nSendClient));
 	}
 	mediaSendMap.clear();
@@ -1474,8 +1472,6 @@ bool CMediaStreamSource::PushVideo(unsigned char* szVideo, int nLength, char* sz
 			//加入媒体拷贝
 			mediaSendMap.insert(MediaSendMap::value_type(recordMP4, recordMP4));
 
-			//加入媒体发送
-			pMediaSendThreadPool->AddClientToThreadPool(recordMP4);
 		}
 	}
 
@@ -1597,6 +1593,7 @@ bool CMediaStreamSource::PushVideo(unsigned char* szVideo, int nLength, char* sz
 				{
 					pClient->PushVideo(pSPSPPSBuffer, nSPSPPSLength, m_mediaCodecInfo.szVideoName);
 					pClient->bPushSPSPPSFrameFlag = true;
+					pClient->SendVideo();
 				}
 			}
  			
@@ -1612,10 +1609,10 @@ bool CMediaStreamSource::PushVideo(unsigned char* szVideo, int nLength, char* sz
 					if(nPopLength > 0)
 						pClient->PushVideo(pData, nPopLength, m_mediaCodecInfo.szVideoName);
 
+					pClient->SendVideo();
 					pCopyVideoGopFrameBuffer.pop_front();
-					Sleep(5);
-				}
-					   
+ 				}
+ 				   
 				pClient->bSendFirstIDRFrameFlag = true;
 				it++; //最后一帧（即当前帧）已经发送完毕
 				continue;
@@ -1624,7 +1621,10 @@ bool CMediaStreamSource::PushVideo(unsigned char* szVideo, int nLength, char* sz
 			if (H265ConvertH264_enable)
 			{//转码
 				if (nCudaDecodeFrameCount == 1) //只有1帧
+				{
 					pClient->PushVideo(pOutEncodeBuffer, nOutLength, m_mediaCodecInfo.szVideoName);
+					pClient->SendVideo();
+				}
 				else
 				{
 					if (pOutEncodeBuffer != NULL && nEncodeBufferLengthCount > 0)
@@ -1636,15 +1636,19 @@ bool CMediaStreamSource::PushVideo(unsigned char* szVideo, int nLength, char* sz
 							{
 								memcpy((char*)&nOneFrameLength, pOutEncodeBuffer + nGetFrameCountLength, sizeof(nOneFrameLength));
 								pClient->PushVideo(pOutEncodeBuffer + (nGetFrameCountLength + sizeof(nOneFrameLength)), nOneFrameLength, m_mediaCodecInfo.szVideoName);
+								pClient->SendVideo();
 
 								nGetFrameCountLength += nOneFrameLength + sizeof(nOneFrameLength);
 							}
 						}
 					}
 				}
-			}else //不转码
- 				pClient->PushVideo(szVideo, nLength, m_mediaCodecInfo.szVideoName);
-
+			}
+			else //不转码
+			{
+				pClient->PushVideo(szVideo, nLength, m_mediaCodecInfo.szVideoName);
+				pClient->SendVideo();
+			}
   			it++;
 		}
 		else
@@ -1886,6 +1890,7 @@ bool CMediaStreamSource::PushAudio(unsigned char* szAudio, int nLength, char* sz
 				{
 					if (nPopLength > 0)
 						pClient->PushAudio(pData, nPopLength, m_mediaCodecInfo.szAudioName, nChannels, SampleRate);
+					pClient->SendAudio();
 					pCopyCacheAudioFifo.pop_front();
 				}
 				pClient->m_bSendCacheAudioFlag = true;
@@ -1895,18 +1900,24 @@ bool CMediaStreamSource::PushAudio(unsigned char* szAudio, int nLength, char* sz
 			}
 
 			if (strcmp(szAudioCodec, "AAC") == 0 || strcmp(szAudioCodec, "MP3") == 0)
+			{
 				pClient->PushAudio(szAudio, nLength, m_mediaCodecInfo.szAudioName, nChannels, SampleRate);
-			else
+				pClient->SendAudio();
+			}else
 			{//G711A 、G711U 
 				if (ABL_MediaServerPort.nG711ConvertAAC == 1)
 				{
 					if(strcmp(szAudioCodec, "G711_A") == 0 || strcmp(szAudioCodec, "G711_U") == 0)
 					   pClient->PushAudio(pOutAACData, nOutAACDataLength, m_mediaCodecInfo.szAudioName, nChannels, SampleRate);
+					pClient->SendAudio();
 				}
 				else
 				{
-					if ((strcmp(szAudioCodec, "G711_A") == 0 || strcmp(szAudioCodec, "G711_U") == 0 ) && nLength == 320)
+					if ((strcmp(szAudioCodec, "G711_A") == 0 || strcmp(szAudioCodec, "G711_U") == 0) && nLength == 320)
+					{
 				         pClient->PushAudio(szAudio, nLength, m_mediaCodecInfo.szAudioName, nChannels, SampleRate);
+						 pClient->SendAudio();
+					}
 					else
 					{//nLength 不是 320 的需要拼接为320长度，因为rtp打包时固定为320字节的时间戳
 						memcpy(g711CacheBuffer + nG711CacheLength, szAudio, nLength);
@@ -1916,6 +1927,7 @@ bool CMediaStreamSource::PushAudio(unsigned char* szAudio, int nLength, char* sz
  						while (nG711CacheLength >= 320)
 						{
 							pClient->PushAudio(g711CacheBuffer + nG711SplittePos, 320, m_mediaCodecInfo.szAudioName, nChannels, SampleRate);
+							pClient->SendAudio();
 							nG711SplittePos  += 320;
 							nG711CacheLength -= 320;
  						}
@@ -1927,7 +1939,7 @@ bool CMediaStreamSource::PushAudio(unsigned char* szAudio, int nLength, char* sz
 						}
  					}
 				}
-			}
+ 			}
 			it++;
 		}
 		else

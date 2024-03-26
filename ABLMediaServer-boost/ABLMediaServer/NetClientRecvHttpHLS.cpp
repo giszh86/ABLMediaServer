@@ -16,7 +16,6 @@ extern char                                   ABL_MediaSeverRunPath[256] ; //µ±Ç
 extern boost::shared_ptr<CMediaStreamSource>  GetMediaStreamSource(char* szURL);
 extern boost::shared_ptr<CMediaStreamSource>  CreateMediaStreamSource(char* szUR, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
 extern bool                                   DeleteMediaStreamSource(char* szURL);
-extern CMediaSendThreadPool*                  pMediaSendThreadPool;
 
 extern void LIBNET_CALLMETHOD	onconnect(NETHANDLE clihandle,
 	uint8_t result, uint16_t nLocalPort);
@@ -200,7 +199,6 @@ CNetClientRecvHttpHLS::CNetClientRecvHttpHLS(NETHANDLE hServer, NETHANDLE hClien
 	hlsAudioFifo.InitFifo(1024 * 512);
 	bRunFlag = bExitCallbackThreadFlag = true  ;
 
-	pMediaSendThreadPool->AddClientToThreadPool(nClient);
 #if  0
 	strcpy(szSourceURL, "/Media/Camera_00002");
 #endif

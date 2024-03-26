@@ -25,7 +25,7 @@ private:
 	std::mutex              threadLock;
 	ClientProcessThreadMap  clientThreadMap;
     uint64_t              nTrueNetThreadPoolCount; 
-    boost::lockfree::queue<uint64_t, boost::lockfree::capacity<2048>> m_NetHandleQueue[MaxNetHandleQueueCount];
+    boost::lockfree::queue<uint64_t, boost::lockfree::capacity<4096>> m_NetHandleQueue[MaxNetHandleQueueCount];
     volatile bool         bExitProcessThreadFlag[MaxNetHandleQueueCount];
     volatile bool         bCreateThreadFlag;
 #ifdef  OS_System_Windows

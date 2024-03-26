@@ -36,7 +36,6 @@ typedef boost::unordered_map<NETHANDLE, CNetRevcBase_ptr>        CNetRevcBase_pt
 CNetRevcBase_ptrMap                                              xh_ABLNetRevcBaseMap;
 std::mutex                                                       ABL_CNetRevcBase_ptrMapLock;
 CNetBaseThreadPool*                                              NetBaseThreadPool;
-CMediaSendThreadPool*                                            pMediaSendThreadPool;
 CNetBaseThreadPool*                                              RecordReplayThreadPool;//录像回放线程池
 CNetBaseThreadPool*                                              MessageSendThreadPool;//消息发送线程池
 
@@ -2519,7 +2518,6 @@ void*  ABLMedisServerProcessThread(void* lpVoid)
 			if (nClient >= 0)
 			{
 				DeleteClientMediaStreamSource(nClient);//移除媒体拷贝
-				pMediaSendThreadPool->DeleteClientToThreadPool(nClient);//移除发送线程 
 				DeleteNetRevcBaseClient(nClient);//执行删除 
 			}
 		}
@@ -2543,6 +2541,7 @@ void  SendToMapFromMutePacketList()
 			if (pClient != NULL)
 			{
 				pClient->AddMuteAACBuffer();
+				pClient->SendAudio();
 			}
 		}
 	}
@@ -3733,9 +3732,6 @@ ABL_Restart:
 	//用于网络数据接收
 	NetBaseThreadPool = new CNetBaseThreadPool(ABL_MediaServerPort.nRecvThreadCount);
 
-	//用于媒体数据发送 
-	pMediaSendThreadPool = new CMediaSendThreadPool(ABL_MediaServerPort.nSendThreadCount);
-
 	//录像回放线程池
 	RecordReplayThreadPool = new CNetBaseThreadPool(ABL_MediaServerPort.nRecordReplayThread);
 
@@ -3882,9 +3878,6 @@ ABL_Restart:
 	delete RecordReplayThreadPool;
 	RecordReplayThreadPool = NULL;
 
-	delete pMediaSendThreadPool;
-	pMediaSendThreadPool = NULL;
-
 	delete MessageSendThreadPool;
 	MessageSendThreadPool = NULL;
 
@@ -3902,7 +3895,7 @@ ABL_Restart:
 #else
 	ExitLogFile();
 #endif
-	WebRtcEndpoint::getInstance().Uninit();
+	//WebRtcEndpoint::getInstance().Uninit();
 
 	WriteLog(Log_Debug, "--------------------ABLMediaServer End .... --------------------");
 
