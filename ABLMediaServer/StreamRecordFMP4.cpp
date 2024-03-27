@@ -19,7 +19,7 @@ extern bool                                  DeleteMediaStreamSource(char* szURL
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
 
-extern CMediaSendThreadPool* pMediaSendThreadPool;
+
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
 extern char                                  ABL_MediaSeverRunPath[256]; //当前路径
 extern MediaServerPort                       ABL_MediaServerPort;
@@ -36,7 +36,7 @@ extern bool                                  DeleteMediaStreamSource(char* szURL
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
 
-extern CMediaSendThreadPool* pMediaSendThreadPool;
+
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
 extern char                                  ABL_MediaSeverRunPath[256]; //当前路径
 extern MediaServerPort                       ABL_MediaServerPort;

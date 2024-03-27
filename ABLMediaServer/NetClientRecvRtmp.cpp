@@ -30,7 +30,7 @@ extern MediaServerPort                       ABL_MediaServerPort;
 
 #endif
 
-extern CMediaSendThreadPool* pMediaSendThreadPool;
+
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
 extern int                                   SampleRateArray[] ;
 extern CMediaFifo                            pMessageNoticeFifo;          //消息通知FIFO

@@ -19,7 +19,7 @@ extern bool                                  DeleteMediaStreamSource(char* szURL
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 extern MediaServerPort                       ABL_MediaServerPort;
 
-extern CMediaSendThreadPool*                 pMediaSendThreadPool;
+
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
 extern char                                  ABL_MediaSeverRunPath[256]; //当前路径
 extern boost::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
@@ -34,7 +34,7 @@ extern bool                                  DeleteMediaStreamSource(char* szURL
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 extern MediaServerPort                       ABL_MediaServerPort;
 
-extern CMediaSendThreadPool*                 pMediaSendThreadPool;
+
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
 extern char                                  ABL_MediaSeverRunPath[256]; //当前路径
 extern std::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
@@ -1141,8 +1141,8 @@ int CNetGB28181RtpServer::ProcessNetData()
 				}
  
 				//rtp 包长度正常才进行解包
-				if(nRtpLength <= nMaxRtpLength)
-				  RtpDepacket(netDataCache + nNetStart, nRtpLength);
+				if (nRtpLength <= nMaxRtpLength || nRtpLength < 1500)
+					RtpDepacket(netDataCache + nNetStart, nRtpLength);
 				else
 				{//rtp 包长度异常
 					WriteLog(Log_Debug, "CNetGB28181RtpServer = %X rtp包头长度有误  nClient = %llu ,nRtpLength = %llu , nMaxRtpLength = %d ", this, nClient, nRtpLength, nMaxRtpLength);

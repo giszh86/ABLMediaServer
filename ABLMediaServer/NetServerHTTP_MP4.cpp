@@ -17,7 +17,7 @@ extern boost::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL, b
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 
-extern CMediaSendThreadPool*                 pMediaSendThreadPool;
+
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
 extern char                                  ABL_MediaSeverRunPath[256]; //当前路径
 extern MediaServerPort                       ABL_MediaServerPort;
@@ -33,7 +33,7 @@ extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL, boo
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 
-extern CMediaSendThreadPool* pMediaSendThreadPool;
+
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
 extern char                                  ABL_MediaSeverRunPath[256]; //当前路径
 extern MediaServerPort                       ABL_MediaServerPort;
@@ -321,7 +321,7 @@ int CNetServerHTTP_MP4::ProcessNetData()
 
 	if (!bFindMP4NameFlag)
 	{
-		if (netDataCacheLength > 512)
+		if (netDataCacheLength > 512 || strstr((char*)netDataCache, "%") != NULL)
 		{
 			WriteLog(Log_Debug, "CNetServerHTTP_MP4 = %X , nClient = %llu ,netDataCacheLength = %d, 发送过来的url数据长度非法 ,立即删除 ", this, nClient, netDataCacheLength);
 			DeleteNetRevcBaseClient(nClient);
@@ -526,9 +526,6 @@ int CNetServerHTTP_MP4::ProcessNetData()
  
 		//把客户端 加入源流媒体拷贝队列 
 		pushClient->AddClientToMap(nClient);
-
-		//把客户端 加入到发送线程池中
-		pMediaSendThreadPool->AddClientToThreadPool(nClient);
 
 		bCheckHttpMP4Flag = true;
 	}

@@ -26,7 +26,7 @@ extern bool                                  DeleteClientMediaStreamSource(uint6
 
 #endif
 
-extern CMediaSendThreadPool*                 pMediaSendThreadPool;
+
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
 extern int                                   SampleRateArray[] ;
 extern char                                  ABL_MediaSeverRunPath[256]; //当前路径

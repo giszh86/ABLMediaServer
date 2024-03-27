@@ -13,7 +13,7 @@ E-Mail  79941308@qq.com
 
 extern             bool                DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 extern boost::shared_ptr<CMediaStreamSource>  GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound = false);
-extern CMediaSendThreadPool* pMediaSendThreadPool;
+
 extern CMediaFifo                      pDisconnectBaseNetFifo; //清理断裂的链接 
 extern bool                            DeleteClientMediaStreamSource(uint64_t nClient);
 extern MediaServerPort                 ABL_MediaServerPort;
@@ -24,7 +24,7 @@ extern bool                            DelClientToMapFromMutePacketList(uint64_t
 
 extern             bool                DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 extern std::shared_ptr<CMediaStreamSource>  GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound = false);
-extern CMediaSendThreadPool* pMediaSendThreadPool;
+
 extern CMediaFifo                      pDisconnectBaseNetFifo; //清理断裂的链接 
 extern bool                            DeleteClientMediaStreamSource(uint64_t nClient);
 extern MediaServerPort                 ABL_MediaServerPort;
@@ -329,7 +329,7 @@ int CNetServerHTTP_FLV::ProcessNetData()
 {
 	if (!bFindFlvNameFlag)
 	{
-		if (netDataCacheLength > 512)
+		if (netDataCacheLength > 512 || strstr((char*)netDataCache, "%") != NULL)
 		{
 			WriteLog(Log_Debug, "CNetServerHTTP_FLV = %X , nClient = %llu ,netDataCacheLength = %d, 发送过来的url数据长度非法 ,立即删除 ", this, nClient, netDataCacheLength);
 			DeleteNetRevcBaseClient(nClient);
@@ -541,8 +541,7 @@ int CNetServerHTTP_FLV::ProcessNetData()
 		//把客户端 加入源流媒体拷贝队列 
 		pushClient->AddClientToMap(nClient);
 
-		//把客户端 加入到发送线程池中
-		pMediaSendThreadPool->AddClientToThreadPool(nClient);
+	
 	}
   
 	return 0;

@@ -26,7 +26,7 @@ extern bool                                  DeleteClientMediaStreamSource(uint6
 extern MediaServerPort                       ABL_MediaServerPort;
 #endif
 
-extern CMediaSendThreadPool*                 pMediaSendThreadPool;
+
 extern CMediaFifo                            pDisconnectBaseNetFifo;       //清理断裂的链接 
 extern char                                  ABL_MediaSeverRunPath[256];   //当前路径
 extern int                                   avpriv_mpeg4audio_sample_rates[];

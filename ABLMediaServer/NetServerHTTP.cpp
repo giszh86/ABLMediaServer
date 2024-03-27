@@ -24,7 +24,7 @@ extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltH
 extern bool                                  QueryMediaSource(char* pushURL);
 extern int                                   GetPushRtspClientToJson(char* szMediaSourceInfo);
 
-extern CMediaSendThreadPool*                 pMediaSendThreadPool;
+
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
 extern MediaServerPort                       ABL_MediaServerPort;
 extern int                                   GetAllMediaStreamSource(char* szMediaSourceInfo, getMediaListStruct mediaListStruct);
@@ -70,7 +70,7 @@ extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHan
 extern bool                                  QueryMediaSource(char* pushURL);
 extern int                                   GetPushRtspClientToJson(char* szMediaSourceInfo);
 
-extern CMediaSendThreadPool*                 pMediaSendThreadPool;
+
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
 extern MediaServerPort                       ABL_MediaServerPort;
 extern int                                   GetAllMediaStreamSource(char* szMediaSourceInfo, getMediaListStruct mediaListStruct);
@@ -2105,8 +2105,7 @@ bool  CNetServerHTTP::index_api_startSendRtp()
   				memcpy((char*)&pClient->mediaCodecInfo, (char*)&tmpMediaSource->m_mediaCodecInfo, sizeof(MediaCodecInfo));
 
 				tmpMediaSource->AddClientToMap(pClient->nClient);
-  				//把nClient 加入Video ,audio 发送线程
-				pMediaSendThreadPool->AddClientToThreadPool(pClient->nClient);
+  				
 			}
 
 			if (is_udp == 1 || is_udp == 2)

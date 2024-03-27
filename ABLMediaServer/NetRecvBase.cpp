@@ -16,7 +16,7 @@ E-Mail  79941308@qq.com
 #include "stdafx.h"
 #include "NetRecvBase.h"
 #ifdef USE_BOOST
-extern CMediaSendThreadPool*                 pMediaSendThreadPool;
+
 extern CMediaFifo                            pDisconnectBaseNetFifo;             //清理断裂的链接 
 extern MediaServerPort                       ABL_MediaServerPort;
 extern boost::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
@@ -25,7 +25,7 @@ extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltH
 extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClientNoLock(NETHANDLE CltHandle);
 
 #else
-extern CMediaSendThreadPool* pMediaSendThreadPool;
+
 extern CMediaFifo                            pDisconnectBaseNetFifo;             //清理断裂的链接 
 extern MediaServerPort                       ABL_MediaServerPort;
 extern std::shared_ptr<CNetRevcBase>       CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);

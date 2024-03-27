@@ -246,7 +246,6 @@
     <ClInclude Include="H265_SPS_Nal.h" />
     <ClInclude Include="LCbase64.h" />
     <ClInclude Include="MediaFifo.h" />
-    <ClInclude Include="MediaSendThreadPool.h" />
     <ClInclude Include="MediaStreamSource.h" />
     <ClInclude Include="MyWriteLogFile.h" />
     <ClInclude Include="NetClientHttp.h" />
@@ -358,11 +357,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='boost_release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="MediaFifo.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='boost_release|x64'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="MediaSendThreadPool.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='boost_release|x64'">NotUsing</PrecompiledHeader>

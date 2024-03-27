@@ -26,7 +26,6 @@ extern bool                                  DeleteClientMediaStreamSource(uint6
 extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
 #endif
 
-extern CMediaSendThreadPool*                 pMediaSendThreadPool;
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
 extern int                                   SampleRateArray[] ;
 extern int64_t                               nTestRtmpPushID;

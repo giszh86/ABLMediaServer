@@ -33,7 +33,7 @@ extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL, boo
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
-extern CMediaSendThreadPool*                 pMediaSendThreadPool;
+
 extern size_t base64_decode(void* target, const char *source, size_t bytes);
 extern MediaServerPort                       ABL_MediaServerPort;
 static const uint8_t                         start_code[4] = { 0, 0, 0, 1 };
@@ -2141,7 +2141,7 @@ void  CNetClientRecvRtsp::SendOptionsHeartbeat()
 	WWW_AuthenticateType wwwType = AuthenticateType;
 	if (wwwType == WWW_Authenticate_None)
 	{
-		sprintf(szResponseBuffer, "OPTIONS %s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: ABL_RtspServer_3.0.1\r\n\r\n", m_szContentBaseURL, CSeq);
+		sprintf(szResponseBuffer, "OPTIONS %s RTSP/1.0\r\nCSeq: %d\r\nSession: %s\r\nUser-Agent: ABL_RtspServer_3.0.1\r\n\r\n", m_szContentBaseURL, CSeq, szSessionID);
 	}
 	else if (wwwType == WWW_Authenticate_MD5)
 	{
@@ -2152,14 +2152,14 @@ void  CNetClientRecvRtsp::SendOptionsHeartbeat()
 		author.setUsernameAndPassword(m_rtspStruct.szUser, m_rtspStruct.szPwd);
 		szResponse = (char*)author.computeDigestResponse("OPTIONS", m_szContentBaseURL); //要注意 uri ,有时候没有最后的 斜杠 /
 
-		sprintf(szResponseBuffer, "OPTIONS %s RTSP/1.0\r\nCSeq: %d\r\nAuthorization: Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", response=\"%s\"\r\nUser-Agent: ABL_RtspServer_3.0.1\r\n\r\n", m_szContentBaseURL, CSeq, m_rtspStruct.szUser, m_rtspStruct.szRealm, m_rtspStruct.szNonce, m_szContentBaseURL, szResponse);
+		sprintf(szResponseBuffer, "OPTIONS %s RTSP/1.0\r\nCSeq: %d\r\nSession: %s\r\nAuthorization: Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", response=\"%s\"\r\nUser-Agent: ABL_RtspServer_3.0.1\r\n\r\n", m_szContentBaseURL, CSeq, szSessionID, m_rtspStruct.szUser, m_rtspStruct.szRealm, m_rtspStruct.szNonce, m_szContentBaseURL, szResponse);
 
 		author.reclaimDigestResponse(szResponse);
 	}
 	else if (wwwType == WWW_Authenticate_Basic)
 	{
 		UserPasswordBase64(szBasic);
-		sprintf(szResponseBuffer, "OPTIONS %s RTSP/1.0\r\nCSeq: %d\r\nAuthorization: Basic %s\r\nUser-Agent: ABL_RtspServer_3.0.1\r\n\r\n", m_szContentBaseURL, CSeq, szBasic);
+		sprintf(szResponseBuffer, "OPTIONS %s RTSP/1.0\r\nCSeq: %d\r\nSession: %s\r\nAuthorization: Basic %s\r\nUser-Agent: ABL_RtspServer_3.0.1\r\n\r\n", m_szContentBaseURL, CSeq, szSessionID, szBasic);
 	}
 
 	unsigned int nRet = XHNetSDK_Write(nClient, (unsigned char*)szResponseBuffer, strlen(szResponseBuffer), 1);

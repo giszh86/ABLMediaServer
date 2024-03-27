@@ -45,9 +45,6 @@
     <ClInclude Include="MediaStreamSource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MediaSendThreadPool.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ABLSipParse.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -246,9 +243,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="MediaFifo.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="MediaSendThreadPool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ABLSipParse.cpp">
