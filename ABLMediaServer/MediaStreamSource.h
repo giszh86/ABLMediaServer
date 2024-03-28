@@ -125,7 +125,7 @@ public:
    int                    nCudaDecodeFrameCount;//解码成功后的帧数量
    int                    nEncodeBufferLengthCount;//转码后buffer的总长度
 #ifdef OS_System_Windows
-   unsigned char**        pCudaDecodeYUVFrame;//解码成功的帧数据
+   unsigned char*        pCudaDecodeYUVFrame;//解码成功的帧数据
 #else
    unsigned char*         pCudaDecodeYUVFrame;//解码成功的帧数据	
 #endif

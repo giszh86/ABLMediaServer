@@ -1020,21 +1020,21 @@ bool  CMediaStreamSource::H265ConvertH264(unsigned char* szVideo, int nLength, c
 				for (int i = 0; i < nCudaDecodeFrameCount; i++)
 				{
 					if (m_h265ConvertH264Struct.convertOutWidth != nSrcWidth && m_h265ConvertH264Struct.convertOutHeight != nSrcHeight)
-						avFrameSWS.AVFrameSWSYUV(pCudaDecodeYUVFrame[i], nCudeDecodeOutLength);
+						avFrameSWS.AVFrameSWSYUV(pCudaDecodeYUVFrame, nCudeDecodeOutLength);
 
 					if (nCudaDecodeFrameCount == 1)//Ö»ÓÐ1Ö¡
 					{
 						if (m_h265ConvertH264Struct.convertOutWidth != nSrcWidth && m_h265ConvertH264Struct.convertOutHeight != nSrcHeight)
 							videoEncode.EncodecYUV(avFrameSWS.szDestData, avFrameSWS.numBytes2, pOutEncodeBuffer, &nOutLength);
 						else if (m_h265ConvertH264Struct.convertOutWidth == nSrcWidth && m_h265ConvertH264Struct.convertOutHeight == nSrcHeight)
-							videoEncode.EncodecYUV(pCudaDecodeYUVFrame[i], nCudeDecodeOutLength, pOutEncodeBuffer, &nOutLength);
+							videoEncode.EncodecYUV(pCudaDecodeYUVFrame, nCudeDecodeOutLength, pOutEncodeBuffer, &nOutLength);
 					}
 					else
 					{//¶àÖ¡ 
 						if (m_h265ConvertH264Struct.convertOutWidth != nSrcWidth && m_h265ConvertH264Struct.convertOutHeight != nSrcHeight)
 							videoEncode.EncodecYUV(avFrameSWS.szDestData, avFrameSWS.numBytes2, pOutEncodeBuffer + (nEncodeBufferLengthCount + sizeof(int)), &nOutLength);
 						else if (m_h265ConvertH264Struct.convertOutWidth == nSrcWidth && m_h265ConvertH264Struct.convertOutHeight == nSrcHeight)
-							videoEncode.EncodecYUV(pCudaDecodeYUVFrame[i], nCudeDecodeOutLength, pOutEncodeBuffer + (nEncodeBufferLengthCount + sizeof(int)), &nOutLength);
+							videoEncode.EncodecYUV(pCudaDecodeYUVFrame, nCudeDecodeOutLength, pOutEncodeBuffer + (nEncodeBufferLengthCount + sizeof(int)), &nOutLength);
 
 						if (nOutLength > 0 && (CudaDecodeH264EncodeH264FIFOBufferLength - nEncodeBufferLengthCount) > (nOutLength + sizeof(nOutLength)))
 						{

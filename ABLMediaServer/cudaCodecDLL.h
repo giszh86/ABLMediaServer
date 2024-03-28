@@ -108,7 +108,7 @@ typedef bool (WINAPI* ABL_CreateVideoDecode) (cudaCodecVideo_enum videoCodec, cu
   int&            nOutDecodeLength    解码返回一帧buffer长度 
 */
 #ifdef  WIN32
-typedef unsigned char** (WINAPI* ABL_CudaVideoDecode) (uint64_t nCudaChan, unsigned char* pVideoData, int nVideoLength, int& nDecodeFrameCount, int& nOutDecodeLength);
+typedef unsigned char* (WINAPI* ABL_CudaVideoDecode) (uint64_t nCudaChan, unsigned char* pVideoData, int nVideoLength, int& nDecodeFrameCount, int& nOutDecodeLength);
 
 #else
 typedef unsigned char* (WINAPI* ABL_CudaVideoDecode) (uint64_t nCudaChan, unsigned char* pVideoData, int nVideoLength, int& nDecodeFrameCount, int& nOutDecodeLength);
