@@ -100,7 +100,12 @@ int ThreadPool::getCompletedTaskCount() const
 
 ThreadPool& netlib::ThreadPool::getInstance()
 {
-	static ThreadPool instance(MAX_THREAD);
+	auto thread_count = std::thread::hardware_concurrency(); //unsigned 表示的就是 unsigned int
+	if (thread_count <= 4)
+		thread_count = MAX_THREAD;
+	else if (thread_count > 256)
+		thread_count = 256;
+	static ThreadPool instance(thread_count);
 	
 	return instance;
 }
