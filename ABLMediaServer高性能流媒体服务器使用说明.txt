@@ -247,8 +247,7 @@
  																	http://190.15.240.36:8088/Media/Camera_00001.flv   或者
 																	d:\\video\\xxxx.mp4   (windows平台)
 																	/home/video/xxxx.mp4  (Linux平台)
-                    					
-					isRtspRecordURL                             代理拉流的url是否是rtsp录像回放的url 默认0 ，1 是【可选参数】，如果是rtsp录像回放的url，可以进行控制代理拉流，比如 暂停、继续、控制倍速播放，拖动播放等等 ，参考
+ 					isRtspRecordURL                             代理拉流的url是否是rtsp录像回放的url 默认0 ，1 是【可选参数】，如果是rtsp录像回放的url，可以进行控制代理拉流，比如 暂停、继续、控制倍速播放，拖动播放等等 ，参考
 					                                            函数 /index/api/controlStreamProxy 
 				    optionsHeartbeat          options心跳       options 命令作为心跳包      【可选参数】 代理rtsp拉流成后，是否开启发送 0 不开启， 1 开启 ，默认不开启，如果从 ZLMediaKit 拉取rtsp流，建议设置为 1 
 					enable_mp4                是否录像          1 录像，0 不录像            【可选参数】
@@ -403,7 +402,7 @@
 						"memo": "success",   # success 为成功 ,如果失败是其他值 
 					}		
 		   		   
-	9）、创建GB28181\Jtt1078接收端口、删除GB28181\Jtt1078接收端口 
+	9）、创建GB28181\Jtt1078接收端口、删除GB28181\Jtt1078接收端口、国标暂停、继续  
 	
          1 	创建GB28181\Jtt1078接收端口
 				 
@@ -436,6 +435,7 @@
 					send_stream_id            媒体流名          比如 44030012343220234234   【可选参数】 用于把本服务器的码流（send_app/send_stream_id）回复给发送端
 					send_disableVideo         是否过滤掉视频    0 不过滤 ，1 过滤视频       【可选参数】 默认 0 不过滤视频，国家电网协议中需要摄像头和摄像头直接需要对接，摄像头推上来的媒体流中过滤掉视频（disableVideo=1）再发给对方才能完成对讲 
 					send_disableAudio         是否过滤掉音频    0 不过滤 ，1 过滤音频       【可选参数】 默认 0 不过滤音频，有时候不需要音频、或者由于敏感原因禁止收听音频，可以过滤掉音频流接入流媒体服务器，只需要设置 disableAudio = 1即可过滤音频  
+	                detectSendAppStream       是否检测发送流ID  0 不检测 ，1 检测           【可选参数】 默认 1 在需要回传码流时，事先检测 send_app、send_stream_id 是否存在。0 不检测，先打开接收成功后，稍后再把send_app、send_stream_id接入流媒体，openRtpServer函数自动回复给下级流媒体。
 					
 	             http  GET 方式 			   
 			        http://190.15.240.11:7088/index/api/openRtpServer?secret=035c73f7-bb6b-4889-a715-d9eb2d1925cc&vhost=_defaultVhost_&app=gb28181&stream_id=44030012343220234234&payload=96&port=0&enable_tcp=0&enable_mp4=0
@@ -479,6 +479,56 @@
 						"code": 0,           # 0为操作成功，其他值为操作失败
 						"memo": "success",   # success 为成功 ,如果失败是其他值 
 					}				
+					
+           3    暂停 GB28181\Jtt1078接收端口，只是不检测接收端口是否有码流进入。
+			     URL: /index/api/pauseRtpServer
+				 功能：
+				      暂停GB28181\Jtt1078接收
+			   
+			     参数：              参数说明     参数参考值   
+					secret           服务器密码   比如 035c73f7-bb6b-4889-a715-d9eb2d1925cc
+				    key              主键值ID     比如  93 ，  调用 /index/api/openRtpServer 返回的 key 的值 
+ 			   
+			    http GET 方式 
+			       http://44.35.33.249:7088/index/api/pauseRtpServer?secret=035c73f7-bb6b-4889-a715-d9eb2d1925cc&key=588
+				   
+				http  POST 方式 
+				   http URL 
+				     http://44.35.33.249:7088/index/api/pauseRtpServer
+					 
+				   http Body 参数 json 格式
+				     {"secret":"035c73f7-bb6b-4889-a715-d9eb2d1925cc","key":588}
+				   
+				返回Body：
+					{
+						"code": 0,           # 0为操作成功，其他值为操作失败
+						"memo": "success",   # success 为成功 ,如果失败是其他值 
+					}				
+           
+           4   继续 GB28181\Jtt1078接收端口，开启检测端口是否有码流到达，如果时长到达最大超时没有码流进入会立即删除接收端口
+			     URL: /index/api/resumeRtpServer
+				 功能：
+				      继续GB28181\Jtt1078接收
+			   
+			     参数：              参数说明     参数参考值   
+					secret           服务器密码   比如 035c73f7-bb6b-4889-a715-d9eb2d1925cc
+				    key              主键值ID     比如  93 ，  调用 /index/api/openRtpServer 返回的 key 的值 
+ 			   
+			    http GET 方式 
+			       http://44.35.33.249:7088/index/api/resumeRtpServer?secret=035c73f7-bb6b-4889-a715-d9eb2d1925cc&key=588
+				   
+				http  POST 方式 
+				   http URL 
+				     http://44.35.33.249:7088/index/api/resumeRtpServer
+					 
+				   http Body 参数 json 格式
+				     {"secret":"035c73f7-bb6b-4889-a715-d9eb2d1925cc","key":588}
+				   
+				返回Body：
+					{
+						"code": 0,           # 0为操作成功，其他值为操作失败
+						"memo": "success",   # success 为成功 ,如果失败是其他值 
+					}	
 					
 	 10）、创建GB28181\Jtt1078 发送端口、删除GB28181\Jtt1078发送端口 
 	
@@ -877,16 +927,14 @@
 					{
 						"hook_enable": 0,
 						"memo": "hook_enable = 1 open notice , hook_enable = 0 close notice "
-				
 					},
 					{
 						"enable_audio": 1,
 						"memo": "enable_audio = 1 open Audio , enable_audio = 0 Close Audio "
-		
 					},
 					{
 						"httpServerPort": 7088,
-						"memo": "http api port "			
+						"memo": "http api port "
 					},
 					{
 						"rtspPort": 554,
@@ -895,27 +943,22 @@
 					{
 						"rtmpPort": 1935,
 						"memo": "rtmp port "
-		
 					},
 					{
 						"httpFlvPort": 8088,
 						"memo": "http-flv port "
-
 					},
 					{
 						"hls_enable": 0,
 						"memo": "hls whether enable "
-			
 					},
 					{
 						"hlsPort": 9088,
 						"memo": "hls port"
-
 					},
 					{
 						"wsPort": 6088,
 						"memo": "websocket flv port"
-				
 					},
 					{
 						"mp4Port": 5088,
@@ -973,7 +1016,6 @@
 						"RecordReplayThread": 32,
 						"memo": "Total number of video playback threads ."
 					}
-				
 				]
 			}
 				
@@ -1659,7 +1701,7 @@
 				 http://127.0.0.1:7088/index/api/setServerConfig
 				 
 			   http Body 参数 json 格式
-				 {"secret":"035c73f7-bb6b-4889-a715-d9eb2d1925cc","noneReaderDuration":20,"iframeArriveNoticCount":30,"on_server_started":"http://10.0.0.238:4088/index/hook/on_server_started","rtc.listening-ip":"192.168.2.5"}
+				 {"secret":"035c73f7-bb6b-4889-a715-d9eb2d1925cc","noneReaderDuration":20,"iframeArriveNoticCount":30,"on_server_started":"http://10.0.0.238:4088/index/hook/on_server_started"}
 			  
 		29） 为了方便某些特殊场合，服务器支持udp的10000 端口接入国标PS码流，就是人们常说的单端口模式，url的命名规则为 /rtp/ssrc ,其中ssrc为下级rtp打包
 		     的16进制的值转换为大小的字符串，即可sprintf(url,"rtp/%X",ssrc) ,具体接入的url名字可以调用 getMediaList 查询出接入的国标流 。需要注意的是 
