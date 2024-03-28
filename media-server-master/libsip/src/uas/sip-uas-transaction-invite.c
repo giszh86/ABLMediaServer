@@ -286,12 +286,12 @@ static void sip_uas_transaction_onretransmission(void* usrptr)
 		if (0 != r)
 		{
 			// 8.1. 3.1 Transaction Layer Errors (p42)
-			//r = t->handler.onack(t->initparam, t, t->session, t->dialog, 503/*Service Unavailable*/, NULL, 0);
+			//r = t->handler.onack(t->initparam, t, t->session, (t->dialog && t->dialog->state == DIALOG_CONFIRMED) ? t->dialog : NULL, 503/*Service Unavailable*/, NULL, 0);
 		}
 
 		assert(!t->reliable);
 		timeout = T1 * (1 << t->retries++);
-		t->timerg = sip_uas_start_timer(t->agent, t, MIN(t->t2, timeout), sip_uas_transaction_onretransmission);
+		t->timerg = sip_uas_start_timer(t->agent, t, MIN(t->t2, MAX(T1, timeout)), sip_uas_transaction_onretransmission);
 	}
 
 	locker_unlock(&t->locker);

@@ -164,6 +164,30 @@ static int mpeg4_vvc_add(struct mpeg4_vvc_t* vvc, uint8_t type, const uint8_t* n
 	return 1;
 }
 
+static int h266_opi_copy(struct mpeg4_vvc_t* vvc, const uint8_t* nalu, size_t bytes)
+{
+	int i;
+	for (i = 0; i < vvc->numOfArrays; i++)
+	{
+		if (H266_NAL_OPI == vvc->nalu[i].type)
+			return mpeg4_vvc_update2(vvc, i, nalu, bytes);
+	}
+
+	return mpeg4_vvc_add(vvc, H266_NAL_OPI, nalu, bytes);
+}
+
+static int h266_dci_copy(struct mpeg4_vvc_t* vvc, const uint8_t* nalu, size_t bytes)
+{
+	int i;
+	for (i = 0; i < vvc->numOfArrays; i++)
+	{
+		if (H266_NAL_DCI == vvc->nalu[i].type)
+			return mpeg4_vvc_update2(vvc, i, nalu, bytes);
+	}
+
+	return mpeg4_vvc_add(vvc, H266_NAL_DCI, nalu, bytes);
+}
+
 static int h266_vps_copy(struct mpeg4_vvc_t* vvc, const uint8_t* nalu, size_t bytes)
 {
 	int i;
@@ -253,6 +277,14 @@ int mpeg4_vvc_update(struct mpeg4_vvc_t* vvc, const uint8_t* nalu, size_t bytes)
 
 	switch ((nalu[1] >> 3) & 0x1f)
 	{
+	case H266_NAL_OPI:
+		r = h266_opi_copy(vvc, nalu, bytes);
+		break;
+
+	case H266_NAL_DCI:
+		r = h266_dci_copy(vvc, nalu, bytes);
+		break;
+
 	case H266_NAL_VPS:
 		h266_sei_clear(vvc); // remove all prefix/suffix sei
 		r = h266_vps_copy(vvc, nalu, bytes);
@@ -356,17 +388,26 @@ int h266_annexbtomp4(struct mpeg4_vvc_t* vvc, const void* data, size_t bytes, vo
 int h266_is_new_access_unit(const uint8_t* nalu, size_t bytes)
 {
 	uint8_t nal_type;
-	if (bytes < 2)
+	uint8_t nuh_layer_id;
+
+	if (bytes < 3)
 		return 0;
 
 	nal_type = (nalu[1] >> 3) & 0x1f;
+	nuh_layer_id = nalu[0] & 0x3F;
 
 	// 7.4.2.4.3 Order of PUs and their association to AUs
-	if (H266_NAL_AUD == nal_type || H266_NAL_OPI == nal_type || H266_NAL_DCI == nal_type 
-		|| H266_NAL_VPS == nal_type || H266_NAL_SPS == nal_type || H266_NAL_PPS == nal_type 
-		|| H266_NAL_PREFIX_APS == nal_type || H266_NAL_PH == nal_type || H266_NAL_PREFIX_SEI == nal_type
-		|| 26 == nal_type || (28 <= nal_type && nal_type <= 29))
+	if (H266_NAL_AUD == nal_type || H266_NAL_OPI == nal_type || H266_NAL_DCI == nal_type || H266_NAL_VPS == nal_type || H266_NAL_SPS == nal_type || H266_NAL_PPS == nal_type ||
+		(nuh_layer_id == 0 && (H266_NAL_PREFIX_APS == nal_type || H266_NAL_PH == nal_type || H266_NAL_PREFIX_SEI == nal_type ||
+			26 == nal_type || (28 <= nal_type && nal_type <= 29))))
 		return 1;
+
+	// 7.4.2.4.4 Order of NAL units and coded pictures and their association to PUs
+	if (nal_type < H266_NAL_OPI)
+	{
+		//sh_picture_header_in_slice_header_flag == 1
+		return (nalu[2] & 0x80) ? 1 : 0;
+	}
 
 	return 0;
 }

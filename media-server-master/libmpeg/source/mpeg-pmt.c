@@ -51,6 +51,17 @@ static int pmt_read_descriptor(struct pes_t* stream, const uint8_t* data, uint16
 				assert(PSI_STREAM_PRIVATE_DATA == stream->codecid);
 				stream->codecid = PSI_STREAM_AUDIO_OPUS;
 			}
+			if (len >= 4 && 'A' == data[2] && 'V' == data[3] && '0' == data[4] && '1' == data[5])
+			{
+				// https://aomediacodec.github.io/av1-mpeg2-ts/
+				// Constraints on AV1 streams in MPEG-2 TS
+				assert(PSI_STREAM_PRIVATE_DATA == stream->codecid);
+				stream->codecid = PSI_STREAM_AV1;
+			}
+			else if (len >= 4 && 'A' == data[2] && 'V' == data[3] && 'S' == data[4] && '3' == data[5])
+			{
+				stream->codecid = PSI_STREAM_VIDEO_AVS3;
+			}
 			break;
 
 		case 0x7f: // DVB-Service Information: 6.1 Descriptor identification and location (p38)
@@ -132,12 +143,12 @@ size_t pmt_read(struct pmt_t *pmt, const uint8_t* data, size_t bytes)
 		return 0; // invalid data length
 	}
 
-	if(pmt->ver != version_number)
-		pmt->stream_count = 0; // clear all streams
+	//if(pmt->ver != version_number)
+	//	pmt_clear(pmt); // fix pmt.pes.pkt.data memory leak
 
 	pmt->PCR_PID = PCR_PID;
 	pmt->pn = program_number;
-	pmt->ver = version_number;
+	//pmt->ver = version_number;
 	pmt->pminfo_len = program_info_length;
 
 	if(program_info_length > 2)
@@ -145,6 +156,7 @@ size_t pmt_read(struct pmt_t *pmt, const uint8_t* data, size_t bytes)
 		// descriptor(data + 12, program_info_length)
 	}
 
+PMT_VERSION_CHANGE:
 	assert(bytes >= section_length + 3); // PMT = section_length + 3
     for (i = 12 + program_info_length; i + 5 <= section_length + 3 - 4/*CRC32*/ && section_length + 3 <= bytes; i += len + 5) // 9: follow section_length item
 	{
@@ -157,8 +169,16 @@ size_t pmt_read(struct pmt_t *pmt, const uint8_t* data, size_t bytes)
 
         assert(pmt->stream_count <= sizeof(pmt->streams)/sizeof(pmt->streams[0]));
         stream = pmt_fetch(pmt, pid);
-        if(NULL == stream)
-            continue;
+		if (NULL == stream)
+		{
+			if (pmt->ver != version_number)
+			{
+				pmt->ver = version_number; // once only
+				pmt_clear(pmt);
+				goto PMT_VERSION_CHANGE;
+			}
+			continue;
+		}
         
         stream->pn = (uint16_t)pmt->pn;
         stream->pid = pid;
@@ -171,6 +191,7 @@ size_t pmt_read(struct pmt_t *pmt, const uint8_t* data, size_t bytes)
 		}
 	}
 
+	pmt->ver = version_number;
 	//assert(j+4 == bytes);
 	//crc = (data[j] << 24) | (data[j+1] << 16) | (data[j+2] << 8) | data[j+3];
 //	assert(0 == mpeg_crc32(0xffffffff, data, section_length+3));
@@ -263,4 +284,37 @@ size_t pmt_write(const struct pmt_t *pmt, uint8_t *data)
 	p[0] = crc & 0xFF;
 
 	return (p - data) + 4; // total length
+}
+
+void pmt_clear(struct pmt_t* pmt)
+{
+	unsigned int i;
+	struct pes_t* pes;
+
+	for (i = 0; i < pmt->stream_count; i++)
+	{
+		pes = &pmt->streams[i];
+		if (pes->pkt.data)
+		{
+			free(pes->pkt.data);
+			pes->pkt.data = NULL;
+		}
+		pes->pkt.size = 0;
+
+		if (pes->esinfo)
+		{
+			free(pes->esinfo);
+			pes->esinfo = NULL;
+		}
+		pes->esinfo_len = 0;
+	}
+	pmt->stream_count = 0;
+
+	if (pmt->pminfo)
+	{
+		free(pmt->pminfo);
+		pmt->pminfo = NULL;
+		
+	}
+	pmt->pminfo_len = 0; 
 }

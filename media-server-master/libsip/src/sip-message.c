@@ -1,6 +1,7 @@
 #include "sip-message.h"
 #include "sip-header.h"
 #include "sip-dialog.h"
+#include "sip-internal.h"
 #include "sys/system.h"
 #include "cstringext.h"
 #include "uuid.h"
@@ -46,7 +47,10 @@ struct sip_message_t* sip_message_create(int mode)
 	sip_contacts_init(&msg->contacts);
 	sip_params_init(&msg->headers);
 
+#if !defined(DEBUG) && !defined(_DEBUG)
 	sip_message_add_header(msg, "User-Agent", SIP_HEADER_USER_AGENT);
+#endif
+	atomic_increment32(&s_gc.message);
 	return msg;
 }
 
@@ -66,6 +70,7 @@ int sip_message_destroy(struct sip_message_t* msg)
 		sip_substate_free(&msg->substate);
 		sip_params_free(&msg->headers);
 		free(msg);
+		atomic_decrement32(&s_gc.message);
 	}
 	return 0;
 }
@@ -516,6 +521,9 @@ static char* sip_message_request_uri(const struct sip_message_t* msg, char* p, c
 	if (p < end) p += cstrcpy(&msg->u.c.method, p, end - p);
 	if (p < end) *p++ = ' ';
 	
+#if defined(SIP_REGISTER_WITH_USERINFO)
+	if (p < end) p += sip_request_uri_write(host, p, end);
+#else
 	if (0 != cstrcasecmp(&msg->u.c.method, SIP_METHOD_REGISTER))
 	{
 		// INVITE sip:bob@biloxi.com SIP/2.0
@@ -537,7 +545,8 @@ static char* sip_message_request_uri(const struct sip_message_t* msg, char* p, c
 
 		// REGISTER sip:registrar.biloxi.com SIP/2.0
 		if (p < end) p += sip_request_uri_write(&uri, p, end);
-	}
+	}	
+#endif
 
 	n = snprintf(p, end - p, " SIP/2.0");
 	if (n < 0 || n >= end - p)
@@ -555,7 +564,7 @@ static char* sip_message_routers(const struct sip_message_t* msg, char* p, const
 
 	// METHOD sip:proxy1
 	// Route: <sip:proxy2>,<sip:proxy3;lr>,<sip:proxy4>,<sip:user@remoteua>
-	for (i = strict_router; i < sip_uris_count((struct sip_uris_t*)&msg->routers); i++)
+	for (i = strict_router; i < sip_uris_count((struct sip_uris_t*)&msg->routers) && p < end; i++)
 	{
 		if (p < end) p += snprintf(p, end - p, "\r\n%s: ", SIP_HEADER_ROUTE);
 		if (p < end) p += sip_uri_write(sip_uris_get((struct sip_uris_t*)&msg->routers, i), p, end);
@@ -718,10 +727,12 @@ int sip_message_add_header(struct sip_message_t* msg, const char* name, const ch
 
 	if (0 == strcasecmp(SIP_HEADER_FROM, name) || 0 == strcasecmp(SIP_HEADER_ABBR_FROM, name))
 	{
+		sip_contact_free(&msg->from);
 		r = sip_header_contact(header.value.p, header.value.p + header.value.n, &msg->from);
 	}
 	else if (0 == strcasecmp(SIP_HEADER_TO, name) || 0 == strcasecmp(SIP_HEADER_ABBR_TO, name))
 	{
+		sip_contact_free(&msg->to);
 		r = sip_header_contact(header.value.p, header.value.p + header.value.n, &msg->to);
 	}
 	else if (0 == strcasecmp(SIP_HEADER_CALLID, name) || 0 == strcasecmp(SIP_HEADER_ABBR_CALLID, name))
@@ -781,7 +792,7 @@ int sip_message_add_header(struct sip_message_t* msg, const char* name, const ch
 	}
 	else if (0 == strcasecmp(SIP_HEADER_SUBSCRIBE_STATE, name))
 	{
-		memset(&msg->substate, 0, sizeof(msg->substate));
+		sip_substate_free(&msg->substate);
 		r = sip_header_substate(header.value.p, header.value.p + header.value.n, &msg->substate);
 	}
 	else if (0 == strcasecmp(SIP_HEADER_RSEQ, name))
