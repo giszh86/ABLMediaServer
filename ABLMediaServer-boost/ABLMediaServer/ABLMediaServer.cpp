@@ -71,6 +71,7 @@ char                                                             ABL_wwwMediaPat
 uint64_t                                                         ABL_nBaseCookieNumber = 100; //Cookie 序号 
 char                                                             ABL_szLocalIP[128] = { 0 };
 uint64_t                                                         ABL_nPrintCheckNetRevcBaseClientDisconnect = 0;
+unsigned int                                                     ABL_nCurrentSystemCpuCount = 4;//当前系统cpu物理核心数 
 CNetRevcBase_ptr                                                 GetNetRevcBaseClient(NETHANDLE CltHandle);
 bool 	                                                         ABL_bCudaFlag  = false ;
 int                                                              ABL_nCudaCount = 0 ;
@@ -3074,6 +3075,13 @@ int main(int argc, char* argv[])
 	pcm16_alaw_tableinit();
 	pcm16_ulaw_tableinit();
  
+	//获取cpu物理核心数 
+	ABL_nCurrentSystemCpuCount = std::thread::hardware_concurrency(); 
+	if (ABL_nCurrentSystemCpuCount <= 4)
+		ABL_nCurrentSystemCpuCount = 4;
+	else if (ABL_nCurrentSystemCpuCount > 256)
+		ABL_nCurrentSystemCpuCount = 256;
+
 ABL_Restart:
 	unsigned char nGet;
 	int nBindHttp, nBindRtsp, nBindRtmp,nBindWsFlv,nBindHttpFlv, nBindHls,nBindMp4,nBindRecvAudio,nBingPS10000;
@@ -3133,6 +3141,7 @@ ABL_Restart:
 	}
 	strcpy(ABL_MediaServerPort.ABL_szLocalIP, ABL_szLocalIP);
 	WriteLog(Log_Debug, "本机IP地址 ABL_szLocalIP : %s ", ABL_szLocalIP);
+	WriteLog(Log_Debug, "本机cpu物理核心数量 nCurrentSystemCpuCount %d ", ABL_nCurrentSystemCpuCount);
 
 	strcpy(ABL_MediaServerPort.secret, ABL_ConfigFile.GetValue("ABLMediaServer", "secret", "035c73f7-bb6b-4889-a715-d9eb2d1925cc111"));
 	ABL_MediaServerPort.nHttpServerPort = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "httpServerPort", "8081"));
@@ -3391,6 +3400,7 @@ ABL_Restart:
 	//获取用户配置的IP地址 
 	strcpy(ABL_szLocalIP, ABL_ConfigFile.GetValue("ABLMediaServer", "localipAddress",""));
 	WriteLog(Log_Debug, "读取到配置文件的IP : %s ", ABL_szLocalIP);
+	WriteLog(Log_Debug, "本机cpu物理核心数量 nCurrentSystemCpuCount %d ", ABL_nCurrentSystemCpuCount);
 
 	//获取IP地址 
 	if (strlen(ABL_szLocalIP) == 0)
@@ -3741,7 +3751,7 @@ ABL_Restart:
 	int nRet = -1 ;
 	if (!ABL_bInitXHNetSDKFlag) //保证只初始化1次
 	{
-		nRet = XHNetSDK_Init(ABL_MediaServerPort.nIOContentNumber, ABL_MediaServerPort.nThreadCountOfIOContent);
+		nRet = XHNetSDK_Init(ABL_nCurrentSystemCpuCount, 1);
  	    ABL_bInitXHNetSDKFlag = true;
 		WriteLog(Log_Debug, "Network Init = %d \r\n", nRet);
 	}
@@ -3895,7 +3905,7 @@ ABL_Restart:
 #else
 	ExitLogFile();
 #endif
-	//WebRtcEndpoint::getInstance().Uninit();
+	WebRtcEndpoint::getInstance().Uninit();
 
 	WriteLog(Log_Debug, "--------------------ABLMediaServer End .... --------------------");
 
