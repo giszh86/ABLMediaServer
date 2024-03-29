@@ -1,0 +1,63 @@
+2020-08-17
+1 增加一个分配序号函数 
+
+	LIBNET_API NETHANDLE XHNetSDK_GenerateIdentifier()
+	{
+		return generate_identifier(); 
+	}
+
+2 修改读取udp数据返回值，地址指针一直不会改变
+	in_addr      addr_nV4;
+	in6_addr     addr_nV6;
+	sockaddr_in  tAddrV4 ;
+	sockaddr_in6 tAddrV6 ;
+	以上变量定义位类成员 
+	
+	tAddrV4.sin_family = AF_INET;
+	tAddrV4.sin_addr = addr_nV4;
+	tAddrV4.sin_port = htons(m_remoteep.port());
+
+	if (m_fnread)
+	{
+		m_fnread(INVALID_NETHANDLE, get_id(), m_autoread ? m_readbuff : m_userreadbuffer, static_cast<uint32_t>(transize), &tAddrV4);
+	}
+
+2020-05-07
+1 增加设置发送、接收缓冲区大小
+	//设置接收，发送缓冲区
+	int  nRecvSize = 1024 * 1024 * 2;
+	boost::asio::socket_base::send_buffer_size    SendSize_option(nRecvSize); //定义发送缓冲区大小
+	boost::asio::socket_base::receive_buffer_size RecvSize_option(nRecvSize); //定义接收缓冲区大小
+	m_socket.set_option(SendSize_option); //设置发送缓存区大小
+	m_socket.set_option(RecvSize_option); //设置接收缓冲区大小
+
+	//设置立即关闭
+	struct linger so_linger ;
+	so_linger.l_onoff = 0;
+	so_linger.l_linger = 1;
+	setsockopt(m_socket.native_handle(), SOL_SOCKET, SO_LINGER, (const char*)&so_linger, sizeof(so_linger)); //设置立即关闭
+
+2  把网络发送改成循环发送
+	unsigned long nSendPos = 0, nSendRet = 0 ;
+
+	while (datasize2 > 0)
+	{//改成循环发送
+		nSendRet = boost::asio::write(m_socket, boost::asio::buffer(data + nSendPos, datasize2), ec);
+
+		if (!ec)
+		{//发送没有出错
+			if (nSendRet > 0)
+			{
+				nSendPos  += nSendRet;
+				datasize2 -= nSendRet;
+			}
+		}
+		else//发送出错，立即跳出循环，否则会死循环
+			break;
+	}
+
+	
+2020-05-02
+1 把函数名字稍微改动
+
+拿最新的网络库源码编译成Linux版本。
