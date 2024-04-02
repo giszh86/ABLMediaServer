@@ -615,7 +615,6 @@ bool  CNetServerWS_FLV::Create_WS_FLV_Handle()
 		//把客户端 加入源流媒体拷贝队列 
 		pushClient->AddClientToMap(nClient);
 
-
 	}
 }
 
