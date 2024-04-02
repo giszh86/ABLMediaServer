@@ -1795,26 +1795,24 @@ bool  CNetServerHTTP::index_api_startSendRtp()
 	}
 	else
 	{
-	GetKeyValue("secret", m_startSendRtpStruct.secret);
-	GetKeyValue("vhost", m_startSendRtpStruct.vhost);
-	GetKeyValue("app", m_startSendRtpStruct.app);
-	GetKeyValue("stream", m_startSendRtpStruct.stream);
-	GetKeyValue("ssrc", m_startSendRtpStruct.ssrc);
-	GetKeyValue("src_port", m_startSendRtpStruct.src_port);
-	GetKeyValue("dst_url", m_startSendRtpStruct.dst_url);
-	GetKeyValue("dst_port", m_startSendRtpStruct.dst_port);
-	GetKeyValue("is_udp", m_startSendRtpStruct.is_udp);
-	GetKeyValue("payload", m_startSendRtpStruct.payload);
- 	GetKeyValue("RtpPayloadDataType", m_startSendRtpStruct.RtpPayloadDataType);
-	GetKeyValue("disableAudio", m_startSendRtpStruct.disableAudio);
-	GetKeyValue("disableVideo", m_startSendRtpStruct.disableVideo);
-	GetKeyValue("recv_app", m_startSendRtpStruct.recv_app);
-	GetKeyValue("recv_stream", m_startSendRtpStruct.recv_stream);
-	GetKeyValue("recv_disableAudio", m_startSendRtpStruct.recv_disableAudio);
-	GetKeyValue("recv_disableVideo", m_startSendRtpStruct.recv_disableVideo);
-	GetKeyValue("jtt1078_version", m_startSendRtpStruct.jtt1078_version);
-
-
+		GetKeyValue("secret", m_startSendRtpStruct.secret);
+		GetKeyValue("vhost", m_startSendRtpStruct.vhost);
+		GetKeyValue("app", m_startSendRtpStruct.app);
+		GetKeyValue("stream", m_startSendRtpStruct.stream);
+		GetKeyValue("ssrc", m_startSendRtpStruct.ssrc);
+		GetKeyValue("src_port", m_startSendRtpStruct.src_port);
+		GetKeyValue("dst_url", m_startSendRtpStruct.dst_url);
+		GetKeyValue("dst_port", m_startSendRtpStruct.dst_port);
+		GetKeyValue("is_udp", m_startSendRtpStruct.is_udp);
+		GetKeyValue("payload", m_startSendRtpStruct.payload);
+		GetKeyValue("RtpPayloadDataType", m_startSendRtpStruct.RtpPayloadDataType);
+		GetKeyValue("disableAudio", m_startSendRtpStruct.disableAudio);
+		GetKeyValue("disableVideo", m_startSendRtpStruct.disableVideo);
+		GetKeyValue("recv_app", m_startSendRtpStruct.recv_app);
+		GetKeyValue("recv_stream", m_startSendRtpStruct.recv_stream);
+		GetKeyValue("recv_disableAudio", m_startSendRtpStruct.recv_disableAudio);
+		GetKeyValue("recv_disableVideo", m_startSendRtpStruct.recv_disableVideo);
+		GetKeyValue("jtt1078_version", m_startSendRtpStruct.jtt1078_version);
 	}
 
 	is_udp = atoi(m_startSendRtpStruct.is_udp);
