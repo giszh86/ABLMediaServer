@@ -26,6 +26,11 @@ public:
    virtual int   SendFirstRequst() = 0;//发送第一个请求
    virtual bool  RequestM3u8File() = 0 ;
 
+   uint64_t               nWriteRecordByteSize;//写入录像字节数量
+   void                   GetCurrentDatetime();//获取当前时间
+   char                   szCurrentDateTime[128];//当前时间，年月日时分秒 
+   char                   szStartDateTime[128];//当前时间，年月日时分秒 
+
    volatile bool          m_bSendCacheAudioFlag;
    int                    nSpeedCount[2];//速度统计 
    RtspNetworkType        m_RtspNetworkType;

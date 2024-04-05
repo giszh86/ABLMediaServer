@@ -123,6 +123,7 @@ int CStreamRecordMP4::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, char*
 	nRecvDataTimerBySecond = 0;
 	nCurrentVideoFrames ++;//当前视频帧数
 	nTotalVideoFrames ++;//录像视频总帧数
+	nWriteRecordByteSize += nDataLength;
 
 	m_videoFifo.push(pVideoData, nDataLength);
 
@@ -150,6 +151,7 @@ int CStreamRecordMP4::PushAudio(uint8_t* pAudioData, uint32_t nDataLength, char*
 	if (ABL_MediaServerPort.nEnableAudio == 0 || !bRunFlag )
 		return -1;
 
+	nWriteRecordByteSize += nDataLength;
 	m_audioFifo.push(pAudioData, nDataLength);
 
 	return 0;
@@ -237,6 +239,7 @@ bool CStreamRecordMP4::OpenMp4File(int nWidth, int nHeight)
 			GetLocalTime(&st);
 			sprintf(szFileName, "%s%04d%02d%02d%02d%02d%02d.mp4", szRecordPath, st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
 			sprintf(szFileNameOrder, "%04d%02d%02d%02d%02d%02d.mp4", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);;
+			sprintf(szStartDateTime, "%04d%02d%02d%02d%02d%02d", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);;
 #else
 			time_t now;
 			time(&now);
@@ -244,6 +247,7 @@ bool CStreamRecordMP4::OpenMp4File(int nWidth, int nHeight)
 			local = localtime(&now);
 			sprintf(szFileName, "%s%04d%02d%02d%02d%02d%02d.mp4", szRecordPath, local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);
 			sprintf(szFileNameOrder, "%04d%02d%02d%02d%02d%02d.mp4", local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);;
+			sprintf(szStartDateTime, "%04d%02d%02d%02d%02d%02d", local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);;
 #endif
 			boost::shared_ptr<CRecordFileSource> pRecord = GetRecordFileSource(m_szShareMediaURL);
 			if (pRecord)
@@ -303,10 +307,12 @@ bool CStreamRecordMP4::CloseMp4File()
 		//完成一个mp4切片文件通知 
 		if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nClientRecordMp4 > 0)
 		{
+			GetCurrentDatetime();//获取当前时间
 			MessageNoticeStruct msgNotice;
 			msgNotice.nClient = ABL_MediaServerPort.nClientRecordMp4;
-			sprintf(msgNotice.szMsg, "{\"app\":\"%s\",\"stream\":\"%s\",\"mediaServerId\":\"%s\",\"networkType\":%d,\"fileName\":\"%s\",\"currentFileDuration\":%llu}", app, stream, ABL_MediaServerPort.mediaServerID, netBaseNetType, szFileNameOrder, (nCurrentVideoFrames / mediaCodecInfo.nVideoFrameRate));
+			sprintf(msgNotice.szMsg, "{\"app\":\"%s\",\"stream\":\"%s\",\"mediaServerId\":\"%s\",\"networkType\":%d,\"fileName\":\"%s\",\"currentFileDuration\":%llu,\"startTime\":\"%s\",\"endTime\":\"%s\",\"fileSize\":%llu}", app, stream, ABL_MediaServerPort.mediaServerID, netBaseNetType, szFileNameOrder, (nCurrentVideoFrames / mediaCodecInfo.nVideoFrameRate), szStartDateTime, szCurrentDateTime, nWriteRecordByteSize);
 			pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
+			nWriteRecordByteSize = 0;
 		}
 		m_bOpenFlag = false;
 	}

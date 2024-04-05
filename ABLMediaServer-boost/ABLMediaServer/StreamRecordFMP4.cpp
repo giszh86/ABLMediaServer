@@ -105,9 +105,10 @@ CStreamRecordFMP4::~CStreamRecordFMP4()
 		//完成一个fmp4切片文件通知 
 		if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nClientRecordMp4 > 0)
 		{
+			GetCurrentDatetime();//获取当前时间
 			MessageNoticeStruct msgNotice;
 			msgNotice.nClient = ABL_MediaServerPort.nClientRecordMp4;
-			sprintf(msgNotice.szMsg, "{\"key\":%llu,\"app\":\"%s\",\"stream\":\"%s\",\"mediaServerId\":\"%s\",\"networkType\":%d,\"fileName\":\"%s\",\"currentFileDuration\":%llu}", key, app, stream, ABL_MediaServerPort.mediaServerID, netBaseNetType, szFileNameOrder, (nCurrentVideoFrames / mediaCodecInfo.nVideoFrameRate));
+			sprintf(msgNotice.szMsg, "{\"key\":%llu,\"app\":\"%s\",\"stream\":\"%s\",\"mediaServerId\":\"%s\",\"networkType\":%d,\"fileName\":\"%s\",\"currentFileDuration\":%llu,\"startTime\":\"%s\",\"endTime\":\"%s\",\"fileSize\":%llu}", key, app, stream, ABL_MediaServerPort.mediaServerID, netBaseNetType, szFileNameOrder, (nCurrentVideoFrames / mediaCodecInfo.nVideoFrameRate), szStartDateTime, szCurrentDateTime, nWriteRecordByteSize);
 			pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
 		}
 	}
@@ -293,6 +294,7 @@ static int fmp4_hls_init_segment(hls_fmp4_t* hls, void* param)
 		GetLocalTime(&st);
 		sprintf(pNetServerHttpMp4->szFileName, "%s%04d%02d%02d%02d%02d%02d.mp4", pNetServerHttpMp4->szRecordPath, st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
 		sprintf(pNetServerHttpMp4->szFileNameOrder, "%04d%02d%02d%02d%02d%02d.mp4", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);;
+		sprintf(pNetServerHttpMp4->szStartDateTime, "%04d%02d%02d%02d%02d%02d", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);;
 #else
 		time_t now;
 		time(&now);
@@ -300,6 +302,7 @@ static int fmp4_hls_init_segment(hls_fmp4_t* hls, void* param)
 		local = localtime(&now);
 		sprintf(pNetServerHttpMp4->szFileName, "%s%04d%02d%02d%02d%02d%02d.mp4", pNetServerHttpMp4->szRecordPath, local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);
 		sprintf(pNetServerHttpMp4->szFileNameOrder, "%04d%02d%02d%02d%02d%02d.mp4", local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);;
+		sprintf(pNetServerHttpMp4->szStartDateTime, "%04d%02d%02d%02d%02d%02d", local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);;
 #endif
 			boost::shared_ptr<CRecordFileSource> pRecord = GetRecordFileSource(pNetServerHttpMp4->m_szShareMediaURL);
 			if (pRecord)
@@ -326,6 +329,7 @@ static int fmp4_hls_init_segment(hls_fmp4_t* hls, void* param)
 	{
 		fwrite(pNetServerHttpMp4->s_packet, 1, bytes, pNetServerHttpMp4->fWriteMP4);
 		fflush(pNetServerHttpMp4->fWriteMP4);
+		pNetServerHttpMp4->nWriteRecordByteSize += bytes ;
 	}
 	//必须hls_init_segment 初始化完成才能写视频、音频段，在回调函数里面做标志
 	pNetServerHttpMp4->hls_init_segmentFlag = true;
@@ -443,6 +447,7 @@ bool CStreamRecordFMP4::writeTSBufferToMP4File(unsigned char* pTSData, int nLeng
 	{
 		fwrite(pTSData, 1, nLength, fWriteMP4);
 		fflush(fWriteMP4);
+		nWriteRecordByteSize += nLength;
 
 		if ((nCurrentVideoFrames / mediaCodecInfo.nVideoFrameRate) >= ABL_MediaServerPort.fileSecond)
 		{
@@ -451,18 +456,21 @@ bool CStreamRecordFMP4::writeTSBufferToMP4File(unsigned char* pTSData, int nLeng
 			//完成一个fmp4切片文件通知 
 			if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nClientRecordMp4 > 0 )
 			{
+ 				GetCurrentDatetime();//获取当前时间
 				MessageNoticeStruct msgNotice;
 				msgNotice.nClient = ABL_MediaServerPort.nClientRecordMp4;
-				sprintf(msgNotice.szMsg, "{\"app\":\"%s\",\"stream\":\"%s\",\"mediaServerId\":\"%s\",\"networkType\":%d,\"fileName\":\"%s\",\"currentFileDuration\":%llu}", app, stream, ABL_MediaServerPort.mediaServerID, netBaseNetType, szFileNameOrder, (nCurrentVideoFrames / mediaCodecInfo.nVideoFrameRate));
+				sprintf(msgNotice.szMsg, "{\"app\":\"%s\",\"stream\":\"%s\",\"mediaServerId\":\"%s\",\"networkType\":%d,\"fileName\":\"%s\",\"currentFileDuration\":%llu,\"startTime\":\"%s\",\"endTime\":\"%s\",\"fileSize\":%llu}", app, stream, ABL_MediaServerPort.mediaServerID, netBaseNetType, szFileNameOrder, (nCurrentVideoFrames / mediaCodecInfo.nVideoFrameRate), szStartDateTime, szCurrentDateTime, nWriteRecordByteSize);
 				pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
 			}
 			nCurrentVideoFrames = 0;
+			nWriteRecordByteSize = 0;
 
 #ifdef OS_System_Windows
 			SYSTEMTIME st;
 			GetLocalTime(&st);
 			sprintf(szFileName, "%s%04d%02d%02d%02d%02d%02d.mp4", szRecordPath, st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
 		    sprintf(szFileNameOrder,"%04d%02d%02d%02d%02d%02d.mp4", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);;
+			sprintf(szStartDateTime, "%04d%02d%02d%02d%02d%02d", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);;
 #else
 			time_t now;
 			time(&now);
@@ -470,6 +478,7 @@ bool CStreamRecordFMP4::writeTSBufferToMP4File(unsigned char* pTSData, int nLeng
 			local = localtime(&now);
 			sprintf(szFileName, "%s%04d%02d%02d%02d%02d%02d.mp4", szRecordPath, local->tm_year + 1900, local->tm_mon+1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);
 		    sprintf(szFileNameOrder, "%04d%02d%02d%02d%02d%02d.mp4", local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);;
+			sprintf(szStartDateTime, "%04d%02d%02d%02d%02d%02d", local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);;
 #endif
   				
 			boost::shared_ptr<CRecordFileSource> pRecord = GetRecordFileSource(m_szShareMediaURL);
@@ -485,11 +494,11 @@ bool CStreamRecordFMP4::writeTSBufferToMP4File(unsigned char* pTSData, int nLeng
 				else
 					fWriteMP4 = fopen(szFileName, "wb");
 
-
 				if (fWriteMP4 != NULL)
 				{
 					fwrite(s_packet, 1, s_packetLength, fWriteMP4);
 					fflush(fWriteMP4);
+					nWriteRecordByteSize += s_packetLength ;
 				}
 				pRecord->AddRecordFile(szFileNameOrder);
 				WriteLog(Log_Debug, "CStreamRecordFMP4 = %X %s 增加录像文件 nClient = %llu ,nMediaClient = %llu szFileNameOrder %s ", this, m_szShareMediaURL, nClient, nMediaClient, szFileNameOrder);

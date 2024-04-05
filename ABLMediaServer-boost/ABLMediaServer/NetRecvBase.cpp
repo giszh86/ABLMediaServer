@@ -30,6 +30,9 @@ unsigned char                                muteAACBuffer4[] = {0x00,0x00,0x00,
 
 CNetRevcBase::CNetRevcBase()
 {
+	nWriteRecordByteSize = 0;
+	memset(szCurrentDateTime, 0x00, sizeof(szCurrentDateTime));
+	memset(szStartDateTime, 0x00, sizeof(szStartDateTime));
 	nMediaClient = nMediaClient2 = 0;
 	m_bSendCacheAudioFlag = false;
 	nSpeedCount[0] = nSpeedCount[1] = 0;
@@ -966,6 +969,22 @@ void   CNetRevcBase::AddMuteAACBuffer()
 
 	if(nAddMuteAACBufferOrder < 64 )
 	  nAddMuteAACBufferOrder ++;
+}
+
+//获取当前时间
+void  CNetRevcBase::GetCurrentDatetime()
+{
+#ifdef OS_System_Windows
+	SYSTEMTIME st;
+	GetLocalTime(&st);
+	sprintf(szCurrentDateTime, "%04d%02d%02d%02d%02d%02d", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);;
+#else
+	time_t now;
+	time(&now);
+	struct tm *local;
+	local = localtime(&now);
+	sprintf(szCurrentDateTime, "%04d%02d%02d%02d%02d%02d", local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);;
+#endif
 }
 
 //检查SPS的位置 

@@ -54,6 +54,7 @@ static int record_ts_write(void* param, const void* packet, size_t bytes)
 				GetLocalTime(&st);
 				sprintf(handle->szFileName, "%s%04d%02d%02d%02d%02d%02d.mp4", handle->szRecordPath, st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
 				sprintf(handle->szFileNameOrder, "%04d%02d%02d%02d%02d%02d.mp4", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);;
+				sprintf(handle->szStartDateTime, "%04d%02d%02d%02d%02d%02d", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);;
 #else
 				time_t now;
 				time(&now);
@@ -61,6 +62,7 @@ static int record_ts_write(void* param, const void* packet, size_t bytes)
 				local = localtime(&now);
 				sprintf(handle->szFileName, "%s%04d%02d%02d%02d%02d%02d.mp4", handle->szRecordPath, local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);
 				sprintf(handle->szFileNameOrder, "%04d%02d%02d%02d%02d%02d.mp4", local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);;
+				sprintf(handle->szStartDateTime, "%04d%02d%02d%02d%02d%02d", local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);;
 #endif
 				boost::shared_ptr<CRecordFileSource> pRecord = GetRecordFileSource(handle->m_szShareMediaURL);
 				if (pRecord)
@@ -86,6 +88,7 @@ static int record_ts_write(void* param, const void* packet, size_t bytes)
 			if (handle->fTSFileWrite != NULL)
 			{
 				handle->fTSFileWriteByteCount += bytes;
+				handle->nWriteRecordByteSize += bytes;
 				return 1 == fwrite(packet, bytes, 1, (FILE*)handle->fTSFileWrite) ? 0 : ferror((FILE*)handle->fTSFileWrite);
 			}
 			else
@@ -142,12 +145,14 @@ bool  CStreamRecordTS::H264H265FrameToTSFile(unsigned char* szVideo, int nLength
 		//完成一个fmp4切片文件通知 
 		if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nClientRecordMp4 > 0)
 		{
+			GetCurrentDatetime();//获取当前时间
 			MessageNoticeStruct msgNotice;
 			msgNotice.nClient = ABL_MediaServerPort.nClientRecordMp4;
-			sprintf(msgNotice.szMsg, "{\"app\":\"%s\",\"stream\":\"%s\",\"mediaServerId\":\"%s\",\"networkType\":%d,\"fileName\":\"%s\",\"currentFileDuration\":%llu}", app, stream, ABL_MediaServerPort.mediaServerID, netBaseNetType, szFileNameOrder, (nCurrentVideoFrames / mediaCodecInfo.nVideoFrameRate));
+			sprintf(msgNotice.szMsg, "{\"app\":\"%s\",\"stream\":\"%s\",\"mediaServerId\":\"%s\",\"networkType\":%d,\"fileName\":\"%s\",\"currentFileDuration\":%llu,\"startTime\":\"%s\",\"endTime\":\"%s\",\"fileSize\":%llu}", app, stream, ABL_MediaServerPort.mediaServerID, netBaseNetType, szFileNameOrder, (nCurrentVideoFrames / mediaCodecInfo.nVideoFrameRate), szStartDateTime, szCurrentDateTime, nWriteRecordByteSize);
 			pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
 		}
  		nCurrentVideoFrames = 0;
+		nWriteRecordByteSize = 0;
 	}
 	return true;
 }
@@ -218,9 +223,10 @@ CStreamRecordTS::~CStreamRecordTS()
 		//完成一个fmp4切片文件通知 
 		if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nClientRecordMp4 > 0)
 		{
+			GetCurrentDatetime();//获取当前时间
 			MessageNoticeStruct msgNotice;
 			msgNotice.nClient = ABL_MediaServerPort.nClientRecordMp4;
-			sprintf(msgNotice.szMsg, "{\"key\":%llu,\"app\":\"%s\",\"stream\":\"%s\",\"mediaServerId\":\"%s\",\"networkType\":%d,\"fileName\":\"%s\",\"currentFileDuration\":%llu}", key, app, stream, ABL_MediaServerPort.mediaServerID, netBaseNetType, szFileNameOrder, (nCurrentVideoFrames / mediaCodecInfo.nVideoFrameRate));
+			sprintf(msgNotice.szMsg, "{\"key\":%llu,\"app\":\"%s\",\"stream\":\"%s\",\"mediaServerId\":\"%s\",\"networkType\":%d,\"fileName\":\"%s\",\"currentFileDuration\":%llu,\"startTime\":\"%s\",\"endTime\":\"%s\",\"fileSize\":%llu}", key, app, stream, ABL_MediaServerPort.mediaServerID, netBaseNetType, szFileNameOrder, (nCurrentVideoFrames / mediaCodecInfo.nVideoFrameRate), szStartDateTime, szCurrentDateTime, nWriteRecordByteSize);
 			pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
 		}
 	}
