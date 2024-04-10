@@ -228,6 +228,12 @@
     <ClInclude Include="SimpleIni.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ABLString.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="spdloghead.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -408,6 +414,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ConvertUTF.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ABLString.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spdloghead.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

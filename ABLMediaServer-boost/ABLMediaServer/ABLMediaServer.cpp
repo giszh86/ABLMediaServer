@@ -27,7 +27,7 @@ E-Mail  79941308@qq.com
 */
 
 #include "stdafx.h"
-#include "../webrtc-streamer/rtc_obj_sdk.h"
+#include "../webrtc-streamer/inc/rtc_obj_sdk.h"
 
 NETHANDLE srvhandle_8080,srvhandle_554, srvhandle_1935, srvhandle_6088, srvhandle_8088, srvhandle_8089, srvhandle_9088, srvhandle_9298, srvhandle_10000;
 
@@ -3112,6 +3112,19 @@ ABL_Restart:
 		return -1;
 	}
 	memset(szConfigFileName, 0x00, sizeof(szConfigFileName));
+
+	spdlog::SPDLOG::getInstance().init("log/ABLMediaServer.txt", "ABLMediaServer","I", 1024 * 1024 * 5, 5, true);
+
+	SPDLOG_LOGGER_ERROR(spdlogptr, "没有找到配置文件 ：{}", szConfigFileName);
+	//SPDLOG_LOGGER_INFO(spdlogptr, "没有找到配置文件 ：{:p}", static_cast<void*>(this));
+	//SPDLOG_LOGGER_DEBUG(spdlogptr, "没有找到配置文件 ：{:p}", static_cast<void*>(this));
+
+	SPDLOG_LOGGER_WARN(spdlogptr, "openEncoder {:s} support but fail\r\n", "asdsad");
+
+	SPDLOG_LOGGER_WARN(spdlogptr, "openEncoder {0} support but fail\r\n", "asdsad");
+	SPDLOG_LOGGER_INFO(spdlogptr, "Support for floats {:03.2f}", 1.23456);
+	SPDLOG_LOGGER_WARN(spdlogptr, "Easy padding in numbers like {:08d}", 12);
+
 
 	StartLogFile("ABLMediaServer", "ABLMediaServer_00*.log", 5);
 	srand(GetTickCount());

@@ -253,6 +253,16 @@ struct MediaServerPort
 	int        httqRequstClose;//是否为短链接操作 
 	int        keepaliveDuration; //发送心跳时间间隔
 	int        flvPlayAddMute;
+
+	int         nUseWvp = 0; //是否参考wvp-zlm的接口返回  为1时候返回格式和ZLM的一致
+	char port_range[string_length_512]; //随机端口范围，最少确保36个端口
+	char listeningip[string_length_512]; //webrtc监听内网ip
+	char externalip[string_length_512]; //webrtc监听外网ip
+	int listeningport;    //webrtc监听内网端口
+	int minport;    //UDP中继端口范围，用于UDP转发，注意安全组放通
+	int maxport;    //UDP中继端口范围，用于UDP转发，注意安全组放通
+	char realm[string_length_512]; //默认域Realm
+	char user[string_length_512]; //快捷的添加用户是使用user=XXX:XXXX的方式
  	MediaServerPort()
 	{
 		memset(wwwPath, 0x00, sizeof(wwwPath));
@@ -363,6 +373,16 @@ struct MediaServerPort
 		enable_GetFileDuration = 0;
 		keepaliveDuration = 20;
 		flvPlayAddMute = 1;
+
+		nUseWvp = 0;
+		memset(port_range, 0x00, sizeof(port_range));
+		memset(listeningip, 0x00, sizeof(listeningip));
+		memset(externalip, 0x00, sizeof(externalip));
+		listeningport = 3478;
+		minport = 50000;
+		maxport = 65535;
+		memset(realm, 0x00, sizeof(realm));
+		memset(user, 0x00, sizeof(user));
  	}
 };
 
@@ -1343,6 +1363,11 @@ void malloc_trim(int n);
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/atomic.hpp>
+
+#include <atomic>
+#include "ABLString.h"
+#include "spdloghead.h"
+#include <cctype>
 
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
