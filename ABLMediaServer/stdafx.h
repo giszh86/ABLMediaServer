@@ -381,8 +381,13 @@ struct MediaServerPort
 
 		nUseWvp = 0;
 		memset(port_range, 0x00, sizeof(port_range));
-
-
+		memset(listeningip, 0x00, sizeof(listeningip));
+		memset(externalip, 0x00, sizeof(externalip));
+		listeningport = 3478;
+		minport = 50000;
+		maxport = 65535;
+		memset(realm, 0x00, sizeof(realm));
+		memset(user, 0x00, sizeof(user));
 
 	}
 };
