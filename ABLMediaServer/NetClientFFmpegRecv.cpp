@@ -8,15 +8,27 @@ E-Mail  79941308@qq.com
 */
 #include "stdafx.h"
 #include "NetClientFFmpegRecv.h"
-
-extern CNetBaseThreadPool*                   RecordReplayThreadPool;//录像回放线程池
+#ifdef USE_BOOST
+extern CNetBaseThreadPool* RecordReplayThreadPool;//录像回放线程池
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 extern boost::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
 extern boost::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szURL, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern MediaServerPort                       ABL_MediaServerPort;
-extern char                                  ABL_MediaSeverRunPath[256] ; //当前路径
+extern char                                  ABL_MediaSeverRunPath[256]; //当前路径
+#else
+
+extern CNetBaseThreadPool* RecordReplayThreadPool;//录像回放线程池
+extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
+extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
+extern std::shared_ptr<CNetRevcBase>       GetNetRevcBaseClient(NETHANDLE CltHandle);
+extern std::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szURL, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
+extern bool                                  DeleteMediaStreamSource(char* szURL);
+extern MediaServerPort                       ABL_MediaServerPort;
+extern char                                  ABL_MediaSeverRunPath[256]; //当前路径
+#endif
+
 
 extern int avpriv_mpeg4audio_sample_rates[];
 
@@ -34,7 +46,14 @@ bool  CNetClientFFmpegRecv::GetMediaShareURLFromFileName(char* szRecordFileName,
 
 	string strRecordFileName = szRecordFileName;
 #ifdef OS_System_Windows
-	replace_all(strRecordFileName, "\\", "/"); 
+
+#ifdef USE_BOOST
+	replace_all(strRecordFileName, "\\", "/");
+#else
+	ABL::replace_all(strRecordFileName, "\\", "/");
+#endif
+
+
 #endif
 	int   nPos;
 	char  szTempFileName[512] = { 0 };
@@ -214,7 +233,7 @@ CNetClientFFmpegRecv::CNetClientFFmpegRecv(NETHANDLE hServer, NETHANDLE hClient,
 			strcpy(mediaCodecInfo.szAudioName, "UNKNOW");
 
 		mediaCodecInfo.nSampleRate = audio_stream->codecpar->sample_rate; //采样频率
-		mediaCodecInfo.nChannels = audio_stream->codecpar->channels;
+		mediaCodecInfo.nChannels = audio_stream->codecpar->ch_layout.nb_channels;
 		sample_index = 8;
 		for (int i = 0; i < 13; i++)
 		{
@@ -260,7 +279,7 @@ CNetClientFFmpegRecv::CNetClientFFmpegRecv(NETHANDLE hServer, NETHANDLE hClient,
 	}
 		
 	packet2 = av_packet_alloc();
-	av_init_packet(packet2);
+	//av_init_packet(packet2);
 	if (pFormatCtx2->streams[stream_isVideo]->codecpar->extradata_size > 0)
 	{
 		int ret;
@@ -386,7 +405,7 @@ int CNetClientFFmpegRecv::ProcessNetData()
 		pMediaSource->nClient = hParent;
 
 		//修改代理拉流成功，往后拉流断线后可以反复重连 
-		boost::shared_ptr<CNetRevcBase>   pParentPtr = GetNetRevcBaseClient(hParent);
+		auto   pParentPtr = GetNetRevcBaseClient(hParent);
 		if (pParentPtr && pParentPtr->bProxySuccessFlag == false)
 			bProxySuccessFlag = pParentPtr->bProxySuccessFlag = true;
 	}
@@ -401,7 +420,8 @@ int CNetClientFFmpegRecv::ProcessNetData()
 	nCurrentDateTime = GetTickCount64();
 	if (m_bPauseFlag == true )
 	{
-		Sleep(2);
+		//Sleep(2);
+		std::this_thread::sleep_for(std::chrono::milliseconds(2));
  		RecordReplayThreadPool->InsertIntoTask(nClient);
 		return -1;
 	}
@@ -410,7 +430,8 @@ int CNetClientFFmpegRecv::ProcessNetData()
 	{//打开mp4文件后需要等待一段事件，否则读取文件会失败
 		if (nCurrentDateTime - mov_readerTime < nWaitTime)
 		{
-			Sleep(2);
+			//Sleep(2);
+			std::this_thread::sleep_for(std::chrono::milliseconds(2));
 			RecordReplayThreadPool->InsertIntoTask(nClient);
 			return 0;
 		}
@@ -509,7 +530,8 @@ int CNetClientFFmpegRecv::ProcessNetData()
 	    return -1;
 	}
 	nOldAVType = nAVType;
-	Sleep(1);
+	//Sleep(1);
+	std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
 	//加入音频
 	if (m_audioCacheFifo.GetSize() > 0 )

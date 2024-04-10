@@ -631,6 +631,7 @@ bool CNetServerHTTP::ResponseHttpRequest(char* szModem, char* httpURL, char* req
 		(strcmp(httpURL, "/stats/pushers") == 0 ) || (strcmp(httpURL, "/index/api/getTranscodingCount") == 0) || (strcmp(httpURL, "/index/api/listServerPort") == 0) || (strcmp(httpURL, "/index/api/setServerConfig") == 0) || 
 		(strcmp(httpURL, "/index/api/pauseRtpServer") == 0) || (strcmp(httpURL, "/index/api/resumeRtpServer") == 0)
 		|| (strcmp(httpURL, "/index/api/getRtpInfo") == 0 )|| (strcmp(httpURL, "/index/api/listRtpServer") == 0)
+		|| (strcmp(httpURL, "/index/api/addFFmpegProxy") == 0) || (strcmp(httpURL, "/index/api/delFFmpegProxy") == 0)
 		
 		)  )
 	{ 
@@ -739,10 +740,14 @@ bool CNetServerHTTP::ResponseHttpRequest(char* szModem, char* httpURL, char* req
 	httpParse.GetFieldValue("Connection", szConnection);
 
 	if (strcmp(httpURL, "/index/api/addStreamProxy") == 0)
-	{//请求代理拉流
-		index_api_addStreamProxy();
- 	}
-	else if (strcmp(httpURL, "/index/api/delStreamProxy") == 0)
+	{//自研请求代理拉流(rtsp,rtmp，本地mp4文件）
+		index_api_addStreamProxy(NetRevcBaseClient_addStreamProxyControl);
+	}
+	else if (strcmp(httpURL, "/index/api/addFFmpegProxy") == 0)
+	{//调用ffmepg函数实现代理拉流（rtmp,flv ,hls,http-mp4）
+		index_api_addStreamProxy(NetRevcBaseClient_addFFmpegProxyControl);
+	}
+	else if (strcmp(httpURL, "/index/api/delStreamProxy") == 0 || strcmp(httpURL, "/index/api/delFFmpegProxy") == 0)
 	{//删除代理拉流
 		index_api_delRequest();
 	}
@@ -920,25 +925,27 @@ bool CNetServerHTTP::ResponseHttpRequest(char* szModem, char* httpURL, char* req
 	return true;
 }
 
+
 //执行请求拉流
-bool  CNetServerHTTP::index_api_addStreamProxy()
+bool  CNetServerHTTP::index_api_addStreamProxy(NetRevcBaseClientType nType)
 {
 	char szShareMediaURL[string_length_2048] = { 0 };
-	
-	memset(szRtspURLTemp,0x00,sizeof(szRtspURLTemp));
+
+	memset(szRtspURLTemp, 0x00, sizeof(szRtspURLTemp));
 	memset((char*)&m_addStreamProxyStruct, 0x00, sizeof(m_addStreamProxyStruct));
 	strcpy(m_addStreamProxyStruct.enable_mp4, "0");
 	strcpy(m_addStreamProxyStruct.disableVideo, "0");
 	strcpy(m_addStreamProxyStruct.disableAudio, "0");
 	strcpy(m_addStreamProxyStruct.optionsHeartbeat, "0");
-	
+
 	GetKeyValue("secret", m_addStreamProxyStruct.secret);
 	GetKeyValue("vhost", m_addStreamProxyStruct.vhost);
 	GetKeyValue("app", m_addStreamProxyStruct.app);
 	GetKeyValue("stream", m_addStreamProxyStruct.stream);
 	GetKeyValue("enable_mp4", m_addStreamProxyStruct.enable_mp4);
 	GetKeyValue("enable_hls", m_addStreamProxyStruct.enable_hls);
-	GetKeyValue("isRtspRecordURL", m_addStreamProxyStruct.isRtspRecordURL);
+	if (nType == NetRevcBaseClient_addStreamProxy)
+		GetKeyValue("isRtspRecordURL", m_addStreamProxyStruct.isRtspRecordURL);
 	if (strlen(m_addStreamProxyStruct.isRtspRecordURL) == 0)
 		strcpy(m_addStreamProxyStruct.isRtspRecordURL, "0");
 	GetKeyValue("convertOutWidth", m_addStreamProxyStruct.convertOutWidth);
@@ -947,10 +954,10 @@ bool  CNetServerHTTP::index_api_addStreamProxy()
 	GetKeyValue("disableVideo", m_addStreamProxyStruct.disableVideo);
 	GetKeyValue("disableAudio", m_addStreamProxyStruct.disableAudio);
 	GetKeyValue("optionsHeartbeat", m_addStreamProxyStruct.optionsHeartbeat);
-	
+
 	//GetKeyValue("url", m_addStreamProxyStruct.url);
-	GetKeyValue("url",szRtspURLTemp);
-	DecodeUrl(szRtspURLTemp, m_addStreamProxyStruct.url, sizeof(szRtspURLTemp)) ;
+	GetKeyValue("url", szRtspURLTemp);
+	DecodeUrl(szRtspURLTemp, m_addStreamProxyStruct.url, sizeof(szRtspURLTemp));
 
 	//防止忘记设置为录像回放
 	if (strstr(m_addStreamProxyStruct.url, RecordFileReplaySplitter) != NULL)
@@ -977,7 +984,7 @@ bool  CNetServerHTTP::index_api_addStreamProxy()
 		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"app parameter error\",\"key\":%d}", IndexApiCode_ParamError, 0);
 		ResponseSuccess(szResponseBody);
 		return false;
- 	}
+	}
 	if (strstr(m_addStreamProxyStruct.stream, "/") != NULL)
 	{
 		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"stream parameter error\",\"key\":%d}", IndexApiCode_ParamError, 0);
@@ -994,14 +1001,14 @@ bool  CNetServerHTTP::index_api_addStreamProxy()
 	}
 
 	//检测enable_mp4 的值
-	if (strlen(m_addStreamProxyStruct.enable_mp4) > 0 && !(strcmp(m_addStreamProxyStruct.enable_mp4,"1") == 0 || strcmp(m_addStreamProxyStruct.enable_mp4, "0") == 0))
+	if (strlen(m_addStreamProxyStruct.enable_mp4) > 0 && !(strcmp(m_addStreamProxyStruct.enable_mp4, "1") == 0 || strcmp(m_addStreamProxyStruct.enable_mp4, "0") == 0))
 	{
 		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"enable_mp4 parameter error , enable_mp4 must [1 , 0 ]\",\"key\":%d}", IndexApiCode_ParamError, 0);
 		ResponseSuccess(szResponseBody);
 		return false;
 	}
 
-	if (!( memcmp(m_addStreamProxyStruct.url,"rtsp://",7) == 0 || memcmp(m_addStreamProxyStruct.url, "rtmp://", 7) == 0 || memcmp(m_addStreamProxyStruct.url, "http://", 7) == 0 || m_addStreamProxyStruct.url[1] == ':' || m_addStreamProxyStruct.url[0] == '/') )
+	if (!(memcmp(m_addStreamProxyStruct.url, "rtsp://", 7) == 0 || memcmp(m_addStreamProxyStruct.url, "rtmp://", 7) == 0 || memcmp(m_addStreamProxyStruct.url, "http://", 7) == 0 || memcmp(m_addStreamProxyStruct.url, "https://", 8) == 0 || m_addStreamProxyStruct.url[1] == ':' || m_addStreamProxyStruct.url[0] == '/'))
 	{
 		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"url %s parameter error\",\"key\":%d}", IndexApiCode_ParamError, m_addStreamProxyStruct.url, 0);
 		ResponseSuccess(szResponseBody);
@@ -1011,12 +1018,12 @@ bool  CNetServerHTTP::index_api_addStreamProxy()
 	//检测转码的宽、高是否合法
 	if (strlen(m_addStreamProxyStruct.convertOutWidth) > 0 && strlen(m_addStreamProxyStruct.convertOutHeight) > 0)
 	{
-		int nWidth  = atoi(m_addStreamProxyStruct.convertOutWidth);
+		int nWidth = atoi(m_addStreamProxyStruct.convertOutWidth);
 		int nHeight = atoi(m_addStreamProxyStruct.convertOutHeight);
 		if (!((nWidth == -1 && nHeight == -1) || (nWidth == 1920 && nHeight == 1080) || (nWidth == 1280 && nHeight == 720) || (nWidth == 960 && nHeight == 640) ||
-			(nWidth == 800 && nHeight == 480) || (nWidth == 704 && nHeight == 576) || (nWidth == 960 && nHeight == 540) || (nWidth == 640 && nHeight == 360 )))
+			(nWidth == 800 && nHeight == 480) || (nWidth == 704 && nHeight == 576) || (nWidth == 960 && nHeight == 540) || (nWidth == 640 && nHeight == 360)))
 		{
-			sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"convertOutWidth : %d ,convertOutHeight: %d error. reference value [-1 x -1 , 1920 x 1080, 1280 x 720 ,960 x 640 ,960 x 540, 800 x 480 ,704 x 576 ,640 x 360]\"}", IndexApiCode_ParamError, nWidth,nHeight);
+			sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"convertOutWidth : %d ,convertOutHeight: %d error. reference value [-1 x -1 , 1920 x 1080, 1280 x 720 ,960 x 640 ,960 x 540, 800 x 480 ,704 x 576 ,640 x 360]\"}", IndexApiCode_ParamError, nWidth, nHeight);
 			ResponseSuccess(szResponseBody);
 			return false;
 		}
@@ -1029,9 +1036,9 @@ bool  CNetServerHTTP::index_api_addStreamProxy()
 		ResponseSuccess(szResponseBody);
 		return false;
 	}
-	
+
 	//检测 disableVideo disableAudio 
-	if ( strcmp(m_addStreamProxyStruct.disableVideo,"1") == 0  && strcmp(m_addStreamProxyStruct.disableAudio, "1") == 0)
+	if (strcmp(m_addStreamProxyStruct.disableVideo, "1") == 0 && strcmp(m_addStreamProxyStruct.disableAudio, "1") == 0)
 	{
 		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"disableVideo , disableAudio Cannot be both 1 \"}", IndexApiCode_ParamError);
 		ResponseSuccess(szResponseBody);
@@ -1059,7 +1066,7 @@ bool  CNetServerHTTP::index_api_addStreamProxy()
 			return false;
 		}
 
-		auto pClient = CreateNetRevcBaseClient(NetRevcBaseClient_addStreamProxyControl, 0, 0, m_addStreamProxyStruct.url, 0, szShareMediaURL);
+		auto pClient = CreateNetRevcBaseClient(nType, 0, 0, m_addStreamProxyStruct.url, 0, szShareMediaURL);
 		if (pClient != NULL)
 		{
 			memcpy((char*)&pClient->m_addStreamProxyStruct, (char*)&m_addStreamProxyStruct, sizeof(addStreamProxyStruct));
@@ -1071,9 +1078,9 @@ bool  CNetServerHTTP::index_api_addStreamProxy()
 			if (strlen(m_addStreamProxyStruct.H264DecodeEncode_enable) > 0)
 				pClient->m_h265ConvertH264Struct.H264DecodeEncode_enable = atoi(m_addStreamProxyStruct.H264DecodeEncode_enable);
 
-			WriteLog(Log_Debug, "\"rtsp://%s:%d/%s/%s\",", "190.168.24.112",ABL_MediaServerPort.nRtspPort,m_addStreamProxyStruct.app,m_addStreamProxyStruct.stream);
-            pClient->nClient_http = nClient ; //赋值给http请求连接 
-			WriteLog(Log_Debug, "代理拉流 nClient_http = %d ",nClient );
+			WriteLog(Log_Debug, "\"rtsp://%s:%d/%s/%s\",", ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.nRtspPort, m_addStreamProxyStruct.app, m_addStreamProxyStruct.stream);
+			pClient->nClient_http = nClient; //赋值给http请求连接 
+			WriteLog(Log_Debug, "代理拉流 nClient_http = %d ", nClient);
 			pClient->SendFirstRequst();//执行第一个命令
 		}
 	}

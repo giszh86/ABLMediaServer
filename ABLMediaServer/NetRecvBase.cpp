@@ -42,6 +42,8 @@ unsigned char                                muteAACBuffer1[] = { 0x00,0x00,0x00
 unsigned char                                muteAACBuffer2[] = { 0x00,0x00,0x00,0x00,0xff,0xf1,0x60,0x40,0x06,0xbf,0xfc,0x01,0x4c,0xd4,0xac,0x34,0x14,0x11,0x0b,0x7e,0x45,0xda,0x1e,0x2d,0x4b,0xa9,0x35,0x2a,0x69,0x52,0x42,0xd1,0x22,0x49,0x24,0x96,0x09,0x65,0x0e,0x48,0xe2,0xf9,0xae,0x2e,0xe8,0x59,0x52,0xa2,0x86,0xff,0xc5,0xf8,0xab,0x2f,0xfc,0x7c,0x0e };
 unsigned char                                muteAACBuffer3[] = { 0x00,0x00,0x00,0x00,0xff,0xf1,0x60,0x40,0x02,0x7f,0xfc,0x01,0x38,0x14,0xac,0x21,0xf4,0x87,0x0b,0xe2,0x30,0x00,0xe0 };
 unsigned char                                muteAACBuffer4[] = { 0x00,0x00,0x00,0x00,0xff,0xf1,0x60,0x40,0x02,0x7f,0xfc,0x01,0x2c,0x14,0xac,0x21,0xf4,0x87,0x0b,0xf1,0xec,0x00,0x38 };
+extern  uint8_t                              NALU_START_CODE[3];
+extern  uint8_t                              SLICE_START_CODE[4];
 
 CNetRevcBase::CNetRevcBase()
 {
@@ -358,14 +360,28 @@ bool  CNetRevcBase::CheckVideoIsIFrame(char* szVideoName, unsigned char* szPVide
 	int nPos = 0;
 	bool bVideoIsIFrameFlag = false;
 	unsigned char  nFrameType = 0x00;
+	int nNaluType = 1;
+	int nAddStep = 3;
 
 	for (int i = 0; i < nPVideoLength; i++)
 	{
-		if (memcmp(szPVideoData + i, szVideoFrameHead, 4) == 0)
+		nNaluType = -1;
+		if (memcmp(szPVideoData + i, (unsigned char*)NALU_START_CODE, sizeof(NALU_START_CODE)) == 0)
+		{//有出现 00 00 01 的nalu头标志
+			nNaluType = 1;
+			nAddStep = sizeof(NALU_START_CODE);
+		}
+		else if (memcmp(szPVideoData + i, (unsigned char*)SLICE_START_CODE, sizeof(SLICE_START_CODE)) == 0)
+		{//有出现 00 00 00 01 的nalu头标志
+			nNaluType = 2;
+			nAddStep = sizeof(SLICE_START_CODE);
+		}
+
+		if (nNaluType >= 1)
 		{//找到帧片段
 			if (strcmp(szVideoName, "H264") == 0)
 			{
-				nFrameType = (szPVideoData[i + 4] & 0x1F);
+				nFrameType = (szPVideoData[i + nAddStep] & 0x1F);
 				if (nFrameType == 7 || nFrameType == 8 || nFrameType == 5)
 				{//SPS   PPS   IDR 
 					bVideoIsIFrameFlag = true;
@@ -374,13 +390,16 @@ bool  CNetRevcBase::CheckVideoIsIFrame(char* szVideoName, unsigned char* szPVide
 			}
 			else if (strcmp(szVideoName, "H265") == 0)
 			{
-				nFrameType = (szPVideoData[i + 4] & 0x7E) >> 1;
+				nFrameType = (szPVideoData[i + nAddStep] & 0x7E) >> 1;
 				if ((nFrameType >= 16 && nFrameType <= 21) || (nFrameType >= 32 && nFrameType <= 34))
 				{//SPS   PPS   IDR 
 					bVideoIsIFrameFlag = true;
 					break;
 				}
 			}
+
+			//偏移位置 
+			i += nAddStep;
 		}
 
 		//不需要全部检查完毕，就可以判断一帧类型
@@ -1034,14 +1053,28 @@ int  CNetRevcBase::FindSPSPositionPos(char* szVideoName, unsigned char* pVideo, 
 	int nPos = 0;
 	bool bVideoIsSPSFlag = false;
 	unsigned char  nFrameType = 0x00;
+	int nNaluType = 1;
+	int nAddStep = 3;
 
 	for (int i = 0; i < nLength; i++)
 	{
-		if (memcmp(pVideo + i, szVideoFrameHead, 4) == 0)
+		nNaluType = -1;
+		if (memcmp(pVideo + i, (unsigned char*)NALU_START_CODE, sizeof(NALU_START_CODE)) == 0)
+		{//有出现 00 00 01 的nalu头标志
+			nNaluType = 1;
+			nAddStep = sizeof(NALU_START_CODE);
+		}
+		else if (memcmp(pVideo + i, (unsigned char*)SLICE_START_CODE, sizeof(SLICE_START_CODE)) == 0)
+		{//有出现 00 00 00 01 的nalu头标志
+			nNaluType = 2;
+			nAddStep = sizeof(SLICE_START_CODE);
+		}
+
+		if (nNaluType >= 1)
 		{//找到帧片段
 			if (strcmp(szVideoName, "H264") == 0)
 			{
-				nFrameType = (pVideo[i + 4] & 0x1F);
+				nFrameType = (pVideo[i + nAddStep] & 0x1F);
 				if (nFrameType == 7)
 				{//SPS 
 					nPos = i;
@@ -1050,13 +1083,16 @@ int  CNetRevcBase::FindSPSPositionPos(char* szVideoName, unsigned char* pVideo, 
 			}
 			else if (strcmp(szVideoName, "H265") == 0)
 			{
-				nFrameType = (pVideo[i + 4] & 0x7E) >> 1;
+				nFrameType = (pVideo[i + nAddStep] & 0x7E) >> 1;
 				if (nFrameType == 33)
 				{//SPS   PPS   IDR 
 					nPos = i;
 					continue;
 				}
 			}
+
+			//偏移位置 
+			i += nAddStep;
 		}
 
 		//不需要全部检查完毕，就可以判断一帧类型

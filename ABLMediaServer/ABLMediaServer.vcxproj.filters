@@ -219,6 +219,9 @@
     <ClInclude Include="NetRtspServerUDP.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="NetClientFFmpegRecv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -402,6 +405,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="NetRtspServerUDP.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NetClientFFmpegRecv.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

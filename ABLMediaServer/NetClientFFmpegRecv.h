@@ -9,8 +9,13 @@
 #include "opus-head.h"
 #include "webm-vpx.h"
 #include "aom-av1.h"
+#ifdef USE_BOOST
 
 using namespace boost;
+#else
+
+
+#endif
 
 #define     ReadRecordFileInput_MaxPacketCount     1024*1024*3 
 #define     OpenMp4FileToReadWaitMaxMilliSecond    300  //打开mp4文件，500毫秒后 才开始读取文件 
@@ -71,7 +76,13 @@ public:
    bool                 UpdatePauseFlag(bool bFlag);
 
    uint64_t              nDownloadFrameCount;
+#ifdef USE_BOOST
    boost::shared_ptr<CMediaStreamSource> pMediaSource;
+#else
+
+   std::shared_ptr<CMediaStreamSource> pMediaSource;
+#endif
+
    int                   nRetLength;
    std::mutex            readRecordFileInputLock;
    unsigned char         audioBuffer[4096];

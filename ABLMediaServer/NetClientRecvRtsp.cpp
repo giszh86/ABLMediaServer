@@ -1987,6 +1987,7 @@ bool CNetClientRecvRtsp::RtspResume()
 		UserPasswordBase64(szBasic);
 		sprintf(szResponseBuffer, "PLAY %s RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nSession: %s\r\nAuthorization: Basic %s\r\n\r\n", m_szContentBaseURL, CSeq, MediaServerVerson, szSessionID, szBasic);
 	}
+	nRecvDataTimerBySecond = 0;
 
 	XHNetSDK_Write(nClient, (unsigned char*)szResponseBuffer, strlen(szResponseBuffer), 1);
 	CSeq++;

@@ -248,6 +248,7 @@
     <ClInclude Include="MediaFifo.h" />
     <ClInclude Include="MediaStreamSource.h" />
     <ClInclude Include="MyWriteLogFile.h" />
+    <ClInclude Include="NetClientFFmpegRecv.h" />
     <ClInclude Include="NetClientHttp.h" />
     <ClInclude Include="NetClientReadLocalMediaFile.h" />
     <ClInclude Include="NetClientRecvJTT1078.h" />
@@ -371,6 +372,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='boost_release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="NetClientFFmpegRecv.cpp" />
     <ClCompile Include="NetClientHttp.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
