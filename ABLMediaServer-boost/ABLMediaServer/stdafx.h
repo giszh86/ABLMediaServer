@@ -430,6 +430,7 @@ enum NetBaseNetType
 	NetBaseNetType_HttpHLSClientRecv       = 33 ,//http-hls主动拉流对象 
 	NetBaseNetType_HttClientRecvJTT1078    = 34, //接收交通部JTT1078 
 	NetBaseNetType_ReadLocalMediaFile      = 35, //代理读取本地媒体文件主要包括mp4文件
+	NetBaseNetType_FFmpegRecvNetworkMedia  = 36,//rtsp ,rtmp ,http-flv ,http-mp4 ,http-hls 的码流 
 
 	//主动推流对象
 	NetBaseNetType_RtspClientPush          = 40,//rtsp主动推流对象 
@@ -491,7 +492,7 @@ enum NetBaseNetType
 	NetBaseNetType_NetClientWebrtcPlayer = 130,//webrtc的播放 
 };
 
-#define   MediaServerVerson                 "ABLMediaServer-6.3.6(2024-04-02)"
+#define   MediaServerVerson                 "ABLMediaServer-6.3.6(2024-04-08)"
 #define   RtspServerPublic                  "DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE, OPTIONS, ANNOUNCE, RECORD，GET_PARAMETER"
 #define   RecordFileReplaySplitter          "__ReplayFMP4RecordFile__"  //实况、录像区分的标志字符串，用于区分实况，放置在url中。
 
@@ -926,6 +927,8 @@ enum NetRevcBaseClientType
 	NetRevcBaseClient_addStreamProxyControl      = 4, //控制代理拉流
 	NetRevcBaseClient_addPushProxyControl        = 5, //控制代理推流
 	NetRevcBaseClient__NetGB28181Proxy           = 6, //GB28181代理 
+	NetRevcBaseClient_addFFmpegProxyControl      = 10 ,//ffmpeg 代理拉流控制
+	NetRevcBaseClient_addFFmpegProxy             = 11, //代理拉流方式
 };
 
 //http请求参数 
@@ -1445,5 +1448,6 @@ typedef list<int> LogFileVector;
 #include "SHA1.h"
 #include "NetClientReadLocalMediaFile.h"
 #include "SimpleIni.h"
+#include "NetClientFFmpegRecv.h"
 
 #endif

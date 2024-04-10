@@ -26,6 +26,8 @@ extern bool 	                       ABL_bCudaFlag ;
 extern int                             ABL_nCudaCount ;
 extern CMediaFifo                      pMessageNoticeFifo;          //消息通知FIFO
 extern char                            ABL_szLocalIP[128];
+uint8_t NALU_START_CODE[]              = { 0x00, 0x00, 0x01 };
+uint8_t SLICE_START_CODE[]             = { 0X00, 0X00, 0X00, 0X01 };
 
 #ifdef OS_System_Windows
 extern ABL_cudaDecode_Init  cudaEncode_Init ;
@@ -2152,14 +2154,28 @@ bool  CMediaStreamSource::CheckVideoIsIFrame(char* szVideoCodecName, unsigned ch
 	bool bVideoIsIFrameFlag = false;
 	unsigned char  nFrameType = 0x00;
 	int nPosSPS = -1, nPosIDR = -1;
+	int nNaluType = 1;
+	int nAddStep = 3;
 
 	for (int i = 0; i < nPVideoLength; i++)
 	{
-		if (memcmp(szPVideoData+i, szVideoFrameHead, 4) == 0)
+		nNaluType = -1;
+		if (memcmp(szPVideoData + i, (unsigned char*)NALU_START_CODE, sizeof(NALU_START_CODE)) == 0)
+		{//有出现 00 00 01 的nalu头标志
+			nNaluType = 1;
+			nAddStep = sizeof(NALU_START_CODE);
+		}
+		else if (memcmp(szPVideoData + i, (unsigned char*)SLICE_START_CODE, sizeof(SLICE_START_CODE)) == 0)
+		{//有出现 00 00 00 01 的nalu头标志
+			nNaluType = 2; 
+			nAddStep = sizeof(SLICE_START_CODE);
+		}
+
+		if(nNaluType >= 1)
 		{//找到帧片段
 			if (strcmp(szVideoCodecName, "H264") == 0)
 			{
-				nFrameType = (szPVideoData[i+4] & 0x1F);
+				nFrameType = (szPVideoData[i+ nAddStep] & 0x1F);
 				if (nFrameType == 7 || nFrameType == 8 || nFrameType == 5)
 				{//SPS   PPS   IDR 
 					if (nSPSPPSLength == 0)
@@ -2187,7 +2203,7 @@ bool  CMediaStreamSource::CheckVideoIsIFrame(char* szVideoCodecName, unsigned ch
  			}
 			else if (strcmp(szVideoCodecName, "H265") == 0)
 			{
-				nFrameType = (szPVideoData[i+4] & 0x7E) >> 1;
+				nFrameType = (szPVideoData[i+ nAddStep] & 0x7E) >> 1;
 				//WriteLog(Log_Debug, " nFrameType = %d ", nFrameType);
 				if ((nFrameType >= 16 && nFrameType <= 23) || (nFrameType >= 32 && nFrameType <= 34))
 				{//SPS   PPS   IDR 
@@ -2218,6 +2234,8 @@ bool  CMediaStreamSource::CheckVideoIsIFrame(char* szVideoCodecName, unsigned ch
  					}
 				}
 			}
+
+			i += nAddStep; 
 		}
 	
 		//不需要全部检查完毕，就可以判断一帧类型

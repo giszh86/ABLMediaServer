@@ -28,7 +28,7 @@ CNetClientAddPushProxy::CNetClientAddPushProxy(NETHANDLE hServer, NETHANDLE hCli
  	netBaseNetType = NetBaseNetType_addPushProxyControl;
 	nMediaClient = 0;
 	nCreateDateTime = GetTickCount64();
-	WriteLog(Log_Debug, "CNetClientAddStreamProxy 构造 = %X  nClient = %llu ", this, nClient);
+	WriteLog(Log_Debug, "CNetClientAddPushProxy 构造 = %X  nClient = %llu ", this, nClient);
 }
 
 CNetClientAddPushProxy::~CNetClientAddPushProxy()

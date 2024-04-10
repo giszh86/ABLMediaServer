@@ -84,8 +84,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>D:\boost_1_73_0\boost_1_73_0;..\rapidjson-master\include;..\media-server-master\libflv\include;..\media-server-master\librtmp\include;..\media-server-master\libmpeg\include;..\media-server-master\libhls\include;..\media-server-master\libmov\include;..\media-server-master\librtp\include;..\ffmpeg-6.0\include;..\boost\include;..\spdlog\include;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\boost_1_73_0_Lib_VC2019-NEW\lib;..\media-server-master\x64\Release;..\ffmpeg-6.0\lib;..\directx9\lib\x64;..\lib\Release;..\boost\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\boost_1_73_0\boost_1_73_0;..\rapidjson-master\include;..\media-server-master\libflv\include;..\media-server-master\librtmp\include;..\media-server-master\libmpeg\include;..\media-server-master\libhls\include;..\media-server-master\libmov\include;..\media-server-master\librtp\include;..\ffmpeg-6.0\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\boost_1_73_0_Lib_VC2019-NEW\lib;..\media-server-master\x64\Release;..\ffmpeg-6.0\lib;..\directx9\lib\x64;..\lib\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -143,7 +143,6 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
-      <LanguageStandard>Default</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -160,7 +159,6 @@
     <ClInclude Include="AACEncode.h" />
     <ClInclude Include="ABLogSDK.h" />
     <ClInclude Include="ABLSipParse.h" />
-    <ClInclude Include="ABLString.h" />
     <ClInclude Include="AVFrameSWS.h" />
     <ClInclude Include="ConvertUTF.h" />
     <ClInclude Include="faac.h" />
@@ -173,6 +171,7 @@
     <ClInclude Include="MediaFifo.h" />
     <ClInclude Include="MediaStreamSource.h" />
     <ClInclude Include="MyWriteLogFile.h" />
+    <ClInclude Include="NetClientFFmpegRecv.h" />
     <ClInclude Include="NetClientHttp.h" />
     <ClInclude Include="NetClientReadLocalMediaFile.h" />
     <ClInclude Include="NetClientSnap.h" />
@@ -220,7 +219,6 @@
     <ClInclude Include="rtspMD5\strDup.hh" />
     <ClInclude Include="SHA1.h" />
     <ClInclude Include="SimpleIni.h" />
-    <ClInclude Include="spdloghead.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="StreamRecordFMP4.h" />
     <ClInclude Include="StreamRecordMP4.h" />
@@ -235,10 +233,10 @@
     <ClCompile Include="ABLMediaServer.cpp" />
     <ClCompile Include="ABLogSDK.cpp" />
     <ClCompile Include="ABLSipParse.cpp" />
-    <ClCompile Include="ABLString.cpp" />
     <ClCompile Include="AVFrameSWS.cpp" />
     <ClCompile Include="ConvertUTF.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="FFVideoDecode.cpp" />
     <ClCompile Include="FFVideoEncode.cpp" />
@@ -256,6 +254,7 @@
     <ClCompile Include="MediaFifo.cpp" />
     <ClCompile Include="MediaStreamSource.cpp" />
     <ClCompile Include="MyWriteLogFile.cpp" />
+    <ClCompile Include="NetClientFFmpegRecv.cpp" />
     <ClCompile Include="NetClientHttp.cpp" />
     <ClCompile Include="NetClientReadLocalMediaFile.cpp" />
     <ClCompile Include="NetClientSnap.cpp" />
@@ -315,9 +314,6 @@
     </ClCompile>
     <ClCompile Include="SHA1.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="spdloghead.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="stdafx.cpp">

@@ -228,10 +228,7 @@
     <ClInclude Include="SimpleIni.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ABLString.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="spdloghead.h">
+    <ClInclude Include="NetClientFFmpegRecv.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -416,10 +413,7 @@
     <ClCompile Include="ConvertUTF.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ABLString.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="spdloghead.cpp">
+    <ClCompile Include="NetClientFFmpegRecv.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

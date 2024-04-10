@@ -64,7 +64,7 @@ public:
  
    bool                    index_api_addPushProxy();
  
-   bool                    index_api_addStreamProxy();
+   bool                    index_api_addStreamProxy(NetRevcBaseClientType nType);
    bool                    index_api_delRequest();
 
    bool                    ResponseSuccess(char* szSuccessInfo);

@@ -27,7 +27,9 @@ CNetClientAddStreamProxy::CNetClientAddStreamProxy(NETHANDLE hServer, NETHANDLE 
 	strcpy(m_szShareMediaURL,szShareMediaURL);
  	netBaseNetType = NetBaseNetType_addStreamProxyControl;
 	nMediaClient = 0;
-	WriteLog(Log_Debug, "CNetClientAddStreamProxy 构造 = %X nClient = %llu ", this, nClient);
+	nServer = hServer;
+	nClient = hClient;
+	WriteLog(Log_Debug, "CNetClientAddStreamProxy 构造 = %X nClient = %llu ", this, hClient);
 }
 
 CNetClientAddStreamProxy::~CNetClientAddStreamProxy()
@@ -76,7 +78,13 @@ int CNetClientAddStreamProxy::SendFirstRequst()
 
 	if (strlen(m_szShareMediaURL) > 0)
 	{
-	  boost::shared_ptr<CNetRevcBase> pClient = CreateNetRevcBaseClient(NetRevcBaseClient_addStreamProxy, 0, 0, m_addStreamProxyStruct.url, 0, m_szShareMediaURL);
+	   boost::shared_ptr<CNetRevcBase> pClient = NULL;
+
+	  if(nServer == NetRevcBaseClient_addStreamProxyControl)//自研代理拉流 
+	    pClient = CreateNetRevcBaseClient(NetRevcBaseClient_addStreamProxy, 0, 0, m_addStreamProxyStruct.url, 0, m_szShareMediaURL);
+	  else if(nServer == NetRevcBaseClient_addFFmpegProxyControl)//调用ffmepg函数实现代理拉流
+	    pClient = CreateNetRevcBaseClient(NetRevcBaseClient_addFFmpegProxy, 0, 0, m_addStreamProxyStruct.url, 0, m_szShareMediaURL);
+
 	  if (pClient)
 	  {
 		 ParseRtspRtmpHttpURL(m_addStreamProxyStruct.url);

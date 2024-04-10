@@ -27,7 +27,7 @@ E-Mail  79941308@qq.com
 */
 
 #include "stdafx.h"
-#include "../webrtc-streamer/inc/rtc_obj_sdk.h"
+#include "../webrtc-streamer/rtc_obj_sdk.h"
 
 NETHANDLE srvhandle_8080,srvhandle_554, srvhandle_1935, srvhandle_6088, srvhandle_8088, srvhandle_8089, srvhandle_9088, srvhandle_9298, srvhandle_10000;
 
@@ -1426,10 +1426,10 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType,NETHANDLE serverHandl
 							return NULL;
  				}
 			}
-			else if (netClientType == NetRevcBaseClient_addStreamProxyControl)
-			{//代理拉流控制
+			else if (netClientType == NetRevcBaseClient_addStreamProxyControl || netClientType == NetRevcBaseClient_addFFmpegProxyControl)
+			{//代理拉流控制包括自研、调用ffmepg 
 				CltHandle = XHNetSDK_GenerateIdentifier();
-				pXHClient = boost::make_shared<CNetClientAddStreamProxy>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+				pXHClient = boost::make_shared<CNetClientAddStreamProxy>(netClientType, CltHandle, szIP, nPort, szShareMediaURL);
 				if(pXHClient)
 				   pXHClient->nClient = CltHandle;
 			}
@@ -1480,6 +1480,16 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType,NETHANDLE serverHandl
 				}
 				else
 				  return NULL;
+			}
+			else if (netClientType == NetRevcBaseClient_addFFmpegProxy)
+			{//ffmpeg 代理拉流
+				if (strstr(szIP, "rtsp://") != NULL || strstr(szIP, "rtmp://") != NULL || strstr(szIP, "http://") != NULL || strstr(szIP, "https://") != NULL || strstr(szIP, ".mp4") != NULL || strstr(szIP, ".mov") != NULL || strstr(szIP, ".mkv") != NULL || strstr(szIP, ".ts") != NULL || strstr(szIP, ".ps") != NULL || strstr(szIP, ".flv") != NULL || strstr(szIP, ".264") != NULL || strstr(szIP, ".265") != NULL)
+				{//本地文件
+					CltHandle = XHNetSDK_GenerateIdentifier();
+					pXHClient = boost::make_shared<CNetClientFFmpegRecv>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+					if (pXHClient)
+						CltHandle = pXHClient->nClient;
+				}
 			}
 			else if (netClientType == NetRevcBaseClient_addPushStreamProxy)
 			{//代理推流
@@ -1820,8 +1830,16 @@ bool  DeleteNetRevcBaseClient(NETHANDLE CltHandle)
  		  XHNetSDK_Disconnect((*iterator1).second->nClient);
 
 		//把依赖的父类删除掉
-		if((*iterator1).second->hParent > 0 )
-		  pDisconnectBaseNetFifo.push((unsigned char*)&(*iterator1).second->hParent, sizeof((*iterator1).second->hParent));
+		if ((*iterator1).second->hParent > 0)
+		{
+			boost::shared_ptr<CNetRevcBase>  pParentPtr = GetNetRevcBaseClientNoLock((*iterator1).second->hParent);
+			
+			if (pParentPtr != NULL)
+			{//不是代理推流、代理拉流的就可以删除父类,代理拉流、代理推流的不能删除 ，需要重连次数达到配置文件所配置的数量 
+ 				if (!(pParentPtr->netBaseNetType == NetBaseNetType_addStreamProxyControl || pParentPtr->netBaseNetType == NetBaseNetType_addPushProxyControl))
+					pDisconnectBaseNetFifo.push((unsigned char*)&(*iterator1).second->hParent, sizeof((*iterator1).second->hParent));
+			}
+		}
 
  		xh_ABLNetRevcBaseMap.erase(iterator1);
   		return true;
@@ -2060,7 +2078,7 @@ int  CheckNetRevcBaseClientDisconnect()
 		    (((*iterator1).second)->netBaseNetType >= NetBaseNetType_HttpClient_ServerStarted && ((*iterator1).second)->netBaseNetType <= NetBaseNetType_HttpClient_on_publish ) ) )
 		  pDisconnectBaseNetFifo.push((unsigned char*)&((*iterator1).second)->nClient, sizeof((unsigned char*)&((*iterator1).second)->nClient));
 
- 		if (((*iterator1).second)->netBaseNetType == NetBaseNetType_HttpHLSServerSendPush || //HLS　发送
+ 		if (
 			(((*iterator1).second)->netBaseNetType == NetBaseNetType_RtspServerRecvPush && ((*iterator1).second)->m_RtspNetworkType == RtspNetworkType_TCP) ||   //接收rtsp推流上来(tcp）方式
 			((*iterator1).second)->netBaseNetType == NetBaseNetType_RtspServerRecvPushVideo || //rtsp 接收视频
 			((*iterator1).second)->netBaseNetType == NetBaseNetType_RtspServerRecvPushAudio || //rtsp 接收音频
@@ -2091,6 +2109,7 @@ int  CheckNetRevcBaseClientDisconnect()
 			((*iterator1).second)->netBaseNetType == NetBaseNetType_SnapPicture_JPEG || //抓拍对象超时检测
 			((*iterator1).second)->netBaseNetType == NetBaseNetType_WebSocektRecvAudio || //websocket协议接入pcm音频流
 			((*iterator1).second)->netBaseNetType == NetBaseNetType_GB28181TcpPSInputStream ||//通过10000端口TCP方式接收国标PS流接入
+			((*iterator1).second)->netBaseNetType == NetBaseNetType_FFmpegRecvNetworkMedia ||//通过调用ffmpeg拉取 rtmp,flv,mp4,hls 码流 接入
 			((*iterator1).second)->netBaseNetType == NetBaseNetType_NetClientWebrtcPlayer //webRTC 播放 
 		)
 		{//现在检测 HLS 网络断线 ，还可以增加别的类型检测 
@@ -3753,7 +3772,7 @@ ABL_Restart:
 		ABL_MediaServerPort.snapOutPictureHeight = 1080;
 
 	//用于网络数据接收
-	NetBaseThreadPool = new CNetBaseThreadPool(ABL_MediaServerPort.nRecvThreadCount);
+	NetBaseThreadPool = new CNetBaseThreadPool(ABL_nCurrentSystemCpuCount);
 
 	//录像回放线程池
 	RecordReplayThreadPool = new CNetBaseThreadPool(ABL_MediaServerPort.nRecordReplayThread);

@@ -140,7 +140,8 @@ void    CNetRtspServer::SplitterMp3Buffer(unsigned char* szMp3Buffer, int nLengt
 	if (nPos1 != -1 && nPos2 == -1)
 	{
 		pMediaSource->PushAudio(szMp3Buffer + nPos1, nLength - nPos1, szAudioName, nChannels, nSampleRate);
-	}
+	}else 
+		pMediaSource->PushAudio(szMp3Buffer, nLength , szAudioName, nChannels, nSampleRate);
 }
 
 //对AAC的rtp包进行切割
