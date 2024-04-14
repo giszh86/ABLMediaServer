@@ -406,7 +406,7 @@ void   CNetServerRecvAudio::AudioPcmResamle(unsigned char* inPCM, int nPcmDataLe
 
 	
 
-#ifdef  FFMPEG6
+#ifdef  FFMPEG61
 
 		AVChannelLayout out_ch_layout;
 		out_ch_layout.nb_channels = 1;

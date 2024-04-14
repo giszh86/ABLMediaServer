@@ -236,6 +236,7 @@
     <ClInclude Include="ABLSipParse.h" />
     <ClInclude Include="ABLString.h" />
     <ClInclude Include="AVFrameSWS.h" />
+    <ClInclude Include="Crash_Dumper.h" />
     <ClInclude Include="faac.h" />
     <ClInclude Include="faaccfg.h" />
     <ClInclude Include="FFVideoDecode.h" />
@@ -331,6 +332,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='boost_release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Crash_Dumper.cpp" />
     <ClCompile Include="FFVideoDecode.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>

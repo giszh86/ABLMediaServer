@@ -1382,10 +1382,11 @@ void malloc_trim(int n);
 using namespace boost;
 #else
 #include <atomic>
-#include "ABLString.h"
+
 #include <cctype>
 
 #endif
+#include "ABLString.h"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"

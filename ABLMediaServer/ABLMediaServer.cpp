@@ -27,7 +27,7 @@ E-Mail  79941308@qq.com
 */
 
 #include "stdafx.h"
-#include "../webrtc-streamer/inc/rtc_obj_sdk.h"
+#include "webrtc-streamer/inc/rtc_obj_sdk.h"
 
 NETHANDLE srvhandle_8080,srvhandle_554, srvhandle_1935, srvhandle_6088, srvhandle_8088, srvhandle_8089, srvhandle_9088, srvhandle_9298, srvhandle_10000;
 #ifdef USE_BOOST
@@ -2280,9 +2280,8 @@ bool  DeleteNetRevcBaseClient(NETHANDLE CltHandle)
 {
 	std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
 
-	CNetRevcBase_ptrMap::iterator iterator1;
+	auto iterator1 = xh_ABLNetRevcBaseMap.find(CltHandle);
 
-	iterator1 = xh_ABLNetRevcBaseMap.find(CltHandle);
 	if (iterator1 != xh_ABLNetRevcBaseMap.end())
 	{
 		(*iterator1).second->bRunFlag = false;

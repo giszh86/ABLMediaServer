@@ -242,7 +242,7 @@ bool   CNetRtspServerUDP::CreateVideoRtpDecode(std::shared_ptr<CMediaStreamSourc
 }
 
 #ifdef USE_BOOST
-bool   CNetRtspServerUDP::CreateAudioRtpDecode(std::shared_ptr<CMediaStreamSource> mediaServer, char* AudioName, int nAudioPT, int Channels, int SampleRate, int nSampleIndex)
+bool   CNetRtspServerUDP::CreateAudioRtpDecode(boost::shared_ptr<CMediaStreamSource> mediaServer, char* AudioName, int nAudioPT, int Channels, int SampleRate, int nSampleIndex)
 
 #else
 bool   CNetRtspServerUDP::CreateAudioRtpDecode(std::shared_ptr<CMediaStreamSource> mediaServer, char* AudioName, int nAudioPT, int Channels, int SampleRate, int nSampleIndex)
