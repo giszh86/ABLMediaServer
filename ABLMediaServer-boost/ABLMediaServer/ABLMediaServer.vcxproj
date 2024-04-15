@@ -84,8 +84,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>D:\boost_1_73_0\boost_1_73_0;..\rapidjson-master\include;..\media-server-master\libflv\include;..\media-server-master\librtmp\include;..\media-server-master\libmpeg\include;..\media-server-master\libhls\include;..\media-server-master\libmov\include;..\media-server-master\librtp\include;..\ffmpeg-6.0\include;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\boost_1_73_0_Lib_VC2019-NEW\lib;..\media-server-master\x64\Release;..\ffmpeg-6.0\lib;..\directx9\lib\x64;..\lib\Release;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\study\ABLMediaServer\3rd\boost\include;..\rapidjson-master\include;..\media-server-master\libflv\include;..\media-server-master\librtmp\include;..\media-server-master\libmpeg\include;..\media-server-master\libhls\include;..\media-server-master\libmov\include;..\media-server-master\librtp\include;D:\study\ABLMediaServer\3rd\ffmpeg6\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\study\ABLMediaServer\3rd\boost\lib;..\media-server-master\x64\Release;D:\study\ABLMediaServer\3rd\ffmpeg6\lib\x64;..\directx9\lib\x64;..\lib\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -196,6 +196,7 @@
     <ClInclude Include="NetRtspServer.h" />
     <ClInclude Include="NetBaseThreadPool.h" />
     <ClInclude Include="NetServerHTTP_MP4.h" />
+    <ClInclude Include="NetServerReadMultRecordFile.h" />
     <ClInclude Include="NetServerRecvAudio.h" />
     <ClInclude Include="NetServerRecvRtpTS_PS.h" />
     <ClInclude Include="NetServerWS_FLV.h" />
@@ -279,6 +280,7 @@
     <ClCompile Include="NetRtspServer.cpp" />
     <ClCompile Include="NetBaseThreadPool.cpp" />
     <ClCompile Include="NetServerHTTP_MP4.cpp" />
+    <ClCompile Include="NetServerReadMultRecordFile.cpp" />
     <ClCompile Include="NetServerRecvAudio.cpp" />
     <ClCompile Include="NetServerRecvRtpTS_PS.cpp" />
     <ClCompile Include="NetServerWS_FLV.cpp" />

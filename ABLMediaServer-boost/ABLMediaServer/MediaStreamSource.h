@@ -137,7 +137,7 @@ public:
    bool                   H265ConvertH264(unsigned char* szVideo, int nLength, char* szVideoCodec);
 
    uint64_t               tCopyVideoTime; //拷贝视频时间戳 
-   int                    netBaseNetType; //所有链接的网络类型
+   int                    netBaseNetType; //媒体提供者的对象网络类型
    char                   szJson[string_length_4096] ;  //生成的json
 
    bool                   ConvertG711ToAAC(int nCodec, unsigned char* pG711, int nBytes,unsigned char* szOutAAC, int& nAACLength);
@@ -271,7 +271,7 @@ public:
    MediaSendMap         mediaSendMap;//本数据 需要 发送、拷贝的链接列表  
 
    uint64_t             nClient; //记录是那个链接接收的推流 
-   uint64_t             nLastWatchTime, nLastWatchTimeDisconect;//最后观看时间
+   uint64_t             nLastWatchTime, nRecordLastWatchTime, nLastWatchTimeDisconect;//最后观看时间
    volatile bool        bUpdateVideoSpeed;//是否更新视频速度
 };
 

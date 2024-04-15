@@ -284,7 +284,7 @@ CNetClientFFmpegRecv::CNetClientFFmpegRecv(NETHANDLE hServer, NETHANDLE hClient,
 		duration = video_stream->duration / 1000000;
 
 	//确定帧速度
-	mediaCodecInfo.nVideoFrameRate = video_stream->r_frame_rate.num / video_stream->r_frame_rate.den;
+	mediaCodecInfo.nVideoFrameRate = video_stream->avg_frame_rate.num / video_stream->avg_frame_rate.den;
 
 	//创建录像点播媒体源 
 	pMediaSource = CreateMediaStreamSource(m_szShareMediaURL, 0, MediaSourceType_LiveMedia, duration, m_h265ConvertH264Struct);

@@ -82,6 +82,7 @@
 #define  string_length_2048   2048  
 #define  string_length_4096   4096 
 #define  string_length_8192   8192 
+#define  string_length_48K    1024*48 
 #define  string_length_512K   1024*512 
 
 uint64_t GetCurrentSecond();
@@ -253,16 +254,6 @@ struct MediaServerPort
 	int        httqRequstClose;//是否为短链接操作 
 	int        keepaliveDuration; //发送心跳时间间隔
 	int        flvPlayAddMute;
-
-	int         nUseWvp = 0; //是否参考wvp-zlm的接口返回  为1时候返回格式和ZLM的一致
-	char port_range[string_length_512]; //随机端口范围，最少确保36个端口
-	char listeningip[string_length_512]; //webrtc监听内网ip
-	char externalip[string_length_512]; //webrtc监听外网ip
-	int listeningport;    //webrtc监听内网端口
-	int minport;    //UDP中继端口范围，用于UDP转发，注意安全组放通
-	int maxport;    //UDP中继端口范围，用于UDP转发，注意安全组放通
-	char realm[string_length_512]; //默认域Realm
-	char user[string_length_512]; //快捷的添加用户是使用user=XXX:XXXX的方式
  	MediaServerPort()
 	{
 		memset(wwwPath, 0x00, sizeof(wwwPath));
@@ -373,16 +364,6 @@ struct MediaServerPort
 		enable_GetFileDuration = 0;
 		keepaliveDuration = 20;
 		flvPlayAddMute = 1;
-
-		nUseWvp = 0;
-		memset(port_range, 0x00, sizeof(port_range));
-		memset(listeningip, 0x00, sizeof(listeningip));
-		memset(externalip, 0x00, sizeof(externalip));
-		listeningport = 3478;
-		minport = 50000;
-		maxport = 65535;
-		memset(realm, 0x00, sizeof(realm));
-		memset(user, 0x00, sizeof(user));
  	}
 };
 
@@ -489,10 +470,11 @@ enum NetBaseNetType
 	NetBaseNetType_HttpClient_on_publish           = 124,//码流接入通知 
 	NetBaseNetType_HttpClient_on_iframe_arrive     = 125,//i帧到达事件
 
-	NetBaseNetType_NetClientWebrtcPlayer = 130,//webrtc的播放 
+	NetBaseNetType_NetClientWebrtcPlayer           = 130,//webrtc的播放 
+	NetBaseNetType_NetServerReadMultRecordFile     = 140,//连续读取多个录像文件
 };
 
-#define   MediaServerVerson                 "ABLMediaServer-6.3.6(2024-04-08)"
+#define   MediaServerVerson                 "ABLMediaServer-6.3.6(2024-04-15)"
 #define   RtspServerPublic                  "DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE, OPTIONS, ANNOUNCE, RECORD，GET_PARAMETER"
 #define   RecordFileReplaySplitter          "__ReplayFMP4RecordFile__"  //实况、录像区分的标志字符串，用于区分实况，放置在url中。
 
@@ -825,6 +807,7 @@ struct getSnapStruct
 	char  app[string_length_256];//添加流的应用名
 	char  stream[string_length_512];//添加流的id 
 	char  timeout_sec[128];//抓拍图片超时 ，单位 秒
+	char  captureReplayType[64];//抓拍返回类型
 
 	getSnapStruct()
 	{
@@ -833,6 +816,7 @@ struct getSnapStruct
 		memset(app, 0x00, sizeof(app));
 		memset(stream, 0x00, sizeof(stream));
 		memset(timeout_sec, 0x00, sizeof(timeout_sec));
+		memset(captureReplayType, 0x00, sizeof(captureReplayType));
 	}
 };
 
@@ -1367,11 +1351,6 @@ void malloc_trim(int n);
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/atomic.hpp>
 
-#include <atomic>
-#include "ABLString.h"
-#include "spdloghead.h"
-#include <cctype>
-
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
@@ -1449,5 +1428,6 @@ typedef list<int> LogFileVector;
 #include "NetClientReadLocalMediaFile.h"
 #include "SimpleIni.h"
 #include "NetClientFFmpegRecv.h"
+#include "NetServerReadMultRecordFile.h"
 
 #endif

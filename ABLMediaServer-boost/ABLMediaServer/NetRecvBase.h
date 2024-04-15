@@ -26,6 +26,8 @@ public:
    virtual int   SendFirstRequst() = 0;//发送第一个请求
    virtual bool  RequestM3u8File() = 0 ;
 
+   std::vector<std::string> mutliRecordPlayNameList;//多个录像连续播放文件
+   MessageNoticeStruct    msgNotice;
    uint64_t               nWriteRecordByteSize;//写入录像字节数量
    void                   GetCurrentDatetime();//获取当前时间
    char                   szCurrentDateTime[128];//当前时间，年月日时分秒 

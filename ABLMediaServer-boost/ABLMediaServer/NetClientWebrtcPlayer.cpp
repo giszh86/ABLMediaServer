@@ -21,7 +21,7 @@ extern CMediaFifo                            pDisconnectBaseNetFifo; //«Â¿Ì∂œ¡—µ
 extern char                                  ABL_MediaSeverRunPath[256]; //µ±«∞¬∑æ∂
 extern MediaServerPort                       ABL_MediaServerPort;
 
-#include "../webrtc-streamer/rtc_obj_sdk.h"
+#include "../webrtc-streamer/inc/rtc_obj_sdk.h"
 
 CNetClientWebrtcPlayer::CNetClientWebrtcPlayer(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort,char* szShareMediaURL)
 {

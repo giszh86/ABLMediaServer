@@ -794,10 +794,10 @@ int  CNetRtspServer::GetRtspPathCount(char* szRtspURL)
  	nPos1 = strCurRtspURL.find("//", 0);
 	if (nPos1 < 0)
 		return 0;//µØÖ··Ç·¨ 
-
+	nPos1 += 2;
 	while (true)
 	{
-		nPos1 = strCurRtspURL.find("/", nPos1 + 2);
+		nPos1 = strCurRtspURL.find("/", nPos1);
 		if (nPos1 >= 0)
 		{
 			nPos1 += 1;
@@ -814,9 +814,10 @@ int  CNetRtspServer::GetRtspPathCount(char* szRtspURL)
 	  strcpy(m_addStreamProxyStruct.url, szRtspURL);
 	  
 	  nPos1 = strCurRtspURL.find("//", 0);
+	  nPos1 += 2;
 	  if (nPos1 > 0)
 	  {
-		  nPos2 = strCurRtspURL.find("/", nPos1 + 2);
+		  nPos2 = strCurRtspURL.find("/", nPos1);
 		  if (nPos2 > 0)
 		  {
 			  nPos3 = strCurRtspURL.find("/", nPos2 + 1);
@@ -825,6 +826,7 @@ int  CNetRtspServer::GetRtspPathCount(char* szRtspURL)
 				  memcpy(m_addStreamProxyStruct.app, szRtspURL + nPos2 + 1, nPos3 - nPos2 - 1);
 				  memcpy(m_addStreamProxyStruct.stream, szRtspURL + nPos3 + 1, strlen(szRtspURL) - nPos3 - 1);
 			  }
+			  nPos2 += 1;
 		  }
 	  }
  	}

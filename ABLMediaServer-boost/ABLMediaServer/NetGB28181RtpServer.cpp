@@ -801,10 +801,10 @@ CNetGB28181RtpServer::~CNetGB28181RtpServer()
 	 fclose(fWrite1078File);
 #endif
 	 //码流没有达到通知
-	 if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nClientNotArrive > 0 && bUpdateVideoFrameSpeedFlag == false)
+	 if (ABL_MediaServerPort.hook_enable == 1 && bUpdateVideoFrameSpeedFlag == false)
 	 {
 		 MessageNoticeStruct msgNotice;
-		 msgNotice.nClient = ABL_MediaServerPort.nClientNotArrive;
+		 msgNotice.nClient = NetBaseNetType_HttpClient_on_stream_not_arrive;
 		 sprintf(msgNotice.szMsg, "{\"mediaServerId\":\"%s\",\"app\":\"%s\",\"stream\":\"%s\",\"networkType\":%d,\"key\":%llu}", ABL_MediaServerPort.mediaServerID,m_addStreamProxyStruct.app, m_addStreamProxyStruct.stream,  netBaseNetType, nClient);
 		 pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
 	 }

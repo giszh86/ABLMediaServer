@@ -145,7 +145,7 @@ int CNetClientSnap::SendVideo()
 					   bSnapSuccessFlag = true ;
 					   pPicture->AddPictureFile(szFileNameOrder);
 
-					   if (ABL_MediaServerPort.captureReplayType == 1)
+					   if (atoi(m_getSnapStruct.captureReplayType) == 1)
 					   {//·µ»Øurl
 					       sprintf(szResponseBody, "{\"code\":0,\"memo\":\"success , Catpuring takes time %d millisecond .\",\"url\":\"http://%s:%d/%s/%s/%s\"}", GetTickCount64() - nPrintTime, ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.nHttpServerPort, m_addStreamProxyStruct.app, m_addStreamProxyStruct.stream, szFileName);
 					       ResponseHttp(nClient_http, szResponseBody, false);
