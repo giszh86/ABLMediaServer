@@ -27,7 +27,7 @@ E-Mail  79941308@qq.com
 */
 
 #include "stdafx.h"
-#include "webrtc-streamer/inc/rtc_obj_sdk.h"
+#include "../webrtc-streamer/inc/rtc_obj_sdk.h"
 
 NETHANDLE srvhandle_8080,srvhandle_554, srvhandle_1935, srvhandle_6088, srvhandle_8088, srvhandle_8089, srvhandle_9088, srvhandle_9298, srvhandle_10000;
 #ifdef USE_BOOST

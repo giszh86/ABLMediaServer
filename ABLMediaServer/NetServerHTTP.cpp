@@ -2139,7 +2139,14 @@ bool CNetServerHTTP::index_api_getServerConfig()
 	strcat(szMediaSourceInfoBuffer, "]}");
 #ifdef OS_System_Windows
 	string strResponse = szMediaSourceInfoBuffer;
-	replace_all(strResponse, "\\", "\\\\"); 
+
+#ifdef USE_BOOST
+	replace_all(strResponse, "\\", "\\\\");
+#else
+	ABL::replace_all(strResponse, "\\", "\\\\");
+#endif
+
+	
 	memset(szMediaSourceInfoBuffer, 0x00, MaxMediaSourceInfoLength);
 	strcpy(szMediaSourceInfoBuffer, strResponse.c_str());
 #endif 
