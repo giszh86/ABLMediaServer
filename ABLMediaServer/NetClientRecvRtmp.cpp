@@ -308,10 +308,10 @@ CNetClientRecvRtmp::~CNetClientRecvRtmp()
 	NetDataFifo.FreeFifo();
   	
 	//码流没有达到通知
-	if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nClientNotArrive > 0 && bUpdateVideoFrameSpeedFlag == false)
+	if (ABL_MediaServerPort.hook_enable == 1  && bUpdateVideoFrameSpeedFlag == false)
 	{
 		MessageNoticeStruct msgNotice;
-		msgNotice.nClient = ABL_MediaServerPort.nClientNotArrive;
+		msgNotice.nClient = NetBaseNetType_HttpClient_on_stream_not_arrive;
 		sprintf(msgNotice.szMsg, "{\"app\":\"%s\",\"stream\":\"%s\",\"mediaServerId\":\"%s\",\"networkType\":%d,\"key\":%llu}", m_addStreamProxyStruct.app, m_addStreamProxyStruct.stream, ABL_MediaServerPort.mediaServerID, netBaseNetType, hParent);
 		pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
 	}

@@ -818,10 +818,10 @@ CNetGB28181RtpServer::~CNetGB28181RtpServer()
 	 fclose(fWrite1078File);
 #endif
 	 //码流没有达到通知
-	 if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nClientNotArrive > 0 && bUpdateVideoFrameSpeedFlag == false)
+	 if (ABL_MediaServerPort.hook_enable == 1 && bUpdateVideoFrameSpeedFlag == false)
 	 {
 		 MessageNoticeStruct msgNotice;
-		 msgNotice.nClient = ABL_MediaServerPort.nClientNotArrive;
+		 msgNotice.nClient = NetBaseNetType_HttpClient_on_stream_not_arrive;
 		 sprintf(msgNotice.szMsg, "{\"mediaServerId\":\"%s\",\"app\":\"%s\",\"stream\":\"%s\",\"networkType\":%d,\"key\":%llu}", ABL_MediaServerPort.mediaServerID,m_addStreamProxyStruct.app, m_addStreamProxyStruct.stream,  netBaseNetType, nClient);
 		 pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
 	 }
@@ -1141,8 +1141,8 @@ int CNetGB28181RtpServer::ProcessNetData()
 				}
  
 				//rtp 包长度正常才进行解包
-				if (nRtpLength <= nMaxRtpLength || nRtpLength < 1500)
-					RtpDepacket(netDataCache + nNetStart, nRtpLength);
+				if(nRtpLength <= nMaxRtpLength || nRtpLength < 1500 )
+				  RtpDepacket(netDataCache + nNetStart, nRtpLength);
 				else
 				{//rtp 包长度异常
 					WriteLog(Log_Debug, "CNetGB28181RtpServer = %X rtp包头长度有误  nClient = %llu ,nRtpLength = %llu , nMaxRtpLength = %d ", this, nClient, nRtpLength, nMaxRtpLength);

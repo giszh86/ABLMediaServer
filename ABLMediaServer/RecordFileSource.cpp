@@ -1,14 +1,14 @@
 /*
 功能：
-	1、装入老的历史录像文件名字
-	2、对录像文件名字进行升序排列
+    1、装入老的历史录像文件名字
+    2、对录像文件名字进行升序排列
 	3、增加新录像文件文件，追加到list的尾部
 	4、删除过期的录像文件
-	5、根据 app\ stream 、时间段 查找出符合条件的所有录像文件名字
-	6、根据 app\ stream \ 一个录像名字 ，判断该文件是否存在
-
+	5、根据 app\ stream 、时间段 查找出符合条件的所有录像文件名字 
+	6、根据 app\ stream \ 一个录像名字 ，判断该文件是否存在  
+	 
 日期    2022-01-13
-作者    罗家兄弟
+作者    罗家兄弟 
 QQ      79941308
 E-Mail  79941308@qq.com
 */
@@ -99,10 +99,10 @@ bool  CRecordFileSource::UpdateExpireRecordFile(char* szNewFileName)
 			  bUpdateFlag = true;
 
 			  //完成一个覆盖一个mp4文件通知 
-			  if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nClientDeleteRecordMp4 > 0)
+			  if (ABL_MediaServerPort.hook_enable == 1 )
 			  {
 				  MessageNoticeStruct msgNotice;
-				  msgNotice.nClient = ABL_MediaServerPort.nClientDeleteRecordMp4;
+				  msgNotice.nClient = NetBaseNetType_HttpClient_DeleteRecordMp4;
 				  sprintf(msgNotice.szMsg, "{\"app\":\"%s\",\"stream\":\"%s\",\"mediaServerId\":\"%s\",\"fileName\":\"%s.mp4\"}", m_app, m_stream, ABL_MediaServerPort.mediaServerID, szDateTime);
 				  pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
 			  }
@@ -157,10 +157,10 @@ bool  CRecordFileSource::queryRecordFile(char* szRecordFileName)
 	}
 
 	//码流找不到
-	if (ABL_MediaServerPort.hook_enable == 1 && bRet == false &&  ABL_MediaServerPort.nClientNotFound > 0)
+	if (ABL_MediaServerPort.hook_enable == 1 && bRet == false )
 	{
 		MessageNoticeStruct msgNotice;
-		msgNotice.nClient = ABL_MediaServerPort.nClientNotFound;
+		msgNotice.nClient = NetBaseNetType_HttpClient_Not_found;
 		sprintf(msgNotice.szMsg, "{\"app\":\"%s\",\"stream\":\"%s___ReplayFMP4RecordFile__%s\",\"mediaServerId\":\"%s\"}", m_app, m_stream, szRecordFileName, ABL_MediaServerPort.mediaServerID);
 		pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
 	}

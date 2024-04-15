@@ -46,7 +46,7 @@ int CNetClientSnap::nPictureNumber = 1;
 CNetClientSnap::CNetClientSnap(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort, char* szShareMediaURL)
 {
 	bWaitIFrameFlag = false;
-	strcpy(m_szShareMediaURL, szShareMediaURL);
+	strcpy(m_szShareMediaURL,szShareMediaURL);
 	nClient = hClient;
 	netBaseNetType = NetBaseNetType_SnapPicture_JPEG;
 	nMediaClient = 0;
@@ -81,11 +81,11 @@ CNetClientSnap::~CNetClientSnap()
 
 	if (!bSnapSuccessFlag)
 	{
-		sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"getSnap Error , Catpuring takes time %d millisecond .\"}", IndexApiCode_RequestProcessFailed, GetTickCount64() - nPrintTime);
-		ResponseHttp2(nClient_http, szResponseBody, false);
-	}
+	   sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"getSnap Error , Catpuring takes time %d millisecond .\"}", IndexApiCode_RequestProcessFailed, GetTickCount64() - nPrintTime);
+	   ResponseHttp2(nClient_http, szResponseBody, false);
+  	}
 
-	m_videoFifo.FreeFifo();
+ 	m_videoFifo.FreeFifo();
 
 	WriteLog(Log_Debug, "CNetClientSnap 析构 = %X  nClient = %llu ,nMediaClient = %llu\r\n", this, nClient, nMediaClient);
 	malloc_trim(0);
@@ -100,16 +100,15 @@ int CNetClientSnap::PushVideo(uint8_t* pVideoData, uint32_t nDataLength, char* s
 	{
 		if (bWaitIFrameFlag)
 		{//需要等等I帧
-			if (CheckVideoIsIFrame(szVideoCodec, pVideoData, nDataLength) == false)
+			if (CheckVideoIsIFrame(szVideoCodec, pVideoData, nDataLength) == false )
 			{//等待I帧
 				return 0;
-			}
-			else
-				bWaitIFrameFlag = false;
+			}else 
+				bWaitIFrameFlag = false ;
 		}
 
 		m_videoFifo.push(pVideoData, nDataLength);
-	}
+ 	}
 	return 0;
 }
 
@@ -131,11 +130,11 @@ int CNetClientSnap::SendVideo()
 		if (!videoDecode.m_bInitDecode)
 			videoDecode.startDecode(mediaCodecInfo.szVideoName, 0, 0);
 
-		if (videoDecode.m_bInitDecode)
+		if (videoDecode.m_bInitDecode )
 		{
 			if (videoDecode.DecodeYV12Image(pData, nLength) > 0 && videoDecode.pDPicture->key_frame == 1)
 			{
-#ifdef OS_System_Windows
+ #ifdef OS_System_Windows
 				SYSTEMTIME st;
 				GetLocalTime(&st);
 				sprintf(szFileName, "%s%04d%02d%02d%02d%02d%02d%02d.jpg", szRecordPath, st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, nPictureNumber);
@@ -143,12 +142,12 @@ int CNetClientSnap::SendVideo()
 #else
 				time_t now;
 				time(&now);
-				struct tm* local;
+				struct tm *local;
 				local = localtime(&now);
 				sprintf(szFileName, "%s%04d%02d%02d%02d%02d%02d%02d.jpg", szRecordPath, local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec, nPictureNumber);
 				sprintf(szFileNameOrder, "%04d%02d%02d%02d%02d%02d%02d.jpg", local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec, nPictureNumber);;
 #endif
-				nPictureNumber++;
+				nPictureNumber ++;
 				if (nPictureNumber > 99)
 					nPictureNumber = 1;
 
@@ -160,40 +159,39 @@ int CNetClientSnap::SendVideo()
 
 					if (videoDecode.CaptureJpegFromAVFrame(szPictureFileName, 98))
 					{
-						bSnapSuccessFlag = true;
-						pPicture->AddPictureFile(szFileNameOrder);
+					   bSnapSuccessFlag = true ;
+					   pPicture->AddPictureFile(szFileNameOrder);
 
-						if (ABL_MediaServerPort.captureReplayType == 1)
-						{//返回url
-							sprintf(szResponseBody, "{\"code\":0,\"memo\":\"success , Catpuring takes time %d millisecond .\",\"url\":\"http://%s:%d/%s/%s/%s\"}", GetTickCount64() - nPrintTime, ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.nHttpServerPort, m_addStreamProxyStruct.app, m_addStreamProxyStruct.stream, szFileName);
-							ResponseHttp(nClient_http, szResponseBody, false);
-						}
-						else
-						{//直接返回图片
-							auto  pHttpClient = GetNetRevcBaseClient(nClient_http);
-							if (pHttpClient != NULL)
-							{
-								CNetServerHTTP* httResponse = (CNetServerHTTP*)pHttpClient.get();
-								if (httResponse)
-								{
-									sprintf(szDownLoadImage, "/%s/%s/%s", m_addStreamProxyStruct.app, m_addStreamProxyStruct.stream, szFileNameOrder);
-									httResponse->index_api_downloadImage(szDownLoadImage);
-								}
-							}
-						}
+					   if (atoi(m_getSnapStruct.captureReplayType) == 1)
+					   {//返回url
+					       sprintf(szResponseBody, "{\"code\":0,\"memo\":\"success , Catpuring takes time %d millisecond .\",\"url\":\"http://%s:%d/%s/%s/%s\"}", GetTickCount64() - nPrintTime, ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.nHttpServerPort, m_addStreamProxyStruct.app, m_addStreamProxyStruct.stream, szFileName);
+					       ResponseHttp(nClient_http, szResponseBody, false);
+					   }
+					   else
+					   {//直接返回图片
+						   auto  pHttpClient =  GetNetRevcBaseClient(nClient_http);
+						   if (pHttpClient != NULL)
+						   {
+							   CNetServerHTTP* httResponse = (CNetServerHTTP*) pHttpClient.get();
+							   if (httResponse)
+							   {
+								   sprintf(szDownLoadImage, "/%s/%s/%s", m_addStreamProxyStruct.app, m_addStreamProxyStruct.stream, szFileNameOrder);
+								   httResponse->index_api_downloadImage(szDownLoadImage);
+							   }
+						   }
+ 					   }
 
-						if (ABL_MediaServerPort.snapObjectDestroy == 1)
-							DeleteNetRevcBaseClient(nClient);
-						else
-						{//从拷贝线程、发送线程移除
-							bWaitIFrameFlag = true;//需要等等I帧
-							auto pMediaSouce = GetMediaStreamSource(m_szShareMediaURL);
-							if (pMediaSouce)
-							{//从拷贝线程，发送线程移除
-								pMediaSouce->DeleteClientFromMap(nClient);
-						
-							}
-						}
+					   if(ABL_MediaServerPort.snapObjectDestroy == 1)
+						   DeleteNetRevcBaseClient(nClient);
+					   else
+					   {//从拷贝线程、发送线程移除
+						   bWaitIFrameFlag = true;//需要等等I帧
+						   auto pMediaSouce = GetMediaStreamSource(m_szShareMediaURL);
+						   if (pMediaSouce)
+						   {//从拷贝线程，发送线程移除
+							   pMediaSouce->DeleteClientFromMap(nClient);
+						   }
+					   }
 					}
 				}
 				else
@@ -201,7 +199,7 @@ int CNetClientSnap::SendVideo()
 					sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"Error , Catpuring takes time %d millisecond .\"}", IndexApiCode_RequestProcessFailed, GetTickCount64() - nPrintTime);
 					ResponseHttp(nClient_http, szResponseBody, false);
 				}
-			}
+ 			}
 		}
 
 		m_videoFifo.pop_front();
@@ -217,12 +215,12 @@ int CNetClientSnap::SendAudio()
 
 int CNetClientSnap::InputNetData(NETHANDLE nServerHandle, NETHANDLE nClientHandle, uint8_t* pData, uint32_t nDataLength, void* address)
 {
-	return 0;
+    return 0;
 }
 
 int CNetClientSnap::ProcessNetData()
 {
-	return 0;
+ 	return 0;
 }
 
 //发送第一个请求
@@ -233,14 +231,13 @@ int CNetClientSnap::SendFirstRequst()
 	{
 		WriteLog(Log_Debug, "CNetClientSnap = %X nClient = %llu ,不存在媒体源 %s", this, nClient, m_szShareMediaURL);
 		pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
-		return -1;
+		return -1 ;
 	}
 	bSnapSuccessFlag = false; //复位为尚未抓拍成功
 	nPrintTime = nCreateDateTime = GetTickCount64();//刷新时间
-
 	pMediaSource->AddClientToMap(nClient);
 
-	return 0;
+    return 0;
 }
 
 //请求m3u8文件

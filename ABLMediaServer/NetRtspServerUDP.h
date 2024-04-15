@@ -3,6 +3,7 @@
 #ifdef USE_BOOST
 #include <boost/unordered/unordered_map.hpp>
 #include <boost/smart_ptr/shared_ptr.hpp>
+#include <boost/unordered/unordered_map.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/algorithm/string.hpp>
 
@@ -38,24 +39,21 @@ public:
 
 #endif
  
-
 #ifdef WriteRtpDecodeFile
    FILE*          fWriteVideoFile;
    FILE*          fWriteAudioFile;
 #endif
-
 #ifdef USE_BOOST
-   bool           CreateVideoRtpDecode(boost::shared_ptr<CMediaStreamSource> mediaServer, char* VideoName, int nVidoePT);
-   bool           CreateAudioRtpDecode(boost::shared_ptr<CMediaStreamSource> mediaServer, char* AudioName, int nAudioPT, int Channels, int SampleRate, int nSampleIndex);
-
+   bool           CreateVideoRtpDecode(boost::shared_ptr<CMediaStreamSource> mediaServer, char* VideoName,int nVidoePT);
+   bool           CreateAudioRtpDecode(boost::shared_ptr<CMediaStreamSource> mediaServer, char* AudioName, int nAudioPT,int Channels,int SampleRate,int nSampleIndex);
+   void           AddADTSHeadToAAC(unsigned char* szData, int nAACLength);
 #else
    bool           CreateVideoRtpDecode(std::shared_ptr<CMediaStreamSource> mediaServer, char* VideoName, int nVidoePT);
    bool           CreateAudioRtpDecode(std::shared_ptr<CMediaStreamSource> mediaServer, char* AudioName, int nAudioPT, int Channels, int SampleRate, int nSampleIndex);
 
 
 #endif
-  void           AddADTSHeadToAAC(unsigned char* szData, int nAACLength);
-   void           SplitterRtpAACData(unsigned char* rtpAAC, int nLength);
+  void           AddADTSHeadToAAC(unsigned char* szData, int nAACLength);   void           SplitterRtpAACData(unsigned char* rtpAAC, int nLength);
    void           SplitterMp3Buffer(unsigned char* szMp3Buffer, int nLength);
 
    unsigned char  szFullMp3Buffer[2048];

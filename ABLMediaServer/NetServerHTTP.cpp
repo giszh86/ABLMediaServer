@@ -1825,7 +1825,8 @@ bool  CNetServerHTTP::index_api_startSendRtp()
 
 		//检测 app stream 是否存在
 		sprintf(szShareMediaURL, "/%s/%s", m_startSendRtpStruct.app, m_startSendRtpStruct.stream);
-		auto tmpMediaSource = GetMediaStreamSource(szShareMediaURL);
+
+ 		auto tmpMediaSource = GetMediaStreamSource(szShareMediaURL);
 		if (tmpMediaSource == NULL)
 		{
 			sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"MediaSource: %s Not Found \",\"key\":%d}", IndexApiCode_ParamError, szShareMediaURL, 0);
@@ -2139,14 +2140,11 @@ bool CNetServerHTTP::index_api_getServerConfig()
 	strcat(szMediaSourceInfoBuffer, "]}");
 #ifdef OS_System_Windows
 	string strResponse = szMediaSourceInfoBuffer;
-
 #ifdef USE_BOOST
-	replace_all(strResponse, "\\", "\\\\");
+	replace_all(strResponse, "\\", "\\\\"); 
 #else
-	ABL::replace_all(strResponse, "\\", "\\\\");
+	ABL::replace_all(strResponse, "\\", "\\\\"); 
 #endif
-
-	
 	memset(szMediaSourceInfoBuffer, 0x00, MaxMediaSourceInfoLength);
 	strcpy(szMediaSourceInfoBuffer, strResponse.c_str());
 #endif 
@@ -2401,11 +2399,13 @@ bool  CNetServerHTTP::index_api_getSnap()
 	char szShareMediaURL[string_length_2048] = { 0 };
 
 	memset((char*)&m_getSnapStruct, 0x00, sizeof(m_getSnapStruct));
+	sprintf(m_getSnapStruct.captureReplayType, "%d", ABL_MediaServerPort.captureReplayType);
 	GetKeyValue("secret", m_getSnapStruct.secret);
 	GetKeyValue("vhost", m_getSnapStruct.vhost);
 	GetKeyValue("app", m_getSnapStruct.app);
 	GetKeyValue("stream", m_getSnapStruct.stream);
 	GetKeyValue("timeout_sec", m_getSnapStruct.timeout_sec);
+	GetKeyValue("captureReplayType", m_getSnapStruct.captureReplayType);
 
 	if (strlen(m_getSnapStruct.secret) == 0 || strlen(m_getSnapStruct.app) == 0 || strlen(m_getSnapStruct.stream) == 0 || strlen(m_getSnapStruct.timeout_sec) == 0)
 	{
@@ -2484,6 +2484,7 @@ bool  CNetServerHTTP::index_api_getSnap()
 		    pClient = CreateNetRevcBaseClient(NetBaseNetType_SnapPicture_JPEG, 0, 0, m_addStreamProxyStruct.url, 0, szShareMediaURL);
 			if (pClient != NULL)
 			{
+				memcpy((char*)&pClient->m_getSnapStruct, (char*)&m_getSnapStruct, sizeof(getSnapStruct));
 				pClient->nClient_http = nClient; //赋值给http请求连接 
 				pClient->timeout_sec = atoi(m_getSnapStruct.timeout_sec);//超时
 				pClient->SendFirstRequst();
@@ -2635,7 +2636,6 @@ bool  CNetServerHTTP::index_api_downloadImage(char* szHttpURL)
 #else
 				ABL::replace_all(strHttpURL, "/", "\\");
 #endif
-			
 				sprintf(szImageFileName, "%s%s", ABL_MediaServerPort.picturePath, strHttpURL.c_str());
  				struct _stat64 fileBuf;
 				int error = _stat64(szImageFileName, &fileBuf);

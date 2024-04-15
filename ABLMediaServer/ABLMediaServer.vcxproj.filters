@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="dump">
+      <UniqueIdentifier>{415e5a26-44ff-4b7f-adb9-7626ba8b0ceb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -222,8 +225,11 @@
     <ClInclude Include="NetClientFFmpegRecv.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Crash_Dumper.h">
+    <ClInclude Include="NetServerReadMultRecordFile.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="win\Crash_Dumper.h">
+      <Filter>dump</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -413,8 +419,11 @@
     <ClCompile Include="NetClientFFmpegRecv.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Crash_Dumper.cpp">
+    <ClCompile Include="NetServerReadMultRecordFile.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="win\Crash_Dumper.cpp">
+      <Filter>dump</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

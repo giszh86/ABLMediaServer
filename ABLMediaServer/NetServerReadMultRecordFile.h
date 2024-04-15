@@ -10,6 +10,7 @@
 #include "webm-vpx.h"
 #include "aom-av1.h"
 
+#ifdef USE_BOOST
 #include <boost/unordered/unordered_map.hpp>
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <boost/unordered/unordered_map.hpp>
@@ -17,6 +18,15 @@
 #include <boost/algorithm/string.hpp>
 
 using namespace boost;
+#else
+#include <memory>
+#include <iostream>
+#include <string>
+#include <sstream>
+#include <unordered_set>
+#include <random>
+
+#endif
 
 #define     OpenMp4FileToReadWaitMaxMilliSecond    300  //打开mp4文件，500毫秒后 才开始读取文件 
 //#define     WriteAACFileFlag                       1    //是否保存AAC文件
@@ -80,7 +90,14 @@ public:
    bool                 UpdatePauseFlag(bool bFlag);
 
    uint64_t              nDownloadFrameCount;
+#ifdef USE_BOOST
    boost::shared_ptr<CMediaStreamSource> pMediaSource;
+
+
+#else
+   std::shared_ptr<CMediaStreamSource> pMediaSource;
+#endif
+
    int                   nRetLength;
    std::mutex            readRecordFileInputLock;
    unsigned char         audioBuffer[4096];

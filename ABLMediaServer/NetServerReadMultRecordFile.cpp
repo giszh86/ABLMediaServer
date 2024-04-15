@@ -12,7 +12,17 @@ E-Mail  79941308@qq.com
 extern CNetBaseThreadPool*                   RecordReplayThreadPool;//录像回放线程池
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
 extern bool                                  DeleteNetRevcBaseClient(NETHANDLE CltHandle);
+
+#ifdef USE_BOOST
+
 extern boost::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szURL, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
+
+#else
+extern std::shared_ptr<CMediaStreamSource> CreateMediaStreamSource(char* szURL, uint64_t nClient, MediaSourceType nSourceType, uint32_t nDuration, H265ConvertH264Struct  h265ConvertH264Struct);
+
+#endif
+
+
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern MediaServerPort                       ABL_MediaServerPort;
 extern char                                  ABL_MediaSeverRunPath[256] ; //当前路径
@@ -33,7 +43,14 @@ bool  CNetServerReadMultRecordFile::GetMediaShareURLFromFileName(char* szRecordF
 
 	string strRecordFileName = szRecordFileName;
 #ifdef OS_System_Windows
-	replace_all(strRecordFileName, "\\", "/"); 
+#ifdef USE_BOOST
+	replace_all(strRecordFileName, "\\", "/");
+#else
+	ABL::replace_all(strRecordFileName, "\\", "/");
+#endif
+
+
+	
 #endif
 	int   nPos;
 	char  szTempFileName[512] = { 0 };
@@ -198,7 +215,14 @@ CNetServerReadMultRecordFile::CNetServerReadMultRecordFile(NETHANDLE hServer, NE
 			strcpy(mediaCodecInfo.szAudioName, "UNKNOW");
 
 		mediaCodecInfo.nSampleRate = audio_stream->codecpar->sample_rate; //采样频率
+#ifdef FFMPEG6
+		mediaCodecInfo.nChannels = audio_stream->codecpar->ch_layout.nb_channels;
+#else
+
 		mediaCodecInfo.nChannels = audio_stream->codecpar->channels;
+#endif // FFMPEG6
+
+		
 		sample_index = 8;
 		for (int i = 0; i < 13; i++)
 		{
@@ -235,7 +259,14 @@ CNetServerReadMultRecordFile::CNetServerReadMultRecordFile(NETHANDLE hServer, NE
 	}
 
 	packet2 = av_packet_alloc();
+#ifdef FFMPEG6
+
+#else
+
 	av_init_packet(packet2);
+#endif // FFMPEG6
+
+
 	if (pFormatCtx2->streams[stream_isVideo]->codecpar->extradata_size > 0)
 	{
 		int ret;
@@ -642,7 +673,13 @@ BeginReadFile:
 		}
 	}
 	packet2 = av_packet_alloc();
+
+#ifdef FFMPEG6
+
+#else
+
 	av_init_packet(packet2);
+#endif // FFMPEG6
 
 	return true;
 }

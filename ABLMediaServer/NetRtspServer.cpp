@@ -162,9 +162,8 @@ void    CNetRtspServer::SplitterMp3Buffer(unsigned char* szMp3Buffer, int nLengt
 	if (nPos1 != -1 && nPos2 == -1)
 	{
 		pMediaSource->PushAudio(szMp3Buffer + nPos1, nLength - nPos1, szAudioName, nChannels, nSampleRate);
-	}
-	else
-		pMediaSource->PushAudio(szMp3Buffer, nLength, szAudioName, nChannels, nSampleRate);
+	}else 
+		pMediaSource->PushAudio(szMp3Buffer, nLength , szAudioName, nChannels, nSampleRate);
 }
 
 //对AAC的rtp包进行切割
@@ -824,10 +823,10 @@ int  CNetRtspServer::GetRtspPathCount(char* szRtspURL)
  	nPos1 = strCurRtspURL.find("//", 0);
 	if (nPos1 < 0)
 		return 0;//地址非法 
-
+	nPos1 += 2;
 	while (true)
 	{
-		nPos1 = strCurRtspURL.find("/", nPos1 + 2);
+		nPos1 = strCurRtspURL.find("/", nPos1);
 		if (nPos1 >= 0)
 		{
 			nPos1 += 1;
@@ -844,9 +843,10 @@ int  CNetRtspServer::GetRtspPathCount(char* szRtspURL)
 	  strcpy(m_addStreamProxyStruct.url, szRtspURL);
 	  
 	  nPos1 = strCurRtspURL.find("//", 0);
+	  nPos1 += 2;
 	  if (nPos1 > 0)
 	  {
-		  nPos2 = strCurRtspURL.find("/", nPos1 + 2);
+		  nPos2 = strCurRtspURL.find("/", nPos1);
 		  if (nPos2 > 0)
 		  {
 			  nPos3 = strCurRtspURL.find("/", nPos2 + 1);
@@ -855,6 +855,7 @@ int  CNetRtspServer::GetRtspPathCount(char* szRtspURL)
 				  memcpy(m_addStreamProxyStruct.app, szRtspURL + nPos2 + 1, nPos3 - nPos2 - 1);
 				  memcpy(m_addStreamProxyStruct.stream, szRtspURL + nPos3 + 1, strlen(szRtspURL) - nPos3 - 1);
 			  }
+			  nPos2 += 1;
 		  }
 	  }
  	}
@@ -1523,7 +1524,7 @@ void  CNetRtspServer::InputRtspData(unsigned char* pRecvData, int nDataLength)
 		{//转发rtsp 媒体流 
 			m_videoFifo.InitFifo(MaxLiveingVideoFifoBufferLength);
 			m_audioFifo.InitFifo(MaxLiveingAudioFifoBufferLength);
-			pMediaSource->AddClientToMap(nClient);//媒体拷贝		
+			pMediaSource->AddClientToMap(nClient);//媒体拷贝
 
 			if(nReplayClient > 0 )
 			{

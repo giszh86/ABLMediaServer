@@ -1,24 +1,24 @@
 /*
 功能：
-        高性能流媒体服务器(ABLMediaServer)主框架
+		高性能流媒体服务器(ABLMediaServer)主框架
 
 		媒体输入方式             支持音视频格式
 ----------------------------------------------------------------------------------------
 				1、rtsp          视频H264、H265，音频AAC、G711A、G711U)
-				2、rtmp          视频H264，      音频AAC、G711A、G711U)      
+				2、rtmp          视频H264，      音频AAC、G711A、G711U)
 				3、国标GB28181   视频H264、H265，音频AAC、G711A、G711U)
 				4、WebRTC        视频H264、H265，音频AAC、G711A、G711U)
 				5、
 		媒体输输出方式
 ----------------------------------------------------------------------------------------
-		        1、rtsp          视频H264、H265，音频AAC、G711A、G711U)
-				2、rtmp          视频H264、H265，音频AAC、G711A、G711U) 
-				3、http-flv      视频H264、H265，音频AAC、G711A、G711U) 
-				4、m3u8          视频H264、H265，音频AAC、G711A、G711U) 
-				5、fmp4          视频H264、H265，音频AAC、G711A、G711U) 
-				6、国标GB28181   视频H264、H265，音频AAC、G711A、G711U) 
-				7、WebRTC        视频H264、H265，音频AAC、G711A、G711U) 
-				8、ws-flv        视频H264、H265，音频AAC、G711A、G711U) 
+				1、rtsp          视频H264、H265，音频AAC、G711A、G711U)
+				2、rtmp          视频H264、H265，音频AAC、G711A、G711U)
+				3、http-flv      视频H264、H265，音频AAC、G711A、G711U)
+				4、m3u8          视频H264、H265，音频AAC、G711A、G711U)
+				5、fmp4          视频H264、H265，音频AAC、G711A、G711U)
+				6、国标GB28181   视频H264、H265，音频AAC、G711A、G711U)
+				7、WebRTC        视频H264、H265，音频AAC、G711A、G711U)
+				8、ws-flv        视频H264、H265，音频AAC、G711A、G711U)
 
 日期    2021-04-02
 作者    罗家兄弟
@@ -29,16 +29,15 @@ E-Mail  79941308@qq.com
 #include "stdafx.h"
 #include "../webrtc-streamer/inc/rtc_obj_sdk.h"
 
-NETHANDLE srvhandle_8080,srvhandle_554, srvhandle_1935, srvhandle_6088, srvhandle_8088, srvhandle_8089, srvhandle_9088, srvhandle_9298, srvhandle_10000;
+NETHANDLE srvhandle_8080, srvhandle_554, srvhandle_1935, srvhandle_6088, srvhandle_8088, srvhandle_8089, srvhandle_9088, srvhandle_9298, srvhandle_10000;
 #ifdef USE_BOOST
 typedef boost::shared_ptr<CNetRevcBase> CNetRevcBase_ptr;
 typedef boost::unordered_map<NETHANDLE, CNetRevcBase_ptr>        CNetRevcBase_ptrMap;
 CNetRevcBase_ptrMap                                              xh_ABLNetRevcBaseMap;
 std::mutex                                                       ABL_CNetRevcBase_ptrMapLock;
-CNetBaseThreadPool*                                              NetBaseThreadPool;
-
-CNetBaseThreadPool*                                              RecordReplayThreadPool;//录像回放线程池
-CNetBaseThreadPool*                                              MessageSendThreadPool;//消息发送线程池
+CNetBaseThreadPool* NetBaseThreadPool;
+CNetBaseThreadPool* RecordReplayThreadPool;//录像回放线程池
+CNetBaseThreadPool* MessageSendThreadPool;//消息发送线程池
 
 /* 媒体数据存储 -------------------------------------------------------------------------------------*/
 typedef boost::shared_ptr<CMediaStreamSource>                    CMediaStreamSource_ptr;
@@ -61,7 +60,7 @@ std::mutex                                                       ABL_CPictureFil
 uint64_t                                                         ArrayAddMutePacketList[8192];//增加静音包的列表
 uint64_t                                                         nMaxAddMuteListNumber = 0; //最后一个静音对象所在的序号
 
-volatile bool                                                    ABL_bMediaServerRunFlag = true ;
+volatile bool                                                    ABL_bMediaServerRunFlag = true;
 volatile bool                                                    ABL_bExitMediaServerRunFlag = false; //退出处理线程标志 
 CMediaFifo                                                       pDisconnectBaseNetFifo;             //清理断裂的链接 
 CMediaFifo                                                       pReConnectStreamProxyFifo;          //需要重新连接代理ID 
@@ -72,24 +71,26 @@ char                                                             ABL_wwwMediaPat
 uint64_t                                                         ABL_nBaseCookieNumber = 100; //Cookie 序号 
 char                                                             ABL_szLocalIP[128] = { 0 };
 uint64_t                                                         ABL_nPrintCheckNetRevcBaseClientDisconnect = 0;
-unsigned int                                                     ABL_nCurrentSystemCpuCount = 4;//当前系统cpu物理核心数
+unsigned int                                                     ABL_nCurrentSystemCpuCount = 4;//当前系统cpu物理核心数 
 CNetRevcBase_ptr                                                 GetNetRevcBaseClient(NETHANDLE CltHandle);
-bool 	                                                         ABL_bCudaFlag  = false ;
-int                                                              ABL_nCudaCount = 0 ;
+bool 	                                                         ABL_bCudaFlag = false;
+int                                                              ABL_nCudaCount = 0;
 volatile bool                                                    ABL_bRestartServerFlag = false;
 volatile bool                                                    ABL_bInitXHNetSDKFlag = false;
 volatile bool                                                    ABL_bInitCudaSDKFlag = false;
 char                                                             szConfigFileName[512] = { 0 };
+CNetRevcBase_ptr                                                 CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
+CMediaStreamSource_ptr                                           GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound);
+
 #else
 
 typedef std::shared_ptr<CNetRevcBase> CNetRevcBase_ptr;
 typedef std::unordered_map<NETHANDLE, CNetRevcBase_ptr>        CNetRevcBase_ptrMap;
 CNetRevcBase_ptrMap                                              xh_ABLNetRevcBaseMap;
 std::mutex                                                       ABL_CNetRevcBase_ptrMapLock;
-CNetBaseThreadPool*                                              NetBaseThreadPool;
-
-CNetBaseThreadPool*                                              RecordReplayThreadPool;//录像回放线程池
-CNetBaseThreadPool*                                              MessageSendThreadPool;//消息发送线程池
+CNetBaseThreadPool* NetBaseThreadPool;
+CNetBaseThreadPool* RecordReplayThreadPool;//录像回放线程池
+CNetBaseThreadPool* MessageSendThreadPool;//消息发送线程池
 
 /* 媒体数据存储 -------------------------------------------------------------------------------------*/
 typedef std::shared_ptr<CMediaStreamSource>                    CMediaStreamSource_ptr;
@@ -112,7 +113,7 @@ std::mutex                                                       ABL_CPictureFil
 uint64_t                                                         ArrayAddMutePacketList[8192];//增加静音包的列表
 uint64_t                                                         nMaxAddMuteListNumber = 0; //最后一个静音对象所在的序号
 
-volatile bool                                                    ABL_bMediaServerRunFlag = true ;
+volatile bool                                                    ABL_bMediaServerRunFlag = true;
 volatile bool                                                    ABL_bExitMediaServerRunFlag = false; //退出处理线程标志 
 CMediaFifo                                                       pDisconnectBaseNetFifo;             //清理断裂的链接 
 CMediaFifo                                                       pReConnectStreamProxyFifo;          //需要重新连接代理ID 
@@ -123,16 +124,19 @@ char                                                             ABL_wwwMediaPat
 uint64_t                                                         ABL_nBaseCookieNumber = 100; //Cookie 序号 
 char                                                             ABL_szLocalIP[128] = { 0 };
 uint64_t                                                         ABL_nPrintCheckNetRevcBaseClientDisconnect = 0;
-unsigned int                                                     ABL_nCurrentSystemCpuCount = 4;//当前系统cpu物理核心数
+unsigned int                                                     ABL_nCurrentSystemCpuCount = 4;//当前系统cpu物理核心数 
 CNetRevcBase_ptr                                                 GetNetRevcBaseClient(NETHANDLE CltHandle);
-bool 	                                                         ABL_bCudaFlag  = false ;
-int                                                              ABL_nCudaCount = 0 ;
+bool 	                                                         ABL_bCudaFlag = false;
+int                                                              ABL_nCudaCount = 0;
 volatile bool                                                    ABL_bRestartServerFlag = false;
 volatile bool                                                    ABL_bInitXHNetSDKFlag = false;
 volatile bool                                                    ABL_bInitCudaSDKFlag = false;
 char                                                             szConfigFileName[512] = { 0 };
+CNetRevcBase_ptr                                                 CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL);
+CMediaStreamSource_ptr                                           GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound);
 
-#endif //USE_BOOST
+#endif  //USE_BOOST
+
 #ifdef OS_System_Windows
 //cuda 解码 
 HINSTANCE            hCudaDecodeInstance;
@@ -172,7 +176,7 @@ ABL_cudaEncode_UnInit cudaEncode_UnInit  = NULL;
 //把需要增加
 bool   AddClientToMapAddMutePacketList(uint64_t nClient)
 {
-	bool bRet = false ;
+	bool bRet = false;
 
 	for (int i = 0; i < 8192; i++)
 	{
@@ -180,21 +184,21 @@ bool   AddClientToMapAddMutePacketList(uint64_t nClient)
 		{
 			ArrayAddMutePacketList[i] = nClient;
 			bRet = true;
- 		}
+		}
 
 		//查找最大的序号
 		if (ArrayAddMutePacketList[i] > 0 && (i + 1) > nMaxAddMuteListNumber)
 			nMaxAddMuteListNumber = i + 1;
 	}
- 
+
 	return bRet;
 }
 
 bool   DelClientToMapFromMutePacketList(uint64_t nClient)
 {
 	bool bRet = false;
-	int  nMaxNumber = 0 ;
-	for (int i = 0; i < nMaxAddMuteListNumber ; i++)
+	int  nMaxNumber = 0;
+	for (int i = 0; i < nMaxAddMuteListNumber; i++)
 	{
 		if (bRet == false && ArrayAddMutePacketList[i] == nClient)
 		{
@@ -217,10 +221,10 @@ uint64_t GetCurrentSecondByTime(char* szDateTime)
 		return 0;
 
 	time_t clock;
-	struct tm tm ;
- 
- 	sscanf(szDateTime, "%04d%02d%02d%02d%02d%02d", &tm.tm_year, &tm.tm_mon, &tm.tm_mday, &tm.tm_hour, &tm.tm_min, &tm.tm_sec);
- 	tm.tm_year = tm.tm_year - 1900;
+	struct tm tm;
+
+	sscanf(szDateTime, "%04d%02d%02d%02d%02d%02d", &tm.tm_year, &tm.tm_mon, &tm.tm_mday, &tm.tm_hour, &tm.tm_min, &tm.tm_sec);
+	tm.tm_year = tm.tm_year - 1900;
 	tm.tm_mon = tm.tm_mon - 1;
 	tm.tm_isdst = -1;
 	clock = mktime(&tm);
@@ -246,13 +250,13 @@ uint64_t GetCurrentSecond()
 	return clock;
 }
 
-BOOL GBK2UTF8(char *szGbk, char *szUtf8, int Len)
+BOOL GBK2UTF8(char* szGbk, char* szUtf8, int Len)
 {
 	// 先将多字节GBK（CP_ACP或ANSI）转换成宽字符UTF-16  
 	// 得到转换后，所需要的内存字符数  
 	int n = MultiByteToWideChar(CP_ACP, 0, szGbk, -1, NULL, 0);
 	// 字符数乘以 sizeof(WCHAR) 得到字节数  
-	WCHAR *str1 = new WCHAR[sizeof(WCHAR) * n];
+	WCHAR* str1 = new WCHAR[sizeof(WCHAR) * n];
 	// 转换  
 	MultiByteToWideChar(CP_ACP,  // MultiByte的代码页Code Page  
 		0,            //附加标志，与音标有关  
@@ -280,27 +284,27 @@ BOOL GBK2UTF8(char *szGbk, char *szUtf8, int Len)
 CSimpleIniA                                                      ABL_ConfigFile;
 #endif
 
-MediaServerPort                                                  ABL_MediaServerPort; 
+MediaServerPort                                                  ABL_MediaServerPort;
 int64_t                                                          nTestRtmpPushID;
-unsigned short                                                   ABL_nGB28181Port = 10002 ;
+unsigned short                                                   ABL_nGB28181Port = 10002;
 
 #ifndef OS_System_Windows
 
 int GB2312ToUTF8(char* szSrc, size_t iSrcLen, char* szDst, size_t iDstLen)
 {
-      iconv_t cd = iconv_open("utf-8//IGNORE", "gb2312//IGNORE");
-      if(0 == cd)
-         return -2;
-      memset(szDst, 0, iDstLen);
-      char **src = &szSrc;
-      char **dst = &szDst;
-      if(-1 == (int)iconv(cd, src, &iSrcLen, dst, &iDstLen))
-	  {
-	     iconv_close(cd);
-         return -1;
-	  }
-      iconv_close(cd);
-      return 0;
+	iconv_t cd = iconv_open("utf-8//IGNORE", "gb2312//IGNORE");
+	if (0 == cd)
+		return -2;
+	memset(szDst, 0, iDstLen);
+	char** src = &szSrc;
+	char** dst = &szDst;
+	if (-1 == (int)iconv(cd, src, &iSrcLen, dst, &iDstLen))
+	{
+		iconv_close(cd);
+		return -1;
+	}
+	iconv_close(cd);
+	return 0;
 }
 
 unsigned long GetTickCount()
@@ -321,7 +325,7 @@ uint64_t GetCurrentSecond()
 {
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
-	return (tv.tv_sec) ;
+	return (tv.tv_sec);
 }
 
 //延时
@@ -335,52 +339,52 @@ void  Sleep(int mMicroSecond)
 
 bool GetLocalAdaptersInfo(string& strIPList)
 {
-	struct ifaddrs *ifaddr, *ifa;
+	struct ifaddrs* ifaddr, * ifa;
 
 	int family, s;
 
-	char szAllIPAddress[4096]={0};
-	char host[NI_MAXHOST] = {0};
+	char szAllIPAddress[4096] = { 0 };
+	char host[NI_MAXHOST] = { 0 };
 
-	if (getifaddrs(&ifaddr) == -1) 
+	if (getifaddrs(&ifaddr) == -1)
 	{ //通过getifaddrs函数得到所有网卡信息
-  		return false ;
- 	}
+		return false;
+	}
 
-	for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) 
+	for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next)
 	{ //做链表做循环
 
 		if (ifa->ifa_addr == NULL) //判断地址是否为空
- 			continue;
+			continue;
 
 		family = ifa->ifa_addr->sa_family; //得到IP地址的协议族
- 
-		if (family == AF_INET ) 
-		{ //判断协议族是AF_INET还是AF_INET6
-	        memset(host,0x00, NI_MAXHOST);
-			 
- 		    //通过getnameinfo函数得到对应的IP地址。NI_MAXHOST为宏定义，值为1025. NI_NUMERICHOST宏定义，和NI_NUMERICSERV对应，都试一下就知道了。
- 			s = getnameinfo(ifa->ifa_addr,
- 				(family == AF_INET) ? sizeof(struct sockaddr_in) :
- 				sizeof(struct sockaddr_in6),
- 				host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
 
-			 if( !(strcmp(host,"127.0.0.1") == 0 || strcmp(host, "0.0.0.0") == 0) )
-			 {
-			   strcat(szAllIPAddress,host);
-			   strcat(szAllIPAddress,",");
-			 }	
-			 
-			 if (s != 0) 
-			 {
+		if (family == AF_INET)
+		{ //判断协议族是AF_INET还是AF_INET6
+			memset(host, 0x00, NI_MAXHOST);
+
+			//通过getnameinfo函数得到对应的IP地址。NI_MAXHOST为宏定义，值为1025. NI_NUMERICHOST宏定义，和NI_NUMERICSERV对应，都试一下就知道了。
+			s = getnameinfo(ifa->ifa_addr,
+				(family == AF_INET) ? sizeof(struct sockaddr_in) :
+				sizeof(struct sockaddr_in6),
+				host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
+
+			if (!(strcmp(host, "127.0.0.1") == 0 || strcmp(host, "0.0.0.0") == 0))
+			{
+				strcat(szAllIPAddress, host);
+				strcat(szAllIPAddress, ",");
+			}
+
+			if (s != 0)
+			{
 				printf("getnameinfo() failed: %s\n", gai_strerror(s));
-  			 }
-       	}
+			}
+		}
 	}
-	WriteLog(Log_Debug, "szAllIPAddress = %s ",szAllIPAddress);
+	WriteLog(Log_Debug, "szAllIPAddress = %s ", szAllIPAddress);
 	strIPList = szAllIPAddress;
-	
-    return true ;
+
+	return true;
 }
 
 #endif
@@ -446,7 +450,7 @@ CMediaStreamSource_ptr CreateMediaStreamSource(char* szURL, uint64_t nClient, Me
 	return pXHClient;
 }
 
-CMediaStreamSource_ptr GetMediaStreamSource(char* szURL,bool bNoticeStreamNoFound=false)
+CMediaStreamSource_ptr GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound = false)
 {
 	std::lock_guard<std::mutex> lock(ABL_CMediaStreamSourceMapLock);
 
@@ -462,22 +466,22 @@ CMediaStreamSource_ptr GetMediaStreamSource(char* szURL,bool bNoticeStreamNoFoun
 	else
 	{
 		//码流找不到
-		if (ABL_MediaServerPort.hook_enable == 1 && bNoticeStreamNoFound && ABL_MediaServerPort.nClientNotFound > 0 && strstr(szURL, RecordFileReplaySplitter) == NULL)
+		if (ABL_MediaServerPort.hook_enable == 1 && bNoticeStreamNoFound && strstr(szURL, RecordFileReplaySplitter) == NULL)
 		{
 			int      nPos2 = 0;
 			char     szApp[512] = { 0 };
 			char     szStream[512] = { 0 };
 			string   strMediaSource = szURL;
 
-			nPos2 =  strMediaSource.find("/", 1);
-			if (nPos2 > 0 && nPos2 != string::npos && strlen(szURL) < 512 )
+			nPos2 = strMediaSource.find("/", 1);
+			if (nPos2 > 0 && nPos2 != string::npos && strlen(szURL) < 512)
 			{
- 				memcpy(szApp, szURL + 1, nPos2 - 1);
+				memcpy(szApp, szURL + 1, nPos2 - 1);
 				memcpy(szStream, szURL + nPos2 + 1, strlen(szURL) - nPos2 - 1);
 			}
 
 			MessageNoticeStruct msgNotice;
-			msgNotice.nClient = ABL_MediaServerPort.nClientNotFound;
+			msgNotice.nClient = NetBaseNetType_HttpClient_Not_found;
 			sprintf(msgNotice.szMsg, "{\"app\":\"%s\",\"stream\":\"%s\",\"mediaServerId\":\"%s\"}", szApp, szStream, ABL_MediaServerPort.mediaServerID);
 			pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
 		}
@@ -512,12 +516,12 @@ bool  DeleteMediaStreamSource(char* szURL)
 	if (iterator1 != xh_ABLMediaStreamSourceMap.end())
 	{
 		//媒体断线时通知
-		if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nClientDisconnect > 0 && (strlen((*iterator1).second->m_mediaCodecInfo.szVideoName) > 0 || strlen((*iterator1).second->m_mediaCodecInfo.szAudioName) > 0) )
+		if (ABL_MediaServerPort.hook_enable == 1 && (strlen((*iterator1).second->m_mediaCodecInfo.szVideoName) > 0 || strlen((*iterator1).second->m_mediaCodecInfo.szAudioName) > 0))
 		{
 			MessageNoticeStruct msgNotice;
-			msgNotice.nClient = ABL_MediaServerPort.nClientDisconnect;
+			msgNotice.nClient = NetBaseNetType_HttpClient_on_stream_disconnect;
 			sprintf(msgNotice.szMsg, "{\"app\":\"%s\",\"stream\":\"%s\",\"mediaServerId\":\"%s\",\"networkType\":%d,\"key\":%llu}", (*iterator1).second->app, (*iterator1).second->stream, ABL_MediaServerPort.mediaServerID, (*iterator1).second->netBaseNetType, (*iterator1).second->nClient);
- 			pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
+			pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
 		}
 
 		xh_ABLMediaStreamSourceMap.erase(iterator1);
@@ -533,13 +537,13 @@ bool  DeleteMediaStreamSource(char* szURL)
 bool DeleteClientMediaStreamSource(uint64_t nClient)
 {
 	std::lock_guard<std::mutex> lock(ABL_CMediaStreamSourceMapLock);
-
+	CMediaStreamSource_ptrMap::iterator iterator1;
 	CMediaStreamSource_ptr   pClient = NULL;
 	bool bDeleteFlag = false;
 
-	for (auto iterator1 : xh_ABLMediaStreamSourceMap)
+	for (iterator1 = xh_ABLMediaStreamSourceMap.begin(); iterator1 != xh_ABLMediaStreamSourceMap.end(); ++iterator1)
 	{
-		pClient = iterator1.second;
+		pClient = (*iterator1).second;
 		if (pClient->DeleteClientFromMap(nClient))
 		{
 			bDeleteFlag = true;
@@ -553,28 +557,28 @@ bool DeleteClientMediaStreamSource(uint64_t nClient)
 int  CloseMediaStreamSource(closeStreamsStruct closeStruct)
 {
 	std::lock_guard<std::mutex> lock(ABL_CMediaStreamSourceMapLock);
-
+	CMediaStreamSource_ptrMap::iterator iterator1;
 	CMediaStreamSource_ptr   pClient = NULL;
-	int  nDeleteCount =  0 ;
+	int  nDeleteCount = 0;
 
-	for (auto iterator1 = xh_ABLMediaStreamSourceMap.begin(); iterator1 != xh_ABLMediaStreamSourceMap.end(); ++iterator1)
+	for (iterator1 = xh_ABLMediaStreamSourceMap.begin(); iterator1 != xh_ABLMediaStreamSourceMap.end(); ++iterator1)
 	{
 		pClient = (*iterator1).second;
- 
+
 		if (closeStruct.force == 1 && strlen(closeStruct.app) > 0 && strlen(closeStruct.stream) > 0)
 		{//强制关闭
 			if (strcmp(pClient->app, closeStruct.app) == 0 && strcmp(pClient->stream, closeStruct.stream) == 0)
 			{
- 				nDeleteCount ++;
+				nDeleteCount++;
 				pDisconnectBaseNetFifo.push((unsigned char*)&pClient->nClient, sizeof(pClient->nClient));
 			}
 		}
 		else if (closeStruct.force == 1 && strlen(closeStruct.app) > 0 && strlen(closeStruct.stream) == 0)
 		{//强制关闭
-			if (strcmp(pClient->app, closeStruct.app) == 0 )
+			if (strcmp(pClient->app, closeStruct.app) == 0)
 			{
 				nDeleteCount++;
- 				pDisconnectBaseNetFifo.push((unsigned char*)&pClient->nClient, sizeof(pClient->nClient));
+				pDisconnectBaseNetFifo.push((unsigned char*)&pClient->nClient, sizeof(pClient->nClient));
 			}
 		}
 		else if (closeStruct.force == 1 && strlen(closeStruct.app) == 0 && strlen(closeStruct.stream) > 0)
@@ -587,14 +591,14 @@ int  CloseMediaStreamSource(closeStreamsStruct closeStruct)
 		}
 		else if (closeStruct.force == 1 && strlen(closeStruct.app) == 0 && strlen(closeStruct.stream) == 0)
 		{//强制关闭
-  				nDeleteCount++;
-				pDisconnectBaseNetFifo.push((unsigned char*)&pClient->nClient, sizeof(pClient->nClient));
+			nDeleteCount++;
+			pDisconnectBaseNetFifo.push((unsigned char*)&pClient->nClient, sizeof(pClient->nClient));
 		}
 		else if (closeStruct.force == 0 && strlen(closeStruct.app) > 0 && strlen(closeStruct.stream) > 0)
 		{//不强制关闭
 			if (pClient->mediaSendMap.size() == 0 && strcmp(pClient->app, closeStruct.app) == 0 && strcmp(pClient->stream, closeStruct.stream) == 0)
 			{
-				nDeleteCount ++;
+				nDeleteCount++;
 				pDisconnectBaseNetFifo.push((unsigned char*)&pClient->nClient, sizeof(pClient->nClient));
 			}
 		}
@@ -603,7 +607,7 @@ int  CloseMediaStreamSource(closeStreamsStruct closeStruct)
 			if (pClient->mediaSendMap.size() == 0 && strcmp(pClient->app, closeStruct.app) == 0)
 			{
 				nDeleteCount++;
- 				pDisconnectBaseNetFifo.push((unsigned char*)&pClient->nClient, sizeof(pClient->nClient));
+				pDisconnectBaseNetFifo.push((unsigned char*)&pClient->nClient, sizeof(pClient->nClient));
 			}
 		}
 		else if (closeStruct.force == 0 && strlen(closeStruct.app) == 0 && strlen(closeStruct.stream) > 0)
@@ -615,7 +619,7 @@ int  CloseMediaStreamSource(closeStreamsStruct closeStruct)
 			}
 		}
 	}
-	return nDeleteCount ;
+	return nDeleteCount;
 }
 
 //先把基类的视频接入对象ID全部装入FIFO，这样减少一个lock，杜绝外部混乱调用http api 函数造成死锁 
@@ -627,10 +631,10 @@ int   GetAllNetBaseObjectToFifo()
 
 	for (iterator1 = xh_ABLNetRevcBaseMap.begin(); iterator1 != xh_ABLNetRevcBaseMap.end(); ++iterator1)
 	{
-		CNetRevcBase_ptr pClient = (*iterator1).second; 
-		if (pClient->netBaseNetType == NetBaseNetType_WebSocektRecvAudio || pClient->netBaseNetType == NetBaseNetType_addStreamProxyControl || pClient->netBaseNetType == NetBaseNetType_RtspServerRecvPush || pClient->netBaseNetType == NetBaseNetType_RtmpServerRecvPush ||
+		CNetRevcBase_ptr pClient = (*iterator1).second;
+		if (pClient->netBaseNetType == NetBaseNetType_WebSocektRecvAudio || pClient->netBaseNetType == NetBaseNetType_addStreamProxyControl || pClient->netBaseNetType == NetBaseNetType_RtspServerRecvPush || pClient->netBaseNetType == NetBaseNetType_RtmpServerRecvPush || pClient->netBaseNetType == NetBaseNetType_NetServerReadMultRecordFile ||
 			pClient->netBaseNetType == NetBaseNetType_NetGB28181RtpServerUDP || pClient->netBaseNetType == NetBaseNetType_NetGB28181RtpServerTCP_Server || pClient->netBaseNetType == ReadRecordFileInput_ReadFMP4File || pClient->netBaseNetType == NetBaseNetType_NetGB28181UDPTSStreamInput || pClient->netBaseNetType == NetBaseNetType_NetGB28181RtpServerTCP_Active ||
-			pClient->netBaseNetType == NetBaseNetType_NetGB28181UDPPSStreamInput || (pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpUDP && strlen(pClient->m_startSendRtpStruct.recv_app) > 0 && strlen(pClient->m_startSendRtpStruct.recv_stream) > 0) || (pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Connect  && strlen(pClient->m_startSendRtpStruct.recv_app) > 0 && strlen(pClient->m_startSendRtpStruct.recv_stream) > 0) ||
+			pClient->netBaseNetType == NetBaseNetType_NetGB28181UDPPSStreamInput || (pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpUDP && strlen(pClient->m_startSendRtpStruct.recv_app) > 0 && strlen(pClient->m_startSendRtpStruct.recv_stream) > 0) || (pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Connect && strlen(pClient->m_startSendRtpStruct.recv_app) > 0 && strlen(pClient->m_startSendRtpStruct.recv_stream) > 0) ||
 			(pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Passive && strlen(pClient->m_startSendRtpStruct.recv_app) > 0 && strlen(pClient->m_startSendRtpStruct.recv_stream) > 0) || pClient->netBaseNetType == NetBaseNetType_GB28181TcpPSInputStream)
 		{//代理拉流（rtsp,rtmp,flv,hls ）,rtsp推流，rtmp推流，gb28181，webrtc 
 			pNetBaseObjectFifo.push((unsigned char*)&(*iterator1).second->nClient, sizeof((*iterator1).second->nClient));
@@ -644,14 +648,14 @@ int   GetAllNetBaseObjectToFifo()
 int GetAllMediaStreamSource(char* szMediaSourceInfo, getMediaListStruct mediaListStruct)
 {
 	int              nMediaCount = 0;
-	char             szTemp2[1024*48] = { 0 };
+	char             szTemp2[1024 * 48] = { 0 };
 	char             szShareMediaURL[string_length_2048];
 	bool             bAddFlag = false;
 	uint64_t         nNoneReadDuration = 0;
 	unsigned short   nClientPort;
 	char             szApp[string_length_256] = { 0 };
 	char             szStream[string_length_512] = { 0 };
-	unsigned char*   pData;
+	unsigned char* pData;
 	uint64_t         nClient;
 	int              nLength;
 
@@ -659,8 +663,8 @@ int GetAllMediaStreamSource(char* szMediaSourceInfo, getMediaListStruct mediaLis
 	GetAllNetBaseObjectToFifo();
 
 	if (xh_ABLMediaStreamSourceMap.size() > 0)
- 		strcpy(szMediaSourceInfo, "{\"code\":0,\"memo\":\"success\",\"mediaList\":[");
- 
+		strcpy(szMediaSourceInfo, "{\"code\":0,\"memo\":\"success\",\"mediaList\":[");
+
 	while ((pData = pNetBaseObjectFifo.pop(&nLength)) != NULL)
 	{
 		memcpy((char*)&nClient, pData, sizeof(uint64_t));
@@ -728,19 +732,19 @@ int GetAllMediaStreamSource(char* szMediaSourceInfo, getMediaListStruct mediaLis
 
 					if (tmpMediaSource->nMediaSourceType == MediaSourceType_LiveMedia)
 					{//实况播放
-						sprintf(szTemp2, "{\"key\":%llu,\"port\":%d,\"app\":\"%s\",\"stream\":\"%s\",\"sim\":\"%s\",\"status\":%s,\"enable_hls\":%s,\"transcodingStatus\":%s,\"sourceURL\":\"%s\",\"networkType\":%d,\"readerCount\":%d,\"noneReaderDuration\":%llu,\"videoCodec\":\"%s\",\"videoFrameSpeed\":%d,\"width\":%d,\"height\":%d,\"videoBitrate\":%d,\"audioCodec\":\"%s\",\"audioChannels\":%d,\"audioSampleRate\":%d,\"audioBitrate\":%d,\"url\":{\"rtsp\":\"rtsp://%s:%d/%s/%s\",\"rtmp\":\"rtmp://%s:%d/%s/%s\",\"http-flv\":\"http://%s:%d/%s/%s.flv\",\"ws-flv\":\"ws://%s:%d/%s/%s.flv\",\"http-mp4\":\"http://%s:%d/%s/%s.mp4\",\"http-hls\":\"http://%s:%d/%s/%s.m3u8\",\"webrtc\":\"http://%s:%d/webrtc-streamer.html?video=/%s/%s\"}},", tmpMediaSource->nClient, nClientPort, szApp, szStream, tmpMediaSource->sim, tmpMediaSource->enable_mp4 == true ? "true" : "false",tmpMediaSource->enable_hls == true ? "true" : "false", tmpMediaSource->H265ConvertH264_enable == true ? "true" : "false", pClient->m_addStreamProxyStruct.url, pClient->netBaseNetType, tmpMediaSource->mediaSendMap.size(), nNoneReadDuration,
+						sprintf(szTemp2, "{\"key\":%llu,\"port\":%d,\"app\":\"%s\",\"stream\":\"%s\",\"sim\":\"%s\",\"status\":%s,\"enable_hls\":%s,\"transcodingStatus\":%s,\"sourceURL\":\"%s\",\"networkType\":%d,\"readerCount\":%d,\"noneReaderDuration\":%llu,\"videoCodec\":\"%s\",\"videoFrameSpeed\":%d,\"width\":%d,\"height\":%d,\"videoBitrate\":%d,\"audioCodec\":\"%s\",\"audioChannels\":%d,\"audioSampleRate\":%d,\"audioBitrate\":%d,\"url\":{\"rtsp\":\"rtsp://%s:%d/%s/%s\",\"rtmp\":\"rtmp://%s:%d/%s/%s\",\"http-flv\":\"http://%s:%d/%s/%s.flv\",\"ws-flv\":\"ws://%s:%d/%s/%s.flv\",\"http-mp4\":\"http://%s:%d/%s/%s.mp4\",\"http-hls\":\"http://%s:%d/%s/%s.m3u8\",\"webrtc\":\"http://%s:%d/webrtc-streamer.html?video=/%s/%s\"}},", tmpMediaSource->nClient, nClientPort, szApp, szStream, tmpMediaSource->sim, tmpMediaSource->enable_mp4 == true ? "true" : "false", tmpMediaSource->enable_hls == true ? "true" : "false", tmpMediaSource->H265ConvertH264_enable == true ? "true" : "false", pClient->m_addStreamProxyStruct.url, pClient->netBaseNetType, tmpMediaSource->mediaSendMap.size(), nNoneReadDuration,
 							tmpMediaSource->m_mediaCodecInfo.szVideoName, tmpMediaSource->m_mediaCodecInfo.nVideoFrameRate, tmpMediaSource->m_mediaCodecInfo.nWidth, tmpMediaSource->m_mediaCodecInfo.nHeight, tmpMediaSource->m_mediaCodecInfo.nVideoBitrate, tmpMediaSource->m_mediaCodecInfo.szAudioName, tmpMediaSource->m_mediaCodecInfo.nChannels, tmpMediaSource->m_mediaCodecInfo.nSampleRate, tmpMediaSource->m_mediaCodecInfo.nAudioBitrate,
 							ABL_szLocalIP, ABL_MediaServerPort.nRtspPort, szApp, szStream,
 							ABL_szLocalIP, ABL_MediaServerPort.nRtmpPort, szApp, szStream,
 							ABL_szLocalIP, ABL_MediaServerPort.nHttpFlvPort, szApp, szStream,
 							ABL_szLocalIP, ABL_MediaServerPort.nWSFlvPort, szApp, szStream,
 							ABL_szLocalIP, ABL_MediaServerPort.nHttpMp4Port, szApp, szStream,
-							ABL_szLocalIP, ABL_MediaServerPort.nHlsPort, szApp, szStream, 
-						    ABL_szLocalIP, ABL_MediaServerPort.nWebRtcPort, szApp, szStream);
+							ABL_szLocalIP, ABL_MediaServerPort.nHlsPort, szApp, szStream,
+							ABL_szLocalIP, ABL_MediaServerPort.nWebRtcPort, szApp, szStream);
 					}
 					else
 					{//录像点播
-						sprintf(szTemp2, "{\"key\":%llu,\"port\":%d,\"app\":\"%s\",\"stream\":\"%s\",\"sim\":\"%s\",\"status\":%s,\"enable_hls\":%s,\"transcodingStatus\":%s,\"sourceURL\":\"%s\",\"networkType\":%d,\"readerCount\":%d,\"noneReaderDuration\":%llu,\"videoCodec\":\"%s\",\"videoFrameSpeed\":%d,\"width\":%d,\"height\":%d,\"videoBitrate\":%d,\"audioCodec\":\"%s\",\"audioChannels\":%d,\"audioSampleRate\":%d,\"audioBitrate\":%d,\"url\":{\"rtsp\":\"rtsp://%s:%d/%s/%s\",\"rtmp\":\"rtmp://%s:%d/%s/%s\",\"http-flv\":\"http://%s:%d/%s/%s.flv\",\"ws-flv\":\"ws://%s:%d/%s/%s.flv\",\"http-mp4\":\"http://%s:%d/%s/%s.mp4\"}},", tmpMediaSource->nClient, nClientPort, szApp, szStream, tmpMediaSource->sim, tmpMediaSource->enable_mp4 == true ? "true" : "false","false", tmpMediaSource->enable_mp4 == true ? "true" : "false", pClient->m_addStreamProxyStruct.url, pClient->netBaseNetType, tmpMediaSource->mediaSendMap.size(), nNoneReadDuration,
+						sprintf(szTemp2, "{\"key\":%llu,\"port\":%d,\"app\":\"%s\",\"stream\":\"%s\",\"sim\":\"%s\",\"status\":%s,\"enable_hls\":%s,\"transcodingStatus\":%s,\"sourceURL\":\"%s\",\"networkType\":%d,\"readerCount\":%d,\"noneReaderDuration\":%llu,\"videoCodec\":\"%s\",\"videoFrameSpeed\":%d,\"width\":%d,\"height\":%d,\"videoBitrate\":%d,\"audioCodec\":\"%s\",\"audioChannels\":%d,\"audioSampleRate\":%d,\"audioBitrate\":%d,\"url\":{\"rtsp\":\"rtsp://%s:%d/%s/%s\",\"rtmp\":\"rtmp://%s:%d/%s/%s\",\"http-flv\":\"http://%s:%d/%s/%s.flv\",\"ws-flv\":\"ws://%s:%d/%s/%s.flv\",\"http-mp4\":\"http://%s:%d/%s/%s.mp4\"}},", tmpMediaSource->nClient, nClientPort, szApp, szStream, tmpMediaSource->sim, tmpMediaSource->enable_mp4 == true ? "true" : "false", "false", tmpMediaSource->enable_mp4 == true ? "true" : "false", pClient->m_addStreamProxyStruct.url, pClient->netBaseNetType, tmpMediaSource->mediaSendMap.size(), nNoneReadDuration,
 							tmpMediaSource->m_mediaCodecInfo.szVideoName, tmpMediaSource->m_mediaCodecInfo.nVideoFrameRate, tmpMediaSource->m_mediaCodecInfo.nWidth, tmpMediaSource->m_mediaCodecInfo.nHeight, tmpMediaSource->m_mediaCodecInfo.nVideoBitrate, tmpMediaSource->m_mediaCodecInfo.szAudioName, tmpMediaSource->m_mediaCodecInfo.nChannels, tmpMediaSource->m_mediaCodecInfo.nSampleRate, tmpMediaSource->m_mediaCodecInfo.nAudioBitrate,
 							ABL_szLocalIP, ABL_MediaServerPort.nRtspPort, szApp, szStream,
 							ABL_szLocalIP, ABL_MediaServerPort.nRtmpPort, szApp, szStream,
@@ -753,8 +757,8 @@ int GetAllMediaStreamSource(char* szMediaSourceInfo, getMediaListStruct mediaLis
 
 					nMediaCount++;
 				}
- 			}
-	     }//if (pClient != NULL)
+			}
+		}//if (pClient != NULL)
 
 		pNetBaseObjectFifo.pop_front();
 	}
@@ -766,8 +770,8 @@ int GetAllMediaStreamSource(char* szMediaSourceInfo, getMediaListStruct mediaLis
 	}
 
 	if (nMediaCount == 0)
- 		sprintf(szMediaSourceInfo, "{\"code\":%d,\"memo\":\"MediaSource [app: %s , stream: %s] Not Found .\"}", IndexApiCode_RequestFileNotFound, mediaListStruct.app, mediaListStruct.stream);
- 
+		sprintf(szMediaSourceInfo, "{\"code\":%d,\"memo\":\"MediaSource [app: %s , stream: %s] Not Found .\"}", IndexApiCode_RequestFileNotFound, mediaListStruct.app, mediaListStruct.stream);
+
 	return nMediaCount;
 }
 
@@ -776,29 +780,29 @@ int GetALLListServerPort(char* szMediaSourceInfo, ListServerPortStruct  listServ
 {
 	std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
 
-
+	CNetRevcBase_ptrMap::iterator iterator1;
 	int   nMediaCount = 0;
 	char  szTemp2[string_length_8192] = { 0 };
-	uint64_t nClient = 0 ;
+	uint64_t nClient = 0;
 
 	if (xh_ABLNetRevcBaseMap.size() > 0)
 	{
 		strcpy(szMediaSourceInfo, "{\"code\":0,\"memo\":\"success\",\"data\":[");
 	}
 
-	for (auto iterator1 = xh_ABLNetRevcBaseMap.begin(); iterator1 != xh_ABLNetRevcBaseMap.end(); ++iterator1)
+	for (iterator1 = xh_ABLNetRevcBaseMap.begin(); iterator1 != xh_ABLNetRevcBaseMap.end(); ++iterator1)
 	{
 		CNetRevcBase_ptr    pClient = (*iterator1).second;
 
 		//WriteLog(Log_Debug,  "GetALLListServerPort netBaseNetType = %d, nClient = %llu , app = %s ,string = %s ,nClientPort = %d",pClient->netBaseNetType, pClient->nClient, pClient->m_addStreamProxyStruct.app,pClient->m_addStreamProxyStruct.stream,pClient->nClientPort);
 
-		if (strlen(pClient->m_addStreamProxyStruct.app) > 0 && strlen(pClient->m_addStreamProxyStruct.stream) > 0 && pClient->nClientPort > 0 )
+		if (strlen(pClient->m_addStreamProxyStruct.app) > 0 && strlen(pClient->m_addStreamProxyStruct.stream) > 0 && pClient->nClientPort > 0)
 		{
-			if(pClient->nClientPort >= 0 && !(pClient->netBaseNetType == NetBaseNetType_addStreamProxyControl || pClient->netBaseNetType == NetBaseNetType_addPushProxyControl || pClient->netBaseNetType == NetBaseNetType_NetServerHTTP ||
-			   pClient->netBaseNetType == NetBaseNetType_RecordFile_FMP4 || pClient->netBaseNetType == NetBaseNetType_RecordFile_MP4 || pClient->netBaseNetType == RtspPlayerType_RecordReplay || pClient->netBaseNetType == NetBaseNetType_SnapPicture_JPEG ||
-			  pClient->netBaseNetType == NetBaseNetType_GB28181TcpPSInputStream
+			if (pClient->nClientPort >= 0 && !(pClient->netBaseNetType == NetBaseNetType_addStreamProxyControl || pClient->netBaseNetType == NetBaseNetType_addPushProxyControl || pClient->netBaseNetType == NetBaseNetType_NetServerHTTP ||
+				pClient->netBaseNetType == NetBaseNetType_RecordFile_FMP4 || pClient->netBaseNetType == NetBaseNetType_RecordFile_MP4 || pClient->netBaseNetType == RtspPlayerType_RecordReplay || pClient->netBaseNetType == NetBaseNetType_SnapPicture_JPEG ||
+				pClient->netBaseNetType == NetBaseNetType_GB28181TcpPSInputStream
 				))
-			{ 
+			{
 				memset(szTemp2, 0x00, sizeof(szTemp2));
 
 				if (pClient->netBaseNetType >= NetBaseNetType_RtspClientRecv && pClient->netBaseNetType <= NetBaseNetType_GB28181ClientPushUDP)
@@ -818,7 +822,7 @@ int GetALLListServerPort(char* szMediaSourceInfo, ListServerPortStruct  listServ
 				{
 					sprintf(szTemp2, "{\"key\":%llu,\"app\":\"%s\",\"stream\":\"%s\",\"networkType\":%d,\"port\":%d},", nClient, pClient->m_addStreamProxyStruct.app, pClient->m_addStreamProxyStruct.stream, pClient->netBaseNetType, pClient->nClientPort);
 				}
-				else if (strlen(listServerPortStruct.app) == 0 && strlen(listServerPortStruct.stream) >  0 && strcmp(pClient->m_addStreamProxyStruct.stream, listServerPortStruct.stream) == 0)
+				else if (strlen(listServerPortStruct.app) == 0 && strlen(listServerPortStruct.stream) > 0 && strcmp(pClient->m_addStreamProxyStruct.stream, listServerPortStruct.stream) == 0)
 				{
 					sprintf(szTemp2, "{\"key\":%llu,\"app\":\"%s\",\"stream\":\"%s\",\"networkType\":%d,\"port\":%d},", nClient, pClient->m_addStreamProxyStruct.app, pClient->m_addStreamProxyStruct.stream, pClient->netBaseNetType, pClient->nClientPort);
 				}
@@ -852,23 +856,23 @@ int GetAllOutList(char* szMediaSourceInfo, char* szOutType)
 {
 	std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
 
-
+	CNetRevcBase_ptrMap::iterator iterator1;
 	CNetRevcBase_ptr   pClient = NULL;
 	int   nMediaCount = 0;
 	char  szTemp2[string_length_8192] = { 0 };
-	uint64_t nClient = 0 ;
- 
+	uint64_t nClient = 0;
+
 	if (xh_ABLMediaStreamSourceMap.size() > 0)
 	{
 		strcpy(szMediaSourceInfo, "{\"code\":0,\"memo\":\"success\",\"outList\":[");
 	}
 
-	for (auto iterator1 = xh_ABLNetRevcBaseMap.begin(); iterator1 != xh_ABLNetRevcBaseMap.end(); ++iterator1)
+	for (iterator1 = xh_ABLNetRevcBaseMap.begin(); iterator1 != xh_ABLNetRevcBaseMap.end(); ++iterator1)
 	{
 		pClient = (*iterator1).second;
 
 		if (pClient->netBaseNetType == NetBaseNetType_RtmpServerSendPush || pClient->netBaseNetType == NetBaseNetType_RtspServerSendPush || pClient->netBaseNetType == NetBaseNetType_HttpFLVServerSendPush ||
-			pClient->netBaseNetType == NetBaseNetType_HttpHLSServerSendPush || pClient->netBaseNetType == NetBaseNetType_WsFLVServerSendPush || pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpUDP || 
+			pClient->netBaseNetType == NetBaseNetType_HttpHLSServerSendPush || pClient->netBaseNetType == NetBaseNetType_WsFLVServerSendPush || pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpUDP ||
 			pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Connect || pClient->netBaseNetType == NetBaseNetType_RtspClientPush || pClient->netBaseNetType == NetBaseNetType_RtmpClientPush ||
 			pClient->netBaseNetType == NetBaseNetType_HttpMP4ServerSendPush || pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Passive || pClient->netBaseNetType == NetBaseNetType_NetClientWebrtcPlayer)
 		{
@@ -877,16 +881,16 @@ int GetAllOutList(char* szMediaSourceInfo, char* szOutType)
 			else
 				nClient = pClient->nClient;
 
- 			if (strlen(pClient->mediaCodecInfo.szVideoName) > 0 || strlen(pClient->mediaCodecInfo.szAudioName) > 0)
+			if (strlen(pClient->mediaCodecInfo.szVideoName) > 0 || strlen(pClient->mediaCodecInfo.szAudioName) > 0)
 			{
 				sprintf(szTemp2, "{\"key\":%llu,\"app\":\"%s\",\"stream\":\"%s\",\"sourceURL\":\"%s\",\"videoCodec\":\"%s\",\"videoFrameSpeed\":%d,\"width\":%d,\"height\":%d,\"audioCodec\":\"%s\",\"audioChannels\":%d,\"audioSampleRate\":%d,\"networkType\":%d,\"dst_url\":\"%s\",\"dst_port\":%d},", nClient, pClient->m_addStreamProxyStruct.app, pClient->m_addStreamProxyStruct.stream, pClient->m_addStreamProxyStruct.url,
-					pClient->mediaCodecInfo.szVideoName, pClient->mediaCodecInfo.nVideoFrameRate, pClient->mediaCodecInfo.nWidth, pClient->mediaCodecInfo.nHeight, pClient->mediaCodecInfo.szAudioName, pClient->mediaCodecInfo.nChannels, pClient->mediaCodecInfo.nSampleRate, pClient->netBaseNetType, pClient->szClientIP,pClient->nClientPort);
+					pClient->mediaCodecInfo.szVideoName, pClient->mediaCodecInfo.nVideoFrameRate, pClient->mediaCodecInfo.nWidth, pClient->mediaCodecInfo.nHeight, pClient->mediaCodecInfo.szAudioName, pClient->mediaCodecInfo.nChannels, pClient->mediaCodecInfo.nSampleRate, pClient->netBaseNetType, pClient->szClientIP, pClient->nClientPort);
 
 				strcat(szMediaSourceInfo, szTemp2);
 
 				nMediaCount++;
 			}
- 		}
+		}
 	}
 
 	if (nMediaCount > 0)
@@ -907,8 +911,10 @@ int GetAllOutList(char* szMediaSourceInfo, char* szOutType)
 bool CheckAppStreamExisting(char* szAppStreamURL)
 {
 	std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
+
+	CNetRevcBase_ptrMap::iterator iterator1;
 	CNetRevcBase_ptr   pClient = NULL;
-	bool   bAppStreamExisting = false ;
+	bool   bAppStreamExisting = false;
 	char   szTemp2[string_length_8192] = { 0 };
 
 	if (xh_ABLNetRevcBaseMap.size() <= 0)
@@ -916,7 +922,7 @@ bool CheckAppStreamExisting(char* szAppStreamURL)
 		return false;
 	}
 
-	for (auto iterator1 = xh_ABLNetRevcBaseMap.begin(); iterator1 != xh_ABLNetRevcBaseMap.end(); ++iterator1)
+	for (iterator1 = xh_ABLNetRevcBaseMap.begin(); iterator1 != xh_ABLNetRevcBaseMap.end(); ++iterator1)
 	{
 		pClient = (*iterator1).second;
 		if (pClient != NULL && pClient->netBaseNetType != NetBaseNetType_NetServerHTTP)
@@ -924,16 +930,16 @@ bool CheckAppStreamExisting(char* szAppStreamURL)
 			sprintf(szTemp2, "/%s/%s", pClient->m_addStreamProxyStruct.app, pClient->m_addStreamProxyStruct.stream);
 			if (strcmp(szTemp2, szAppStreamURL) == 0)
 			{
-				bAppStreamExisting = true ;
+				bAppStreamExisting = true;
 				WriteLog(Log_Debug, "CheckAppStreamExisting(), url = %s  已经存在 ,正在接入 !", szAppStreamURL);
 				break;
 			}
 		}
 	}
-	if(!bAppStreamExisting)
-	  WriteLog(Log_Debug, "CheckAppStreamExisting(), url = %s  尚未使用 !", szAppStreamURL);
+	if (!bAppStreamExisting)
+		WriteLog(Log_Debug, "CheckAppStreamExisting(), url = %s  尚未使用 !", szAppStreamURL);
 
-	return bAppStreamExisting ;
+	return bAppStreamExisting;
 }
 
 /* 媒体数据存储 -------------------------------------------------------------------------------------*/
@@ -948,12 +954,12 @@ int  DeleteExpireM3u8File()
 	CRecordFileSource_ptr   pRecord = NULL;
 	int                     nDeleteCount = 0;
 
-	for (it = xh_ABLRecordFileSourceMap.begin() ;it != xh_ABLRecordFileSourceMap.end(); ++it)
+	for (it = xh_ABLRecordFileSourceMap.begin(); it != xh_ABLRecordFileSourceMap.end(); ++it)
 	{
 		pRecord = (*it).second;
 		if (pRecord)
 			nDeleteCount += pRecord->DeleteM3u8ExpireFile();
- 	}
+	}
 	return nDeleteCount;
 }
 
@@ -961,9 +967,10 @@ CRecordFileSource_ptr GetRecordFileSource(char* szShareURL)
 {
 	std::lock_guard<std::mutex> lock(ABL_CRecordFileSourceMapLock);
 
+	CRecordFileSource_ptrMap::iterator iterator1;
 	CRecordFileSource_ptr   pRecord = NULL;
 
-	auto iterator1 = xh_ABLRecordFileSourceMap.find(szShareURL);
+	iterator1 = xh_ABLRecordFileSourceMap.find(szShareURL);
 	if (iterator1 != xh_ABLRecordFileSourceMap.end())
 	{
 		pRecord = (*iterator1).second;
@@ -975,7 +982,7 @@ CRecordFileSource_ptr GetRecordFileSource(char* szShareURL)
 	}
 }
 
-CRecordFileSource_ptr CreateRecordFileSource(char* app,char* stream)
+CRecordFileSource_ptr CreateRecordFileSource(char* app, char* stream)
 {
 	char szShareURL[string_length_1024] = { 0 };
 	sprintf(szShareURL, "/%s/%s", app, stream);
@@ -989,7 +996,7 @@ CRecordFileSource_ptr CreateRecordFileSource(char* app,char* stream)
 	std::lock_guard<std::mutex> lock(ABL_CRecordFileSourceMapLock);
 
 	CRecordFileSource_ptr pRecord = NULL;
-	 
+
 	try
 	{
 		do
@@ -1002,7 +1009,7 @@ CRecordFileSource_ptr CreateRecordFileSource(char* app,char* stream)
 	
 		} while (pRecord == NULL);
 	}
-	catch (const std::exception &e)
+	catch (const std::exception& e)
 	{
 		return NULL;
 	}
@@ -1036,20 +1043,20 @@ bool  DeleteRecordFileSource(char* szURL)
 }
 
 //增加一个录像文件到录像媒体源
-bool AddRecordFileToRecordSource(char* szShareURL,char* szFileName)
+bool AddRecordFileToRecordSource(char* szShareURL, char* szFileName)
 {
 	std::lock_guard<std::mutex> lock(ABL_CRecordFileSourceMapLock);
 
 	CRecordFileSource_ptrMap::iterator iterator1;
- 
+
 	iterator1 = xh_ABLRecordFileSourceMap.find(szShareURL);
 	if (iterator1 != xh_ABLRecordFileSourceMap.end())
 	{
- 		return (*iterator1).second->AddRecordFile(szFileName);
+		return (*iterator1).second->AddRecordFile(szFileName);
 	}
 	else
 	{
-		return false ;
+		return false;
 	}
 }
 
@@ -1068,14 +1075,17 @@ int queryRecordListByTime(char* szMediaSourceInfo, queryRecordListStruct querySt
 	char  szTemp1[string_length_2048] = { 0 };
 	char  szShareMediaURL[string_length_2048] = { 0 };
 	bool  bAddFlag = false;
-	FILE*          fp=NULL;
+	FILE* fp = NULL;
 	char           szFileName[string_length_1024] = { 0 };
-	mov_reader_t*  mov = NULL ;
-	uint64_t       duration = 0 ;//录像回放时读取到录像文件长度
-	FILE*          fileM3U8=NULL;
+	mov_reader_t* mov = NULL;
+	uint64_t       duration = 0;//录像回放时读取到录像文件长度
+	FILE* fileM3U8 = NULL;
 	char           m3u8FileName[string_length_512] = { 0 };
 	char           mapm3u8FileName[string_length_512] = { 0 };
 	int            nFileOrder = 0;
+	char           szRecordURL[string_length_48K] = { 0 };
+	char           szRecordPlayURL[string_length_2048] = { 0 };
+	CNetRevcBase_ptr  mutlRecordPlay = NULL;
 
 	if (xh_ABLRecordFileSourceMap.size() > 0)
 	{
@@ -1086,16 +1096,48 @@ int queryRecordListByTime(char* szMediaSourceInfo, queryRecordListStruct querySt
 			sprintf(mapm3u8FileName, "\\%s\\%s\\%s_%s.m3u8", queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime);
 #else
 			sprintf(m3u8FileName, "%s%s/%s/%s_%s.m3u8", ABL_MediaServerPort.recordPath, queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime);
-			sprintf(mapm3u8FileName, "/%s/%s/%s_%s.m3u8",  queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime);
+			sprintf(mapm3u8FileName, "/%s/%s/%s_%s.m3u8", queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime);
 #endif 
 			fileM3U8 = fopen(m3u8FileName, "wb");
 			sprintf(szTemp1, "\"http-hls\":\"http://%s:%d/%s/%s%s%s_%s.m3u8\"", ABL_szLocalIP, ABL_MediaServerPort.nHlsPort, queryStruct.app, queryStruct.stream, RecordFileReplaySplitter, queryStruct.starttime, queryStruct.endtime);
 		}
-   
-		if(fileM3U8 != NULL)
-			sprintf(szMediaSourceInfo, "{\"code\":0,\"app\":\"%s\",\"stream\":\"%s\",\"starttime\":\"%s\",\"endtime\":\"%s\",%s,\"recordFileList\":[", queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime, szTemp1);
+
+		if (fileM3U8 != NULL)
+		{//ts 切片
+			sprintf(szRecordURL, "\"url\":{\"rtsp\": \"rtsp://%s:%d/%s/%s_%s-%s\",\"rtmp\": \"rtmp://%s:%d/%s/%s_%s-%s\",\"http-flv\": \"http://%s:%d/%s/%s_%s-%s.flv\",\"ws-flv\": \"ws://%s:%d/%s/%s_%s-%s.flv\",\"http-mp4\": \"http://%s:%d/%s/%s_%s-%s.mp4\",%s}",
+				ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.nRtspPort, queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime,
+				ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.nRtmpPort, queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime,
+				ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.nHttpFlvPort, queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime,
+				ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.nWSFlvPort, queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime,
+				ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.nHttpMp4Port, queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime,
+				szTemp1
+			);
+		}
 		else
-		    sprintf(szMediaSourceInfo, "{\"code\":0,\"app\":\"%s\",\"stream\":\"%s\",\"starttime\":\"%s\",\"endtime\":\"%s\",\"recordFileList\":[",queryStruct.app,queryStruct.stream,queryStruct.starttime,queryStruct.endtime);
+		{//非TS 
+			if (ABL_MediaServerPort.nHlsEnable == 1)
+			{//hls切片
+				sprintf(szRecordURL, "\"url\":{\"rtsp\": \"rtsp://%s:%d/%s/%s_%s-%s\",\"rtmp\": \"rtmp://%s:%d/%s/%s_%s-%s\",\"http-flv\": \"http://%s:%d/%s/%s_%s-%s.flv\",\"ws-flv\": \"ws://%s:%d/%s/%s_%s-%s.flv\",\"http-mp4\": \"http://%s:%d/%s/%s_%s-%s.mp4\",\"http-hls\": \"http://%s:%d/%s/%s_%s-%s.m3u8\"}",
+					ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.nRtspPort, queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime,
+					ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.nRtmpPort, queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime,
+					ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.nHttpFlvPort, queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime,
+					ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.nWSFlvPort, queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime,
+					ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.nHttpMp4Port, queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime,
+					ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.nHlsPort, queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime
+				);
+			}
+			else
+			{
+				sprintf(szRecordURL, "\"url\":{\"rtsp\": \"rtsp://%s:%d/%s/%s_%s-%s\",\"rtmp\": \"rtmp://%s:%d/%s/%s_%s-%s\",\"http-flv\": \"http://%s:%d/%s/%s_%s-%s.flv\",\"ws-flv\": \"ws://%s:%d/%s/%s_%s-%s.flv\",\"http-mp4\": \"http://%s:%d/%s/%s_%s-%s.mp4\"}",
+					ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.nRtspPort, queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime,
+					ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.nRtmpPort, queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime,
+					ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.nHttpFlvPort, queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime,
+					ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.nWSFlvPort, queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime,
+					ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.nHttpMp4Port, queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime
+				);
+			}
+		}
+		sprintf(szMediaSourceInfo, "{\"code\":0,\"app\":\"%s\",\"stream\":\"%s\",\"starttime\":\"%s\",\"endtime\":\"%s\",%s,\"recordFileList\":[", queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime, szRecordURL);
 	}
 
 	sprintf(szShareMediaURL, "/%s/%s", queryStruct.app, queryStruct.stream);
@@ -1103,11 +1145,11 @@ int queryRecordListByTime(char* szMediaSourceInfo, queryRecordListStruct querySt
 	if (iterator1 != xh_ABLRecordFileSourceMap.end())
 	{
 		pRecord = (*iterator1).second;
-		
+
 		if (ABL_MediaServerPort.videoFileFormat == 3 && strlen(mapm3u8FileName) > 0)
 			pRecord->AddM3u8FileToMap(mapm3u8FileName);
 
-		for(it2 = pRecord->fileList.begin() ;it2 != pRecord->fileList.end() ; it2++)
+		for (it2 = pRecord->fileList.begin(); it2 != pRecord->fileList.end(); it2++)
 		{
 			if (*it2 >= atoll(queryStruct.starttime) && *it2 <= atoll(queryStruct.endtime))
 			{
@@ -1123,7 +1165,7 @@ int queryRecordListByTime(char* szMediaSourceInfo, queryRecordListStruct querySt
 						fwrite(szTemp2, 1, strlen(szTemp2), fileM3U8);
 						memset(szTemp2, 0x00, sizeof(szTemp2));
 					}
-				    sprintf(szTemp1, "#EXTINF:%d.000,\n/%s/%s%s%llu.mp4\n", ABL_MediaServerPort.fileSecond, queryStruct.app, queryStruct.stream, RecordFileReplaySplitter,*it2);
+					sprintf(szTemp1, "#EXTINF:%d.000,\n/%s/%s%s%llu.mp4\n", ABL_MediaServerPort.fileSecond, queryStruct.app, queryStruct.stream, RecordFileReplaySplitter, *it2);
 					fwrite(szTemp1, 1, strlen(szTemp1), fileM3U8);
 					fflush(fileM3U8);
 				}
@@ -1133,6 +1175,19 @@ int queryRecordListByTime(char* szMediaSourceInfo, queryRecordListStruct querySt
 #else
 				sprintf(szFileName, "%s%s/%s/%llu.mp4", ABL_MediaServerPort.recordPath, queryStruct.app, queryStruct.stream, *it2);
 #endif 
+				if (nFileOrder == 1)
+				{
+					sprintf(szRecordPlayURL, "/%s/%s_%s-%s", queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime);
+
+					//没有存在媒体源再创建
+					if (GetMediaStreamSource(szRecordPlayURL, false) == NULL)
+					{
+						mutlRecordPlay = CreateNetRevcBaseClient(NetBaseNetType_NetServerReadMultRecordFile, 0, 0, szFileName, 0, szRecordPlayURL);
+					}
+				}
+				if (mutlRecordPlay != NULL)
+					mutlRecordPlay->mutliRecordPlayNameList.push_back(szFileName);
+
 				if (ABL_MediaServerPort.enable_GetFileDuration != 0)
 				{//需要获取录像文件真实时长 
 					fp = fopen(szFileName, "rb");
@@ -1145,8 +1200,8 @@ int queryRecordListByTime(char* szMediaSourceInfo, queryRecordListStruct querySt
 				}
 				else
 					duration = ABL_MediaServerPort.fileSecond * 1000;
-  
-				sprintf(szTemp2, "{\"file\":\"%llu.mp4\",\"duration\":%llu,\"url\":{\"rtsp\":\"rtsp://%s:%d/%s/%s%s%llu\",\"rtmp\":\"rtmp://%s:%d/%s/%s%s%llu\",\"http-flv\":\"http://%s:%d/%s/%s%s%llu.flv\",\"ws-flv\":\"ws://%s:%d/%s/%s%s%llu.flv\",\"http-mp4\":\"http://%s:%d/%s/%s%s%llu.mp4\",\"download\":\"http://%s:%d/%s/%s%s%llu.mp4?download_speed=%d\"}},", *it2, duration/1000,
+
+				sprintf(szTemp2, "{\"file\":\"%llu.mp4\",\"duration\":%llu,\"url\":{\"rtsp\":\"rtsp://%s:%d/%s/%s%s%llu\",\"rtmp\":\"rtmp://%s:%d/%s/%s%s%llu\",\"http-flv\":\"http://%s:%d/%s/%s%s%llu.flv\",\"ws-flv\":\"ws://%s:%d/%s/%s%s%llu.flv\",\"http-mp4\":\"http://%s:%d/%s/%s%s%llu.mp4\",\"download\":\"http://%s:%d/%s/%s%s%llu.mp4?download_speed=%d\"}},", *it2, duration / 1000,
 					ABL_szLocalIP, ABL_MediaServerPort.nRtspPort, queryStruct.app, queryStruct.stream, RecordFileReplaySplitter, *it2,
 					ABL_szLocalIP, ABL_MediaServerPort.nRtmpPort, queryStruct.app, queryStruct.stream, RecordFileReplaySplitter, *it2,
 					ABL_szLocalIP, ABL_MediaServerPort.nHttpFlvPort, queryStruct.app, queryStruct.stream, RecordFileReplaySplitter, *it2,
@@ -1173,8 +1228,8 @@ int queryRecordListByTime(char* szMediaSourceInfo, queryRecordListStruct querySt
 			fclose(fileM3U8);
 		return 0;
 	}
-   	 
-  	if (nMediaCount > 0)
+
+	if (nMediaCount > 0)
 	{
 		if (fileM3U8)
 		{
@@ -1182,9 +1237,9 @@ int queryRecordListByTime(char* szMediaSourceInfo, queryRecordListStruct querySt
 			fwrite(szTemp1, 1, strlen(szTemp1), fileM3U8);
 			fflush(fileM3U8);
 		}
- 		szMediaSourceInfo[strlen(szMediaSourceInfo) - 1] = 0x00;
+		szMediaSourceInfo[strlen(szMediaSourceInfo) - 1] = 0x00;
 		strcat(szMediaSourceInfo, "]}");
- 	}
+	}
 
 	if (nMediaCount == 0)
 	{
@@ -1217,10 +1272,10 @@ bool QureyRecordFileFromRecordSource(char* szShareURL, char* szFileName)
 /* 录像文件存储 -------------------------------------------------------------------------------------*/
 
 /* 图片文件存储 -------------------------------------------------------------------------------------*/
-CPictureFileSource_ptr GetPictureFileSource(char* szShareURL,bool bLock )
+CPictureFileSource_ptr GetPictureFileSource(char* szShareURL, bool bLock)
 {
-	if(bLock)
-	   std::lock_guard<std::mutex> lock(ABL_CPictureFileSourceMapLock);
+	if (bLock)
+		std::lock_guard<std::mutex> lock(ABL_CPictureFileSourceMapLock);
 
 	CPictureFileSource_ptrMap::iterator iterator1;
 	CPictureFileSource_ptr   pPicture = NULL;
@@ -1241,7 +1296,7 @@ CPictureFileSource_ptr CreatePictureFileSource(char* app, char* stream)
 {
 	char szShareURL[string_length_1024] = { 0 };
 	sprintf(szShareURL, "/%s/%s", app, stream);
-	CPictureFileSource_ptr pReordFile = GetPictureFileSource(szShareURL,true);
+	CPictureFileSource_ptr pReordFile = GetPictureFileSource(szShareURL, true);
 	if (pReordFile != NULL)
 	{
 		WriteLog(Log_Debug, "CreatePictureFileSource 失败 , app = %s ,stream = %s 已经存在 ", app, stream);
@@ -1264,7 +1319,7 @@ CPictureFileSource_ptr CreatePictureFileSource(char* app, char* stream)
 	
 		} while (pPicture == NULL);
 	}
-	catch (const std::exception &e)
+	catch (const std::exception& e)
 	{
 		return NULL;
 	}
@@ -1273,7 +1328,7 @@ CPictureFileSource_ptr CreatePictureFileSource(char* app, char* stream)
 		xh_ABLPictureFileSourceMap.insert(std::make_pair(pPicture->m_szShareURL, pPicture));
 	if (!ret.second)
 	{
- 		return NULL;
+		return NULL;
 	}
 
 	return pPicture;
@@ -1342,7 +1397,7 @@ int queryPictureListByTime(char* szMediaSourceInfo, queryPictureListStruct query
 
 		for (it2 = pPicture->fileList.begin(); it2 != pPicture->fileList.end(); it2++)
 		{
-			if ( (*it2 / 100) >= atoll(queryStruct.starttime) && (*it2 / 100) <= atoll(queryStruct.endtime) )
+			if ((*it2 / 100) >= atoll(queryStruct.starttime) && (*it2 / 100) <= atoll(queryStruct.endtime))
 			{
 				memset(szTemp2, 0x00, sizeof(szTemp2));
 
@@ -1549,13 +1604,13 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHand
 			}
 			else if (netClientType == NetRevcBaseClient_addFFmpegProxy)
 			{//ffmpeg 代理拉流
-			if (strstr(szIP, "rtsp://") != NULL || strstr(szIP, "rtmp://") != NULL || strstr(szIP, "http://") != NULL || strstr(szIP, "https://") != NULL || strstr(szIP, ".mp4") != NULL || strstr(szIP, ".mov") != NULL || strstr(szIP, ".mkv") != NULL || strstr(szIP, ".ts") != NULL || strstr(szIP, ".ps") != NULL || strstr(szIP, ".flv") != NULL || strstr(szIP, ".264") != NULL || strstr(szIP, ".265") != NULL)
-			{//本地文件
-				CltHandle = XHNetSDK_GenerateIdentifier();
-				pXHClient = boost::make_shared<CNetClientFFmpegRecv>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				if (pXHClient)
-					CltHandle = pXHClient->nClient;
-			}
+				if (strstr(szIP, "rtsp://") != NULL || strstr(szIP, "rtmp://") != NULL || strstr(szIP, "http://") != NULL || strstr(szIP, "https://") != NULL || strstr(szIP, ".mp4") != NULL || strstr(szIP, ".mov") != NULL || strstr(szIP, ".mkv") != NULL || strstr(szIP, ".ts") != NULL || strstr(szIP, ".ps") != NULL || strstr(szIP, ".flv") != NULL || strstr(szIP, ".264") != NULL || strstr(szIP, ".265") != NULL)
+				{//本地文件
+					CltHandle = XHNetSDK_GenerateIdentifier();
+					pXHClient = boost::make_shared<CNetClientFFmpegRecv>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+					if (pXHClient)
+						CltHandle = pXHClient->nClient;
+				}
 			}
 			else if (netClientType == NetRevcBaseClient_addPushStreamProxy)
 			{//代理推流
@@ -1809,6 +1864,11 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHand
 					pXHClient->netBaseNetType = NetBaseNetType_RtspServerRecvPushAudio;
 				}
 			}
+			else if (netClientType == NetBaseNetType_NetServerReadMultRecordFile)
+			{//连续读取多个录像文件
+				CltHandle = XHNetSDK_GenerateIdentifier();
+				pXHClient = boost::make_shared<CNetServerReadMultRecordFile>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+			}
 			else if (netClientType == NetBaseNetType_NetClientWebrtcPlayer)
 			{//webrtc播放 
 				CltHandle = XHNetSDK_GenerateIdentifier();
@@ -1830,6 +1890,7 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHand
 
 	return pXHClient;
 }
+
 
 #else
 CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHandle, NETHANDLE CltHandle, char* szIP, unsigned short nPort, char* szShareMediaURL)
@@ -1972,13 +2033,13 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHand
 			}
 			else if (netClientType == NetRevcBaseClient_addFFmpegProxy)
 			{//ffmpeg 代理拉流
-			if (strstr(szIP, "rtsp://") != NULL || strstr(szIP, "rtmp://") != NULL || strstr(szIP, "http://") != NULL || strstr(szIP, "https://") != NULL || strstr(szIP, ".mp4") != NULL || strstr(szIP, ".mov") != NULL || strstr(szIP, ".mkv") != NULL || strstr(szIP, ".ts") != NULL || strstr(szIP, ".ps") != NULL || strstr(szIP, ".flv") != NULL || strstr(szIP, ".264") != NULL || strstr(szIP, ".265") != NULL)
-			{//本地文件
-				CltHandle = XHNetSDK_GenerateIdentifier();
-				pXHClient = std::make_shared<CNetClientFFmpegRecv>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
-				if (pXHClient)
-					CltHandle = pXHClient->nClient;
-			}
+				if (strstr(szIP, "rtsp://") != NULL || strstr(szIP, "rtmp://") != NULL || strstr(szIP, "http://") != NULL || strstr(szIP, "https://") != NULL || strstr(szIP, ".mp4") != NULL || strstr(szIP, ".mov") != NULL || strstr(szIP, ".mkv") != NULL || strstr(szIP, ".ts") != NULL || strstr(szIP, ".ps") != NULL || strstr(szIP, ".flv") != NULL || strstr(szIP, ".264") != NULL || strstr(szIP, ".265") != NULL)
+				{//本地文件
+					CltHandle = XHNetSDK_GenerateIdentifier();
+					pXHClient = std::make_shared<CNetClientFFmpegRecv>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+					if (pXHClient)
+						CltHandle = pXHClient->nClient;
+				}
 			}
 			else if (netClientType == NetRevcBaseClient_addPushStreamProxy)
 			{//代理推流
@@ -2232,6 +2293,11 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHand
 					pXHClient->netBaseNetType = NetBaseNetType_RtspServerRecvPushAudio;
 				}
 			}
+			else if (netClientType == NetBaseNetType_NetServerReadMultRecordFile)
+			{//连续读取多个录像文件
+				CltHandle = XHNetSDK_GenerateIdentifier();
+				pXHClient = std::make_shared<CNetServerReadMultRecordFile>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+			}
 			else if (netClientType == NetBaseNetType_NetClientWebrtcPlayer)
 			{//webrtc播放 
 				CltHandle = XHNetSDK_GenerateIdentifier();
@@ -2254,9 +2320,8 @@ CNetRevcBase_ptr CreateNetRevcBaseClient(int netClientType, NETHANDLE serverHand
 	return pXHClient;
 }
 
+
 #endif //USE_BOOST
-
-
 CNetRevcBase_ptr GetNetRevcBaseClient(NETHANDLE CltHandle)
 {
 	std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
@@ -2285,14 +2350,14 @@ bool  DeleteNetRevcBaseClient(NETHANDLE CltHandle)
 	if (iterator1 != xh_ABLNetRevcBaseMap.end())
 	{
 		(*iterator1).second->bRunFlag = false;
- 		if ( ((*iterator1).second->netBaseNetType == NetBaseNetType_RtspClientPush || (*iterator1).second->netBaseNetType ==  NetBaseNetType_RtmpClientPush ||
-			(*iterator1).second->netBaseNetType == NetBaseNetType_RtspClientRecv || (*iterator1).second->netBaseNetType == NetBaseNetType_RtmpClientRecv)
+		if (((*iterator1).second->netBaseNetType == NetBaseNetType_RtspClientPush || (*iterator1).second->netBaseNetType == NetBaseNetType_RtmpClientPush ||
+			(*iterator1).second->netBaseNetType == NetBaseNetType_RtspClientRecv || (*iterator1).second->netBaseNetType == NetBaseNetType_RtmpClientRecv || (*iterator1).second->netBaseNetType == NetBaseNetType_FFmpegRecvNetworkMedia)
 			&& (*iterator1).second->bProxySuccessFlag == false)
 		{//rtsp\rtmp 代理拉流，rtsp \ rtmp 代理推流
 			//如果没有成功过则需要删除父类 
 			auto  pParentPtr = GetNetRevcBaseClientNoLock((*iterator1).second->hParent);
 			if (pParentPtr && pParentPtr->bProxySuccessFlag == false || (*iterator1).second->m_nXHRtspURLType == XHRtspURLType_RecordPlay)
- 			   pDisconnectBaseNetFifo.push((unsigned char*)&(*iterator1).second->hParent, sizeof((*iterator1).second->hParent));
+				pDisconnectBaseNetFifo.push((unsigned char*)&(*iterator1).second->hParent, sizeof((*iterator1).second->hParent));
 		}
 
 		//关闭国标监听 
@@ -2301,10 +2366,10 @@ bool  DeleteNetRevcBaseClient(NETHANDLE CltHandle)
 			XHNetSDK_Unlisten((*iterator1).second->nClient);
 			if ((*iterator1).second->nMediaClient == 0)
 			{//码流没有达到通知
-				if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nClientNotArrive > 0 && (*iterator1).second->bUpdateVideoFrameSpeedFlag == false)
+				if (ABL_MediaServerPort.hook_enable == 1 && (*iterator1).second->bUpdateVideoFrameSpeedFlag == false)
 				{
 					MessageNoticeStruct msgNotice;
-					msgNotice.nClient = ABL_MediaServerPort.nClientNotArrive;
+					msgNotice.nClient = NetBaseNetType_HttpClient_on_stream_not_arrive;
 					sprintf(msgNotice.szMsg, "{\"mediaServerId\":\"%s\",\"app\":\"%s\",\"stream\":\"%s\",\"networkType\":%d,\"key\":%llu}", ABL_MediaServerPort.mediaServerID, (*iterator1).second->m_addStreamProxyStruct.app, (*iterator1).second->m_addStreamProxyStruct.stream, (*iterator1).second->netBaseNetType, (*iterator1).second->nClient);
 					pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
 				}
@@ -2318,7 +2383,7 @@ bool  DeleteNetRevcBaseClient(NETHANDLE CltHandle)
 			WriteLog(Log_Debug, " XHNetSDK_Unlisten() , nMediaClient = %llu  ", (*iterator1).second->nClient);
 		}
 		else //在此处关闭，确保boost:asio 单线程状态下 close(pSocket) ;
- 		  XHNetSDK_Disconnect((*iterator1).second->nClient);
+			XHNetSDK_Disconnect((*iterator1).second->nClient);
 
 		//把依赖的父类删除掉
 		if ((*iterator1).second->hParent > 0)
@@ -2331,8 +2396,9 @@ bool  DeleteNetRevcBaseClient(NETHANDLE CltHandle)
 					pDisconnectBaseNetFifo.push((unsigned char*)&(*iterator1).second->hParent, sizeof((*iterator1).second->hParent));
 			}
 		}
- 		xh_ABLNetRevcBaseMap.erase(iterator1);
-  		return true;
+
+		xh_ABLNetRevcBaseMap.erase(iterator1);
+		return true;
 	}
 	else
 	{
@@ -2342,26 +2408,27 @@ bool  DeleteNetRevcBaseClient(NETHANDLE CltHandle)
 
 /*
  功能：
-    检查端口是否已经使用 
+	检查端口是否已经使用
 参数：
   int   nPort,      端口
-  int   nPortType,  类型  1 openRtpServe , 2 sartSendRtp 
-  bool  bLockFlag   是否锁住 
+  int   nPortType,  类型  1 openRtpServe , 2 sartSendRtp
+  bool  bLockFlag   是否锁住
 */
 bool  CheckPortAlreadyUsed(int nPort, int nPortType, bool bLockFlag)
 {
 	if (bLockFlag)
 		std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
 
+	CNetRevcBase_ptrMap::iterator iterator1;
 	bool                 bRet = false;
 	CNetRevcBase_ptr     pClient = NULL;
 
-	for (auto iterator1 = xh_ABLNetRevcBaseMap.begin(); iterator1 != xh_ABLNetRevcBaseMap.end(); iterator1++)
+	for (iterator1 = xh_ABLNetRevcBaseMap.begin(); iterator1 != xh_ABLNetRevcBaseMap.end(); iterator1++)
 	{
 		pClient = (*iterator1).second;
 		if (nPortType == 1)
 		{
-			if (pClient->netBaseNetType == NetRevcBaseClient__NetGB28181Proxy   &&
+			if (pClient->netBaseNetType == NetRevcBaseClient__NetGB28181Proxy &&
 				atoi(pClient->m_openRtpServerStruct.port) == nPort
 				)
 			{//已经占用了 nPort;
@@ -2371,7 +2438,7 @@ bool  CheckPortAlreadyUsed(int nPort, int nPortType, bool bLockFlag)
 		}
 		else if (nPortType == 2)
 		{
-			if (( pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpUDP || pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Connect) &&
+			if ((pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpUDP || pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Connect) &&
 				atoi(pClient->m_startSendRtpStruct.src_port) == nPort
 				)
 			{//已经占用了 nPort;
@@ -2395,20 +2462,22 @@ bool  CheckSSRCAlreadyUsed(int nSSRC, bool bLockFlag)
 {
 	if (bLockFlag)
 		std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
+
+	CNetRevcBase_ptrMap::iterator iterator1;
 	bool                 bRet = false;
 	CNetRevcBase_ptr     pClient = NULL;
 
-	for (auto iterator1 = xh_ABLNetRevcBaseMap.begin(); iterator1 != xh_ABLNetRevcBaseMap.end(); iterator1++)
+	for (iterator1 = xh_ABLNetRevcBaseMap.begin(); iterator1 != xh_ABLNetRevcBaseMap.end(); iterator1++)
 	{
 		pClient = (*iterator1).second;
- 		if ((pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpUDP || pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Connect) &&
+		if ((pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpUDP || pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Connect) &&
 			atoi(pClient->m_startSendRtpStruct.ssrc) == nSSRC
 			)
 		{//已经占用了 nPort;
 			bRet = true;
 			break;
 		}
- 	}
+	}
 	WriteLog(Log_Debug, "CheckSSRCAlreadyUsed() bRet = %d  ", bRet);
 	return bRet;
 }
@@ -2421,7 +2490,7 @@ char  dst_url,    目标IP
 int   dst_port    目标端口
 bool  bLockFlag   是否锁住
 */
-bool  CheckDst_url_portAlreadyUsed(char* dst_url,int dst_port, bool bLockFlag)
+bool  CheckDst_url_portAlreadyUsed(char* dst_url, int dst_port, bool bLockFlag)
 {
 	if (bLockFlag)
 		std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
@@ -2434,7 +2503,7 @@ bool  CheckDst_url_portAlreadyUsed(char* dst_url,int dst_port, bool bLockFlag)
 	{
 		pClient = (*iterator1).second;
 		if ((pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpUDP || pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Connect) &&
- 			atoi(pClient->m_startSendRtpStruct.dst_port) == dst_port && strcmp(pClient->m_startSendRtpStruct.dst_url,dst_url) == 0 
+			atoi(pClient->m_startSendRtpStruct.dst_port) == dst_port && strcmp(pClient->m_startSendRtpStruct.dst_url, dst_url) == 0
 			)
 		{//已经占用了 nPort;
 			bRet = true;
@@ -2446,31 +2515,31 @@ bool  CheckDst_url_portAlreadyUsed(char* dst_url,int dst_port, bool bLockFlag)
 }
 
 //查找某一个网络类型的对象总数
-int  GetNetRevcBaseClientCountByNetType(NetBaseNetType netType,bool bLockFlag)
+int  GetNetRevcBaseClientCountByNetType(NetBaseNetType netType, bool bLockFlag)
 {
-	if(bLockFlag)
-	 std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
+	if (bLockFlag)
+		std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
 
 	CNetRevcBase_ptrMap::iterator iterator1;
-	int                nCount = 0 ;
+	int                nCount = 0;
 	CNetRevcBase_ptr   pClient = NULL;
 
- 	for(iterator1 = xh_ABLNetRevcBaseMap.begin();iterator1 != xh_ABLNetRevcBaseMap.end(); iterator1++)
+	for (iterator1 = xh_ABLNetRevcBaseMap.begin(); iterator1 != xh_ABLNetRevcBaseMap.end(); iterator1++)
 	{
 		pClient = (*iterator1).second;
-		if (pClient->netBaseNetType == netType && pClient->bSnapSuccessFlag == false )
+		if (pClient->netBaseNetType == netType && pClient->bSnapSuccessFlag == false)
 		{//是抓拍对象，并且尚未抓拍成功
-			nCount ++;
- 		}
+			nCount++;
+		}
 	}
-	WriteLog(Log_Debug, "GetNetRevcBaseClientCountByNetType() netType = %d , nCount = %d  ", netType,nCount );
+	WriteLog(Log_Debug, "GetNetRevcBaseClientCountByNetType() netType = %d , nCount = %d  ", netType, nCount);
 	return nCount;
 }
 
 //把所有对象装入链表，准备删除 
 int  FillNetRevcBaseClientFifo()
 {
- 	std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
+	std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
 
 	CNetRevcBase_ptrMap::iterator iterator1;
 	int                nCount = 0;
@@ -2481,14 +2550,14 @@ int  FillNetRevcBaseClientFifo()
 		pClient = (*iterator1).second;
 		pDisconnectBaseNetFifo.push((unsigned char*)&pClient->nClient, sizeof(pClient->nClient));
 	}
- 	return nCount;
+	return nCount;
 }
 
 //根据ShareMediaURL、NetBaseNetType 查找对象 
-CNetRevcBase_ptr  GetNetRevcBaseClientByNetTypeShareMediaURL(NetBaseNetType netType,char* ShareMediaURL, bool bLockFlag)
+CNetRevcBase_ptr  GetNetRevcBaseClientByNetTypeShareMediaURL(NetBaseNetType netType, char* ShareMediaURL, bool bLockFlag)
 {
-	if(bLockFlag)
-	  std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
+	if (bLockFlag)
+		std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
 
 	CNetRevcBase_ptrMap::iterator iterator1;
 	CNetRevcBase_ptr   pClient = NULL;
@@ -2496,13 +2565,13 @@ CNetRevcBase_ptr  GetNetRevcBaseClientByNetTypeShareMediaURL(NetBaseNetType netT
 	for (iterator1 = xh_ABLNetRevcBaseMap.begin(); iterator1 != xh_ABLNetRevcBaseMap.end(); iterator1++)
 	{
 		pClient = (*iterator1).second;
-		if (pClient->netBaseNetType == netType && strcmp(ShareMediaURL,pClient->m_szShareMediaURL) == 0)
+		if (pClient->netBaseNetType == netType && strcmp(ShareMediaURL, pClient->m_szShareMediaURL) == 0)
 		{
-	        WriteLog(Log_Debug, "GetNetRevcBaseClientByNetTypeShareMediaURL() netType = %d , nClient = %llu ", netType, pClient->nClient);
+			WriteLog(Log_Debug, "GetNetRevcBaseClientByNetTypeShareMediaURL() netType = %d , nClient = %llu ", netType, pClient->nClient);
 			return pClient;
 		}
 	}
-	return  NULL ;
+	return  NULL;
 }
 
 //查找推流url是否存在
@@ -2540,16 +2609,18 @@ int  CheckNetRevcBaseClientDisconnect()
 	int                           nPrintCount = 0;
 	char                          szLine[string_length_4096] = { 0 };
 	char                          szTemp[string_length_512] = { 0 };
+	int                           netBaseNetType;
 
-	ABL_nPrintCheckNetRevcBaseClientDisconnect ++;
-	if(ABL_nPrintCheckNetRevcBaseClientDisconnect % 20 == 0)//1分钟打印一次
-	  WriteLog(Log_Debug, "CheckNetRevcBaseClientDisconnect() 当前服务器对象总数 nSize = %llu ", xh_ABLNetRevcBaseMap.size());
+	ABL_nPrintCheckNetRevcBaseClientDisconnect++;
+	if (ABL_nPrintCheckNetRevcBaseClientDisconnect % 20 == 0)//1分钟打印一次
+		WriteLog(Log_Debug, "CheckNetRevcBaseClientDisconnect() 当前服务器对象总数 nSize = %llu ", xh_ABLNetRevcBaseMap.size());
 
 	for (iterator1 = xh_ABLNetRevcBaseMap.begin(); iterator1 != xh_ABLNetRevcBaseMap.end(); ++iterator1)
 	{
+		netBaseNetType = ((*iterator1).second)->netBaseNetType;
 		if (ABL_nPrintCheckNetRevcBaseClientDisconnect % 30 == 0)//1分钟打印一次
 		{
-			nPrintCount ++;
+			nPrintCount++;
 			sprintf(szTemp, "[ nClient = %llu netType = %d ] , ", ((*iterator1).second)->nClient, ((*iterator1).second)->netBaseNetType);
 			strcat(szLine, szTemp);
 			if (nPrintCount >= 4)
@@ -2561,9 +2632,9 @@ int  CheckNetRevcBaseClientDisconnect()
 		}
 
 		//检查事件连接，如果设置hook_enable = 0 立即删除
-		if(ABL_MediaServerPort.hook_enable == 0 && ((((*iterator1).second)->netBaseNetType >= NetBaseNetType_HttpClient_None_reader && ((*iterator1).second)->netBaseNetType <= NetBaseNetType_HttpClient_Record_Progress ) ||
-		    (((*iterator1).second)->netBaseNetType >= NetBaseNetType_HttpClient_ServerStarted && ((*iterator1).second)->netBaseNetType <= NetBaseNetType_HttpClient_on_publish ) ) )
-		  pDisconnectBaseNetFifo.push((unsigned char*)&((*iterator1).second)->nClient, sizeof((unsigned char*)&((*iterator1).second)->nClient));
+		if (ABL_MediaServerPort.hook_enable == 0 && ((((*iterator1).second)->netBaseNetType >= NetBaseNetType_HttpClient_None_reader && ((*iterator1).second)->netBaseNetType <= NetBaseNetType_HttpClient_Record_Progress) ||
+			(((*iterator1).second)->netBaseNetType >= NetBaseNetType_HttpClient_ServerStarted && ((*iterator1).second)->netBaseNetType <= NetBaseNetType_HttpClient_on_publish)))
+			pDisconnectBaseNetFifo.push((unsigned char*)&((*iterator1).second)->nClient, sizeof((unsigned char*)&((*iterator1).second)->nClient));
 
 		if (
 			(((*iterator1).second)->netBaseNetType == NetBaseNetType_RtspServerRecvPush && ((*iterator1).second)->m_RtspNetworkType == RtspNetworkType_TCP) ||   //接收rtsp推流上来(tcp）方式
@@ -2574,7 +2645,7 @@ int  CheckNetRevcBaseClientDisconnect()
 
 			((*iterator1).second)->netBaseNetType == NetBaseNetType_RtspClientPush ||   //rtsp 推流
 			((*iterator1).second)->netBaseNetType == NetBaseNetType_RtmpClientPush ||   //rtmp 推流
- 
+
 			((*iterator1).second)->netBaseNetType == NetBaseNetType_RtspClientRecv ||      //代理接收Rtsp推流
 			((*iterator1).second)->netBaseNetType == NetBaseNetType_RtmpClientRecv ||      //代理接收Rtmp推流
 			((*iterator1).second)->netBaseNetType == NetBaseNetType_HttpFlvClientRecv ||   //代理接收HttpFlv推流
@@ -2583,9 +2654,9 @@ int  CheckNetRevcBaseClientDisconnect()
 			((*iterator1).second)->netBaseNetType == NetBaseNetType_NetGB28181RtpServerUDP ||   //GB28181 以UDP方式接收 
 			((*iterator1).second)->netBaseNetType == NetBaseNetType_NetGB28181RtpServerTCP_Server || //GB28181 以TCP方式接收 
 
-			((*iterator1).second)->netBaseNetType ==  NetBaseNetType_NetGB28181SendRtpUDP || //国标UDP推流
-			((*iterator1).second)->netBaseNetType ==  NetBaseNetType_NetGB28181SendRtpTCP_Connect ||//国标TCP推流 
- 			
+			((*iterator1).second)->netBaseNetType == NetBaseNetType_NetGB28181SendRtpUDP || //国标UDP推流
+			((*iterator1).second)->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Connect ||//国标TCP推流 
+
 			((*iterator1).second)->netBaseNetType == NetBaseNetType_HttpFLVServerSendPush ||//监测http-flv发流 
 			((*iterator1).second)->netBaseNetType == NetBaseNetType_WsFLVServerSendPush ||//监测ws-flv发流 
 			((*iterator1).second)->netBaseNetType == NetBaseNetType_HttpMP4ServerSendPush || //监测MP4发流 
@@ -2605,59 +2676,59 @@ int  CheckNetRevcBaseClientDisconnect()
 				((*iterator1).second)->RequestM3u8File();
 			}
 
-	       if (((*iterator1).second)->m_bPauseFlag == false && ((*iterator1).second)->nRecvDataTimerBySecond >= (ABL_MediaServerPort.MaxDiconnectTimeoutSecond / 2 ) )
- 	       {//不是国标回放暂停、也不是rtsp回放暂停
-			   nDiconnectCount ++;
-			   ((*iterator1).second)->bRunFlag = false;
-			   WriteLog(Log_Debug, "CheckNetRevcBaseClientDisconnect() nClient = %llu 检测到网络异常断开1 ", ((*iterator1).second)->nClient );
+			if (((*iterator1).second)->m_bPauseFlag == false && ((*iterator1).second)->nRecvDataTimerBySecond >= (ABL_MediaServerPort.MaxDiconnectTimeoutSecond / 2))
+			{//不是国标回放暂停、也不是rtsp回放暂停
+				nDiconnectCount++;
+				((*iterator1).second)->bRunFlag = false;
+				WriteLog(Log_Debug, "CheckNetRevcBaseClientDisconnect() nClient = %llu 检测到网络异常断开1 ", ((*iterator1).second)->nClient);
 
-			   pDisconnectBaseNetFifo.push((unsigned char*)&((*iterator1).second)->nClient, sizeof((unsigned char*)&((*iterator1).second)->nClient));
+				pDisconnectBaseNetFifo.push((unsigned char*)&((*iterator1).second)->nClient, sizeof((unsigned char*)&((*iterator1).second)->nClient));
 
-			   if(((*iterator1).second)->m_nXHRtspURLType == XHRtspURLType_RecordPlay)
-				   pDisconnectBaseNetFifo.push((unsigned char*)&((*iterator1).second)->hParent, sizeof((unsigned char*)&((*iterator1).second)->hParent));
-		   }
-		   //发送rtcp包
-		   if (((*iterator1).second)->netBaseNetType == NetBaseNetType_RtspClientRecv)
-		   {
-		       CNetClientRecvRtsp* pRtspClient = (CNetClientRecvRtsp*) (*iterator1).second.get();
-			   if (pRtspClient->bSendRRReportFlag)
-			   {
-			       if (GetTickCount64() - pRtspClient->nCurrentTime >= 1000*3)
-			       {
-					   pRtspClient->SendRtcpReportData();
-			       }
-		      }
+				if (((*iterator1).second)->m_nXHRtspURLType == XHRtspURLType_RecordPlay)
+					pDisconnectBaseNetFifo.push((unsigned char*)&((*iterator1).second)->hParent, sizeof((unsigned char*)&((*iterator1).second)->hParent));
+			}
+			//发送rtcp包
+			if (((*iterator1).second)->netBaseNetType == NetBaseNetType_RtspClientRecv)
+			{
+				CNetClientRecvRtsp* pRtspClient = (CNetClientRecvRtsp*)(*iterator1).second.get();
+				if (pRtspClient->bSendRRReportFlag)
+				{
+					if (GetTickCount64() - pRtspClient->nCurrentTime >= 1000 * 3)
+					{
+						pRtspClient->SendRtcpReportData();
+					}
+				}
 
-			  //发送options 心跳包 
-			  if(atoi(pRtspClient->m_addStreamProxyStruct.optionsHeartbeat) == 1)
-			     pRtspClient->SendOptionsHeartbeat();
-		   }
+				//发送options 心跳包 
+				if (atoi(pRtspClient->m_addStreamProxyStruct.optionsHeartbeat) == 1)
+					pRtspClient->SendOptionsHeartbeat();
+			}
 
-		   //定期更新动态域名的IP
-		   if (((*iterator1).second)->tUpdateIPTime - GetTickCount64() >= 1000 * 15)
-		   {
-			   ((*iterator1).second)->tUpdateIPTime = GetTickCount64();
-			   ((*iterator1).second)->ConvertDemainToIPAddress();
-		   }
+			//定期更新动态域名的IP
+			if (((*iterator1).second)->tUpdateIPTime - GetTickCount64() >= 1000 * 15)
+			{
+				((*iterator1).second)->tUpdateIPTime = GetTickCount64();
+				((*iterator1).second)->ConvertDemainToIPAddress();
+			}
 
-		   //快速检测录像下载完毕
-		   if (((*iterator1).second)->nRecvDataTimerBySecond >= 3 && ((*iterator1).second)->netBaseNetType == NetBaseNetType_RtspServerSendPush && ((*iterator1).second)->m_bPauseFlag == false  && ((*iterator1).second)->nReplayClient > 0)
-		   {
-			   char szQuitText[128] = { 0 };
-			   strcpy(szQuitText, "ABL_ANNOUNCE_QUIT:2021");
-			   sprintf(((*iterator1).second)->szReponseTemp, "ANNOUNCE RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nContent-Type: text/parameters\r\nContent-Length: %d\r\n\r\n%s", 8, MediaServerVerson,strlen(szQuitText),szQuitText);
-			   WriteLog(Log_Debug, "CheckNetRevcBaseClientDisconnect() nClient = %llu 录像发送完毕", ((*iterator1).second)->nClient);
-			   XHNetSDK_Write(((*iterator1).second)->nClient,(unsigned char*)((*iterator1).second)->szReponseTemp, strlen(((*iterator1).second)->szReponseTemp), 1);
+			//快速检测录像下载完毕
+			if (((*iterator1).second)->nRecvDataTimerBySecond >= 3 && ((*iterator1).second)->netBaseNetType == NetBaseNetType_RtspServerSendPush && ((*iterator1).second)->m_bPauseFlag == false && ((*iterator1).second)->nReplayClient > 0)
+			{
+				char szQuitText[128] = { 0 };
+				strcpy(szQuitText, "ABL_ANNOUNCE_QUIT:2021");
+				sprintf(((*iterator1).second)->szReponseTemp, "ANNOUNCE RTSP/1.0\r\nCSeq: %d\r\nUser-Agent: %s\r\nContent-Type: text/parameters\r\nContent-Length: %d\r\n\r\n%s", 8, MediaServerVerson, strlen(szQuitText), szQuitText);
+				WriteLog(Log_Debug, "CheckNetRevcBaseClientDisconnect() nClient = %llu 录像发送完毕", ((*iterator1).second)->nClient);
+				XHNetSDK_Write(((*iterator1).second)->nClient, (unsigned char*)((*iterator1).second)->szReponseTemp, strlen(((*iterator1).second)->szReponseTemp), 1);
 
-			   pDisconnectBaseNetFifo.push((unsigned char*)&((*iterator1).second)->nClient, sizeof((unsigned char*)&((*iterator1).second)->nClient));
-		   }
+				pDisconnectBaseNetFifo.push((unsigned char*)&((*iterator1).second)->nClient, sizeof((unsigned char*)&((*iterator1).second)->nClient));
+			}
 
-		   if (((*iterator1).second)->m_bPauseFlag == false)
-			   ((*iterator1).second)->nRecvDataTimerBySecond ++;  //不是暂停，计时
-		   else
-			   ((*iterator1).second)->nRecvDataTimerBySecond = 0;//已经暂停，不再计时
+			if (((*iterator1).second)->m_bPauseFlag == false)
+				((*iterator1).second)->nRecvDataTimerBySecond++;  //不是暂停，计时
+			else
+				((*iterator1).second)->nRecvDataTimerBySecond = 0;//已经暂停，不再计时
 		}
-		else if (((*iterator1).second)->netBaseNetType == NetBaseNetType_NetGB28181RtpServerListen && ((*iterator1).second)->bUpdateVideoFrameSpeedFlag == false )
+		else if (((*iterator1).second)->netBaseNetType == NetBaseNetType_NetGB28181RtpServerListen && ((*iterator1).second)->bUpdateVideoFrameSpeedFlag == false)
 		{//检测国标代理拉流 TCP 
 			if ((GetTickCount64() - ((*iterator1).second)->nCreateDateTime) >= (1000 * (ABL_MediaServerPort.MaxDiconnectTimeoutSecond / 2)))
 			{//在超时的时间范围内，码流尚未到达 
@@ -2680,27 +2751,18 @@ int  CheckNetRevcBaseClientDisconnect()
 			{//已经断线，需要重新连接 
 				if (((*iterator1).second)->bRecordProxyDisconnectTimeFlag == false)
 				{
-				  ((*iterator1).second)->nProxyDisconnectTime = GetTickCount64();
-				  ((*iterator1).second)->bRecordProxyDisconnectTimeFlag = true;
+					((*iterator1).second)->nProxyDisconnectTime = GetTickCount64();
+					((*iterator1).second)->bRecordProxyDisconnectTimeFlag = true;
 				}
 
 				if (GetTickCount64() - ((*iterator1).second)->nProxyDisconnectTime >= 1000 * 15)
 				{
- 					((*iterator1).second)->bRecordProxyDisconnectTimeFlag = false;
+					((*iterator1).second)->bRecordProxyDisconnectTimeFlag = false;
 
-					((*iterator1).second)->nReConnectingCount ++; //重连次数累积 
+					((*iterator1).second)->nReConnectingCount++; //重连次数累积 
 
 					if (((*iterator1).second)->nReConnectingCount > ABL_MediaServerPort.nReConnectingCount)
 					{
-						//重连次数已经达到最大次数
-						if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nReConnectingCount > 0 )
-						{
-							MessageNoticeStruct msgNotice;
-							msgNotice.nClient = ABL_MediaServerPort.nReConnectingCount;
- 							sprintf(msgNotice.szMsg, "{\"app\":\"%s\",\"stream\":\"%s\",\"mediaServerId\":\"%s\",\"networkType\":%d,\"key\":%llu}", ((*iterator1).second)->m_addStreamProxyStruct.app, ((*iterator1).second)->m_addStreamProxyStruct.stream, ABL_MediaServerPort.mediaServerID, ((*iterator1).second)->netBaseNetType, ((*iterator1).second)->nClient);
-							pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
-						}
-
 						WriteLog(Log_Debug, "nClient = %llu , nMediaClient = %llu ,url: %s 重连次数已经达到 %llu 次，需要断开 ", ((*iterator1).second)->nClient, ((*iterator1).second)->nMediaClient, ((*iterator1).second)->m_addStreamProxyStruct.url, ((*iterator1).second)->nReConnectingCount);
 						pDisconnectBaseNetFifo.push((unsigned char*)&((*iterator1).second)->nClient, sizeof(((*iterator1).second)->nClient));
 					}
@@ -2709,38 +2771,38 @@ int  CheckNetRevcBaseClientDisconnect()
 						sprintf(((*iterator1).second)->szResponseBody, "{\"code\":%d,\"memo\":\"Network Connnect[ %s ] Timeout .\",\"key\":%llu}", IndexApiCode_ConnectTimeout, ((*iterator1).second)->m_addStreamProxyStruct.url, ((*iterator1).second)->nClient);
 						((*iterator1).second)->ResponseHttp(((*iterator1).second)->nClient_http, ((*iterator1).second)->szResponseBody, false);
 
- 						//如果从未成功过则删除代理对象句柄
+						//如果从未成功过则删除代理对象句柄
 						if (((*iterator1).second)->bProxySuccessFlag == true && ((*iterator1).second)->m_nXHRtspURLType != XHRtspURLType_RecordPlay)
 						{
-				            WriteLog(Log_Debug, "nClient = %llu , nMediaClient = %llu 检测到网络异常断开2 , %s ，现在执行第 %llu 次重连  ", ((*iterator1).second)->nClient, ((*iterator1).second)->nMediaClient,((*iterator1).second)->m_addStreamProxyStruct.url, ((*iterator1).second)->nReConnectingCount);
+							WriteLog(Log_Debug, "nClient = %llu , nMediaClient = %llu 检测到网络异常断开2 , %s ，现在执行第 %llu 次重连  ", ((*iterator1).second)->nClient, ((*iterator1).second)->nMediaClient, ((*iterator1).second)->m_addStreamProxyStruct.url, ((*iterator1).second)->nReConnectingCount);
 							pReConnectStreamProxyFifo.push((unsigned char*)&((*iterator1).second)->nClient, sizeof(((*iterator1).second)->nClient));
 						}
 						else
-						    pDisconnectBaseNetFifo.push((unsigned char*)&((*iterator1).second)->nClient, sizeof(((*iterator1).second)->nClient));
- 					}
- 				}
+							pDisconnectBaseNetFifo.push((unsigned char*)&((*iterator1).second)->nClient, sizeof(((*iterator1).second)->nClient));
+					}
+				}
 			}
 			else
 			{
 				//如果是超时断开的，往往就是原来代理成功过的，需要无限次重连 
-				if (((*iterator1).second)->bProxySuccessFlag == false && pClient->bUpdateVideoFrameSpeedFlag == true )
+				if (((*iterator1).second)->bProxySuccessFlag == false && pClient->bUpdateVideoFrameSpeedFlag == true)
 					((*iterator1).second)->bProxySuccessFlag = true;
 
 				//如果成功，重连次数复位 
-				if ( ((*iterator1).second)->nReConnectingCount != 0 && pClient->bUpdateVideoFrameSpeedFlag == true )
+				if (((*iterator1).second)->nReConnectingCount != 0 && pClient->bUpdateVideoFrameSpeedFlag == true)
 				{
 					((*iterator1).second)->nReConnectingCount = 0;
 					WriteLog(Log_Debug, "nClient = %llu , nMediaClient = %llu ,url %s ，重连次数复位为 0 ", ((*iterator1).second)->nClient, ((*iterator1).second)->nMediaClient, ((*iterator1).second)->m_addStreamProxyStruct.url);
 				}
- 			}
- 		}
+			}
+		}
 
 		//单独处理各种代理拉流、推流时，连接超时回复http请求
 		if (((*iterator1).second)->netBaseNetType == NetBaseNetType_RtspClientRecv || ((*iterator1).second)->netBaseNetType == NetBaseNetType_RtmpClientRecv || ((*iterator1).second)->netBaseNetType == NetBaseNetType_HttpFlvClientRecv || ((*iterator1).second)->netBaseNetType == NetBaseNetType_HttpHLSClientRecv ||
-			((*iterator1).second)->netBaseNetType ==  NetBaseNetType_RtspClientPush || ((*iterator1).second)->netBaseNetType == NetBaseNetType_RtmpClientPush
- 			)
+			((*iterator1).second)->netBaseNetType == NetBaseNetType_RtspClientPush || ((*iterator1).second)->netBaseNetType == NetBaseNetType_RtmpClientPush
+			)
 		{
-			if (!((*iterator1).second)->bResponseHttpFlag && GetTickCount64() - ((*iterator1).second)->nCreateDateTime >= 15000 )
+			if (!((*iterator1).second)->bResponseHttpFlag && GetTickCount64() - ((*iterator1).second)->nCreateDateTime >= 15000)
 			{//连接超时9秒，尚未回复http请求，一律回复连接超时
 				sprintf(((*iterator1).second)->szResponseBody, "{\"code\":%d,\"memo\":\"Network Connnect[ %s : %s ] Timeout .\",\"key\":%d}", IndexApiCode_ConnectTimeout, ((*iterator1).second)->m_rtspStruct.szIP, ((*iterator1).second)->m_rtspStruct.szPort, 0);
 				((*iterator1).second)->ResponseHttp(((*iterator1).second)->nClient_http, ((*iterator1).second)->szResponseBody, false);
@@ -2750,34 +2812,42 @@ int  CheckNetRevcBaseClientDisconnect()
 				if (pParentPtr)
 				{
 					if (pParentPtr->bProxySuccessFlag == false)
-					   pDisconnectBaseNetFifo.push((unsigned char*)&((*iterator1).second)->hParent, sizeof(((*iterator1).second)->hParent));
+						pDisconnectBaseNetFifo.push((unsigned char*)&((*iterator1).second)->hParent, sizeof(((*iterator1).second)->hParent));
 				}
- 			}
+			}
 		}
 
 		//抓拍超时检测 
-		if (((*iterator1).second)->netBaseNetType == NetBaseNetType_SnapPicture_JPEG && ((*iterator1).second)->bSnapSuccessFlag == false )
+		if (((*iterator1).second)->netBaseNetType == NetBaseNetType_SnapPicture_JPEG && ((*iterator1).second)->bSnapSuccessFlag == false)
 		{
-			if(GetTickCount64() - ((*iterator1).second)->nPrintTime >= 1000 * ((*iterator1).second)->timeout_sec)
-			   pDisconnectBaseNetFifo.push((unsigned char*)&((*iterator1).second)->nClient, sizeof(((*iterator1).second)->nClient));
+			if (GetTickCount64() - ((*iterator1).second)->nPrintTime >= 1000 * ((*iterator1).second)->timeout_sec)
+				pDisconnectBaseNetFifo.push((unsigned char*)&((*iterator1).second)->nClient, sizeof(((*iterator1).second)->nClient));
 		}
 
 		//抓拍对象超过生存时长检测
-		if (((*iterator1).second)->netBaseNetType == NetBaseNetType_SnapPicture_JPEG && (GetTickCount64() - ((*iterator1).second)->nPrintTime) >= 1000 * ABL_MediaServerPort.snapObjectDuration )
+		if (((*iterator1).second)->netBaseNetType == NetBaseNetType_SnapPicture_JPEG && (GetTickCount64() - ((*iterator1).second)->nPrintTime) >= 1000 * ABL_MediaServerPort.snapObjectDuration)
 		{
-			WriteLog(Log_Debug, "抓拍对象已经超过最长的生存时长 %d 秒 ,加入删除链表等待销毁，nClient = %llu ", ABL_MediaServerPort.snapObjectDuration,((*iterator1).second)->nClient);
+			WriteLog(Log_Debug, "抓拍对象已经超过最长的生存时长 %d 秒 ,加入删除链表等待销毁，nClient = %llu ", ABL_MediaServerPort.snapObjectDuration, ((*iterator1).second)->nClient);
 			pDisconnectBaseNetFifo.push((unsigned char*)&((*iterator1).second)->nClient, sizeof(((*iterator1).second)->nClient));
 		}
 
-   	}
+		//消息通知超时检测
+		if ((netBaseNetType == NetBaseNetType_HttpClient_None_reader || netBaseNetType == NetBaseNetType_HttpClient_Not_found || netBaseNetType == NetBaseNetType_HttpClient_Record_mp4 || netBaseNetType == NetBaseNetType_HttpClient_Record_Progress || netBaseNetType == NetBaseNetType_HttpClient_on_stream_arrive ||
+			netBaseNetType == NetBaseNetType_HttpClient_on_stream_not_arrive || netBaseNetType == NetBaseNetType_HttpClient_on_stream_disconnect || netBaseNetType == NetBaseNetType_HttpClient_on_record_ts || netBaseNetType == NetBaseNetType_HttpClient_ServerStarted || netBaseNetType == NetBaseNetType_HttpClient_ServerKeepalive || netBaseNetType == NetBaseNetType_HttpClient_DeleteRecordMp4 ||
+			netBaseNetType == NetBaseNetType_HttpClient_on_play || netBaseNetType == NetBaseNetType_HttpClient_on_publish || netBaseNetType == NetBaseNetType_HttpClient_on_iframe_arrive) && GetTickCount64() - ((*iterator1).second)->nCreateDateTime >= 15000)
+		{
+			WriteLog(Log_Debug, "消息通知已经超过 15 秒 ,加入删除链表等待销毁，nClient = %llu ", ((*iterator1).second)->nClient);
+			pDisconnectBaseNetFifo.push((unsigned char*)&((*iterator1).second)->nClient, sizeof(((*iterator1).second)->nClient));
+		}
+	}
 
 	//服务器心跳
-	if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nServerKeepalive > 0 && (GetTickCount64() - ABL_MediaServerPort.nServerKeepaliveTime) >= 1000 * ABL_MediaServerPort.keepaliveDuration)
+	if (ABL_MediaServerPort.hook_enable == 1 && (GetTickCount64() - ABL_MediaServerPort.nServerKeepaliveTime) >= 1000 * ABL_MediaServerPort.keepaliveDuration)
 	{
 		ABL_MediaServerPort.nServerKeepaliveTime = GetTickCount64();
 
 		MessageNoticeStruct msgNotice;
-		msgNotice.nClient = ABL_MediaServerPort.nServerKeepalive;
+		msgNotice.nClient = NetBaseNetType_HttpClient_ServerKeepalive;
 
 #ifdef OS_System_Windows
 		SYSTEMTIME st;
@@ -2786,7 +2856,7 @@ int  CheckNetRevcBaseClientDisconnect()
 #else
 		time_t now;
 		time(&now);
-		struct tm *local;
+		struct tm* local;
 		local = localtime(&now);
 		sprintf(msgNotice.szMsg, "{\"localipAddress\":\"%s\",\"mediaServerId\":\"%s\",\"datetime\":\"%04d-%02d-%02d %02d:%02d:%02d\"}", ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.mediaServerID, local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);
 #endif
@@ -2794,7 +2864,7 @@ int  CheckNetRevcBaseClientDisconnect()
 	}
 
 	if (strlen(szLine))
-    	WriteLog(Log_Debug, "当前对象信息 %s ", szLine);
+		WriteLog(Log_Debug, "当前对象信息 %s ", szLine);
 
 	return nDiconnectCount;
 }
@@ -2810,12 +2880,12 @@ void LIBNET_CALLMETHOD	onaccept(NETHANDLE srvhandle,
 
 	if (address)
 	{
- 		sockaddr_in* addr = reinterpret_cast<sockaddr_in*>(address);
+		sockaddr_in* addr = reinterpret_cast<sockaddr_in*>(address);
 		sprintf(temp, "%s", ::inet_ntoa(addr->sin_addr));
 		nPort = ::ntohs(addr->sin_port);
-  	}
- 
-	if(CreateNetRevcBaseClient(NetRevcBaseClient_ServerAccept,srvhandle, clihandle, temp,nPort,"") == NULL)
+	}
+
+	if (CreateNetRevcBaseClient(NetRevcBaseClient_ServerAccept, srvhandle, clihandle, temp, nPort, "") == NULL)
 		XHNetSDK_Disconnect(clihandle);
 }
 
@@ -2828,14 +2898,14 @@ void LIBNET_CALLMETHOD onread(NETHANDLE srvhandle,
 	CNetRevcBase_ptr  pBasePtr = GetNetRevcBaseClient(clihandle);
 	if (pBasePtr != NULL)
 	{
-		pBasePtr->InputNetData(srvhandle, clihandle, data, datasize,address);
+		pBasePtr->InputNetData(srvhandle, clihandle, data, datasize, address);
 		pBasePtr->ProcessNetData();
 	}
 }
 
 void LIBNET_CALLMETHOD	onclose(NETHANDLE srvhandle,
 	NETHANDLE clihandle)
-{  
+{
 	WriteLog(Log_Debug, "onclose() nClient = %llu 客户端断开 srvhandle = %llu", clihandle, srvhandle);
 
 	DeleteNetRevcBaseClient(clihandle);
@@ -2849,25 +2919,25 @@ void LIBNET_CALLMETHOD	onconnect(NETHANDLE clihandle,
 		CNetRevcBase_ptr pClient = GetNetRevcBaseClient(clihandle);
 		if (pClient)
 		{
- 			WriteLog(Log_Debug, "clihandle = %llu ,URL: %s ,连接失败 result: %d ", clihandle,pClient->m_rtspStruct.szSrcRtspPullUrl,result);
-			if (pClient->netBaseNetType == NetBaseNetType_RtspClientRecv || pClient->netBaseNetType ==  NetBaseNetType_RtmpClientRecv || pClient->netBaseNetType == NetBaseNetType_HttpFlvClientRecv || 
-				pClient->netBaseNetType ==  NetBaseNetType_HttpHLSClientRecv || pClient->netBaseNetType ==  NetBaseNetType_RtspClientPush || pClient->netBaseNetType == NetBaseNetType_RtmpClientPush ||
+			WriteLog(Log_Debug, "clihandle = %llu ,URL: %s ,连接失败 result: %d ", clihandle, pClient->m_rtspStruct.szSrcRtspPullUrl, result);
+			if (pClient->netBaseNetType == NetBaseNetType_RtspClientRecv || pClient->netBaseNetType == NetBaseNetType_RtmpClientRecv || pClient->netBaseNetType == NetBaseNetType_HttpFlvClientRecv ||
+				pClient->netBaseNetType == NetBaseNetType_HttpHLSClientRecv || pClient->netBaseNetType == NetBaseNetType_RtspClientPush || pClient->netBaseNetType == NetBaseNetType_RtmpClientPush ||
 				pClient->netBaseNetType == NetBaseNetType_NetGB28181SendRtpTCP_Connect || pClient->netBaseNetType == NetBaseNetType_NetGB28181RtpServerTCP_Active)
 			{//rtsp 代理拉流失败
-				sprintf(pClient->szResponseBody, "{\"code\":%d,\"memo\":\"Network Connect [%s : %s] Failed .\",\"key\":%llu}", IndexApiCode_ConnectFail,pClient->m_rtspStruct.szIP,pClient->m_rtspStruct.szPort, pClient->hParent);
+				sprintf(pClient->szResponseBody, "{\"code\":%d,\"memo\":\"Network Connect [%s : %s] Failed .\",\"key\":%llu}", IndexApiCode_ConnectFail, pClient->m_rtspStruct.szIP, pClient->m_rtspStruct.szPort, pClient->hParent);
 				pClient->ResponseHttp(pClient->nClient_http, pClient->szResponseBody, false);
 
 				//判断是否成功过，如果尚未成功，则立即删除 ，如果成功过则无限次重连
 				CNetRevcBase_ptr pParent = GetNetRevcBaseClient(pClient->hParent);
 				if (pParent != NULL)
 				{
-				  if (pParent->bProxySuccessFlag == false)
-					pDisconnectBaseNetFifo.push((unsigned char*)&pClient->hParent, sizeof(pClient->hParent));
- 				}
+					if (pParent->bProxySuccessFlag == false)
+						pDisconnectBaseNetFifo.push((unsigned char*)&pClient->hParent, sizeof(pClient->hParent));
+				}
 			}
-  		}
- 		 
- 	    pDisconnectBaseNetFifo.push((unsigned char*)&clihandle, sizeof(clihandle));
+		}
+
+		pDisconnectBaseNetFifo.push((unsigned char*)&clihandle, sizeof(clihandle));
 	}
 	else if (result == 1)
 	{//如果链接成功，发送第一个请求
@@ -2877,60 +2947,69 @@ void LIBNET_CALLMETHOD	onconnect(NETHANDLE clihandle,
 			WriteLog(Log_Debug, "clihandle = %llu ,URL: %s , 连接成功 result: %d ", clihandle, pClient->m_rtspStruct.szSrcRtspPullUrl, result);
 			pClient->bConnectSuccessFlag = true;//连接成功
 			pClient->nClientPort = ntohs(nLocalPort);//记下本地端口号
-  			pClient->SendFirstRequst();
+			pClient->SendFirstRequst();
 		}
 	}
 }
-
+#ifdef USE_BOOST
 //创建 事件通知http Client 对象 
-void CreateHttpClientFunc()
+boost::shared_ptr<CNetRevcBase> CreateHttpClientFunc(int nMsgType)
 {
-	if (ABL_MediaServerPort.nClientNoneReader == 0 && strlen(ABL_MediaServerPort.on_stream_none_reader) > 20 && memcmp(ABL_MediaServerPort.on_stream_none_reader,"http",4) == 0)
-   		 CreateNetRevcBaseClient(NetBaseNetType_HttpClient_None_reader, 0, 0, ABL_MediaServerPort.on_stream_none_reader, 0, "");
- 	
-	if(ABL_MediaServerPort.nClientNotFound == 0 && strlen(ABL_MediaServerPort.on_stream_not_found) > 20 && memcmp(ABL_MediaServerPort.on_stream_not_found, "http", 4) == 0 )
- 		CreateNetRevcBaseClient(NetBaseNetType_HttpClient_Not_found, 0, 0, ABL_MediaServerPort.on_stream_not_found, 0, "");
+	boost::shared_ptr<CNetRevcBase> pMsgClient = NULL;
+#else
+//创建 事件通知http Client 对象 
+std::shared_ptr<CNetRevcBase> CreateHttpClientFunc(int nMsgType)
+{
+	std::shared_ptr<CNetRevcBase> pMsgClient = NULL;
+#endif//USE_BOOST
 
- 	if (ABL_MediaServerPort.nClientRecordMp4 == 0 && strlen(ABL_MediaServerPort.on_record_mp4) > 20 && memcmp(ABL_MediaServerPort.on_record_mp4, "http", 4) == 0 )
-		CreateNetRevcBaseClient(NetBaseNetType_HttpClient_Record_mp4, 0, 0, ABL_MediaServerPort.on_record_mp4, 0, "");
+	if (ABL_MediaServerPort.hook_enable == 1 && nMsgType == NetBaseNetType_HttpClient_None_reader && strlen(ABL_MediaServerPort.on_stream_none_reader) > 20 && memcmp(ABL_MediaServerPort.on_stream_none_reader, "http", 4) == 0)
+		pMsgClient = CreateNetRevcBaseClient(NetBaseNetType_HttpClient_None_reader, 0, 0, ABL_MediaServerPort.on_stream_none_reader, 0, "");
 
-	if (ABL_MediaServerPort.nClientDeleteRecordMp4 == 0 && strlen(ABL_MediaServerPort.on_delete_record_mp4) > 20 && memcmp(ABL_MediaServerPort.on_delete_record_mp4, "http", 4) == 0 )
-		CreateNetRevcBaseClient(NetBaseNetType_HttpClient_DeleteRecordMp4, 0, 0, ABL_MediaServerPort.on_delete_record_mp4, 0, "");
+	if (ABL_MediaServerPort.hook_enable == 1 && nMsgType == NetBaseNetType_HttpClient_Not_found && strlen(ABL_MediaServerPort.on_stream_not_found) > 20 && memcmp(ABL_MediaServerPort.on_stream_not_found, "http", 4) == 0)
+		pMsgClient = CreateNetRevcBaseClient(NetBaseNetType_HttpClient_Not_found, 0, 0, ABL_MediaServerPort.on_stream_not_found, 0, "");
 
-	if (ABL_MediaServerPort.nClientRecordProgress == 0 && strlen(ABL_MediaServerPort.on_record_progress) > 20 && memcmp(ABL_MediaServerPort.on_record_progress, "http", 4) == 0)
-		CreateNetRevcBaseClient(NetBaseNetType_HttpClient_Record_Progress, 0, 0, ABL_MediaServerPort.on_record_progress, 0, "");
- 
- 	if (ABL_MediaServerPort.nClientArrive == 0 && strlen(ABL_MediaServerPort.on_stream_arrive) > 20 && memcmp(ABL_MediaServerPort.on_stream_arrive, "http", 4) == 0)
-		CreateNetRevcBaseClient(NetBaseNetType_HttpClient_on_stream_arrive, 0, 0, ABL_MediaServerPort.on_stream_arrive, 0, "");
+	if (ABL_MediaServerPort.hook_enable == 1 && nMsgType == NetBaseNetType_HttpClient_Record_mp4 && strlen(ABL_MediaServerPort.on_record_mp4) > 20 && memcmp(ABL_MediaServerPort.on_record_mp4, "http", 4) == 0)
+		pMsgClient = CreateNetRevcBaseClient(NetBaseNetType_HttpClient_Record_mp4, 0, 0, ABL_MediaServerPort.on_record_mp4, 0, "");
 
-	if (ABL_MediaServerPort.nClientNotArrive == 0 && strlen(ABL_MediaServerPort.on_stream_not_arrive) > 20 && memcmp(ABL_MediaServerPort.on_stream_not_arrive, "http", 4) == 0)
-		CreateNetRevcBaseClient(NetBaseNetType_HttpClient_on_stream_not_arrive, 0, 0, ABL_MediaServerPort.on_stream_not_arrive, 0, "");
+	if (ABL_MediaServerPort.hook_enable == 1 && nMsgType == NetBaseNetType_HttpClient_DeleteRecordMp4 && strlen(ABL_MediaServerPort.on_delete_record_mp4) > 20 && memcmp(ABL_MediaServerPort.on_delete_record_mp4, "http", 4) == 0)
+		pMsgClient = CreateNetRevcBaseClient(NetBaseNetType_HttpClient_DeleteRecordMp4, 0, 0, ABL_MediaServerPort.on_delete_record_mp4, 0, "");
 
-	if (ABL_MediaServerPort.nClientDisconnect == 0 && strlen(ABL_MediaServerPort.on_stream_disconnect) > 20 && memcmp(ABL_MediaServerPort.on_stream_disconnect, "http", 4) == 0)
-		CreateNetRevcBaseClient(NetBaseNetType_HttpClient_on_stream_disconnect, 0, 0, ABL_MediaServerPort.on_stream_disconnect, 0, "");
+	if (ABL_MediaServerPort.hook_enable == 1 && nMsgType == NetBaseNetType_HttpClient_Record_Progress && strlen(ABL_MediaServerPort.on_record_progress) > 20 && memcmp(ABL_MediaServerPort.on_record_progress, "http", 4) == 0)
+		pMsgClient = CreateNetRevcBaseClient(NetBaseNetType_HttpClient_Record_Progress, 0, 0, ABL_MediaServerPort.on_record_progress, 0, "");
 
-	if (ABL_MediaServerPort.nClientRecordTS == 0 && strlen(ABL_MediaServerPort.on_record_ts) > 20 && memcmp(ABL_MediaServerPort.on_record_ts, "http", 4) == 0)
-		CreateNetRevcBaseClient(NetBaseNetType_HttpClient_on_record_ts, 0, 0, ABL_MediaServerPort.on_record_ts, 0, "");
+	if (ABL_MediaServerPort.hook_enable == 1 && nMsgType == NetBaseNetType_HttpClient_on_stream_arrive && strlen(ABL_MediaServerPort.on_stream_arrive) > 20 && memcmp(ABL_MediaServerPort.on_stream_arrive, "http", 4) == 0)
+		pMsgClient = CreateNetRevcBaseClient(NetBaseNetType_HttpClient_on_stream_arrive, 0, 0, ABL_MediaServerPort.on_stream_arrive, 0, "");
 
-	if (ABL_MediaServerPort.nServerStarted == 0 && strlen(ABL_MediaServerPort.on_server_started) > 20 && memcmp(ABL_MediaServerPort.on_server_started, "http", 4) == 0)
-		CreateNetRevcBaseClient(NetBaseNetType_HttpClient_ServerStarted, 0, 0, ABL_MediaServerPort.on_server_started, 0, "");
+	if (ABL_MediaServerPort.hook_enable == 1 && nMsgType == NetBaseNetType_HttpClient_on_stream_not_arrive && strlen(ABL_MediaServerPort.on_stream_not_arrive) > 20 && memcmp(ABL_MediaServerPort.on_stream_not_arrive, "http", 4) == 0)
+		pMsgClient = CreateNetRevcBaseClient(NetBaseNetType_HttpClient_on_stream_not_arrive, 0, 0, ABL_MediaServerPort.on_stream_not_arrive, 0, "");
 
-	if (ABL_MediaServerPort.nServerKeepalive == 0 && strlen(ABL_MediaServerPort.on_server_keepalive) > 20 && memcmp(ABL_MediaServerPort.on_server_keepalive, "http", 4) == 0)
-		CreateNetRevcBaseClient(NetBaseNetType_HttpClient_ServerKeepalive, 0, 0, ABL_MediaServerPort.on_server_keepalive, 0, "");
+	if (ABL_MediaServerPort.hook_enable == 1 && nMsgType == NetBaseNetType_HttpClient_on_stream_disconnect && strlen(ABL_MediaServerPort.on_stream_disconnect) > 20 && memcmp(ABL_MediaServerPort.on_stream_disconnect, "http", 4) == 0)
+		pMsgClient = CreateNetRevcBaseClient(NetBaseNetType_HttpClient_on_stream_disconnect, 0, 0, ABL_MediaServerPort.on_stream_disconnect, 0, "");
 
-	if (ABL_MediaServerPort.nPlay == 0 && strlen(ABL_MediaServerPort.on_play) > 20 && memcmp(ABL_MediaServerPort.on_play, "http", 4) == 0)
-		CreateNetRevcBaseClient(NetBaseNetType_HttpClient_on_play, 0, 0, ABL_MediaServerPort.on_play, 0, "");
+	if (ABL_MediaServerPort.hook_enable == 1 && nMsgType == NetBaseNetType_HttpClient_on_record_ts && strlen(ABL_MediaServerPort.on_record_ts) > 20 && memcmp(ABL_MediaServerPort.on_record_ts, "http", 4) == 0)
+		pMsgClient = CreateNetRevcBaseClient(NetBaseNetType_HttpClient_on_record_ts, 0, 0, ABL_MediaServerPort.on_record_ts, 0, "");
 
-	if (ABL_MediaServerPort.nPublish == 0 && strlen(ABL_MediaServerPort.on_publish) > 20 && memcmp(ABL_MediaServerPort.on_publish, "http", 4) == 0)
-		CreateNetRevcBaseClient(NetBaseNetType_HttpClient_on_publish, 0, 0, ABL_MediaServerPort.on_publish, 0, "");
+	if (ABL_MediaServerPort.hook_enable == 1 && nMsgType == NetBaseNetType_HttpClient_ServerStarted && strlen(ABL_MediaServerPort.on_server_started) > 20 && memcmp(ABL_MediaServerPort.on_server_started, "http", 4) == 0)
+		pMsgClient = CreateNetRevcBaseClient(NetBaseNetType_HttpClient_ServerStarted, 0, 0, ABL_MediaServerPort.on_server_started, 0, "");
 
-	if (ABL_MediaServerPort.nFrameArrive == 0 && strlen(ABL_MediaServerPort.on_stream_iframe_arrive) > 20 && memcmp(ABL_MediaServerPort.on_stream_iframe_arrive, "http", 4) == 0)
-		CreateNetRevcBaseClient(NetBaseNetType_HttpClient_on_iframe_arrive, 0, 0, ABL_MediaServerPort.on_stream_iframe_arrive, 0, "");
+	if (ABL_MediaServerPort.hook_enable == 1 && nMsgType == NetBaseNetType_HttpClient_ServerKeepalive && strlen(ABL_MediaServerPort.on_server_keepalive) > 20 && memcmp(ABL_MediaServerPort.on_server_keepalive, "http", 4) == 0)
+		pMsgClient = CreateNetRevcBaseClient(NetBaseNetType_HttpClient_ServerKeepalive, 0, 0, ABL_MediaServerPort.on_server_keepalive, 0, "");
 
+	if (ABL_MediaServerPort.hook_enable == 1 && nMsgType == NetBaseNetType_HttpClient_on_play && strlen(ABL_MediaServerPort.on_play) > 20 && memcmp(ABL_MediaServerPort.on_play, "http", 4) == 0)
+		pMsgClient = CreateNetRevcBaseClient(NetBaseNetType_HttpClient_on_play, 0, 0, ABL_MediaServerPort.on_play, 0, "");
+
+	if (ABL_MediaServerPort.hook_enable == 1 && nMsgType == NetBaseNetType_HttpClient_on_publish && strlen(ABL_MediaServerPort.on_publish) > 20 && memcmp(ABL_MediaServerPort.on_publish, "http", 4) == 0)
+		pMsgClient = CreateNetRevcBaseClient(NetBaseNetType_HttpClient_on_publish, 0, 0, ABL_MediaServerPort.on_publish, 0, "");
+
+	if (ABL_MediaServerPort.hook_enable == 1 && nMsgType == NetBaseNetType_HttpClient_on_iframe_arrive && strlen(ABL_MediaServerPort.on_stream_iframe_arrive) > 20 && memcmp(ABL_MediaServerPort.on_stream_iframe_arrive, "http", 4) == 0)
+		pMsgClient = CreateNetRevcBaseClient(NetBaseNetType_HttpClient_on_iframe_arrive, 0, 0, ABL_MediaServerPort.on_stream_iframe_arrive, 0, "");
+
+	return pMsgClient;
 }
 
 //一些事务处理 
-void*  ABLMedisServerProcessThread(void* lpVoid)
+void* ABLMedisServerProcessThread(void* lpVoid)
 {
 	int nDeleteBreakTimer = 0;
 	int nCheckNetRevcBaseClientDisconnectTime = 0;
@@ -2946,20 +3025,13 @@ void*  ABLMedisServerProcessThread(void* lpVoid)
 
 	while (ABL_bMediaServerRunFlag)
 	{
-		//检查消息通知 
-		if (ABL_MediaServerPort.hook_enable == 1 && ( nCreateHttpClientTimer >= 2 || pMessageNoticeFifo.GetSize() > 0 ) )
-		{//5秒检查一下
-			nCreateHttpClientTimer = 0;
-			CreateHttpClientFunc();
-		}
-
 		//检测网络异常断开，执行一些清理工作 
 		if (nCheckNetRevcBaseClientDisconnectTime >= 20)
 		{
 			nCheckNetRevcBaseClientDisconnectTime = 0;
 			CheckNetRevcBaseClientDisconnect();
 		}
-		
+
 		//处理消息通知
 		while ((pData = pMessageNoticeFifo.pop(&nLength)) != NULL)
 		{
@@ -2968,14 +3040,11 @@ void*  ABLMedisServerProcessThread(void* lpVoid)
 				memset((char*)&msgNotice, 0x00, sizeof(msgNotice));
 				memcpy((char*)&msgNotice, pData, nLength);
 
-				auto pHttpClient = GetNetRevcBaseClient(msgNotice.nClient);
-				if (pHttpClient != NULL)
-				{
-  					pHttpClient->PushVideo((unsigned char*)msgNotice.szMsg, strlen(msgNotice.szMsg), "JSON");
-					pHttpClient->ProcessNetData();
-				}
- 			}
- 			pMessageNoticeFifo.pop_front();
+				auto pMsgClient = CreateHttpClientFunc(msgNotice.nClient);
+				if (pMsgClient != NULL)
+					memcpy((char*)&pMsgClient->msgNotice, (char*)&msgNotice, sizeof(msgNotice));
+			}
+			pMessageNoticeFifo.pop_front();
 		}
 
 		//代理拉流重连
@@ -2992,31 +3061,31 @@ void*  ABLMedisServerProcessThread(void* lpVoid)
 						CNetRevcBase_ptr pClient = GetNetRevcBaseClient(nClient);
 						if (pClient)
 							pClient->SendFirstRequst(); //执行重连
- 					}
+					}
 				}
 
 				pReConnectStreamProxyFifo.pop_front();
- 			}
- 		}
- 
+			}
+		}
+
 		//删除过期的M3u8文件 
-		if (DeleteExpireM3u8FileTimer >= 10 * 180 )
+		if (DeleteExpireM3u8FileTimer >= 10 * 180)
 		{
 			DeleteExpireM3u8FileTimer = 0;
 			DeleteExpireM3u8File();
 		}
 
-		nDeleteBreakTimer ++;
-		nCheckNetRevcBaseClientDisconnectTime ++;
-		nReConnectStreamProxyTimer ++;
-		nCreateHttpClientTimer ++;
-		DeleteExpireM3u8FileTimer ++ ;
+		nDeleteBreakTimer++;
+		nCheckNetRevcBaseClientDisconnectTime++;
+		nReConnectStreamProxyTimer++;
+		nCreateHttpClientTimer++;
+		DeleteExpireM3u8FileTimer++;
 
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		//Sleep(100);
 	}
- 
-  	FillNetRevcBaseClientFifo();//把所有对象装入链表，准备删除
+
+	FillNetRevcBaseClientFifo();//把所有对象装入链表，准备删除
 
 	while ((pData = pDisconnectBaseNetFifo.pop(&nLength)) != NULL)
 	{
@@ -3026,7 +3095,6 @@ void*  ABLMedisServerProcessThread(void* lpVoid)
 			if (nClient >= 0)
 			{
 				DeleteClientMediaStreamSource(nClient);//移除媒体拷贝
-			
 				DeleteNetRevcBaseClient(nClient);//执行删除 
 			}
 		}
@@ -3058,10 +3126,10 @@ void  SendToMapFromMutePacketList()
 }
 
 //快速删除资源线程
-void*  ABLMedisServerFastDeleteThread(void* lpVoid)
+void* ABLMedisServerFastDeleteThread(void* lpVoid)
 {
 	unsigned char* pData = NULL;
- 	int            nLength;
+	int            nLength;
 	uint64_t       nClient;
 
 	while (ABL_bMediaServerRunFlag)
@@ -3100,7 +3168,7 @@ bool   ABLDeleteFile(char* szFileName)
 	return ::DeleteFile(szFileName);
 }
 
-bool GetMediaServerCurrentPath(char *szCurPath)
+bool GetMediaServerCurrentPath(char* szCurPath)
 {
 	char    szPath[255] = { 0 };
 	string  strTemp;
@@ -3183,9 +3251,9 @@ bool GetLocalAdaptersInfo(string& strIPList)
 
 			if (!(strcmp(pIpAddr->IpAddress.String, "127.0.0.1") == 0 || strcmp(pIpAddr->IpAddress.String, "0.0.0.0") == 0))
 			{
-			  strIPList += pIpAddr->IpAddress.String;
-			  strIPList += ",";
- 			}
+				strIPList += pIpAddr->IpAddress.String;
+				strIPList += ",";
+			}
 
 			//指向网关列表
 			PIP_ADDR_STRING pGateAwayList = &pIterater->GatewayList;
@@ -3207,7 +3275,7 @@ bool GetLocalAdaptersInfo(string& strIPList)
 	}
 
 	WriteLog(Log_Debug, "strIPList = %s ", strIPList.c_str());
- 	return true;
+	return true;
 }
 
 //根据录像路径查找所有录像文件 - windows
@@ -3217,7 +3285,7 @@ void FindHistoryRecordFile(char* szRecordPath)
 	WIN32_FIND_DATA fd = { 0 };
 	WIN32_FIND_DATA fd2 = { 0 };
 	WIN32_FIND_DATA fd3 = { 0 };
-	bool bFindFlag = true ;
+	bool bFindFlag = true;
 	char szApp[256] = { 0 }, szStream[string_length_512] = { 0 };//现在只支持2级路径
 	char szDeleteFile[string_length_512] = { 0 };
 
@@ -3228,15 +3296,15 @@ void FindHistoryRecordFile(char* szRecordPath)
 	if (INVALID_HANDLE_VALUE == hFind)
 	{
 		WriteLog(Log_Debug, "FindHistoryRecordFile ，配置的录像路径 %s ,没有找到任何文件！ ", szRecordPath);
-		return ;
+		return;
 	}
- 
- 	while (bFindFlag)
+
+	while (bFindFlag)
 	{
 		bFindFlag = FindNextFile(hFind, &fd);
-		if (bFindFlag && !(strcmp(fd.cFileName,"." ) == 0 || strcmp(fd.cFileName, "..") == 0) && fd.dwFileAttributes == FILE_ATTRIBUTE_DIRECTORY)
+		if (bFindFlag && !(strcmp(fd.cFileName, ".") == 0 || strcmp(fd.cFileName, "..") == 0) && fd.dwFileAttributes == FILE_ATTRIBUTE_DIRECTORY)
 		{
- 			//WriteLog(Log_Debug, "FindHistoryRecordFile ，路径 %s%s  ", szRecordPath, fd.cFileName);
+			//WriteLog(Log_Debug, "FindHistoryRecordFile ，路径 %s%s  ", szRecordPath, fd.cFileName);
 
 			sprintf(tempFileFind, "%s%s\\%s", szRecordPath, fd.cFileName, "*.*");
 			HANDLE hFind2 = FindFirstFile(tempFileFind, &fd2);
@@ -3251,12 +3319,12 @@ void FindHistoryRecordFile(char* szRecordPath)
 
 						sprintf(tempFileFind, "%s%s\\%s\\%s", szRecordPath, fd.cFileName, fd2.cFileName, "*.*");
 						HANDLE hFind3 = FindFirstFile(tempFileFind, &fd3);
- 						bool bFindFlag3 = true;
+						bool bFindFlag3 = true;
 
 						CRecordFileSource_ptr pRecord = CreateRecordFileSource(fd.cFileName, fd2.cFileName);
-						if (hFind3 && pRecord && strstr(fd3.cFileName,".mp4") != NULL )
+						if (hFind3 && pRecord && strstr(fd3.cFileName, ".mp4") != NULL)
 							pRecord->AddRecordFile(fd3.cFileName);
-						
+
 						//删除掉 .m3u8 文件
 						if (hFind3 && strstr(fd3.cFileName, ".m3u8") != NULL)
 						{
@@ -3266,8 +3334,8 @@ void FindHistoryRecordFile(char* szRecordPath)
 
 						while (bFindFlag3 && pRecord)
 						{
- 							bFindFlag3 = FindNextFile(hFind3, &fd3);
- 							if (bFindFlag3 && !(strcmp(fd3.cFileName, ".") == 0 || strcmp(fd3.cFileName, "..") == 0) && fd3.dwFileAttributes == FILE_ATTRIBUTE_ARCHIVE)
+							bFindFlag3 = FindNextFile(hFind3, &fd3);
+							if (bFindFlag3 && !(strcmp(fd3.cFileName, ".") == 0 || strcmp(fd3.cFileName, "..") == 0) && fd3.dwFileAttributes == FILE_ATTRIBUTE_ARCHIVE)
 							{
 								if (pRecord && strstr(fd3.cFileName, ".mp4") != NULL)
 								{
@@ -3281,12 +3349,12 @@ void FindHistoryRecordFile(char* szRecordPath)
 								}
 								//WriteLog(Log_Debug, "FindHistoryRecordFile ，文件 %s%s\\%s\\%s  ", szRecordPath, fd.cFileName, fd2.cFileName, fd3.cFileName);
 							}
- 						}
+						}
 						FindClose(hFind3);
 
-						if(pRecord)
-						  pRecord->Sort();
- 					}
+						if (pRecord)
+							pRecord->Sort();
+					}
 				}
 			}
 			FindClose(hFind2);
@@ -3352,8 +3420,8 @@ void FindHistoryPictureFile(char* szPicturePath)
 						}
 						FindClose(hFind3);
 
-						if(pPicture)
-						  pPicture->Sort();
+						if (pPicture)
+							pPicture->Sort();
 					}
 				}
 			}
@@ -3375,49 +3443,49 @@ bool  ABLDeleteFile(char* szFileName)
 //根据录像路径查找所有录像文件 - linux 
 void FindHistoryRecordFile(char* szRecordPath)
 {
-	struct dirent * filename;    // return value for readdir()
-	DIR * dir;                   // return value for opendir()
+	struct dirent* filename;    // return value for readdir()
+	DIR* dir;                   // return value for opendir()
 	dir = opendir(szRecordPath);
 	char  szTempPath[512] = { 0 };
 	char  szDeleteFile[1024] = { 0 };
 
- 	while ((filename = readdir(dir)) != NULL)
+	while ((filename = readdir(dir)) != NULL)
 	{
 		// get rid of "." and ".."
 		if (strcmp(filename->d_name, ".") == 0 ||
 			strcmp(filename->d_name, "..") == 0)
 			continue;
-			
-		if (strlen(filename->d_name) > 0 )
+
+		if (strlen(filename->d_name) > 0)
 		{
 			//WriteLog(Log_Debug, "FindHistoryRecordFile ，路径 %s ", filename->d_name);
 
-			struct dirent * filename2;     
-			DIR *           dir2;                   
+			struct dirent* filename2;
+			DIR* dir2;
 			memset(szTempPath, 0x00, sizeof(szTempPath));
-			sprintf(szTempPath,"%s%s", szRecordPath, filename->d_name);
+			sprintf(szTempPath, "%s%s", szRecordPath, filename->d_name);
 			dir2 = opendir(szTempPath);
-   
+
 			while ((filename2 = readdir(dir2)) != NULL)
 			{
 				if (!(strcmp(filename2->d_name, ".") == 0 || strcmp(filename2->d_name, "..") == 0))
 				{
 					//WriteLog(Log_Debug, "FindHistoryRecordFile ，第2级路径 %s ", filename2->d_name);
 
-					struct dirent * filename3;     
-					DIR *           dir3;                   
+					struct dirent* filename3;
+					DIR* dir3;
 					memset(szTempPath, 0x00, sizeof(szTempPath));
-					sprintf(szTempPath,"%s%s/%s", szRecordPath, filename->d_name,filename2->d_name);
+					sprintf(szTempPath, "%s%s/%s", szRecordPath, filename->d_name, filename2->d_name);
 					dir3 = opendir(szTempPath);
-					
-					CRecordFileSource_ptr pRecord = CreateRecordFileSource(filename->d_name,filename2->d_name);
-					
+
+					CRecordFileSource_ptr pRecord = CreateRecordFileSource(filename->d_name, filename2->d_name);
+
 					while ((filename3 = readdir(dir3)) != NULL && pRecord)
 					{
 						if (!(strcmp(filename3->d_name, ".") == 0 || strcmp(filename3->d_name, "..") == 0))
 						{
 							//WriteLog(Log_Debug, "FindHistoryRecordFile ,录像文件名字 %s ", filename3->d_name);
-							if (pRecord && strstr(filename3->d_name,".mp4") != NULL )
+							if (pRecord && strstr(filename3->d_name, ".mp4") != NULL)
 							{
 								pRecord->AddRecordFile(filename3->d_name);
 							}
@@ -3430,12 +3498,12 @@ void FindHistoryRecordFile(char* szRecordPath)
 					}
 					closedir(dir3);
 
-					if(pRecord)
-					pRecord->Sort();
+					if (pRecord)
+						pRecord->Sort();
 				}
 			}//while ((filename2 = readdir(dir2)) != NULL)
 			closedir(dir2);
-			
+
 		}
 	}//while ((filename = readdir(dir)) != NULL)
 	closedir(dir);
@@ -3444,8 +3512,8 @@ void FindHistoryRecordFile(char* szRecordPath)
 //根据图片路径查找所有图片文件 - linux 
 void FindHistoryPictureFile(char* szPicturePath)
 {
-	struct dirent * filename;    // return value for readdir()
-	DIR * dir;                   // return value for opendir()
+	struct dirent* filename;    // return value for readdir()
+	DIR* dir;                   // return value for opendir()
 	dir = opendir(szPicturePath);
 	char  szTempPath[512] = { 0 };
 
@@ -3460,8 +3528,8 @@ void FindHistoryPictureFile(char* szPicturePath)
 		{
 			//WriteLog(Log_Debug, "FindHistoryPictureFile ，路径 %s ", filename->d_name);
 
-			struct dirent * filename2;
-			DIR *           dir2;
+			struct dirent* filename2;
+			DIR* dir2;
 			memset(szTempPath, 0x00, sizeof(szTempPath));
 			sprintf(szTempPath, "%s%s", szPicturePath, filename->d_name);
 			dir2 = opendir(szTempPath);
@@ -3472,8 +3540,8 @@ void FindHistoryPictureFile(char* szPicturePath)
 				{
 					//WriteLog(Log_Debug, "FindHistoryPictureFile ，第2级路径 %s ", filename2->d_name);
 
-					struct dirent * filename3;
-					DIR *           dir3;
+					struct dirent* filename3;
+					DIR* dir3;
 					memset(szTempPath, 0x00, sizeof(szTempPath));
 					sprintf(szTempPath, "%s%s/%s", szPicturePath, filename->d_name, filename2->d_name);
 					dir3 = opendir(szTempPath);
@@ -3493,8 +3561,8 @@ void FindHistoryPictureFile(char* szPicturePath)
 					}
 					closedir(dir3);
 
-					if(pPicture)
-					  pPicture->Sort();
+					if (pPicture)
+						pPicture->Sort();
 				}
 			}//while ((filename2 = readdir(dir2)) != NULL)
 			closedir(dir2);
@@ -3507,16 +3575,16 @@ void FindHistoryPictureFile(char* szPicturePath)
 
 void WebRtcCallBack(const char* callbackJson, void* pUserHandle)
 {
- 	WriteLog(Log_Debug, " ----- WebRtcCallBack ----- ：\r\n%s ", callbackJson);
-	if (strlen(callbackJson) > 0 /* && callbackJson[0] == '{' && callbackJson[strlen(callbackJson) - 1] == '}' */ )
-	 {
+	WriteLog(Log_Debug, " ----- WebRtcCallBack ----- ：\r\n%s ", callbackJson);
+	if (strlen(callbackJson) > 0 /* && callbackJson[0] == '{' && callbackJson[strlen(callbackJson) - 1] == '}' */)
+	{
 		WebRtcCallStruct callbackStruct;
 		rapidjson::Document doc;
 		doc.Parse<0>((char*)callbackJson);
 		int listSize;
 		if (!doc.HasParseError())
 		{
-			if(strstr(callbackJson, "eventID") != NULL )
+			if (strstr(callbackJson, "eventID") != NULL)
 				callbackStruct.eventID = doc["eventID"].GetInt64();
 			if (strstr(callbackJson, "media") != NULL)
 				strcpy(callbackStruct.media, doc["media"].GetString());
@@ -3533,48 +3601,48 @@ void WebRtcCallBack(const char* callbackJson, void* pUserHandle)
 				WriteLog(Log_Debug, "不存在流 %s ", callbackStruct.stream);
 			else
 			{
-				if (strcmp(pMediaSource->m_mediaCodecInfo.szVideoName, "H264") == 0 && pMediaSource->bCreateWebRtcPlaySourceFlag.load() == false )
+				if (strcmp(pMediaSource->m_mediaCodecInfo.szVideoName, "H264") == 0 && pMediaSource->bCreateWebRtcPlaySourceFlag.load() == false)
 				{
 					CNetRevcBase_ptr pClient = CreateNetRevcBaseClient(NetBaseNetType_NetClientWebrtcPlayer, 0, 0, "", 0, callbackStruct.stream);
 					if (pClient != NULL)
 					{
- 						WriteLog(Log_Debug, "创建webrtc播放  %s ", callbackStruct.stream);
+						WriteLog(Log_Debug, "创建webrtc播放  %s ", callbackStruct.stream);
 						memcpy((char*)&pClient->webRtcCallStruct, (char*)&callbackStruct, sizeof(WebRtcCallStruct));
 					}
-					pMediaSource->nWebRtcPlayerCount ++;
+					pMediaSource->nWebRtcPlayerCount++;
 				}
 				else
 				{
 					if (strcmp(pMediaSource->m_mediaCodecInfo.szVideoName, "H264") == 0 && pMediaSource->bCreateWebRtcPlaySourceFlag.load() == true)
 					{
-						pMediaSource->nWebRtcPlayerCount ++ ; 
- 						WriteLog(Log_Debug, "媒体源 %s 的视频格式为 %s ,已经创建了webrtc 播放媒体源 ", callbackStruct.stream, pMediaSource->m_mediaCodecInfo.szVideoName);
+						pMediaSource->nWebRtcPlayerCount++;
+						WriteLog(Log_Debug, "媒体源 %s 的视频格式为 %s ,已经创建了webrtc 播放媒体源 ", callbackStruct.stream, pMediaSource->m_mediaCodecInfo.szVideoName);
 					}
 					else
-					    WriteLog(Log_Debug, "媒体源 %s 的视频格式为 %s ,不支持WebRTC播放，必须为H264 ", callbackStruct.stream, pMediaSource->m_mediaCodecInfo.szVideoName);
+						WriteLog(Log_Debug, "媒体源 %s 的视频格式为 %s ,不支持WebRTC播放，必须为H264 ", callbackStruct.stream, pMediaSource->m_mediaCodecInfo.szVideoName);
 				}
 			}
 		}
-		else if (callbackStruct.eventID == 5 )
+		else if (callbackStruct.eventID == 5)
 		{//删除webrtc播放
 			CMediaStreamSource_ptr pMediaSource = GetMediaStreamSource(callbackStruct.stream, false);
 			if (pMediaSource != NULL)
 			{
-				pMediaSource->nWebRtcPlayerCount --;
+				pMediaSource->nWebRtcPlayerCount--;
 				if (pMediaSource->nWebRtcPlayerCount <= 0)
 				{//统计出无人观看时
 					pMediaSource->nWebRtcPlayerCount = 0;
 					WriteLog(Log_Debug, "媒体源 %s , pMediaSource->nWebRtcPlayerCount = %d  已经无人观看，把 nClient = %llu 从 发送线程池移除  ", callbackStruct.stream, pMediaSource->nWebRtcPlayerCount, pMediaSource->nWebRtcPushStreamID);
 				}
 			}
-  		}
+		}
 		else if (callbackStruct.eventID == 7)
 		{//删除webrtc媒体源
 
 		}
-	} 
+	}
 };
-#define VERSION	 "1.0.001.0313" //   001是当日第几个版本       最后的是日期
+#define VERSION	 "1.0.001.0415" //   001是当日第几个版本       最后的是日期
 void  printfVersion()
 {
 
@@ -3613,7 +3681,7 @@ int main(int argc, char* argv[])
 
 ABL_Restart:
 	unsigned char nGet;
-	int nBindHttp, nBindRtsp, nBindRtmp,nBindWsFlv,nBindHttpFlv, nBindHls,nBindMp4,nBindRecvAudio,nBingPS10000;
+	int nBindHttp, nBindRtsp, nBindRtmp, nBindWsFlv, nBindHttpFlv, nBindHls, nBindMp4, nBindRecvAudio, nBingPS10000;
 
 	memset(ABL_MediaSeverRunPath, 0x00, sizeof(ABL_MediaSeverRunPath));
 	memset(ABL_wwwMediaPath, 0x00, sizeof(ABL_wwwMediaPath));
@@ -3664,9 +3732,9 @@ ABL_Restart:
 		GetLocalAdaptersInfo(strIPTemp);
 		int nPos = strIPTemp.find(",", 0);
 		if (nPos > 0)
- 		  memcpy(ABL_szLocalIP, strIPTemp.c_str(), nPos);
-		 else 
-		  strcpy(ABL_szLocalIP, "127.0.0.1");
+			memcpy(ABL_szLocalIP, strIPTemp.c_str(), nPos);
+		else
+			strcpy(ABL_szLocalIP, "127.0.0.1");
 	}
 	strcpy(ABL_MediaServerPort.ABL_szLocalIP, ABL_szLocalIP);
 	WriteLog(Log_Debug, "本机IP地址 ABL_szLocalIP : %s ", ABL_szLocalIP);
@@ -3766,7 +3834,7 @@ ABL_Restart:
 	ABL_MediaServerPort.keepaliveDuration = ABL_ConfigFile.GetLongValue("ABLMediaServer", "keepaliveDuration", 20);
 	ABL_MediaServerPort.nWebRtcPort = ABL_ConfigFile.GetLongValue("ABLMediaServer", "webrtcPort", 8000);
 
-	strcpy(ABL_MediaServerPort.defaultSnap, ABL_ConfigFile.GetValue("api", "defaultSnap", ""));
+	
 	ABL_MediaServerPort.nUseWvp = ABL_ConfigFile.GetLongValue("api", "usewvp", 0);
 	strcpy(ABL_MediaServerPort.port_range, ABL_ConfigFile.GetValue("rtp_proxy", "port_range", ""));
 	strcpy(ABL_MediaServerPort.listeningip, ABL_ConfigFile.GetValue("rtc", "listening-ip", ""));
@@ -3784,9 +3852,9 @@ ABL_Restart:
 		ABL_MediaServerPort.httpDownloadSpeed = 10;
 	else if (ABL_MediaServerPort.httpDownloadSpeed <= 0)
 		ABL_MediaServerPort.httpDownloadSpeed = 1;
- 
+
 	if (strlen(ABL_MediaServerPort.recordPath) == 0)
-	   strcpy(ABL_MediaServerPort.recordPath, ABL_MediaSeverRunPath);
+		strcpy(ABL_MediaServerPort.recordPath, ABL_MediaSeverRunPath);
 	else
 	{//用户设置的路径,防止用户没有创建好路径
 		int nPos = 0;
@@ -3794,7 +3862,7 @@ ABL_Restart:
 		string strPath = ABL_MediaServerPort.recordPath;
 		while (true)
 		{
-			nPos = strPath.find("\\", nPos+3);
+			nPos = strPath.find("\\", nPos + 3);
 			if (nPos > 0)
 			{
 				memcpy(szTempPath, ABL_MediaServerPort.recordPath, nPos);
@@ -3872,15 +3940,13 @@ ABL_Restart:
 	::CreateDirectory(ABL_MediaServerPort.debugPath, NULL);
 
 	WriteLog(Log_Debug, "创建成功录像路径：%s ,创建图片路径: %s  ", ABL_MediaServerPort.recordPath, ABL_MediaServerPort.picturePath);
-	
 	//把历史录像文件装入 list  
 	FindHistoryRecordFile(ABL_MediaServerPort.recordPath);
-	WriteLog(Log_Debug, "创建成功录像路径 成功");
 	//把历史图片装入list 
 	FindHistoryPictureFile(ABL_MediaServerPort.picturePath);
-	WriteLog(Log_Debug, "把历史图片装入 成功");
+
 	rtp_packet_setsize(65535);
-	WriteLog(Log_Debug, "rtp_packet_setsize 成功");
+
 	if (ABL_MediaServerPort.H265ConvertH264_enable == 1 && ABL_MediaServerPort.H265DecodeCpuGpuType == 1 && ABL_bInitCudaSDKFlag == false)
 	{///英伟达
 		if (true/*不能根据显卡名称来判断，有些电脑有双显卡 strstr(pD3DName.Description, "GeForce") != NULL || strstr(pD3DName.Description, "NVIDIA") != NULL*/)
@@ -3909,33 +3975,34 @@ ABL_Restart:
 				ABL_MediaServerPort.H265DecodeCpuGpuType = 0; //恢复cpu软解
 			else
 			{//cuda 资源已经启动过 
-				ABL_bInitCudaSDKFlag = true; 
+				ABL_bInitCudaSDKFlag = true;
 				WriteLog(Log_Debug, "测试英伟达显卡 ABL_bCudaFlag = %d, 英伟达显卡总数 : %d  ", ABL_bCudaFlag, ABL_nCudaCount);
 			}
 		}
 		else
 			ABL_MediaServerPort.H265DecodeCpuGpuType = 0; //恢复cpu软解
 	}
-	else if (ABL_MediaServerPort.H265ConvertH264_enable == 1 && ABL_MediaServerPort.H265DecodeCpuGpuType == 2 )
+	else if (ABL_MediaServerPort.H265ConvertH264_enable == 1 && ABL_MediaServerPort.H265DecodeCpuGpuType == 2)
 	{//amd 
 		ABL_MediaServerPort.H265DecodeCpuGpuType = 0; //恢复cpu软解
 	}
 
-	if(ABL_MediaServerPort.H265ConvertH264_enable == 1)
-	   WriteLog(Log_Debug, "ABL_MediaServerPort.H265DecodeCpuGpuType = %d ", ABL_MediaServerPort.H265DecodeCpuGpuType);
+	if (ABL_MediaServerPort.H265ConvertH264_enable == 1)
+		WriteLog(Log_Debug, "ABL_MediaServerPort.H265DecodeCpuGpuType = %d ", ABL_MediaServerPort.H265DecodeCpuGpuType);
 #else
 	InitLogFile();
-    if(argc >= 3)
-      WriteLog(Log_Debug, "argc = %d, argv[0] = %s ,argv[1] = %s ,argv[2] = %s ", argc,argv[0],argv[1],argv[2]);
- 
+	if (argc >= 3)
+		WriteLog(Log_Debug, "argc = %d, argv[0] = %s ,argv[1] = %s ,argv[2] = %s ", argc, argv[0], argv[1], argv[2]);
+
 	strcpy(ABL_MediaSeverRunPath, get_current_dir_name());
-	if(argc >=3 && strcmp(argv[1],"-c") == 0)
+	if (argc >= 3 && strcmp(argv[1], "-c") == 0)
 	{//带配置文件启动
-	   strcpy(szConfigFileName,argv[2]) ;	
-	}else
-	  sprintf(szConfigFileName, "%s/%s", ABL_MediaSeverRunPath, "ABLMediaServer.ini");
+		strcpy(szConfigFileName, argv[2]);
+	}
+	else
+		sprintf(szConfigFileName, "%s/%s", ABL_MediaSeverRunPath, "ABLMediaServer.ini");
 	WriteLog(Log_Debug, "ABLMediaServer.ini : %s ", szConfigFileName);
- 	if (access(szConfigFileName, F_OK) != 0)
+	if (access(szConfigFileName, F_OK) != 0)
 	{
 		WriteLog(Log_Debug, "当前路径 %s 没有配置文件 ABLMediaServer.ini，请检查。", ABL_MediaSeverRunPath);
 		return -1;
@@ -3945,9 +4012,9 @@ ABL_Restart:
 		WriteLog(Log_Debug, "读取配置文件 %s 失败 ！", szConfigFileName);
 		return -1;
 	}
-	
+
 	//获取用户配置的IP地址 
-	strcpy(ABL_szLocalIP, ABL_ConfigFile.GetValue("ABLMediaServer", "localipAddress",""));
+	strcpy(ABL_szLocalIP, ABL_ConfigFile.GetValue("ABLMediaServer", "localipAddress", ""));
 	WriteLog(Log_Debug, "读取到配置文件的IP : %s ", ABL_szLocalIP);
 	WriteLog(Log_Debug, "本机cpu物理核心数量 nCurrentSystemCpuCount %d ", ABL_nCurrentSystemCpuCount);
 
@@ -3958,9 +4025,9 @@ ABL_Restart:
 		GetLocalAdaptersInfo(strIPTemp);
 		int nPos = strIPTemp.find(",", 0);
 		if (nPos > 0)
- 		  memcpy(ABL_szLocalIP, strIPTemp.c_str(), nPos);
-		 else 
-		  strcpy(ABL_szLocalIP, "127.0.0.1");
+			memcpy(ABL_szLocalIP, strIPTemp.c_str(), nPos);
+		else
+			strcpy(ABL_szLocalIP, "127.0.0.1");
 	}
 	strcpy(ABL_MediaServerPort.ABL_szLocalIP, ABL_szLocalIP);
 	WriteLog(Log_Debug, "本机IP地址 ABL_szLocalIP : %s ", ABL_szLocalIP);
@@ -4081,20 +4148,20 @@ ABL_Restart:
 		string strPath = ABL_MediaServerPort.recordPath;
 		while (true)
 		{
-			nPos = strPath.find("/", nPos+1);
+			nPos = strPath.find("/", nPos + 1);
 			if (nPos > 0)
 			{
 				memcpy(szTempPath, ABL_MediaServerPort.recordPath, nPos);
 				umask(0);
 				mkdir(szTempPath, 777);
-				
-	            WriteLog(Log_Debug, "创建子路径：%s ", szTempPath);
+
+				WriteLog(Log_Debug, "创建子路径：%s ", szTempPath);
 			}
 			else
 			{
 				umask(0);
- 				mkdir(ABL_MediaServerPort.recordPath, 777);
-	            WriteLog(Log_Debug, "创建子路径：%s ", ABL_MediaServerPort.recordPath);
+				mkdir(ABL_MediaServerPort.recordPath, 777);
+				WriteLog(Log_Debug, "创建子路径：%s ", ABL_MediaServerPort.recordPath);
 				break;
 			}
 		}
@@ -4162,7 +4229,7 @@ ABL_Restart:
 	umask(0);
 	mkdir(ABL_MediaServerPort.recordPath, 777);
 
-    //创建调试文件路径
+	//创建调试文件路径
 	sprintf(ABL_MediaServerPort.debugPath, "%s/debugFile/", ABL_MediaSeverRunPath);
 	umask(0);
 	mkdir(ABL_MediaServerPort.debugPath, 777);
@@ -4182,7 +4249,7 @@ ABL_Restart:
 			rlim_new.rlim_cur = rlim_new.rlim_max = rlim.rlim_max;
 			setrlimit(RLIMIT_CORE, &rlim_new);
 		}
-	 WriteLog(Log_Debug,"设置core文件大小为: %llu " , rlim_new.rlim_cur);
+		WriteLog(Log_Debug, "设置core文件大小为: %llu ", rlim_new.rlim_cur);
 	}
 
 	if (getrlimit(RLIMIT_NOFILE, &rlim) == 0) {
@@ -4191,7 +4258,7 @@ ABL_Restart:
 			rlim_new.rlim_cur = rlim_new.rlim_max = rlim.rlim_max;
 			setrlimit(RLIMIT_NOFILE, &rlim_new);
 		}
-	  WriteLog(Log_Debug, "设置最大Socket套接字最大连接数: %llu " , rlim_new.rlim_cur);
+		WriteLog(Log_Debug, "设置最大Socket套接字最大连接数: %llu ", rlim_new.rlim_cur);
 	}
 
 	//把历史录像文件装入 list  
@@ -4281,7 +4348,7 @@ ABL_Restart:
 	if (ABL_MediaServerPort.wwwPath[strlen(ABL_MediaServerPort.wwwPath) - 1] != '\\')
 		strcat(ABL_MediaServerPort.wwwPath, "\\");
 	sprintf(ABL_wwwMediaPath, "%swww", ABL_MediaServerPort.wwwPath);
-	::CreateDirectory(ABL_wwwMediaPath,NULL);
+	::CreateDirectory(ABL_wwwMediaPath, NULL);
 #else
 	if (ABL_MediaServerPort.wwwPath[strlen(ABL_MediaServerPort.wwwPath) - 1] != '/')
 		strcat(ABL_MediaServerPort.wwwPath, "/");
@@ -4290,7 +4357,7 @@ ABL_Restart:
 	mkdir(ABL_wwwMediaPath, 777);
 #endif
 	WriteLog(Log_Debug, "www 路径为 %s ", ABL_wwwMediaPath);
-	
+
 	//防止用户乱填写
 	if ((ABL_MediaServerPort.snapOutPictureWidth == 0 && ABL_MediaServerPort.snapOutPictureHeight != 0) || (ABL_MediaServerPort.snapOutPictureWidth != 0 && ABL_MediaServerPort.snapOutPictureHeight == 0))
 		ABL_MediaServerPort.snapOutPictureWidth = ABL_MediaServerPort.snapOutPictureHeight = 0;
@@ -4300,8 +4367,7 @@ ABL_Restart:
 		ABL_MediaServerPort.snapOutPictureHeight = 1080;
 
 	//用于网络数据接收
-	NetBaseThreadPool = new CNetBaseThreadPool(ABL_MediaServerPort.nRecvThreadCount);
-
+	NetBaseThreadPool = new CNetBaseThreadPool(ABL_nCurrentSystemCpuCount);
 
 	//录像回放线程池
 	RecordReplayThreadPool = new CNetBaseThreadPool(ABL_MediaServerPort.nRecordReplayThread);
@@ -4309,14 +4375,14 @@ ABL_Restart:
 	//消息发送线程池
 	MessageSendThreadPool = new CNetBaseThreadPool(6);
 
-	int nRet = -1 ;
+	int nRet = -1;
 	if (!ABL_bInitXHNetSDKFlag) //保证只初始化1次
 	{
 		nRet = XHNetSDK_Init(ABL_nCurrentSystemCpuCount, 1);
 		ABL_bInitXHNetSDKFlag = true;
 		WriteLog(Log_Debug, "Network Init = %d \r\n", nRet);
 	}
-	  
+
 	nBindHttp = XHNetSDK_Listen((int8_t*)("0.0.0.0"), ABL_MediaServerPort.nHttpServerPort, &srvhandle_8080, onaccept, onread, onclose, true);
 	nBindRtsp = XHNetSDK_Listen((int8_t*)("0.0.0.0"), ABL_MediaServerPort.nRtspPort, &srvhandle_554, onaccept, onread, onclose, true);
 	nBindRtmp = XHNetSDK_Listen((int8_t*)("0.0.0.0"), ABL_MediaServerPort.nRtmpPort, &srvhandle_1935, onaccept, onread, onclose, true);
@@ -4342,26 +4408,23 @@ ABL_Restart:
 
 	ABL_MediaServerPort.nServerStartTime = GetCurrentSecond();
 	ABL_MediaServerPort.nServerKeepaliveTime = GetTickCount64();
-	//创建消息通知
-	if (ABL_MediaServerPort.hook_enable == 1)
-	   CreateHttpClientFunc();
 
 #if  0 //测试 hls 客户端  http://190.168.24.112:8082/live/Camera_00001.m3u8  \   http://190.15.240.36:9088/Media/Camera_00001.m3u8 \ http://190.15.240.36:9088/Media/Camera_00001/hls.m3u8
 	//CreateNetRevcBaseClient(0, 0, "http://190.168.24.112:8082/live/Camera_00001.m3u8", 0);
-	CreateNetRevcBaseClient(NetRevcBaseClient_addStreamProxy,0, 0, "http://190.15.240.36:9088/Media/Camera_00001.m3u8", 0,"/Media/Camera_00002");
+	CreateNetRevcBaseClient(NetRevcBaseClient_addStreamProxy, 0, 0, "http://190.15.240.36:9088/Media/Camera_00001.m3u8", 0, "/Media/Camera_00002");
 #endif
 #if   0 //测试 rtmp 客户端  rtmp://10.0.0.239:1936/Media/Camera_00001  \   rtmp://10.0.0.239:1936/Media/Camera_00001
-	CreateNetRevcBaseClient(NetRevcBaseClient_addStreamProxy,0, 0, "rtmp://190.15.240.36:1935/Media/Camera_00001", 0, "/Media/Camera_00002");
+	CreateNetRevcBaseClient(NetRevcBaseClient_addStreamProxy, 0, 0, "rtmp://190.15.240.36:1935/Media/Camera_00001", 0, "/Media/Camera_00002");
 #endif
 #if   0 //测试 flv  http://190.15.240.36:8088/Media/Camera_00001.flv
-	CreateNetRevcBaseClient(NetRevcBaseClient_addStreamProxy,0, 0, "http://190.15.240.36:8088/Media/Camera_00001.flv", 0, "/Media/Camera_00002");
+	CreateNetRevcBaseClient(NetRevcBaseClient_addStreamProxy, 0, 0, "http://190.15.240.36:8088/Media/Camera_00001.flv", 0, "/Media/Camera_00002");
 #endif
 #if   0 //测试 rtmp 客户端  rtmp://10.0.0.239:1936/Media/Camera_00001  \   rtmp://10.0.0.239:1936/Media/Camera_00001
-	CNetRevcBase_ptr rtmpClient = CreateNetRevcBaseClient(NetRevcBaseClient_addPushStreamProxy,0, 0, "rtmp://190.15.240.36:1935/Media/Camera_00001", 0,"/Media/Camera_00001");
+	CNetRevcBase_ptr rtmpClient = CreateNetRevcBaseClient(NetRevcBaseClient_addPushStreamProxy, 0, 0, "rtmp://190.15.240.36:1935/Media/Camera_00001", 0, "/Media/Camera_00001");
 	nTestRtmpPushID = rtmpClient->nClient;
 #endif
 #if  0 //测试 rtmp 客户端  rtmp://10.0.0.239:1936/Media/Camera_00001  \   rtmp://10.0.0.239:1936/Media/Camera_00001
-	CNetRevcBase_ptr rtmpClient = CreateNetRevcBaseClient(NetRevcBaseClient_addStreamProxy,0, 0, "rtsp://admin:abldyjh2020@192.168.1.120:554", 0,"/Media/Camera_00001");
+	CNetRevcBase_ptr rtmpClient = CreateNetRevcBaseClient(NetRevcBaseClient_addStreamProxy, 0, 0, "rtsp://admin:abldyjh2020@192.168.1.120:554", 0, "/Media/Camera_00001");
 	nTestRtmpPushID = rtmpClient->nClient;
 #endif
 #if   0 //测试 rtsp 客户端  
@@ -4372,19 +4435,19 @@ ABL_Restart:
 #endif
 #if 0
 	CreateNetRevcBaseClient(ReadRecordFileInput_ReadFMP4File, 0, 0, "D:\\video\\20220118165107.mp4", 0, "/Media/Camera_00001");
-//	CreateNetRevcBaseClient(ReadRecordFileInput_ReadFMP4File, 0, 0, "D:\\video\\20220119161822.mp4", 0, "/Media/Camera_00001");
-	//CreateNetRevcBaseClient(ReadRecordFileInput_ReadFMP4File, 0, 0, "D:\\video\\20220119162324.mp4", 0, "/Media/Camera_00001");
+	//	CreateNetRevcBaseClient(ReadRecordFileInput_ReadFMP4File, 0, 0, "D:\\video\\20220119161822.mp4", 0, "/Media/Camera_00001");
+		//CreateNetRevcBaseClient(ReadRecordFileInput_ReadFMP4File, 0, 0, "D:\\video\\20220119162324.mp4", 0, "/Media/Camera_00001");
 #endif
 #if   0//测试消息通知  http://10.0.0.238:7088/index/hook/on_stream_none_reader
-	 CreateNetRevcBaseClient(NetBaseNetType_HttpClient_None_reader, 0, 0, "http://10.0.0.238:7088/index/hook/on_stream_none_reader", 0, "");
+	CreateNetRevcBaseClient(NetBaseNetType_HttpClient_None_reader, 0, 0, "http://10.0.0.238:7088/index/hook/on_stream_none_reader", 0, "");
 #endif
 
-	 //创建单端口国标接收 
-	 CreateNetRevcBaseClient(NetBaseNetType_NetGB28181RecvRtpPS_TS, 0, 0, "", 0, "");
+	//创建单端口国标接收 
+	CreateNetRevcBaseClient(NetBaseNetType_NetGB28181RecvRtpPS_TS, 0, 0, "", 0, "");
 
 	//启动业务处理线程
 #ifdef  OS_System_Windows
-	unsigned long dwThread,dwThread2;
+	unsigned long dwThread, dwThread2;
 	::CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ABLMedisServerProcessThread, (LPVOID)NULL, 0, &dwThread);
 	::CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ABLMedisServerFastDeleteThread, (LPVOID)NULL, 0, &dwThread2);
 #else
@@ -4398,19 +4461,19 @@ ABL_Restart:
 	sprintf(szWebrtcConfig, "{\"webrtcPort\":%d}", ABL_MediaServerPort.nWebRtcPort);
 	WebRtcEndpoint::getInstance().init(szWebrtcConfig, [=](const char* callbackJson, void* pUserHandle) {
 		WebRtcCallBack(callbackJson, pUserHandle);
-			});
+		});
 	WriteLog(Log_Debug, "初始化webrtc完毕 ，端口为 %d", ABL_MediaServerPort.nWebRtcPort);
 
 	while (ABL_bMediaServerRunFlag)
 	{
 		//服务器上线通知 
-		if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nServerStarted > 0 && ABL_MediaServerPort.bNoticeStartEvent == false )
+		if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.bNoticeStartEvent == false)
 		{
 			if ((GetCurrentSecond() - ABL_MediaServerPort.nServerStartTime) > 6 && (GetCurrentSecond() - ABL_MediaServerPort.nServerStartTime) <= 15)
 			{
 				ABL_MediaServerPort.bNoticeStartEvent = true;
 				MessageNoticeStruct msgNotice;
-				msgNotice.nClient = ABL_MediaServerPort.nServerStarted;
+				msgNotice.nClient = NetBaseNetType_HttpClient_ServerStarted;
 
 #ifdef OS_System_Windows
 				SYSTEMTIME st;
@@ -4419,7 +4482,7 @@ ABL_Restart:
 #else
 				time_t now;
 				time(&now);
-				struct tm *local;
+				struct tm* local;
 				local = localtime(&now);
 				sprintf(msgNotice.szMsg, "{\"localipAddress\":\"%s\",\"mediaServerId\":\"%s\",\"datetime\":\"%04d-%02d-%02d %02d:%02d:%02d\"}", ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.mediaServerID, local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);
 #endif
@@ -4433,7 +4496,6 @@ ABL_Restart:
 	while (!ABL_bExitMediaServerRunFlag)
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		//Sleep(100);
-  
 	XHNetSDK_Unlisten(srvhandle_8080);
 	XHNetSDK_Unlisten(srvhandle_554);
 	XHNetSDK_Unlisten(srvhandle_1935);
@@ -4443,7 +4505,7 @@ ABL_Restart:
 	XHNetSDK_Unlisten(srvhandle_9088);
 	XHNetSDK_Unlisten(srvhandle_9298);
 	XHNetSDK_Unlisten(srvhandle_10000);
-	
+
 	delete NetBaseThreadPool;
 	NetBaseThreadPool = NULL;
 
@@ -4472,7 +4534,7 @@ ABL_Restart:
 	WriteLog(Log_Debug, "--------------------ABLMediaServer End .... --------------------");
 
 	malloc_trim(0);
-	
+
 	ABL_bMediaServerRunFlag = true;
 	if (ABL_bRestartServerFlag)
 	{
