@@ -46,14 +46,15 @@ public:
 #ifdef USE_BOOST
    bool           CreateVideoRtpDecode(boost::shared_ptr<CMediaStreamSource> mediaServer, char* VideoName,int nVidoePT);
    bool           CreateAudioRtpDecode(boost::shared_ptr<CMediaStreamSource> mediaServer, char* AudioName, int nAudioPT,int Channels,int SampleRate,int nSampleIndex);
-   void           AddADTSHeadToAAC(unsigned char* szData, int nAACLength);
+ 
 #else
    bool           CreateVideoRtpDecode(std::shared_ptr<CMediaStreamSource> mediaServer, char* VideoName, int nVidoePT);
    bool           CreateAudioRtpDecode(std::shared_ptr<CMediaStreamSource> mediaServer, char* AudioName, int nAudioPT, int Channels, int SampleRate, int nSampleIndex);
 
 
 #endif
-  void           AddADTSHeadToAAC(unsigned char* szData, int nAACLength);   void           SplitterRtpAACData(unsigned char* rtpAAC, int nLength);
+  void           AddADTSHeadToAAC(unsigned char* szData, int nAACLength); 
+  void           SplitterRtpAACData(unsigned char* rtpAAC, int nLength);
    void           SplitterMp3Buffer(unsigned char* szMp3Buffer, int nLength);
 
    unsigned char  szFullMp3Buffer[2048];

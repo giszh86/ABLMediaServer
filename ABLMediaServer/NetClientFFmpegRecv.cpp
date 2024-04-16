@@ -538,8 +538,8 @@ int CNetClientFFmpegRecv::ProcessNetData()
 		return -1;
 	}
 	nOldAVType = nAVType;
-	Sleep(1);
-
+	//Sleep(1);
+	std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	//¼ÓÈëÒôÆµ
 	if (m_audioCacheFifo.GetSize() > 0)
 	{

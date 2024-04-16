@@ -27,7 +27,7 @@ E-Mail  79941308@qq.com
 */
 
 #include "stdafx.h"
-#include "../webrtc-streamer/inc/rtc_obj_sdk.h"
+#include "webrtc-streamer/inc/rtc_obj_sdk.h"
 
 NETHANDLE srvhandle_8080, srvhandle_554, srvhandle_1935, srvhandle_6088, srvhandle_8088, srvhandle_8089, srvhandle_9088, srvhandle_9298, srvhandle_10000;
 #ifdef USE_BOOST
@@ -4123,7 +4123,7 @@ ABL_Restart:
 	ABL_MediaServerPort.flvPlayAddMute = ABL_ConfigFile.GetLongValue("ABLMediaServer", "flvPlayAddMute",0);
 	ABL_MediaServerPort.nWebRtcPort = ABL_ConfigFile.GetLongValue("ABLMediaServer", "webrtcPort",8289);
 
-	strcpy(ABL_MediaServerPort.defaultSnap, ABL_ConfigFile.GetValue("api", "defaultSnap", ""));
+	//strcpy(ABL_MediaServerPort.defaultSnap, ABL_ConfigFile.GetValue("api", "defaultSnap", ""));
 	ABL_MediaServerPort.nUseWvp = ABL_ConfigFile.GetLongValue("api", "usewvp", 0);
 	strcpy(ABL_MediaServerPort.port_range, ABL_ConfigFile.GetValue("rtp_proxy", "port_range", ""));
 	strcpy(ABL_MediaServerPort.listeningip, ABL_ConfigFile.GetValue("rtc", "listening-ip", ""));

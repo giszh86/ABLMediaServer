@@ -3,7 +3,7 @@
 
 #include "mpeg-ps.h"
 #include "mpeg-ts.h"
-#include "mpeg-ts-proto.h"
+
 
 #define   DefaultM3u8Number                 -88888 
 #define  MaxHttp_HLSCNetCacheBufferLength   1024*128 
