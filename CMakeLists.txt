@@ -2,78 +2,65 @@ cmake_minimum_required(VERSION 3.12)
 
 project(ABLMediaServer)
 
+# 设置编译选项
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb")
 
+# 添加宏定义
+add_definitions(-DFFMPEG6)
 
-# 设置编译选项，包括 -fPIC
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++17 -fPIC")
-set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-fPIC")
+# 判断是否启用了 USE_BOOST 选项
+option(USE_BOOST "Use Boost library" OFF)
 
+if(USE_BOOST)
+    add_definitions(-DUSE_BOOST)
+    # 添加 Boost 头文件目录
+    include_directories(
+        ./3rd/boost/include/
+    )
+endif()
 
 # 设置输出目录
 message("当前系统架构: ${CMAKE_SYSTEM_PROCESSOR}")
 set(SYSTEM_NAME_LOWER "amd64")   # 自定义系统名称
 if(NOT CMAKE_BUILD_TYPE)
-   set(CMAKE_BUILD_TYPE "Release")   # 自定义构建类型
+    set(CMAKE_BUILD_TYPE "Release")   # 自定义构建类型
 endif()
 
-#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Bin/${SYSTEM_NAME_LOWER}/${CMAKE_BUILD_TYPE})
-
-# 根据架构设置不同的链接目录
+# 根据不同架构设置输出目录和链接目录
 if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64")
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin/linux)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin/linux)
-set(LINK_DIRECTORIES
-        ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/
-        ./3rd/ffmpeg6/lib/linux86
-    )
-    
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin/linux)
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin/linux)    
+    # 设置链接目录
+set(LIBRARY_DIR
+    ${CMAKE_CURRENT_SOURCE_DIR}/bin/linux
+    ${CMAKE_CURRENT_SOURCE_DIR}/media-server-master/${SYSTEM_NAME_LOWER}
+    ${CMAKE_CURRENT_SOURCE_DIR}/3rd/ffmpeg6/lib/linux86
+    ${CMAKE_CURRENT_SOURCE_DIR}/3rd/boost/linux86
+)
+
+
 elseif (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "aarch64")
-  set(LINK_DIRECTORIES
-        ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/
-        ./3rd/ffmpeg6/lib/arm64
-    ) 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Bin/arm64)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Bin/arm64)
 
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin/arm64)
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin/arm64)    
+    # 设置链接目录
+set(LIBRARY_DIR
+    ${CMAKE_CURRENT_SOURCE_DIR}/bin/linux
+    ${CMAKE_CURRENT_SOURCE_DIR}/media-server-master/${SYSTEM_NAME_LOWER}
+    ${CMAKE_CURRENT_SOURCE_DIR}/3rd/ffmpeg6/lib/arm64
+    ${CMAKE_CURRENT_SOURCE_DIR}/3rd/boost/arm64
+	)
 endif()
 
 
+# 设置库文件链接路径
+link_directories(${LIBRARY_DIR})
 
-
-
-
-message("OUTPUT_DIR : ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
-
- message("链接目录: ${LINK_DIRECTORIES}")
- 
-# 设置 FFmpeg 版本
-set(FFMPEG_VERSION "v6.0")
-set(FAAC_PATH ${CMAKE_CURRENT_SOURCE_DIR}/3rd/faac-1.29.9.2/build)
-set(MEDIA_SERVER_PATH ${CMAKE_CURRENT_SOURCE_DIR}/media-server-master/${SYSTEM_NAME_LOWER})
-
-
-# 根据 FFmpeg 版本进行不同操作
-if(FFMPEG_VERSION STREQUAL "v4.0")
-    message("Using FFmpeg v4.0")
-    include_directories(./3rd/ffmpeg4/include)
-elseif(FFMPEG_VERSION STREQUAL "v6.0")
-    message("Using FFmpeg v6.0")
-    add_definitions(-DFFMPEG6)
-    include_directories(./3rd/ffmpeg6/include)
-else()
-    message(FATAL_ERROR "Unsupported FFmpeg version: ${FFMPEG_VERSION}")
-endif()
-
-add_definitions(-DUSE_WVP)
-
-
-# Include directories
+# 设置头文件包含路径
 include_directories(
+    ./3rd/ffmpeg6/include
     ./rapidjson-master/include
     ./media-server-master/libflv/include
     ./media-server-master/librtmp/include
@@ -81,48 +68,37 @@ include_directories(
     ./media-server-master/libhls/include
     ./media-server-master/librtp/include
     ./media-server-master/libmov/include
-    ./ABLMediaServer/packet/ps_demux
-    ./ABLMediaServer/packet/ps_mux
-    ./ABLMediaServer/packet/rtpdepacket
-    ./ABLMediaServer/packet/rtppacket
-     ./ABLMediaServer/
- 
+    ./ABLMediaServer/
 )
 
-   
 
-link_directories(${LINK_DIRECTORIES}  )
 
 
 # 添加子目录，这样子目录中的CMakeLists.txt才会被调用
-add_subdirectory(webrtc-streamer)
+#add_subdirectory(webrtc-streamer)
 
 # 添加子目录，
-add_subdirectory(XHNetSDK)
-
-# Add executable
-add_executable(${PROJECT_NAME})
-
-file(GLOB ABL_SRC_LIST CONFIGURE_DEPENDS 
-   ./ABLMediaServer/*.cpp
-    ./ABLMediaServer/packet/ps_demux/*.cpp
-    ./ABLMediaServer/packet/ps_mux/*.cpp
-    ./ABLMediaServer/packet/rtpdepacket/*.cpp
-    ./ABLMediaServer/packet/rtppacket/*.cpp
+#add_subdirectory(XHNetSDK)
+# 链接静态库
+link_libraries(
+    rtmp
+    flv
+    mpeg
+    hls
+    mov
+    rtp
 )
 
-target_sources(${PROJECT_NAME} PUBLIC ${ABL_SRC_LIST})
+# 添加源文件
+aux_source_directory(./ABLMediaServer/ DIR_SRCS)
+
+# 添加可执行文件
+add_executable(${PROJECT_NAME} ${DIR_SRCS})
 
 # 链接需要的库文件
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
-    pthread
-    XHNetSDK
-    dl
-    PsDemux
-    PsMux
-    RtpDepacket
-    RtpPacket
+    faac
     avcodec
     avutil
     avformat
@@ -130,15 +106,28 @@ target_link_libraries(${PROJECT_NAME}
     avfilter
     postproc
     swresample
+    pthread
+    XHNetSDK
+    PsDemux
+    PsMux
+    RtpDepacket
+    RtpPacket
     webrtc-streamer
-    ${MEDIA_SERVER_PATH}/librtmp.a
-    ${MEDIA_SERVER_PATH}/libflv.a
-	${MEDIA_SERVER_PATH}/libhls.a
-	${MEDIA_SERVER_PATH}/libmov.a
-	${MEDIA_SERVER_PATH}/libmpeg.a	
-	${MEDIA_SERVER_PATH}/librtp.a	
-       ${CMAKE_CURRENT_SOURCE_DIR}/3rd/faac-1.29.9.2/bulid/lib/libfaac.so
-      
+    dl
 )
 
+# 如果启用了 USE_BOOST 选项，则链接 Boost 库文件
+if(USE_BOOST)
+    target_link_libraries(${PROJECT_NAME}
+        PUBLIC
+    boost_system
+    boost_thread
+    boost_log
+    boost_regex
+    boost_filesystem
+    boost_date_time
+    boost_chrono
+    boost_atomic
+    )
+endif()
 
