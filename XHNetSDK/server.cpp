@@ -213,6 +213,7 @@ void server::handle_accept(client_ptr c, const boost::system::error_code& ec)
 #include "libnet_error.h"
 #include "identifier_generator.h"
 #include <malloc.h>
+#include <iostream>
 #if (defined _WIN32)
 #include <WS2tcpip.h>
 #pragma comment(lib, "WS2_32.lib")
@@ -242,11 +243,14 @@ server::server(asio::io_context& ioc,
 
 server::~server(void)
 {
+	
 	recycle_identifier(m_id);
+
 #ifndef _WIN32
 	malloc_trim(0);
 #endif
-	
+
+
 }
 
 int32_t server::run()

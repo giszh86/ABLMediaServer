@@ -550,7 +550,7 @@ int32_t udp_session::multicast(uint8_t option,
 #include "udp_session.h"
 #include "udp_session_manager.h"
 #include "identifier_generator.h"
-
+#include <iostream>
 
 #if (defined _WIN32 || defined _WIN64)
 #include <WS2tcpip.h>
@@ -585,7 +585,6 @@ udp_session::~udp_session(void)
 #ifndef _WIN32
 	malloc_trim(0);
 #endif
-
 }
 
 int32_t udp_session::init(const int8_t* localip,

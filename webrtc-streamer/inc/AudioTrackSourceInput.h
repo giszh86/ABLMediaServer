@@ -7,28 +7,21 @@
 #include <atomic>
 
 #include <api/scoped_refptr.h>
-#include <api/video/i420_buffer.h>
 #include "rtc_base/thread.h"
-//#include "rtc_base/message_handler.h"
-
-
-#include <thread>
 #include "pc/local_audio_source.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
-#include "rtc_base/logging.h"
 #include "rtc_base/ref_counted_object.h"
-
 #include "../capture/AudioCapture.h"
 
-/*
+ /*
 
-	rtc::scoped_refptr<AudioTrackSourceInput> audioSource;
-	m_audioDeviceModule->Terminate();
-	audioSource = AudioTrackSourceInput::Create(audiourl, opts);
-	return audioSource;
+	 rtc::scoped_refptr<AudioTrackSourceInput> audioSource;
+	 m_audioDeviceModule->Terminate();
+	 audioSource = AudioTrackSourceInput::Create(audiourl, opts);
+	 return audioSource;
 
 
-*/
+ */
 class AudioTrackSourceInput : public webrtc::Notifier<webrtc::AudioSourceInterface>
 {
 public:
@@ -61,12 +54,11 @@ protected:
 	virtual ~AudioTrackSourceInput();
 
 private:
-
-	//AudioCapture* m_pAudioCapture = nullptr;
-
-	std::thread m_capturethread;
+	AudioCapture* m_pAudioCapture = nullptr;
 	rtc::scoped_refptr<webrtc::AudioDecoderFactory> m_factory;
+
 	std::vector<uint16_t> m_vecbuffer;
+
 	std::list<webrtc::AudioTrackSinkInterface*> m_sinks;
 	std::mutex m_sink_lock;
 	bool m_wait;

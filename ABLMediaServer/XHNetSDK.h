@@ -2,9 +2,6 @@
 
 #include <stdint.h>
 
-//NETHANDLE固定为uint64_t，否则在arm环境编译出问题，认为是 uint32_t 
-#define NETHANDLE uint64_t
-
 #if (defined _WIN32 || defined _WIN64)
 #define LIBNET_CALLMETHOD _stdcall
 #ifdef LIBNET_STATIC
@@ -18,7 +15,7 @@
 #endif 
 #else
 #define LIBNET_CALLMETHOD
-#define LIBNET_API
+#define LIBNET_API __attribute__((visibility("default")))
 #endif 
 
 #ifndef NETHANDLE
@@ -39,23 +36,23 @@ extern "C"
 {
 #endif
 
-	typedef void (LIBNET_CALLMETHOD	*accept_callback)(NETHANDLE srvhandle,
+	typedef void (LIBNET_CALLMETHOD* accept_callback)(NETHANDLE srvhandle,
 		NETHANDLE clihandle,
 		void* address);
 
 
-	typedef void(LIBNET_CALLMETHOD	*connect_callback)(NETHANDLE clihandle,
+	typedef void(LIBNET_CALLMETHOD* connect_callback)(NETHANDLE clihandle,
 		uint8_t result, uint16_t nLocalPort);
 
 
-	typedef void (LIBNET_CALLMETHOD *read_callback)(NETHANDLE srvhandle,
+	typedef void (LIBNET_CALLMETHOD* read_callback)(NETHANDLE srvhandle,
 		NETHANDLE clihandle,
 		uint8_t* data,
 		uint32_t datasize,
 		void* address);
 
 
-	typedef void (LIBNET_CALLMETHOD	*close_callback)(NETHANDLE srvhandle,
+	typedef void (LIBNET_CALLMETHOD* close_callback)(NETHANDLE srvhandle,
 		NETHANDLE clihandle);
 
 

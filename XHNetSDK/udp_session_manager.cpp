@@ -94,7 +94,7 @@ udp_session_ptr udp_session_manager::get_udp_session(NETHANDLE id)
 
 
 #include "udp_session_manager.h"
-
+#include <iostream>
 
 udp_session_manager::udp_session_manager()
 {
@@ -103,6 +103,7 @@ udp_session_manager::udp_session_manager()
 
 udp_session_manager::~udp_session_manager()
 {
+	std::cout << "delete udp_session_manager start " << std::endl;
 }
 
 bool udp_session_manager::push_udp_session(udp_session_ptr& s)

@@ -526,7 +526,7 @@ bool  CNetServerWS_FLV::Create_WS_FLV_Handle()
 			DeleteNetRevcBaseClient(nClient);
 		}
 		nWebSocketCommStatus = WebSocketCommStatus_ShakeHands;
-
+		
 		nNetStart = nNetEnd = netDataCacheLength = 0;
 		memset(netDataCache, 0x00, MaxHttp_WsFlvNetCacheBufferLength);
 

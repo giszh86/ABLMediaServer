@@ -10,9 +10,6 @@
     <ClCompile Include="..\ABLMediaServer\CNetRtmpServerRecv.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\ABLMediaServer\Ini.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\ABLMediaServer\DigestAuthentication.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -20,9 +17,6 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\ABLMediaServer\MediaFifo.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\ABLMediaServer\MediaSendThreadPool.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\ABLMediaServer\MediaStreamSource.cpp">
@@ -139,9 +133,6 @@
     <ClCompile Include="..\ABLMediaServer\NetGB28181Listen.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\ABLMediaServer\ABLString.cpp">
-      <Filter>include</Filter>
-    </ClCompile>
     <ClCompile Include="..\ABLMediaServer\NetClientRecvRtsp.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -157,10 +148,34 @@
     <ClCompile Include="..\ABLMediaServer\Base64.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\ABLMediaServer\NetClientRecvJTT1078.cpp">
+    <ClCompile Include="..\ABLMediaServer\ABLMediaServer.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\ABLMediaServer\ABLMediaServer.cpp">
+    <ClCompile Include="..\ABLMediaServer\ConvertUTF.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\NetRtspServerUDP.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\NetServerRecvAudio.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\NetClientWebrtcPlayer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\StreamRecordTS.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\NetClientReadLocalMediaFile.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\NetClientFFmpegRecv.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\ABLString.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ABLMediaServer\NetServerReadMultRecordFile.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
@@ -311,9 +326,6 @@
     <ClInclude Include="..\ABLMediaServer\ABLSipParse.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\ABLMediaServer\Ini.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="..\ABLMediaServer\DigestAuthentication.hh">
       <Filter>include</Filter>
     </ClInclude>
@@ -321,9 +333,6 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\ABLMediaServer\MediaFifo.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\ABLMediaServer\MediaSendThreadPool.h">
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\ABLMediaServer\MediaStreamSource.h">
@@ -452,9 +461,6 @@
     <ClInclude Include="..\ABLMediaServer\stdafx.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\ABLMediaServer\cudaCodecDLL_Linux.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="..\ABLMediaServer\XHNetSDK.h">
       <Filter>include</Filter>
     </ClInclude>
@@ -485,9 +491,6 @@
     <ClInclude Include="..\ABLMediaServer\rtp_depacket.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\ABLMediaServer\NetClientRecvJTT1078.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="..\ABLMediaServer\NetClientSendRtmp.h">
       <Filter>include</Filter>
     </ClInclude>
@@ -500,30 +503,60 @@
     <ClInclude Include="..\ABLMediaServer\Base64.hh">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\ConvertUTF.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\cudaCodecDLL.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\SimpleIni.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\NetRtspServerUDP.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\NetServerRecvAudio.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\NetClientWebrtcPlayer.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\StreamRecordTS.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\NetClientReadLocalMediaFile.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\NetClientFFmpegRecv.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ABLMediaServer\NetServerReadMultRecordFile.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Library Include="..\media-server-master\bin\libdash.a">
+    <Library Include="..\bin\linux\libdash.a">
       <Filter>lib</Filter>
     </Library>
-    <Library Include="..\media-server-master\bin\libflv.a">
+    <Library Include="..\bin\linux\libflv.a">
       <Filter>lib</Filter>
     </Library>
-    <Library Include="..\media-server-master\bin\libhls.a">
+    <Library Include="..\bin\linux\libhls.a">
       <Filter>lib</Filter>
     </Library>
-    <Library Include="..\media-server-master\bin\libmkv.a">
+    <Library Include="..\bin\linux\libmkv.a">
       <Filter>lib</Filter>
     </Library>
-    <Library Include="..\media-server-master\bin\libmov.a">
+    <Library Include="..\bin\linux\libmov.a">
       <Filter>lib</Filter>
     </Library>
-    <Library Include="..\media-server-master\bin\libmpeg.a">
+    <Library Include="..\bin\linux\libmpeg.a">
       <Filter>lib</Filter>
     </Library>
-    <Library Include="..\media-server-master\bin\librtmp.a">
+    <Library Include="..\bin\linux\librtmp.a">
       <Filter>lib</Filter>
     </Library>
-    <Library Include="..\media-server-master\bin\librtp.a">
+    <Library Include="..\bin\linux\librtp.a">
       <Filter>lib</Filter>
     </Library>
   </ItemGroup>

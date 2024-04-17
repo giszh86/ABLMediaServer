@@ -62,7 +62,6 @@ namespace netlib
 		int getThreadNum() const;
 
 		int getCompletedTaskCount() const;
-
 public:
 
 		// 获取线程池实例
@@ -74,6 +73,7 @@ public:
 		ThreadPool(const ThreadPool&) = delete;
 
 		ThreadPool& operator=(const ThreadPool&) = delete;	
+
 private:
 		//线程所执行的工作函数
 		void threadWork(void);

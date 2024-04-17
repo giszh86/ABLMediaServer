@@ -526,7 +526,7 @@ void client::handle_connect_timeout(const boost::system::error_code& ec)
 #include "libnet_error.h"
 #include "identifier_generator.h"
 #include <malloc.h>
-
+#include <iostream>
 client::client(asio::io_context& ioc,
 	NETHANDLE srvid,
 	read_callback fnread,
@@ -564,10 +564,10 @@ client::~client(void)
 		m_readbuff = NULL;
 	}
 	m_circularbuff.uninit();
+
 #ifndef _WIN32
 	malloc_trim(0);
-#endif // _WIN32
-
+#endif
 	
 }
 

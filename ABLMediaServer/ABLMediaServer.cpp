@@ -2343,6 +2343,7 @@ CNetRevcBase_ptr GetNetRevcBaseClient(NETHANDLE CltHandle)
 
 bool  DeleteNetRevcBaseClient(NETHANDLE CltHandle)
 {
+
 	std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
 
 	auto iterator1 = xh_ABLNetRevcBaseMap.find(CltHandle);
@@ -2888,13 +2889,14 @@ void LIBNET_CALLMETHOD	onaccept(NETHANDLE srvhandle,
 	if (CreateNetRevcBaseClient(NetRevcBaseClient_ServerAccept, srvhandle, clihandle, temp, nPort, "") == NULL)
 		XHNetSDK_Disconnect(clihandle);
 }
-
+#
 void LIBNET_CALLMETHOD onread(NETHANDLE srvhandle,
 	NETHANDLE clihandle,
 	uint8_t* data,
 	uint32_t datasize,
 	void* address)
 {
+
 	CNetRevcBase_ptr  pBasePtr = GetNetRevcBaseClient(clihandle);
 	if (pBasePtr != NULL)
 	{

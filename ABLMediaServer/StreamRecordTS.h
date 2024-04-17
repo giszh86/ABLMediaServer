@@ -9,7 +9,7 @@
 #include "mpeg-ps.h"
 #include "mov-format.h"
 #include "mpeg-ts.h"
-
+#include "mpeg-ts-proto.h"
 
 #include "mov-format.h"
 #include "fmp4-writer.h"

@@ -157,7 +157,7 @@ client_ptr client_manager::get_client(NETHANDLE id)
 #else
 #include <memory>
 #include "client_manager.h"
-
+#include <iostream>
 struct client_deletor
 {
 	void operator()(client* cli)
@@ -176,7 +176,9 @@ client_manager::client_manager(void)
 
 client_manager::~client_manager(void)
 {
+	std::cout << "delete client_manager start " << std::endl;
 	pop_all_clients();
+	std::cout << "delete client_manager start " << std::endl;
 }
 
 client_ptr client_manager::malloc_client(asio::io_context& ioc,
@@ -196,6 +198,7 @@ client_ptr client_manager::malloc_client(asio::io_context& ioc,
 void client_manager::free_client(client* cli)
 {
 	std::lock_guard<std::mutex> lock(m_poolmtx);
+	
 	delete cli;
 	cli = nullptr;
 	 
