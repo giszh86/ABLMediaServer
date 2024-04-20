@@ -29,7 +29,7 @@ extern CMediaFifo                            pDisconnectBaseNetFifo; //ÇåÀí¶ÏÁÑµ
 extern char                                  ABL_MediaSeverRunPath[256]; //µ±Ç°Â·¾¶
 extern MediaServerPort                       ABL_MediaServerPort;
 
-#include "webrtc-streamer/inc/rtc_obj_sdk.h"
+#include "../webrtc-streamer/inc/rtc_obj_sdk.h"
 
 CNetClientWebrtcPlayer::CNetClientWebrtcPlayer(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort,char* szShareMediaURL)
 {
@@ -64,6 +64,75 @@ CNetClientWebrtcPlayer::CNetClientWebrtcPlayer(NETHANDLE hServer, NETHANDLE hCli
 	      VideoCaptureManager::getInstance().GetInput(m_szShareMediaURL)->Init("H264", pMediaSource->m_mediaCodecInfo.nWidth, pMediaSource->m_mediaCodecInfo.nHeight, pMediaSource->m_mediaCodecInfo.nVideoFrameRate);
 	      pMediaSource->bCreateWebRtcPlaySourceFlag.exchange(true);
  	    }
+		int format= AUDIOMIX_AVSampleFormat::AUDIOMIX_FMT_S16;
+		std::map<std::string, std::string> streamInfo;
+		if (strcmp(pMediaSource->m_mediaCodecInfo.szAudioName, "AAC") == 0) {
+			format = AUDIOMIX_AVSampleFormat::AUDIOMIX_FMT_FLTP;
+			streamInfo["codec_id"] = std::to_string(AV_CODEC_ID_AAC);
+		}
+		if (strcmp(pMediaSource->m_mediaCodecInfo.szAudioName, "G711_A") == 0) {
+			format = AUDIOMIX_AVSampleFormat::AUDIOMIX_FMT_S16;
+			streamInfo["codec_id"] = std::to_string(AV_CODEC_ID_PCM_ALAW);
+		}
+		if (strcmp(pMediaSource->m_mediaCodecInfo.szAudioName, "G711_U") == 0) {
+			format = AUDIOMIX_AVSampleFormat::AUDIOMIX_FMT_S16;
+			streamInfo["codec_id"] = std::to_string(AV_CODEC_ID_PCM_MULAW);
+		}
+		m_resampler = AudioResamplerAPI::CreateAudioResampler(
+			(AUDIOMIX_AVSampleFormat)format, pMediaSource->m_mediaCodecInfo.nSampleRate, pMediaSource->m_mediaCodecInfo.nChannels,
+			(AUDIOMIX_AVSampleFormat)AUDIOMIX_AVSampleFormat::AUDIOMIX_FMT_S16, m_sample_rate, m_nb_channels);
+
+	
+		streamInfo["sample_rate"] = std::to_string(pMediaSource->m_mediaCodecInfo.nSampleRate);
+		streamInfo["nb_channels"] =std::to_string(pMediaSource->m_mediaCodecInfo.nChannels);
+		streamInfo["format"] = std::to_string(format);
+	
+
+		m_decder = FFmpegAudioDecoderAPI::CreateDecoder(streamInfo);
+		// ´¦ÀíÒôÆµÊý¾ÝµÄÏß³Ìº¯Êý
+		netlib::ThreadPool::getInstance().append([&]()
+			{
+
+				while (!stopThread)
+				{
+					int sample_size = 0;
+					uint8_t* output_data[AV_NUM_DATA_POINTERS] = { 0 };
+					int ret = m_resampler->GetOneFrame(output_data, &sample_size);
+					if (ret < 0)
+					{
+						//	std::unique_lock<std::mutex> lock(m_mutex);
+							//audioDataCV.wait(lock, [&]() { return  !stopThread.load(); });
+						if (stopThread.load())
+						{
+							return;
+						}
+						for (int i = 0; i < AV_NUM_DATA_POINTERS; ++i)
+						{
+							if (output_data[i] != nullptr) {
+								delete[] output_data[i];
+								output_data[i] = nullptr;
+							}
+						}
+						std::this_thread::sleep_for(std::chrono::milliseconds(5));
+						continue;
+					}
+
+					if (AudioCaptureManager::getInstance().GetInput(m_szShareMediaURL) && nSpsPositionPos >= 0)
+					{
+						AudioCaptureManager::getInstance().GetInput(m_szShareMediaURL)->onData("", output_data[0], sample_size, 1);
+					}
+				
+					for (int i = 0; i < AV_NUM_DATA_POINTERS; ++i) {
+						if (output_data[i] != nullptr) {
+							delete[] output_data[i];
+							output_data[i] = nullptr;
+						}
+					}
+					continue;
+				}
+			});
+
+
 	}
 	pMediaSource->AddClientToMap(nClient);
 	pMediaSource->nWebRtcPushStreamID = nClient;
@@ -76,6 +145,20 @@ CNetClientWebrtcPlayer::~CNetClientWebrtcPlayer()
 {
 	bRunFlag = false;
 	std::lock_guard<std::mutex> lock(businessProcMutex);
+
+	stopThread.store(false);
+	std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+	if (m_decder != nullptr)
+	{
+		delete  m_decder;
+		m_decder = nullptr;
+	}
+	if (m_resampler != nullptr)
+	{
+		delete  m_resampler;
+		m_resampler = nullptr;
+	}
 
 	if (pMediaSource != NULL)
 	{
@@ -140,6 +223,23 @@ int CNetClientWebrtcPlayer::PushAudio(uint8_t* pVideoData, uint32_t nDataLength,
 		return -1;
 
 	nRecvDataTimerBySecond = 0;
+
+
+	int outSize = 0;
+	uint8_t* outData[AV_NUM_DATA_POINTERS] = { 0 };
+	bool res = m_decder->DecodeData(pVideoData, nDataLength, outData, &outSize);
+	if (res && outSize>0)
+	{
+		res = m_resampler->FillingPCM(outData, outSize);
+	
+	}
+	// ÊÍ·Å×ÊÔ´
+	for (int i = 0; i < AV_NUM_DATA_POINTERS; ++i) {
+		if (outData[i] != nullptr) {
+			delete[] outData[i];
+			outData[i] = nullptr;
+		}
+	}
 
 	return 0;
 }

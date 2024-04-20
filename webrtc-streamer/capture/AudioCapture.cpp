@@ -1,38 +1,87 @@
 
 
 #include "AudioCapture.h"
-//#include "AudioDeviceCapture.h"
-//#include "RtspAudioCapture.h"
-
 #include <thread>
 
-#ifdef WEBRTC_WIN
-//#include "AudioRecordWas.h"
-//#include "device_audios.h"
-#endif
+#include "FFmpegAudioCapturer.h"
 AudioCapture* AudioCapture::CreateAudioCapture(std::string audiourl, const std::map<std::string, std::string> opts)
 {
+	return new FFmpegAudioSource(audiourl, opts);
+}
 
-	if ((audiourl.find("rtsp://") == 0))
+
+
+
+// 添加输入流
+void AudioCaptureManager::AddInput(const std::string& videoUrl)
+{
+	std::lock_guard<std::mutex> lock(m_mutex);
+
+	if (m_inputMap.count(videoUrl) == 0)
+	{
+		AudioCapture* input = AudioCapture::CreateAudioCapture(videoUrl);
+		if (input)
+		{
+			m_inputMap[videoUrl] = input;
+		}
+	}
+
+}
+
+// 移除输入流
+void AudioCaptureManager::RemoveInput(const std::string& videoUrl)
+{
+	std::lock_guard<std::mutex> lock(m_mutex);
+	std::string path = videoUrl;
+	auto it = m_inputMap.find(path);
+	if (it != m_inputMap.end())
 	{
 	
-		//return new RtspAudioCapture(audiourl, opts);
+		m_inputMap.erase(it);
 	}
-	else if ((audiourl.find("file://") == 0))
-	{
-		//return new RtspCaptureImpl(audiourl, opts);
-	}
+}
 
-#ifdef WEBRTC_WIN
-	else if ((audiourl.find("audiocap://") == 0))
+// 获取输入流对象
+AudioCapture* AudioCaptureManager::GetInput(const std::string& videoUrl)
+{
+	std::lock_guard<std::mutex> lock(m_mutex);
+	std::string  path = videoUrl;
+	auto it = m_inputMap.find(path);
+	if (it != m_inputMap.end())
 	{
-		//std::string out_name = audiourl.substr(strlen("audiocap://")).c_str();
-	//	return new AudioRecordWas(out_name, opts);
+		return it->second;
 	}
 	else
 	{
-		//return new AudioRecordWas(audiourl, opts);
+		AudioCapture* input = AudioCapture::CreateAudioCapture(path);
+		if (input)
+		{
+			m_inputMap[path] = input;
+		}
+		return input;
 	}
-#endif
-	return nullptr;
+}
+
+
+std::string AudioCaptureManager::getStream(const std::string& videoUrl)
+{
+
+
+	std::string path = "";
+	if (isURLWithProtocol(videoUrl)) {
+		//std::cout << "Input string is a URL with protocol." << std::endl;
+		path = getPortionAfterPort(videoUrl);
+		//	std::cout << "Extracted path: " << path << std::endl;
+	}
+	else {
+		//std::cout << "Input string is a simple path." << std::endl;
+		path = videoUrl;
+	}
+	return videoUrl;
+}
+
+AudioCaptureManager& AudioCaptureManager::getInstance()
+{
+	static AudioCaptureManager instance;
+	return instance;
 }

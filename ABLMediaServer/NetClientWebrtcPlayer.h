@@ -11,8 +11,8 @@ using namespace boost;
 #else
 #include <memory>
 #endif
-
-
+#include "./ffmpeg/ffmpeg_headers.h"
+#include "./ffmpeg/thread_pool.h"
 //#define  WebRtcVideoFileFlag     1 //写入webrtc视频数据
 
 class CNetClientWebrtcPlayer : public CNetRevcBase
@@ -43,6 +43,14 @@ public:
    int64_t   nWriteFileCount;
    FILE*     fWriteFrameLengthFile;
 #endif
+
+   AudioResamplerAPI* m_resampler = nullptr;
+   FFmpegAudioDecoderAPI* m_decder = nullptr;
+   int m_nb_channels = 2;
+
+   int m_sample_rate = 48000;
+
+   std::atomic<bool> stopThread;
 };
 
 #endif

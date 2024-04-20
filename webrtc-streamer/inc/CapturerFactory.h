@@ -34,14 +34,10 @@
 #include "rtmpvideosource.h"
 #endif
 
-
-// 是否支持ffmpeg功能
-#define USE_FFMPEG		1
-#if USE_FFMPEG
-
-#endif
+#include "spdloghead.h"
 #include "pc/video_track_source.h"
 #include "VideoTrackSourceInput.h"
+#include "AudioTrackSourceInput.h"
 #ifdef _WIN32
 class GBK
 {
@@ -86,7 +82,7 @@ private:
 template<class T>
 class TrackSource : public webrtc::VideoTrackSource {
 public:
-	static rtc::scoped_refptr<TrackSource> Create(const std::string & videourl, const std::map<std::string, std::string> & opts, std::unique_ptr<webrtc::VideoDecoderFactory>& videoDecoderFactory) {
+	static rtc::scoped_refptr<TrackSource> Create(const std::string& videourl, const std::map<std::string, std::string>& opts, std::unique_ptr<webrtc::VideoDecoderFactory>& videoDecoderFactory) {
 		std::unique_ptr<T> capturer = absl::WrapUnique(T::Create(videourl, opts, videoDecoderFactory));
 		if (!capturer) {
 			return nullptr;
@@ -96,7 +92,7 @@ public:
 
 	virtual bool GetStats(Stats* stats) override {
 		bool result = false;
-		T* source =  m_capturer.get();
+		T* source = m_capturer.get();
 		if (source) {
 			stats->input_height = source->height();
 			stats->input_width = source->width();
@@ -110,9 +106,9 @@ protected:
 	explicit TrackSource(std::unique_ptr<T> capturer)
 		: webrtc::VideoTrackSource(/*remote=*/false), m_capturer(std::move(capturer)) {}
 
-   	SourceState state() const override { 
-		return kLive; 
-   	}
+	SourceState state() const override {
+		return kLive;
+	}
 
 private:
 	rtc::VideoSourceInterface<webrtc::VideoFrame>* source() override {
@@ -122,31 +118,32 @@ private:
 };
 
 class CapturerFactory {
-	public:
+public:
 
-	static const std::list<std::string> GetVideoCaptureDeviceList(const std::regex & publishFilter, bool useNullCodec)
+	static const std::list<std::string> GetVideoCaptureDeviceList(const std::regex& publishFilter, bool useNullCodec)
 	{
 		std::list<std::string> videoDeviceList;
 
-		if (std::regex_match("videocap://",publishFilter) && !useNullCodec) {
+		if (std::regex_match("videocap://", publishFilter) && !useNullCodec) {
 			std::unique_ptr<webrtc::VideoCaptureModule::DeviceInfo> info(webrtc::VideoCaptureFactory::CreateDeviceInfo());
 			if (info)
 			{
 				int num_videoDevices = info->NumberOfDevices();
-				RTC_LOG(LS_INFO) << "nb video devices:" << num_videoDevices;
+				SPDLOG_LOGGER_INFO(spdlogptr, "nb video devices:{}", num_videoDevices);
 				for (int i = 0; i < num_videoDevices; ++i)
 				{
 					const uint32_t kSize = 256;
-					char name[kSize] = {0};
-					char id[kSize] = {0};
+					char name[kSize] = { 0 };
+					char id[kSize] = { 0 };
 					if (info->GetDeviceName(i, name, kSize, id, kSize) != -1)
 					{
-						RTC_LOG(LS_INFO) << "video device name:" << name << " id:" << id;
+						SPDLOG_LOGGER_INFO(spdlogptr, "video device name: {} ,id:{}", name, id);
 						std::string devname;
 						auto it = std::find(videoDeviceList.begin(), videoDeviceList.end(), name);
 						if (it == videoDeviceList.end()) {
 							devname = name;
-						} else {
+						}
+						else {
 							devname = "videocap://";
 							devname += std::to_string(i);
 						}
@@ -155,9 +152,9 @@ class CapturerFactory {
 				}
 			}
 		}
-		if (std::regex_match("v4l2://",publishFilter) && useNullCodec) {
+		if (std::regex_match("v4l2://", publishFilter) && useNullCodec) {
 #ifdef HAVE_V4L2	
-			DIR *dir = opendir("/dev");
+			DIR* dir = opendir("/dev");
 			if (dir != nullptr) {
 				struct dirent* entry = NULL;
 				while ((entry = readdir(dir)) != NULL) {
@@ -170,7 +167,7 @@ class CapturerFactory {
 							delete capture;
 							std::string v4l2url("v4l2://");
 							v4l2url.append(device);
-							videoDeviceList.push_back(v4l2url);	
+							videoDeviceList.push_back(v4l2url);
 						}
 					}
 				}
@@ -182,7 +179,7 @@ class CapturerFactory {
 		return videoDeviceList;
 	}
 
-static const std::map<int, std::string>  GetVideoCaptureDeviceMap()
+	static const std::map<int, std::string>  GetVideoCaptureDeviceMap()
 	{
 
 		std::map<int, std::string> videoMap;
@@ -209,8 +206,8 @@ static const std::map<int, std::string>  GetVideoCaptureDeviceMap()
 		std::list<std::string> videoList;
 
 #ifdef USE_X11
-		if (std::regex_match("window://",publishFilter) && !useNullCodec) {
-			std::unique_ptr<webrtc::DesktopCapturer> capturer = webrtc::DesktopCapturer::CreateWindowCapturer(webrtc::DesktopCaptureOptions::CreateDefault());	
+		if (std::regex_match("window://", publishFilter) && !useNullCodec) {
+			std::unique_ptr<webrtc::DesktopCapturer> capturer = webrtc::DesktopCapturer::CreateWindowCapturer(webrtc::DesktopCaptureOptions::CreateDefault());
 			if (capturer) {
 				webrtc::DesktopCapturer::SourceList sourceList;
 				if (capturer->GetSourceList(&sourceList)) {
@@ -222,8 +219,8 @@ static const std::map<int, std::string>  GetVideoCaptureDeviceMap()
 				}
 			}
 		}
-		if (std::regex_match("screen://",publishFilter) && !useNullCodec) {
-			std::unique_ptr<webrtc::DesktopCapturer> capturer = webrtc::DesktopCapturer::CreateScreenCapturer(webrtc::DesktopCaptureOptions::CreateDefault());		
+		if (std::regex_match("screen://", publishFilter) && !useNullCodec) {
+			std::unique_ptr<webrtc::DesktopCapturer> capturer = webrtc::DesktopCapturer::CreateScreenCapturer(webrtc::DesktopCaptureOptions::CreateDefault());
 			if (capturer) {
 				webrtc::DesktopCapturer::SourceList sourceList;
 				if (capturer->GetSourceList(&sourceList)) {
@@ -239,13 +236,13 @@ static const std::map<int, std::string>  GetVideoCaptureDeviceMap()
 		return videoList;
 	}
 
-	static rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> CreateVideoSource(const std::string & videourl, const std::map<std::string,std::string> & opts, const std::regex & publishFilter, rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> peer_connection_factory, std::unique_ptr<webrtc::VideoDecoderFactory>& videoDecoderFactory) {
+	static rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> CreateVideoSource(const std::string& videourl, const std::map<std::string, std::string>& opts, const std::regex& publishFilter, rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> peer_connection_factory, std::unique_ptr<webrtc::VideoDecoderFactory>& videoDecoderFactory) {
 		rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> videoSource;
 		videoSource = VideoTrackSourceInput::Create(videourl, opts);
 		return videoSource;
-		if ( ((videourl.find("rtsp://") == 0) || (videourl.find("rtsps://") == 0) )  && (std::regex_match("rtsp://", publishFilter))) {
+		if (((videourl.find("rtsp://") == 0) || (videourl.find("rtsps://") == 0)) && (std::regex_match("rtsp://", publishFilter))) {
 #ifdef HAVE_LIVE555
-			videoSource = TrackSource<RTSPVideoCapturer>::Create(videourl,opts, videoDecoderFactory);
+			videoSource = TrackSource<RTSPVideoCapturer>::Create(videourl, opts, videoDecoderFactory);
 
 #endif	
 			videoSource = VideoTrackSourceInput::Create(videourl, opts);
@@ -254,7 +251,7 @@ static const std::map<int, std::string>  GetVideoCaptureDeviceMap()
 		{
 #ifdef HAVE_LIVE555
 			videoSource = TrackSource<FileVideoCapturer>::Create(videourl, opts, videoDecoderFactory);
-	   //	videoSource = TrackSource<FFmpegVideoSource>::Create(videourl, opts, videoDecoderFactory);
+			//	videoSource = TrackSource<FFmpegVideoSource>::Create(videourl, opts, videoDecoderFactory);
 #endif
 			videoSource = VideoTrackSourceInput::Create(videourl, opts);
 		}
@@ -263,7 +260,7 @@ static const std::map<int, std::string>  GetVideoCaptureDeviceMap()
 #ifdef HAVE_LIVE555
 			videoSource = TrackSource<RTPVideoCapturer>::Create(SDPClient::getSdpFromRtpUrl(videourl), opts, videoDecoderFactory);
 #endif
-		}		
+		}
 		else if ((videourl.find("screen://") == 0) && (std::regex_match("screen://", publishFilter)))
 		{
 #ifdef USE_X11
@@ -276,96 +273,149 @@ static const std::map<int, std::string>  GetVideoCaptureDeviceMap()
 			videoSource = TrackSource<WindowCapturer>::Create(videourl, opts, videoDecoderFactory);
 #endif 
 		}
-		else if ((videourl.find("rtmp://") == 0) && (std::regex_match("rtmp://",publishFilter))) {
+		else if ((videourl.find("rtmp://") == 0) && (std::regex_match("rtmp://", publishFilter))) {
 #ifdef HAVE_RTMP
 			videoSource = TrackSource<RtmpVideoSource>::Create(videourl, opts, videoDecoderFactory);
 #endif 
 			videoSource = VideoTrackSourceInput::Create(videourl, opts);
 		}
-		else if ((videourl.find("v4l2://") == 0) && (std::regex_match("v4l2://",publishFilter))) {
+		else if ((videourl.find("v4l2://") == 0) && (std::regex_match("v4l2://", publishFilter))) {
 #ifdef HAVE_V4L2			
 			videoSource = TrackSource<V4l2Capturer>::Create(videourl, opts, videoDecoderFactory);
 #endif			
-		}		
-		else if (std::regex_match("videocap://",publishFilter)) {
-		//	videoSource = TrackSource<VcmCapturer>::Create(videourl, opts, videoDecoderFactory);
+		}
+		else if (std::regex_match("videocap://", publishFilter)) {
+			videoSource = TrackSource<VcmCapturer>::Create(videourl, opts, videoDecoderFactory);
+
+
 		}
 		return videoSource;
 	}
 
-	static const std::list<std::string> GetAudioCaptureDeviceList(const std::regex & publishFilter, rtc::scoped_refptr<webrtc::AudioDeviceModule>   audioDeviceModule) {
+	static const std::list<std::string> GetAudioCaptureDeviceList(const std::regex& publishFilter, rtc::scoped_refptr<webrtc::AudioDeviceModule>   audioDeviceModule) {
 		std::list<std::string> audioList;
 		if (std::regex_match("audiocap://", publishFilter))
 		{
 			int16_t num_audioDevices = audioDeviceModule->RecordingDevices();
-			RTC_LOG(LS_INFO) << "nb audio devices:" << num_audioDevices;
+			SPDLOG_LOGGER_INFO(spdlogptr, "nb audio devices:{}", num_audioDevices);
 
 			for (int i = 0; i < num_audioDevices; ++i)
 			{
-				char name[webrtc::kAdmMaxDeviceNameSize] = {0};
-				char id[webrtc::kAdmMaxGuidSize] = {0};
+				char name[webrtc::kAdmMaxDeviceNameSize] = { 0 };
+				char id[webrtc::kAdmMaxGuidSize] = { 0 };
 				if (audioDeviceModule->RecordingDeviceName(i, name, id) != -1)
 				{
-					RTC_LOG(LS_INFO) << "audio device name:" << name << " id:" << id;
+					SPDLOG_LOGGER_INFO(spdlogptr, "audio device name:{}   id:{} ", name, id);
 					std::string devname;
 					auto it = std::find(audioList.begin(), audioList.end(), name);
 					if (it == audioList.end()) {
 						devname = name;
-					} else {
+					}
+					else {
 						devname = "audiocap://";
 						devname += std::to_string(i);
 					}
-					audioList.push_back(devname);					
+					audioList.push_back(devname);
 				}
 			}
-		}	
+		}
 		return audioList;
 	}
 
-	static rtc::scoped_refptr<webrtc::AudioSourceInterface> CreateAudioSource(const std::string & audiourl, 
-							const std::map<std::string,std::string> & opts, 
-							const std::regex & publishFilter, 
-							rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> peer_connection_factory,
-							rtc::scoped_refptr<webrtc::AudioDecoderFactory> audioDecoderfactory,
-							rtc::scoped_refptr<webrtc::AudioDeviceModule>   audioDeviceModule) {
+	static const std::list<std::string> GetAudioPlayoutDeviceList(const std::regex& publishFilter, rtc::scoped_refptr<webrtc::AudioDeviceModule>   audioDeviceModule) {
+		std::list<std::string> audioList;
+		if (std::regex_match("audioplay://", publishFilter))
+		{
+			int16_t num_audioDevices = audioDeviceModule->PlayoutDevices();
+			SPDLOG_LOGGER_INFO(spdlogptr, "nb audio devices: {}", num_audioDevices);
+
+			for (int i = 0; i < num_audioDevices; ++i)
+			{
+				char name[webrtc::kAdmMaxDeviceNameSize] = { 0 };
+				char id[webrtc::kAdmMaxGuidSize] = { 0 };
+				if (audioDeviceModule->PlayoutDeviceName(i, name, id) != -1)
+				{
+					SPDLOG_LOGGER_INFO(spdlogptr, "audio device name:{}   id:{} ", name, id);
+					std::string devname;
+					devname = "audioplay://";
+					devname += std::to_string(i);
+					audioList.push_back(devname);
+				}
+			}
+		}
+		return audioList;
+	}
+
+	static rtc::scoped_refptr<webrtc::AudioSourceInterface> CreateAudioSource(const std::string& audiourl,
+		const std::map<std::string, std::string>& opts,
+		const std::regex& publishFilter,
+		rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> peer_connection_factory,
+		rtc::scoped_refptr<webrtc::AudioDecoderFactory> audioDecoderfactory,
+		rtc::scoped_refptr<webrtc::AudioDeviceModule>   audioDeviceModule) {
 		rtc::scoped_refptr<webrtc::AudioSourceInterface> audioSource;
 
-		if ( (audiourl.find("rtsp://") == 0) && (std::regex_match("rtsp://",publishFilter)) )
+		rtc::scoped_refptr<AudioTrackSourceInput> audioSource1;
+		audioDeviceModule->Terminate();
+		audioSource1 = AudioTrackSourceInput::Create(audiourl, opts);
+		return audioSource1;
+		if ((audiourl.find("rtsp://") == 0) && (std::regex_match("rtsp://", publishFilter)))
 		{
-	#ifdef HAVE_LIVE555
+#ifdef HAVE_LIVE555
 			audioDeviceModule->Terminate();
 			audioSource = RTSPAudioSource::Create(audioDecoderfactory, audiourl, opts);
-	#endif
+#endif
+		/*	rtc::scoped_refptr<AudioTrackSourceInput> audioSource;
+			audioDeviceModule->Terminate();
+			audioSource = AudioTrackSourceInput::Create(audiourl, opts);
+			return audioSource;*/
+
+
+			/*int16_t num_audioDevices = audioDeviceModule->PlayoutDevices();
+			int16_t idx_audioDevice = -1;
+			char name[webrtc::kAdmMaxDeviceNameSize] = { 0 };
+			char id[webrtc::kAdmMaxGuidSize] = { 0 };
+			for (int i = 0; i < num_audioDevices; ++i)
+			{
+				if (audioDeviceModule->PlayoutDeviceName(i, name, id) != -1)
+				{
+					std::map<std::string, std::string> opts1;
+					opts1["device_id"] = id;
+					audioSource = AudioTrackSourceInput::Create(name, opts1);
+					break;
+				}
+			}*/
+
 		}
-		else if ( (audiourl.find("file://") == 0) && (std::regex_match("file://",publishFilter)) )
+		else if ((audiourl.find("file://") == 0) && (std::regex_match("file://", publishFilter)))
 		{
-	#ifdef HAVE_LIVE555
+#ifdef HAVE_LIVE555
 			audioDeviceModule->Terminate();
 			audioSource = FileAudioSource::Create(audioDecoderfactory, audiourl, opts);
-           //audioSource = FFmpegAudioSource::Create(audioDecoderfactory, audiourl, opts);
-	#endif
+			//audioSource = FFmpegAudioSource::Create(audioDecoderfactory, audiourl, opts);
+#endif
 		}
-		else if (std::regex_match("audiocap://",publishFilter)) 
+		else if (std::regex_match("audiocap://", publishFilter))
 		{
 			audioDeviceModule->Init();
 			int16_t num_audioDevices = audioDeviceModule->RecordingDevices();
 			int16_t idx_audioDevice = -1;
-			char name[webrtc::kAdmMaxDeviceNameSize] = {0};
-			char id[webrtc::kAdmMaxGuidSize] = {0};			
+			char name[webrtc::kAdmMaxDeviceNameSize] = { 0 };
+			char id[webrtc::kAdmMaxGuidSize] = { 0 };
 			if (audiourl.find("audiocap://") == 0) {
 				int deviceNumber = atoi(audiourl.substr(strlen("audiocap://")).c_str());
-				RTC_LOG(LS_INFO) << "audiourl:" << audiourl << " device number:" << deviceNumber;
+				SPDLOG_LOGGER_INFO(spdlogptr, "audiourl: {}   device number:{} ", audiourl, deviceNumber);
 				if (audioDeviceModule->RecordingDeviceName(deviceNumber, name, id) != -1)
 				{
 					idx_audioDevice = deviceNumber;
 				}
 
-			} else {
+			}
+			else {
 				for (int i = 0; i < num_audioDevices; ++i)
 				{
 					if (audioDeviceModule->RecordingDeviceName(i, name, id) != -1)
 					{
-						RTC_LOG(LS_INFO) << "audiourl:" << audiourl << " idx_audioDevice:" << i << " " << name;
+						SPDLOG_LOGGER_INFO(spdlogptr, "audiourl: {}  idx_audioDevice:{}  name :{}", audiourl, i, name);
 #ifdef WEBRTC_WIN			
 						if (audiourl == GBK::Utf8ToGbk(name) || audiourl == name || GBK::Utf8ToGbk(audiourl.c_str()) == GBK::Utf8ToGbk(name))
 						{
@@ -373,7 +423,7 @@ static const std::map<int, std::string>  GetVideoCaptureDeviceMap()
 							break;
 						}
 #endif
-						if ( audiourl == name )
+						if (audiourl == name)
 						{
 							idx_audioDevice = i;
 							break;
@@ -381,8 +431,8 @@ static const std::map<int, std::string>  GetVideoCaptureDeviceMap()
 					}
 				}
 			}
-			RTC_LOG(LS_ERROR) << "audiourl:" << audiourl << " idx_audioDevice:" << idx_audioDevice << "/" << num_audioDevices;
-			if ( (idx_audioDevice >= 0) && (idx_audioDevice < num_audioDevices) )
+			SPDLOG_LOGGER_ERROR(spdlogptr, "audiourl:{}  idx_audioDevice:{} num_audioDevices:{} ", audiourl, idx_audioDevice, num_audioDevices);
+			if ((idx_audioDevice >= 0) && (idx_audioDevice < num_audioDevices))
 			{
 				audioDeviceModule->SetRecordingDevice(idx_audioDevice);
 				audioDeviceModule->EnableBuiltInAEC(false);

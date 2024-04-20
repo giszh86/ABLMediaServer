@@ -8,10 +8,23 @@
 typedef SSIZE_T ssize_t;
 #endif
 
+#if (defined _WIN32 || defined _WIN64)
+
+#ifdef   WEBRTCSDK_EXPORTS
+#define WEBRTCSDK_EXPORTSIMPL __declspec(dllexport)
+#else
+#define WEBRTCSDK_EXPORTSIMPL __declspec(dllimport)
+#endif
+#else
+
+#define WEBRTCSDK_EXPORTSIMPL __attribute__((visibility("default")))
+#endif
+
+
 
 typedef  std::function<void(uint8_t* pcm, int datalen, int nSampleRate, int nChannel, int64_t nTimeStamp)> PcmCallBack;
 typedef  std::function<void(uint8_t* aac_raw, int file_size, int64_t nTimeStamp)> AacCallBack;
-class   AudioCapture
+class  WEBRTCSDK_EXPORTSIMPL  AudioCapture
 {
 public:
 	AudioCapture() {};
@@ -20,7 +33,7 @@ public:
 
 	static AudioCapture* CreateAudioCapture(std::string audiourlconst, std::map<std::string, std::string> opts = {});
 
-	virtual int Init(int nSampleRate, int nChannel, int nBitsPerSample) = 0;
+	virtual int Init(const char* audiocodecname, int nSampleRate, int nChannel, int nBitsPerSample) = 0;
 
 	virtual int Init(const std::map<std::string, std::string>& opts) =0;
 
@@ -44,18 +57,18 @@ public:
 
 
 
-class  AudioCaptureManager
+class WEBRTCSDK_EXPORTSIMPL  AudioCaptureManager
 {
 public:
 	// 添加输入流
-	void AddInput(const std::string& audioUrl);
+	void AddInput(const std::string& videoUrl);
 
 	// 移除输入流
-	void RemoveInput(const std::string& audioUrl);
+	void RemoveInput(const std::string& videoUrl);
 
 	// 获取输入流对象
-	AudioCapture* GetInput(const std::string& audioUrl);
-	std::string  getStream(const std::string& audioUrl);
+	AudioCapture* GetInput(const std::string& videoUrl);
+	std::string  getStream(const std::string& videoUrl);
 
 	bool isURLWithProtocol(const std::string& str) {
 		// 判断字符串是否以协议开头，比如 "rtsp://"

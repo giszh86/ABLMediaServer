@@ -3,26 +3,13 @@
 #include <memory>
 #include <string>
 #include <algorithm>
-
+#include "ffmpegTypes.h"
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/fmt/fmt.h> // 包含 fmt 库的头文件
-
-#if (defined _WIN32 || defined _WIN64)
-
-#ifdef   WEBRTCSDK_EXPORTS
-#define WEBRTCSDK_EXPORTSIMPL __declspec(dllexport)
-#else
-#define WEBRTCSDK_EXPORTSIMPL __declspec(dllimport)
-#endif
-#else
-
-#define WEBRTCSDK_EXPORTSIMPL __attribute__((visibility("default")))
-#endif
-
 namespace  spdlog
 {
-	class WEBRTCSDK_EXPORTSIMPL SPDLOG
+	class  SPDLOG
 	{
 	private:
 		SPDLOG() = default;

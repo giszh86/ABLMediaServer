@@ -16,6 +16,9 @@
     <Filter Include="dump">
       <UniqueIdentifier>{415e5a26-44ff-4b7f-adb9-7626ba8b0ceb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ffmpeg">
+      <UniqueIdentifier>{177b7b3f-de98-4000-9f7e-bcb46d174614}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -231,6 +234,33 @@
     <ClInclude Include="win\Crash_Dumper.h">
       <Filter>dump</Filter>
     </ClInclude>
+    <ClInclude Include="ffmpeg\audio_resampler.h">
+      <Filter>ffmpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="ffmpeg\AudioDecoder.h">
+      <Filter>ffmpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="ffmpeg\avx_helper.h">
+      <Filter>ffmpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="ffmpeg\ffmpeg_headers.h">
+      <Filter>ffmpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="ffmpeg\FFmpegAVFrameSWS.h">
+      <Filter>ffmpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="ffmpeg\FFmpegDecoderAPI.h">
+      <Filter>ffmpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="ffmpeg\ffmpegTypes.h">
+      <Filter>ffmpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="ffmpeg\mediabase.h">
+      <Filter>ffmpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="ffmpeg\thread_pool.h">
+      <Filter>ffmpeg</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -424,6 +454,21 @@
     </ClCompile>
     <ClCompile Include="win\Crash_Dumper.cpp">
       <Filter>dump</Filter>
+    </ClCompile>
+    <ClCompile Include="ffmpeg\audio_resampler.cpp">
+      <Filter>ffmpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="ffmpeg\AudioDecoder.cpp">
+      <Filter>ffmpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="ffmpeg\FFmpegAVFrameSWS.cpp">
+      <Filter>ffmpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="ffmpeg\FFmpegDecoderAPI.cpp">
+      <Filter>ffmpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="ffmpeg\thread_pool.cpp">
+      <Filter>ffmpeg</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

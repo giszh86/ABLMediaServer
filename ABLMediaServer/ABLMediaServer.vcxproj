@@ -116,7 +116,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>..\rapidjson-master\include;..\media-server-master\libflv\include;..\media-server-master\librtmp\include;..\media-server-master\libmpeg\include;..\media-server-master\libhls\include;..\media-server-master\libmov\include;..\media-server-master\librtp\include;../3rd/ffmpeg6\include;.\;$(IncludePath)</IncludePath>
+    <IncludePath>..\rapidjson-master\include;..\media-server-master\libflv\include;..\media-server-master\librtmp\include;..\media-server-master\libmpeg\include;..\media-server-master\libhls\include;..\media-server-master\libmov\include;..\media-server-master\librtp\include;../3rd/ffmpeg6\include;.\;../3rd/spdlog/include;$(IncludePath)</IncludePath>
     <LibraryPath>..\media-server-master\x64\Release;..\3rd\ffmpeg6\lib\x64;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)bin\$(Platform)</OutDir>
   </PropertyGroup>
@@ -238,6 +238,15 @@
     <ClInclude Include="AVFrameSWS.h" />
     <ClInclude Include="faac.h" />
     <ClInclude Include="faaccfg.h" />
+    <ClInclude Include="ffmpeg\AudioDecoder.h" />
+    <ClInclude Include="ffmpeg\audio_resampler.h" />
+    <ClInclude Include="ffmpeg\avx_helper.h" />
+    <ClInclude Include="ffmpeg\FFmpegAVFrameSWS.h" />
+    <ClInclude Include="ffmpeg\FFmpegDecoderAPI.h" />
+    <ClInclude Include="ffmpeg\ffmpegTypes.h" />
+    <ClInclude Include="ffmpeg\ffmpeg_headers.h" />
+    <ClInclude Include="ffmpeg\mediabase.h" />
+    <ClInclude Include="ffmpeg\thread_pool.h" />
     <ClInclude Include="FFVideoDecode.h" />
     <ClInclude Include="FFVideoEncode.h" />
     <ClInclude Include="g711.h" />
@@ -333,6 +342,11 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='boost_release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="ffmpeg\AudioDecoder.cpp" />
+    <ClCompile Include="ffmpeg\audio_resampler.cpp" />
+    <ClCompile Include="ffmpeg\FFmpegAVFrameSWS.cpp" />
+    <ClCompile Include="ffmpeg\FFmpegDecoderAPI.cpp" />
+    <ClCompile Include="ffmpeg\thread_pool.cpp" />
     <ClCompile Include="FFVideoDecode.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>

@@ -20,6 +20,7 @@
 #include <thread>
 #include <atomic>
 #include "../capture/VideoCapture.h"
+#include "../capture/AudioCapture.h"
 
 typedef std::function<void(uint8_t* y, int strideY, uint8_t* u, int strideU, uint8_t* v, int strideV, int nWidth, int nHeight)> LocalFrameCallBackFunc;
 
@@ -103,15 +104,14 @@ private:
 
 
 	PeerConnectionManager* webRtcServer;
+
 	HttpServerRequestHandler* httpServer;
+
 	std::function<void(const char* callbackJson, void* pUserHandle)>  m_callback;
+
 	std::atomic<bool> bInit;
 
 	std::thread* m_turnThread;
 
 };
 
-//´´½¨
-WEBRTCSDK_EXPORTSIMPL WebRtcEndpoint* CreateWebRtcEndpoint();
-
-WEBRTCSDK_EXPORTSIMPL void ReleaseCreateWebRtcEndpoint(WebRtcEndpoint*);

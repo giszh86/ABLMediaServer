@@ -2,11 +2,7 @@
 
 #include <map>
 #include "rtc_obj_sdk.h"
-
-
 #include "PeerConnectionManager.h"
-
-
 #include "rtc_base/ssl_adapter.h"
 #include "rtc_base/thread.h"
 #include "p2p/base/basic_packet_socket_factory.h"
@@ -23,6 +19,7 @@
 #include "turn_tool.h"
 #include "SimpleIni.h"
 
+#include "spdloghead.h"
 #if (defined _WIN32 || defined _WIN64)
 #include "rtc_base/win32_socket_init.h"
 #endif
@@ -287,9 +284,7 @@ WebRtcEndpoint::WebRtcEndpoint()
 
 	rtc::PhysicalSocketServer ss;
 	rtc::AutoSocketServerThread main_thread(&ss);
-	rtc::LogMessage::LogTimestamps();
-	rtc::LogMessage::LogThreads();
-	rtc::LogMessage::AddLogToStream(new RtcLogSink(), rtc::LS_NONE);
+	spdlog::SPDLOG::getInstance().init("log/webrtc-streamer.txt", "webrtc-streamer");
 
 	rtc::InitializeSSL();
 	bInit.store(false);
@@ -297,9 +292,3 @@ WebRtcEndpoint::WebRtcEndpoint()
 }
 
 
-
- WebRtcEndpoint* CreateWebRtcEndpoint()
- {
-	 return nullptr;
-	// return HSingletonTemplatePtr<WebRtcEndpointImp>::Instance();
- }
