@@ -70,6 +70,7 @@ include_directories(
     ./media-server-master/librtp/include
     ./media-server-master/libmov/include
     ./ABLMediaServer/
+    ./3rd/spdlog/include
 )
 
 
@@ -91,10 +92,14 @@ link_libraries(
 )
 
 # 添加源文件
-aux_source_directory(./ABLMediaServer/ DIR_SRCS)
+file(GLOB ABL_SRCS
+    ./ABLMediaServer/*.cpp
+    ./ABLMediaServer/*.cc
+    ./ABLMediaServer/ffmpeg/*.cpp
+)
 
 # 添加可执行文件
-add_executable(${PROJECT_NAME} ${DIR_SRCS})
+add_executable(${PROJECT_NAME} ${ABL_SRCS})
 
 # 链接需要的库文件
 target_link_libraries(${PROJECT_NAME}
@@ -131,4 +136,5 @@ if(USE_BOOST)
     boost_atomic
     )
 endif()
+
 
