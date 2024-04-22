@@ -65,5 +65,5 @@ private:
 	int64_t m_previmagets;
 	int64_t m_prevts;
 
-
+	std::string m_audiourl;
 };

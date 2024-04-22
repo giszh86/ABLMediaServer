@@ -36,7 +36,6 @@ void AudioCaptureManager::RemoveInput(const std::string& videoUrl)
 	auto it = m_inputMap.find(path);
 	if (it != m_inputMap.end())
 	{
-	
 		m_inputMap.erase(it);
 	}
 }

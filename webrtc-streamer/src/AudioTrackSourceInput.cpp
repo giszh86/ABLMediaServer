@@ -91,7 +91,9 @@ AudioTrackSourceInput::AudioTrackSourceInput(const std::string& uri, const std::
 	:m_wait(wait)
 	, m_previmagets(0)
 	, m_prevts(0)
+	, m_audiourl(uri)
 {
+
 	m_pAudioCapture =AudioCaptureManager::getInstance().GetInput(uri); 
 	if (m_pAudioCapture)
 	{
@@ -120,6 +122,7 @@ AudioTrackSourceInput::~AudioTrackSourceInput()
 	SPDLOG_LOGGER_INFO(spdlogptr, "AudioTrackSourceInput::stop start ");
 	if (m_pAudioCapture)
 	{
+		AudioCaptureManager::getInstance().RemoveInput(m_audiourl);
 		m_pAudioCapture->Stop();
 		delete m_pAudioCapture;
 		m_pAudioCapture = nullptr;
