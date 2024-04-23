@@ -346,7 +346,68 @@
 		
 		         【注：发送http请求 可以使用curl、postman、或者其他标准的http工具 】
 				 
-				 
+		  4)  申请代理调用ffmepg函数实现 rtsp、rtmp、 http-flv、http-mp4、http-hls 拉流 ，建议如果拉取 http-flv、http-mp4、http-hls 码流调用该函数 ， 如果源流是rtsp 、rtmp、本地MP4文件 建议使用 /index/api/addStreamProxy
+		      当然如果源流是 rtsp、rtmp ，也可以尝试使用 addFFmpegProxy
+			  
+                URL: /index/api/addFFmpegProxy
+			   
+			        参数：               参数说明            参数参考值
+					secret                   服务器密码        比如 035c73f7-bb6b-4889-a715-d9eb2d1925cc
+					vhost                                      比如  _defaultVhost_
+					app                      应用名            比如 Media
+					stream                   媒体流名          比如 Camera_00001            【/app/stream 组合起来不能重复】
+					url                      代理拉流url       比如 http://190.15.240.36:8088/Media/Camera_00001.flv    或者  
+                                                   					http://190.15.240.36:8088/Media/Camera_00001.mp4    或者
+ 																	http://190.15.240.36:9088/Media/Camera_00001.m3u8
+ 																	
+ 					enable_mp4                是否录像          1 录像，0 不录像            【可选参数】
+					enable_hls                是否hls切片       1 进行hls 切片 ，0 不切片   【可选参数】
+				    convertOutWidth           转码宽            转码输出宽 如果指定宽、高   【可选参数】[1920 x 1080, 1280 x 720 ,960 x 640 ,800 x 480 ,720 x 576 , 720 x 480 ,640 x 480 ,352 x 288 ] 就说明 H265 进行转码为 H264 
+				    convertOutHeight          转码高            转码输出高 如果指定宽、高   【可选参数】[1920 x 1080, 1280 x 720 ,960 x 640 ,800 x 480 ,720 x 576 , 720 x 480 ,640 x 480 ,352 x 288 ] 就说明 H265 进行转码为 H264  
+				    H264DecodeEncode_enable   H264是否解码      H264分辨率高再编码降分辨率，【可选参数】有时候需要H264视频进行先解码再重新编码降低分辨率，可以设置 H264DecodeEncode_enable 为 1 ，降下来的分辨率为 convertOutWidth 、 convertOutHeight
+					disableVideo              是否过滤掉视频    0 不过滤 ，1 过滤视频       【可选参数】 默认 0 不过滤视频，国家电网协议中需要摄像头和摄像头直接需要对接，摄像头推上来的媒体流中过滤掉视频（disableVideo=1）再发给对方才能完成对讲 
+					disableAudio              是否过滤掉音频    0 不过滤 ，1 过滤音频       【可选参数】 默认 0 不过滤音频，有时候不需要音频、或者由于敏感原因禁止收听音频，可以过滤掉音频流接入流媒体服务器，只需要设置 disableAudio = 1即可过滤音频  
+					
+               http  GET 方式 		
+			        1 请求rtsp拉流样例
+			            http://190.15.240.11:7088/index/api/addFFmpegProxy?secret=035c73f7-bb6b-4889-a715-d9eb2d1925cc&vhost=_defaultVhost_&app=Media&stream=Camera_00001&url=http://190.15.240.36:8088/Media/Camera_00001.flv&enable_mp4=0
+
+			   http POST 方式  
+                    1 请求rtsp拉流样例		
+                       http请求 url 样例
+                         http://190.15.240.11:7088/index/api/addFFmpegProxy				   
+					   body 参数 , json 格式	  
+			             {"secret":"035c73f7-bb6b-4889-a715-d9eb2d1925cc","vhost":"_defaultVhost_","app":"Media","stream":"Camera_00001","url":"http://190.15.240.36:8088/Media/Camera_00001.flv","enable_mp4":0}
+						 
+				返回Body：
+					{
+						"code": 0,           # 0为操作成功，其他值为操作失败
+						"memo": "success",   # success 为成功 
+						"key": 93            # 成功时返回大于0的值，为代理拉流的Key ,删除代理拉流时需要用的   
+					}
+					
+		  5) 申请删除ffmepg函数代理拉流
+ 			     URL: /index/api/delFFmpegProxy
+			   
+			     参数：
+					secret  服务器密码 ，比如  035c73f7-bb6b-4889-a715-d9eb2d1925cc
+					key                  比如  93 ，调用 addStreamProxy 返回的 key 的值 
+ 			   
+			    http GET 方式 
+			        http://190.15.240.11:7088/index/api/delFFmpegProxy?secret=035c73f7-bb6b-4889-a715-d9eb2d1925cc&key=93
+				   
+				http  POST 方式 
+				    http URL :
+				      http://190.15.240.11:7088/index/api/delFFmpegProxy
+					  
+				    body 参数 Json格式 
+				       {"secret":"035c73f7-bb6b-4889-a715-d9eb2d1925cc","key":93} 
+				   
+				返回Body：
+					{
+						"code": 0,           # 0为操作成功，其他值为操作失败
+						"memo": "success",   # success 为成功 ,如果失败是其他值 
+					}					 
 		   
 	 8）、申请代理rtsp、rtmp、推流 、申请删除代理拉流 
 		 1) 申请代理rtsp、rtmp 推流（注意：不是国标GB28181推流） 
@@ -907,22 +968,17 @@
 			{
 				"code": 0,
 				"params": [
-				
 					{
 						"secret": "035c73f7-bb6b-4889-a715-d9eb2d1925cc",
-						"memo": "server password",				
+						"memo": "server password"
 					},
 					{
 						"ServerIP": "44.35.33.239",
-						"memo": "ABLMediaServer ip address"				
-					},
-					{
-						"rtc.listening-ip": "192.168.2.5",
-						"memo": "Total number of video playback threads ."					
+						"memo": "ABLMediaServer ip address"
 					},
 					{
 						"mediaServerID": "ABLMediaServer_00001",
-						"memo": "media Server ID "			
+						"memo": "media Server ID "
 					},
 					{
 						"hook_enable": 0,
@@ -1312,6 +1368,18 @@
 
 					{"app":"Media","stream":"Camera_00001","mediaServerId":"ABLMediaServer_00001","fileName":"20230418100440.mp4"}
 				
+				  14、某一个接入码流当 i 帧到达会发出通知 ，总共通知默认30次，也可以修改总共通知次数 
+					POST /index/hook/on_stream_iframe_arrive HTTP/1.1
+					Accept: */*
+					Accept-Language: zh-CN,zh;q=0.8
+					Connection: keep-alive
+					Content-Length: 161
+					Content-Type: application/json
+					Host: 127.0.0.1
+					Tools: ABLMediaServer-6.3.6(2024-04-02)
+					User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36
+
+					{"app":"Media","stream":"Camera_00001","mediaServerId":"ABLMediaServer_00001","networkType":23,"key":18,"ip":"44.35.33.249" ,"port":65183,"NotificationNumber":1}
 				
 				
 	  20) 图片抓拍 
@@ -1320,12 +1388,13 @@
 			 功能：
 				 查询某一接入的媒体源进行抓拍
 
-			 参数：              参数说明     参数参考值
-				secret           服务器密码   比如 035c73f7-bb6b-4889-a715-d9eb2d1925cc        【必填参数】
-				vhost                         比如 _defaultVhost_                              【可选参数】 
-				app              应用名       比如 rtp、gb28181、Media 等等 ，自己起的名字     【必填参数】
-				stream           媒体流名     比如 Camera_00001、44303403343034243200234 等等  【必填参数】
- 				timeout_sec      超时时长     10  即本次抓拍最大超时时长 单位 秒               【必填参数】
+			 参数：               参数说明     参数参考值
+				secret            服务器密码   比如 035c73f7-bb6b-4889-a715-d9eb2d1925cc        【必填参数】
+				vhost                          比如 _defaultVhost_                              【可选参数】 
+				app               应用名       比如 rtp、gb28181、Media 等等 ，自己起的名字     【必填参数】
+				stream            媒体流名     比如 Camera_00001、44303403343034243200234 等等  【必填参数】
+ 				timeout_sec       超时时长     10  即本次抓拍最大超时时长 单位 秒               【必填参数】
+				captureReplayType 返回类型     1 返回url , 2 直接返回抓拍的jpeg图片，默认从配置文件读取这个参数值 【可选参数】 
  				  
 	         http  GET 方式 
                http://127.0.0.1:7088/index/api/getSnap?secret=035c73f7-bb6b-4889-a715-d9eb2d1925cc&vhost=_defaultVhost_&app=Media&stream=Camera_00001&timeout_sec=10

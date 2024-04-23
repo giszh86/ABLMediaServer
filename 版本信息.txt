@@ -1,3 +1,275 @@
+ABLMediaServer-2024-04-14 [性能优化版本、音视频同步完美版本、视频播放画面秒开、消息通知方式修改为短连接] 
+1、消息通知对象超时检测，如果删除则进行强行删除
+	if ((netBaseNetType == NetBaseNetType_HttpClient_None_reader || netBaseNetType == NetBaseNetType_HttpClient_Not_found || netBaseNetType == NetBaseNetType_HttpClient_Record_mp4 || netBaseNetType == NetBaseNetType_HttpClient_Record_Progress || netBaseNetType == NetBaseNetType_HttpClient_on_stream_arrive ||
+		netBaseNetType == NetBaseNetType_HttpClient_on_stream_not_arrive || netBaseNetType == NetBaseNetType_HttpClient_on_stream_disconnect || netBaseNetType == NetBaseNetType_HttpClient_on_record_ts || netBaseNetType == NetBaseNetType_HttpClient_ServerStarted || netBaseNetType == NetBaseNetType_HttpClient_ServerKeepalive || netBaseNetType == NetBaseNetType_HttpClient_DeleteRecordMp4 ||
+		netBaseNetType == NetBaseNetType_HttpClient_on_play || netBaseNetType == NetBaseNetType_HttpClient_on_publish || netBaseNetType == NetBaseNetType_HttpClient_on_iframe_arrive) && GetTickCount64() - ((*iterator1).second)->nCreateDateTime >= 15000)
+	{
+		WriteLog(Log_Debug, "消息通知已经超过 15 秒 ,加入删除链表等待销毁，nClient = %llu ", ((*iterator1).second)->nClient);
+		pDisconnectBaseNetFifo.push((unsigned char*)&((*iterator1).second)->nClient, sizeof(((*iterator1).second)->nClient));
+	}
+
+2、查询录像，如果超过有1个录像文件则进行创建多个录像连续播放对象 CNetServerReadMultRecordFile
+	if (nFileOrder == 1)
+	{
+		sprintf(szRecordPlayURL, "/%s/%s_%s-%s", queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime);
+		CreateNetRevcBaseClient(NetBaseNetType_NetServerReadMultRecordFile, 0, 0, szFileName, 0, szRecordPlayURL);
+	}
+	
+3、如果是读取录像文件 120 秒无人观看，执行删除，防止查询录像过度，造成读取硬盘录像过多 
+	if (netBaseNetType == NetBaseNetType_NetServerReadMultRecordFile && (GetCurrentSecond() - nRecordLastWatchTime >= 120 ))
+	{
+		WriteLog(Log_Debug, "查询产生的录像流 /%s/%s ，已有 120 秒无人观看，现在执行删除 nClient = %llu ", app, stream, nClient);
+		pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
+
+		return false;
+	}
+
+4、修正ffmpeg读取媒体文件计算视频平均帧速度的方法 
+	mediaCodecInfo.nVideoFrameRate = video_stream->avg_frame_rate.num / video_stream->avg_frame_rate.den;
+		
+ABLMediaServer-2024-04-13 [性能优化版本、音视频同步完美版本、视频播放画面秒开、消息通知方式修改为短连接] 
+1、由于wvp接收消息通知不方便修改为长连接，特意把消息通知的网络类型修改为短连接 
+   1）、有消息通知，先塞入pMessageNoticeFifo 
+		if (ABL_MediaServerPort.hook_enable == 1  && GetCurrentSecond() - nLastWatchTime >= ABL_MediaServerPort.noneReaderDuration)
+		{
+			MessageNoticeStruct msgNotice;
+			msgNotice.nClient = NetBaseNetType_HttpClient_None_reader;
+			sprintf(msgNotice.szMsg, "{\"app\":\"%s\",\"stream\":\"%s\",\"noneReaderDuration\":%d,\"mediaServerId\":\"%s\",\"networkType\":%d,\"key\":%llu}", app, stream, GetCurrentSecond() - nLastWatchTimeDisconect, ABL_MediaServerPort.mediaServerID, netBaseNetType, nClient);
+			pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
+
+			nLastWatchTime = GetCurrentSecond();
+		}
+		
+   2）、从消息队列获取到通知消息内容，创建消息通知对象，在 int CNetClientHttp::SendFirstRequst() 拷贝消息内容发送出去 
+ 		while ((pData = pMessageNoticeFifo.pop(&nLength)) != NULL)
+		{
+			if (nLength > 0)
+			{
+				memset((char*)&msgNotice, 0x00, sizeof(msgNotice));
+				memcpy((char*)&msgNotice, pData, nLength);
+
+				boost::shared_ptr<CNetRevcBase> pMsgClient = CreateHttpClientFunc(msgNotice.nClient);
+				if (pMsgClient != NULL)
+					memcpy((char*)&pMsgClient->msgNotice, (char*)&msgNotice, sizeof(msgNotice));
+			}
+			pMessageNoticeFifo.pop_front();
+		}
+
+ABLMediaServer-2024-04-12 [性能优化版本、音视频同步完美版本、视频播放画面秒开] 
+1、修复rtsp推流的app、stream切割问题，只能超过2个字符串 
+	int  CNetRtspServer::GetRtspPathCount(char* szRtspURL)
+	{
+		string strCurRtspURL = szRtspURL;
+		int    nPos1, nPos2,nPos3;
+		int    nPathCount = 0;
+		nPos1 = strCurRtspURL.find("//", 0);
+		if (nPos1 < 0)
+			return 0;//地址非法 
+		nPos1 += 2;
+		while (true)
+		{
+			nPos1 = strCurRtspURL.find("/", nPos1);
+			if (nPos1 >= 0)
+			{
+				nPos1 += 1;
+				nPathCount ++;
+			}
+			else
+				break;
+		}
+
+ABLMediaServer-2024-04-10 [性能优化版本、音视频同步完美版本、视频播放画面秒开] 
+1、增加抓拍图片返回类型参数 captureReplayType 默认从配置文件读取这个参数值  
+  1）、默认从配置文件读取这个参数值  
+ 	bool  CNetServerHTTP::index_api_getSnap()
+	{
+		char szShareMediaURL[string_length_2048] = { 0 };
+
+		memset((char*)&m_getSnapStruct, 0x00, sizeof(m_getSnapStruct));
+		sprintf(m_getSnapStruct.captureReplayType, "%d", ABL_MediaServerPort.captureReplayType);
+	 
+		GetKeyValue("captureReplayType", m_getSnapStruct.captureReplayType);
+		
+  2）、根据抓拍类型 m_getSnapStruct.captureReplayType 返回用户指定类型 
+   if (atoi(m_getSnapStruct.captureReplayType) == 1)
+   {//返回url
+	   sprintf(szResponseBody, "{\"code\":0,\"memo\":\"success , Catpuring takes time %d millisecond .\",\"url\":\"http://%s:%d/%s/%s/%s\"}", GetTickCount64() - nPrintTime, ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.nHttpServerPort, m_addStreamProxyStruct.app, m_addStreamProxyStruct.stream, szFileName);
+	   ResponseHttp(nClient_http, szResponseBody, false);
+   }
+   else
+   {//直接返回图片
+	   boost::shared_ptr<CNetRevcBase>  pHttpClient =  GetNetRevcBaseClient(nClient_http);
+	   if (pHttpClient != NULL)
+	   {
+		   CNetServerHTTP* httResponse = (CNetServerHTTP*) pHttpClient.get();
+		   if (httResponse)
+		   {
+			   sprintf(szDownLoadImage, "/%s/%s/%s", m_addStreamProxyStruct.app, m_addStreamProxyStruct.stream, szFileNameOrder);
+			   httResponse->index_api_downloadImage(szDownLoadImage);
+		   }
+	   }
+   }
+		
+ABLMediaServer-2024-04-09 [性能优化版本、音视频同步完美版本、视频播放画面秒开] 
+1、ffmpeg代理拉流接入设置对 rtsp 连接超时、tcp方式、接收缓冲区大小 等等 
+	CNetClientFFmpegRecv::CNetClientFFmpegRecv(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort, char* szShareMediaURL)
+	{
+		WriteLog(Log_Debug, "CNetClientFFmpegRecv 构造函数 = %X ,nClient = %llu , m_szShareMediaURL = %s  ", this, hClient, szShareMediaURL);
+
+		if (strstr(szIP, "rtsp://") != NULL)
+		{
+			AVDictionary* format_opts = NULL;
+			av_dict_set(&format_opts, "buffer_size", "2024000", 0);  
+			av_dict_set(&format_opts, "timeout", "5000000", 0);
+			av_dict_set(&format_opts, "rtsp_transport", "tcp", 0);
+			nRet2 = avformat_open_input(&pFormatCtx2, szIP, NULL, &format_opts);
+			av_dict_free(&format_opts);
+		}
+
+
+ABLMediaServer-2024-04-08 [性能优化版本、音视频同步完美版本、视频播放画面秒开] 
+1、修改ffmpeg代理拉流接入的媒体源提供的ID
+	int CNetClientFFmpegRecv::ProcessNetData() 
+	{
+		std::lock_guard<std::mutex> lock(readRecordFileInputLock);
+		nRecvDataTimerBySecond = 0;
+
+		//修改媒体源的提供ID
+		if (pMediaSource->nClient == 0)
+			pMediaSource->nClient = hParent;
+			
+2、修复删除父类对象，需要增加不是代理推流、不是代理拉流才能直接删除父类。因为如果父类是 代理拉流、代理推流的不能删除 ，需要重连次数达到配置文件所配置的数量
+ 	if ((*iterator1).second->hParent > 0)
+	{
+		boost::shared_ptr<CNetRevcBase>  pParentPtr = GetNetRevcBaseClientNoLock((*iterator1).second->hParent);
+		
+		if (pParentPtr != NULL)
+		{//不是代理推流、代理拉流的就可以删除父类,代理拉流、代理推流的不能删除 ，需要重连次数达到配置文件所配置的数量 
+			if (!(pParentPtr->netBaseNetType == NetBaseNetType_addStreamProxyControl || pParentPtr->netBaseNetType == NetBaseNetType_addPushProxyControl))
+				pDisconnectBaseNetFifo.push((unsigned char*)&(*iterator1).second->hParent, sizeof((*iterator1).second->hParent));
+		}
+	}
+			
+
+ABLMediaServer-2024-04-07 [性能优化版本、音视频同步完美版本、视频播放画面秒开] 
+1、优化检测i帧函数，最近增加 addFFmpegProxy 函数发现 ffmpeg 返回的帧中有出现 00 00 01 这样的 nalu 帧头标志 ，所以需要优化 
+	bool  CNetRevcBase::CheckVideoIsIFrame(char* szVideoName,unsigned char* szPVideoData, int nPVideoLength)
+	{
+		int nPos = 0;
+		bool bVideoIsIFrameFlag = false;
+		unsigned char  nFrameType = 0x00;
+		int nNaluType = 1;
+		int nAddStep = 3;
+
+		for (int i = 0; i< nPVideoLength; i++)
+		{
+			nNaluType = -1;
+			if (memcmp(szPVideoData + i,(unsigned char*) NALU_START_CODE, sizeof(NALU_START_CODE)) == 0)
+			{//有出现 00 00 01 的nalu头标志
+				nNaluType = 1;
+				nAddStep = sizeof(NALU_START_CODE);
+			}
+			else if (memcmp(szPVideoData + i, (unsigned char*)SLICE_START_CODE, sizeof(SLICE_START_CODE)) == 0)
+			{//有出现 00 00 00 01 的nalu头标志
+				nNaluType = 2;
+				nAddStep = sizeof(SLICE_START_CODE);
+			}
+
+			if (nNaluType >= 1)
+			{//找到帧片段
+				if (strcmp(szVideoName, "H264") == 0)
+				{
+					nFrameType = (szPVideoData[i + nAddStep] & 0x1F);
+					if (nFrameType == 7 || nFrameType == 8 || nFrameType == 5)
+					{//SPS   PPS   IDR 
+						bVideoIsIFrameFlag = true;
+						break;
+					}
+				}
+				else if (strcmp(szVideoName, "H265") == 0)
+				{
+					nFrameType = (szPVideoData[i + nAddStep] & 0x7E) >> 1;
+					if ((nFrameType >= 16 && nFrameType <= 21) || (nFrameType >= 32 && nFrameType <= 34))
+					{//SPS   PPS   IDR 
+						bVideoIsIFrameFlag = true;
+						break;
+					}
+				}
+
+				//偏移位置 
+				i += nAddStep;   
+			}
+
+			//不需要全部检查完毕，就可以判断一帧类型
+			if (i >= 256)
+				return false;
+		}
+
+		return bVideoIsIFrameFlag;
+	}
+
+
+ABLMediaServer-2024-04-06 [性能优化版本、音视频同步完美版本、视频播放画面秒开] 
+1、申请代理调用ffmepg函数实现 rtsp、rtmp、http-flv、http-mp4、http-hls 拉流、本地mp4文件，建议如果拉取 rtmp、http-flv、http-mp4、http-hls 码流调用该函数
+  1）、增加 NetClientFFmpegRecv.cpp 、NetClientFFmpegRecv.h 实现ffmpeg读取网络流、本地mp4 码流 
+ 
+  2）、当调用 /index/api/addFFmpegProxy 实现创建 CNetClientFFmpegRecv 实例  
+  
+ 	else if (netClientType == NetRevcBaseClient_addFFmpegProxy)
+	{//ffmpeg 代理拉流
+		if (strstr(szIP, "rtsp://") != NULL || strstr(szIP, "rtmp://") != NULL || strstr(szIP, "http://") != NULL || strstr(szIP, ".mp4") != NULL || strstr(szIP, ".mov") != NULL || strstr(szIP, ".mkv") != NULL || strstr(szIP, ".ts") != NULL || strstr(szIP, ".ps") != NULL || strstr(szIP, ".flv") != NULL || strstr(szIP, ".264") != NULL || strstr(szIP, ".265") != NULL)
+		{//本地文件
+			CltHandle = XHNetSDK_GenerateIdentifier();
+			pXHClient = boost::make_shared<CNetClientFFmpegRecv>(serverHandle, CltHandle, szIP, nPort, szShareMediaURL);
+			if (pXHClient)
+				CltHandle = pXHClient->nClient;
+		}
+	}
+
+ABLMediaServer-2024-04-04 [性能优化版本、音视频同步完美版本、视频播放画面秒开] 
+1 、检测网络断线函数，需要去掉 这个类 NetBaseNetType_HttpHLSServerSendPush，因为有些hls切片非常大，不会几秒钟请求一次文件 
+	int  CheckNetRevcBaseClientDisconnect()
+	{
+		std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
+
+ 		if (((*iterator1).second)->netBaseNetType == NetBaseNetType_HttpHLSServerSendPush || //HLS　发送
+
+2、rtsp代理拉流类，继续播放函数中，需要把断线计时清零 ，否则可能刚刚继续播放就被检测到超时  
+	bool CNetClientRecvRtsp::RtspResume()
+	{
+		if (!m_bPauseFlag || nRtspProcessStep != RtspProcessStep_PLAYSucess || nClient <= 0 || m_nXHRtspURLType != XHRtspURLType_RecordPlay)
+		  return false;
+	 
+		nRecvDataTimerBySecond = 0;
+
+ABLMediaServer-2024-04-02 [性能优化版本、音视频同步完美版本、视频播放画面秒开] 
+1、录像文件完成增加开始时间、结束时间、文件字节大小 
+   1）、在基类函数增加获取当前时间 
+		void  CNetRevcBase::GetCurrentDatetime()
+		{
+		#ifdef OS_System_Windows
+			SYSTEMTIME st;
+			GetLocalTime(&st);
+			sprintf(szCurrentDateTime, "%04d%02d%02d%02d%02d%02d", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);;
+		#else
+			time_t now;
+			time(&now);
+			struct tm *local;
+			local = localtime(&now);
+			sprintf(szCurrentDateTime, "%04d%02d%02d%02d%02d%02d", local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);;
+		#endif
+		}
+		
+   2）、录像文件完成的消息通知增加 开始时间、结束时间、文件字节大小
+ 		if (ABL_MediaServerPort.hook_enable == 1 && ABL_MediaServerPort.nClientRecordMp4 > 0)
+		{
+			GetCurrentDatetime();//获取当前时间
+			MessageNoticeStruct msgNotice;
+			msgNotice.nClient = ABL_MediaServerPort.nClientRecordMp4;
+			sprintf(msgNotice.szMsg, "{\"app\":\"%s\",\"stream\":\"%s\",\"mediaServerId\":\"%s\",\"networkType\":%d,\"fileName\":\"%s\",\"currentFileDuration\":%llu,\"startTime\":\"%s\",\"endTime\":\"%s\",\"fileSize\":%llu}", app, stream, ABL_MediaServerPort.mediaServerID, netBaseNetType, szFileNameOrder, (nCurrentVideoFrames / mediaCodecInfo.nVideoFrameRate), szStartDateTime, szCurrentDateTime, nWriteRecordByteSize);
+			pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
+		}
+		
 ABLMediaServer-2024-03-28 [性能优化版本、音视频同步完美版本、视频播放画面秒开] 
 1、获取本机cpu物理核心数，作为网络启动的ContentIO数量，不再需要用户填写 
    1）、获取本机cpu物理核心数 
