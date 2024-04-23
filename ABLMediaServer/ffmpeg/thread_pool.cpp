@@ -101,7 +101,7 @@ int ThreadPool::getCompletedTaskCount() const
 ThreadPool& netlib::ThreadPool::getInstance()
 {
 	auto thread_count = std::thread::hardware_concurrency(); //unsigned 表示的就是 unsigned int
-	if (thread_count <= 4)
+	if (thread_count <= 10)
 		thread_count = MAX_THREAD;
 	else if (thread_count > 256)
 		thread_count = 256;
@@ -124,6 +124,7 @@ void ThreadPool::threadWork()
 			//等待有任务到来被唤醒
 			if (!m_bRunning.load())
 			{
+				m_nCompletedTasks = m_nCompletedTasks - 1;
 				return; // Thread pool is stopping, exit thread
 			}
 			 if (!m_taskList.empty())
@@ -137,6 +138,7 @@ void ThreadPool::threadWork()
 
 		++m_nCompletedTasks;
 	}
+	m_nCompletedTasks= m_nCompletedTasks-1;
 }
 
 ThreadTask ThreadPool::get_one_task()

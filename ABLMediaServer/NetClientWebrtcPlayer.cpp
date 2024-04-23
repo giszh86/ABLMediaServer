@@ -92,8 +92,8 @@ CNetClientWebrtcPlayer::CNetClientWebrtcPlayer(NETHANDLE hServer, NETHANDLE hCli
 		// 处理音频数据的线程函数
 		netlib::ThreadPool::getInstance().append([&]()
 			{
-
-				while (!stopThread)
+				stopThread.store(false);
+				while (!stopThread.load())
 				{
 					int sample_size = 0;
 					uint8_t* output_data[AV_NUM_DATA_POINTERS] = { 0 };
@@ -146,7 +146,7 @@ CNetClientWebrtcPlayer::~CNetClientWebrtcPlayer()
 	bRunFlag = false;
 	std::lock_guard<std::mutex> lock(businessProcMutex);
 
-	stopThread.store(false);
+	stopThread.store(true);
 	std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
 	if (m_decder != nullptr)
