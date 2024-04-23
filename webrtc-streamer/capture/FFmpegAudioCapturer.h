@@ -17,6 +17,7 @@
 #include <cctype>
 #include <stdio.h>
 #include <string.h>
+#include <condition_variable>
 #include "pc/local_audio_source.h"
 
 #include "AudioCapture.h"
