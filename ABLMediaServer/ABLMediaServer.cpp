@@ -3603,7 +3603,7 @@ void WebRtcCallBack(const char* callbackJson, void* pUserHandle)
 				WriteLog(Log_Debug, "不存在流 %s ", callbackStruct.stream);
 			else
 			{
-				if (strcmp(pMediaSource->m_mediaCodecInfo.szVideoName, "H264") == 0 && pMediaSource->bCreateWebRtcPlaySourceFlag.load() == false)
+				if ( pMediaSource->bCreateWebRtcPlaySourceFlag.load() == false)
 				{
 					CNetRevcBase_ptr pClient = CreateNetRevcBaseClient(NetBaseNetType_NetClientWebrtcPlayer, 0, 0, "", 0, callbackStruct.stream);
 					if (pClient != NULL)
@@ -3615,7 +3615,7 @@ void WebRtcCallBack(const char* callbackJson, void* pUserHandle)
 				}
 				else
 				{
-					if (strcmp(pMediaSource->m_mediaCodecInfo.szVideoName, "H264") == 0 && pMediaSource->bCreateWebRtcPlaySourceFlag.load() == true)
+					if (pMediaSource->bCreateWebRtcPlaySourceFlag.load() == true)
 					{
 						pMediaSource->nWebRtcPlayerCount++;
 						WriteLog(Log_Debug, "媒体源 %s 的视频格式为 %s ,已经创建了webrtc 播放媒体源 ", callbackStruct.stream, pMediaSource->m_mediaCodecInfo.szVideoName);
@@ -3644,7 +3644,7 @@ void WebRtcCallBack(const char* callbackJson, void* pUserHandle)
 		}
 	}
 };
-#define VERSION	 "1.0.001.0415" //   001是当日第几个版本       最后的是日期
+#define VERSION	 "1.0.001.0425" //   001是当日第几个版本       最后的是日期
 void  printfVersion()
 {
 
