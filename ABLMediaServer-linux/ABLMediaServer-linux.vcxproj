@@ -105,7 +105,7 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>./;/home/ubuntu/ABLMediaServer/rapidjson-master/include;$HOME/ABLMediaServer/3rd/boost/include;$HOME/ABLMediaServer/3rd/ffmpeg6/include;$HOME/ABLMediaServer/rapidjson-master/include \;$HOME/ABLMediaServer/media-server-master/libflv/include;$HOME/ABLMediaServer/media-server-master/librtmp/include;$HOME/ABLMediaServer/media-server-master/libmpeg/include;$HOME/ABLMediaServer/media-server-master/libhls/include;$HOME/ABLMediaServer/media-server-master/librtp/include;$HOME/ABLMediaServer/media-server-master/libmov/include;/home/ubuntu/ABLMediaServer</IncludePath>
+    <IncludePath>./;$HOME/ABLMediaServer/rapidjson-master/include;$HOME/ABLMediaServer/3rd/boost/include;$HOME/ABLMediaServer/3rd/ffmpeg6/include;$HOME/ABLMediaServer/rapidjson-master/include \;$HOME/ABLMediaServer/media-server-master/libflv/include;$HOME/ABLMediaServer/media-server-master/librtmp/include;$HOME/ABLMediaServer/media-server-master/libmpeg/include;$HOME/ABLMediaServer/media-server-master/libhls/include;$HOME/ABLMediaServer/media-server-master/librtp/include;$HOME/ABLMediaServer/media-server-master/libmov/include;$HOME/ABLMediaServer;$HOME/ABLMediaServer/3rd/spdlog/include</IncludePath>
     <LibraryPath>/home/ubuntu/ABLMediaServer/bin;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='boost_release|x64'">
@@ -131,6 +131,11 @@
     <ClCompile Include="..\ABLMediaServer\CNetRtmpServerRecv.cpp" />
     <ClCompile Include="..\ABLMediaServer\ConvertUTF.c" />
     <ClCompile Include="..\ABLMediaServer\DigestAuthentication.cpp" />
+    <ClCompile Include="..\ABLMediaServer\ffmpeg\AudioDecoder.cpp" />
+    <ClCompile Include="..\ABLMediaServer\ffmpeg\audio_resampler.cpp" />
+    <ClCompile Include="..\ABLMediaServer\ffmpeg\FFmpegAVFrameSWS.cpp" />
+    <ClCompile Include="..\ABLMediaServer\ffmpeg\FFmpegDecoderAPI.cpp" />
+    <ClCompile Include="..\ABLMediaServer\ffmpeg\thread_pool.cpp" />
     <ClCompile Include="..\ABLMediaServer\FFVideoDecode.cpp" />
     <ClCompile Include="..\ABLMediaServer\FFVideoEncode.cpp" />
     <ClCompile Include="..\ABLMediaServer\g711.cpp" />
@@ -194,6 +199,16 @@
     <ClInclude Include="..\ABLMediaServer\DigestAuthentication.hh" />
     <ClInclude Include="..\ABLMediaServer\faac.h" />
     <ClInclude Include="..\ABLMediaServer\faaccfg.h" />
+    <ClInclude Include="..\ABLMediaServer\ffmpeg\AudioDecoder.h" />
+    <ClInclude Include="..\ABLMediaServer\ffmpeg\audio_resampler.h" />
+    <ClInclude Include="..\ABLMediaServer\ffmpeg\avx_helper.h" />
+    <ClInclude Include="..\ABLMediaServer\ffmpeg\FFmpegAVFrameSWS.h" />
+    <ClInclude Include="..\ABLMediaServer\ffmpeg\FFmpegDecoderAPI.h" />
+    <ClInclude Include="..\ABLMediaServer\ffmpeg\ffmpegTypes.h" />
+    <ClInclude Include="..\ABLMediaServer\ffmpeg\ffmpeg_headers.h" />
+    <ClInclude Include="..\ABLMediaServer\ffmpeg\mediabase.h" />
+    <ClInclude Include="..\ABLMediaServer\ffmpeg\spdloghead.h" />
+    <ClInclude Include="..\ABLMediaServer\ffmpeg\thread_pool.h" />
     <ClInclude Include="..\ABLMediaServer\FFVideoDecode.h" />
     <ClInclude Include="..\ABLMediaServer\FFVideoEncode.h" />
     <ClInclude Include="..\ABLMediaServer\g711.h" />
@@ -302,9 +317,9 @@
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Link>
-      <LibraryDependencies>m;dl;z;rt;pthread;XHNetSDK;PsDemux;PsMux;RtpDepacket;RtpPacket;avfilter;avcodec;avutil;avformat;swscale;postproc;swresample;webrtc-streamer;mpeg;faac;x264;%(LibraryDependencies)</LibraryDependencies>
-      <AdditionalLibraryDirectories>$HOME/ABLMediaServer/bin;$HOME/ABLMediaServer/3rd/faac-1.30/lib;$HOME/ABLMediaServer/3rd/boost/linxulib;%(Link.AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <SharedLibrarySearchPath>%(Link.SharedLibrarySearchPath);/home/ubuntu/ABLMediaServer/bin</SharedLibrarySearchPath>
+      <LibraryDependencies>m;dl;z;rt;pthread;XHNetSDK;PsDemux;PsMux;RtpDepacket;RtpPacket;webrtc-streamer;avcodec;avutil;avformat;swscale;avfilter;postproc;swresample;mpeg;faac;x264;boost_thread;boost_log;boost_regex;boost_filesystem;boost_date_time;boost_chrono;boost_atomic;%(LibraryDependencies)</LibraryDependencies>
+      <AdditionalLibraryDirectories>$HOME/ABLMediaServer/bin/linux;$HOME/ABLMediaServer/3rd/faac-1.30/lib/Linux86;$HOME/ABLMediaServer/3rd/boost/linux86;$HOME/ABLMediaServer/media-server-master/amd64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <SharedLibrarySearchPath>/home/ubuntu/ABLMediaServer/bin/linux</SharedLibrarySearchPath>
     </Link>
     <ClCompile>
       <CppLanguageStandard>c++14</CppLanguageStandard>
