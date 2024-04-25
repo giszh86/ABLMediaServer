@@ -30,12 +30,12 @@ void spdlog::SPDLOG::init(std::string log_file_path, std::string logger_name, st
 
 			auto file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(log_file_path, max_file_size, max_files);
 			file_sink->set_level(spdlog::level::trace);
-			file_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] [thread %t][%s:%#] %v");
+			file_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] [thread %t][%s %!:%#] %v");
 
 			/* 控制台sink */
 			auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
 			console_sink->set_level(spdlog::level::trace);
-			console_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] [thread %t][%s:%#] %v");
+			console_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] [thread %t][%s %!:%#] %v");
 
 			/* Sink组合 */
 			std::vector<spdlog::sink_ptr> sinks;
@@ -55,12 +55,12 @@ void spdlog::SPDLOG::init(std::string log_file_path, std::string logger_name, st
 
 			auto file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_st>(log_file_path, max_file_size, max_files);
 			file_sink->set_level(spdlog::level::trace);
-			file_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] [thread %t][%s:%#] %v");
+			file_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] [thread %t][%s %!:%#] %v");
 
 			/* 控制台sink */
 			auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_st>();
 			console_sink->set_level(spdlog::level::trace);
-			console_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] [thread %t][%s:%#] %v");
+			console_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] [thread %t][%s %!:%#] %v");
 
 			/* Sink组合 */
 			std::vector<spdlog::sink_ptr> sinks;

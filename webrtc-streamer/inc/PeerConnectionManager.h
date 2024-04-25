@@ -245,8 +245,10 @@ class PeerConnectionManager
 					m_pc->Close();
 				}
 			}
-			void setVideoUrl(std::string strVideo) {
+			void setVideoUrl(std::string strVideo, std::string strAudio) {
 				m_videourl = strVideo;
+				m_audioourl = strAudio;
+
 			}
 
 			Json::Value getIceCandidateList() { return m_iceCandidateList; }
@@ -305,16 +307,33 @@ class PeerConnectionManager
 					{
 						jsonobj.Put("playerID", m_peerid);
 						jsonobj.Put("eventID", PlayEvenID::MEDIA_END);
-						jsonobj.Put("media", "video");
-						jsonobj.Put("stream", VideoCaptureManager::getInstance().getStream(m_videourl));
+						if (m_videourl != "null" && !m_videourl.empty())
+						{
+							jsonobj.Put("media", "video");
+							jsonobj.Put("stream", VideoCaptureManager::getInstance().getStream(m_videourl));
+						}
+						else
+						{
+							jsonobj.Put("media", "audio");
+							jsonobj.Put("stream", VideoCaptureManager::getInstance().getStream(m_audioourl));
+						}
 						m_peerConnectionManager->m_callback(jsonobj.ToString(false).c_str(), NULL);
 					}
 					else
 					{
 						jsonobj.Put("playerID", m_peerid);
 						jsonobj.Put("eventID", PlayEvenID::MEDIA_ERROR);
-						jsonobj.Put("media", "video");
-						jsonobj.Put("stream", VideoCaptureManager::getInstance().getStream(m_videourl));
+						if (m_videourl !="null" && !m_videourl.empty() )
+						{
+							jsonobj.Put("media", "video");
+							jsonobj.Put("stream", VideoCaptureManager::getInstance().getStream(m_videourl));
+						}
+						else
+						{
+							jsonobj.Put("media", "audio");
+							jsonobj.Put("stream", VideoCaptureManager::getInstance().getStream(m_audioourl));
+						}
+						
 						m_peerConnectionManager->m_callback(jsonobj.ToString(false).c_str(), NULL);
 					}				
 					m_iceCandidateList.clear();
@@ -331,8 +350,16 @@ class PeerConnectionManager
 					ABL::NSJsonObject jsonobj;
 					jsonobj.Put("playerID", m_peerid);
 					jsonobj.Put("eventID", PlayEvenID::MEDIA_PLAY);
-					jsonobj.Put("media", "video");
-					jsonobj.Put("stream", VideoCaptureManager::getInstance().getStream(m_videourl));
+					if (m_videourl != "null" && !m_videourl.empty())
+					{
+						jsonobj.Put("media", "video");
+						jsonobj.Put("stream", VideoCaptureManager::getInstance().getStream(m_videourl));
+					}
+					else
+					{
+						jsonobj.Put("media", "audio");
+						jsonobj.Put("stream", VideoCaptureManager::getInstance().getStream(m_audioourl));
+					}
 					m_peerConnectionManager->m_callback(jsonobj.ToString(false).c_str(), NULL);
 				}
 			
@@ -349,6 +376,7 @@ class PeerConnectionManager
 
 			public:
 				std::string                                              m_videourl;
+				std::string                                              m_audioourl;
 		private:
 			PeerConnectionManager*                                   m_peerConnectionManager;
 			const std::string                                        m_peerid;
@@ -436,7 +464,7 @@ class PeerConnectionManager
 
 public:
 		std::function<void(const char* callbackJson, void* pUserHandle)>  m_callback;
-
+		Json::StreamWriterBuilder m_jsonWriterBuilder;
 
 };
 
