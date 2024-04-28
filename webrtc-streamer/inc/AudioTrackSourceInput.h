@@ -1,6 +1,6 @@
 ﻿#pragma once
 /**
- *　Windows屏幕录像模块
+ *　音频采集模块
  */
 #include <mutex>
 #include <memory>
