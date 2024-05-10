@@ -103,10 +103,20 @@ namespace ABL
 	ThreadPool& ThreadPool::getInstance()
 	{
 		auto thread_count = std::thread::hardware_concurrency(); //unsigned 表示的就是 unsigned int
-		if (thread_count <= 4)
-			thread_count = 4;
-		else if (thread_count > 256)
-			thread_count = 256;
+
+		if (thread_count > 0 && thread_count <= 4)
+			thread_count = thread_count * 4 * 2;
+		else if (thread_count > 4 && thread_count <= 8)
+			thread_count = thread_count * 3 * 2;
+		else if (thread_count > 8 && thread_count <= 32)
+			thread_count = thread_count * 2 * 2;
+		else
+			thread_count = thread_count * 2;
+
+		if (thread_count > 256)
+			thread_count = MAX_THREAD;
+
+
 		static ThreadPool instance(thread_count);
 
 		return instance;
