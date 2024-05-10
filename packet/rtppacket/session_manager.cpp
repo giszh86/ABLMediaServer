@@ -20,7 +20,11 @@ rtp_session_ptr rtp_session_manager::malloc(rtp_packet_callback cb, void* userda
 	
 	return p;
 }
-
+// 获取单实例对象
+rtp_session_manager& rtp_session_manager::getInstance() {
+	static rtp_session_manager instance;
+	return instance;
+}
 void rtp_session_manager::free(rtp_session_ptr p)
 {
 }

@@ -1,6 +1,6 @@
 #include "rtp_packet.h"
 #include "session_manager.h"
-
+#include "session.h"
 
 RTP_PACKET_API int32_t rtp_packet_start(rtp_packet_callback cb, void* userdata, uint32_t* h)
 {
