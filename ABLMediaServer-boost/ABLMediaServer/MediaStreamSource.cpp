@@ -1886,7 +1886,7 @@ bool CMediaStreamSource::PushAudio(unsigned char* szAudio, int nLength, char* sz
 					pClient->m_bPauseFlag = false ;
 			}
 
-			if (!pClient->m_bSendCacheAudioFlag)
+			if (!pClient->m_bSendCacheAudioFlag && strlen(m_mediaCodecInfo.szVideoName) > 0 )
 			{
 				//øΩ±¥“Ù∆µ
 				CopyAudioFrameBufer();

@@ -27,7 +27,7 @@ E-Mail  79941308@qq.com
 */
 
 #include "stdafx.h"
-#include "../webrtc-streamer/inc/rtc_obj_sdk.h"
+#include "../webrtc-streamer/rtc_obj_sdk.h"
 
 NETHANDLE srvhandle_8080,srvhandle_554, srvhandle_1935, srvhandle_6088, srvhandle_8088, srvhandle_8089, srvhandle_9088, srvhandle_9298, srvhandle_10000;
 
@@ -1021,6 +1021,11 @@ int queryRecordListByTime(char* szMediaSourceInfo, queryRecordListStruct querySt
 	char           szRecordURL[string_length_48K] = { 0 };
 	char           szRecordPlayURL[string_length_2048] = { 0 };
 	CNetRevcBase_ptr  mutlRecordPlay = NULL;
+	CMediaStreamSource_ptr pMediaStreamPtr = NULL;
+	char           szFileNameTime[string_length_256] = { 0 };
+	uint64_t       nTime1, nTime2;
+	bool           bFlag1 = false;
+	bool           bFlag2 = false;
 
 	if (xh_ABLRecordFileSourceMap.size() > 0)
 	{
@@ -1072,7 +1077,6 @@ int queryRecordListByTime(char* szMediaSourceInfo, queryRecordListStruct querySt
 				);
 			}
 		}
-	   sprintf(szMediaSourceInfo, "{\"code\":0,\"app\":\"%s\",\"stream\":\"%s\",\"starttime\":\"%s\",\"endtime\":\"%s\",%s,\"recordFileList\":[",queryStruct.app,queryStruct.stream,queryStruct.starttime,queryStruct.endtime, szRecordURL);
 	}
 
 	sprintf(szShareMediaURL, "/%s/%s", queryStruct.app, queryStruct.stream);
@@ -1080,17 +1084,31 @@ int queryRecordListByTime(char* szMediaSourceInfo, queryRecordListStruct querySt
 	if (iterator1 != xh_ABLRecordFileSourceMap.end())
 	{
 		pRecord = (*iterator1).second;
-		
+
 		if (ABL_MediaServerPort.videoFileFormat == 3 && strlen(mapm3u8FileName) > 0)
 			pRecord->AddM3u8FileToMap(mapm3u8FileName);
 
-		for(it2 = pRecord->fileList.begin() ;it2 != pRecord->fileList.end() ; it2++)
+		for (it2 = pRecord->fileList.begin(); it2 != pRecord->fileList.end(); it2++)
 		{
-			if (*it2 >= atoll(queryStruct.starttime) && *it2 <= atoll(queryStruct.endtime))
+			sprintf(szFileNameTime, "%llu", *it2);
+			nTime1 = GetCurrentSecondByTime(szFileNameTime);
+			nTime2 = GetCurrentSecondByTime(queryStruct.starttime);
+ 			bFlag1 = false;
+			bFlag2 = false;
+			if (nFileOrder == 0)
+			{
+				if (nTime1 <= nTime2 && (nTime1 + ABL_MediaServerPort.fileSecond) > nTime2)
+					bFlag1 = true;//第一个符合条件的文件 
+			}
+			if (nFileOrder >= 1 && *it2 <= atoll(queryStruct.endtime))
+				bFlag2 = true;//后面符合条件的文件
+
+			//符合条件的mp4文件 
+			if (bFlag1 || bFlag2)
 			{
 				memset(szTemp2, 0x00, sizeof(szTemp2));
 
-				nFileOrder++;
+				nFileOrder ++;
 
 				if (fileM3U8 != NULL)
 				{//生成m3u8文件
@@ -1115,9 +1133,17 @@ int queryRecordListByTime(char* szMediaSourceInfo, queryRecordListStruct querySt
 					sprintf(szRecordPlayURL, "/%s/%s_%s-%s", queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime);
 
 					//没有存在媒体源再创建
-					if (GetMediaStreamSource(szRecordPlayURL, false) == NULL)
+ 					if( (pMediaStreamPtr = GetMediaStreamSource(szRecordPlayURL, false)) == NULL )
+ 						mutlRecordPlay = CreateNetRevcBaseClient(NetBaseNetType_NetServerReadMultRecordFile, *it2, 0, szFileName, 0, szRecordPlayURL);
+					if (mutlRecordPlay != NULL)
 					{
-						mutlRecordPlay = CreateNetRevcBaseClient(NetBaseNetType_NetServerReadMultRecordFile, 0, 0, szFileName, 0, szRecordPlayURL);
+						memcpy((char*)&mutlRecordPlay->m_queryRecordListStruct, (char*)&queryStruct, sizeof(queryStruct));
+						sprintf(szMediaSourceInfo, "{\"code\":0,\"key\":%llu,\"app\":\"%s\",\"stream\":\"%s_%s-%s\",\"starttime\":\"%s\",\"endtime\":\"%s\",%s,\"recordFileList\":[", mutlRecordPlay->nClient, queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime, queryStruct.starttime, queryStruct.endtime, szRecordURL);
+					}
+					else
+					{
+						if(pMediaStreamPtr != NULL )
+						   sprintf(szMediaSourceInfo, "{\"code\":0,\"key\":%llu,\"app\":\"%s\",\"stream\":\"%s_%s-%s\",\"starttime\":\"%s\",\"endtime\":\"%s\",%s,\"recordFileList\":[", pMediaStreamPtr->nClient, queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime, queryStruct.starttime, queryStruct.endtime, szRecordURL);
 					}
 				}
 				if (mutlRecordPlay != NULL)
@@ -1166,6 +1192,14 @@ int queryRecordListByTime(char* szMediaSourceInfo, queryRecordListStruct querySt
    	 
   	if (nMediaCount > 0)
 	{
+		//计算最后一个mp4的播放时长 
+		if (mutlRecordPlay != NULL)
+		{
+			CNetServerReadMultRecordFile* pReadMp4File = (CNetServerReadMultRecordFile*)mutlRecordPlay.get();
+			if (pReadMp4File)
+				pReadMp4File->CalcLastMp4FileDuration();
+		}
+
 		if (fileM3U8)
 		{
 			sprintf(szTemp1, "#EXT-X-ENDLIST\n");
@@ -1176,12 +1210,14 @@ int queryRecordListByTime(char* szMediaSourceInfo, queryRecordListStruct querySt
 		strcat(szMediaSourceInfo, "]}");
  	}
 
-	if (nMediaCount == 0)
-	{
-		sprintf(szMediaSourceInfo, "{\"code\":%d,\"memo\":\"RecordList [app: %s , stream: %s] Record File Not Found .\"}", IndexApiCode_RequestFileNotFound, queryStruct.app, queryStruct.stream);
-	}
 	if (fileM3U8)
 		fclose(fileM3U8);
+
+	if (nMediaCount == 0)
+	{
+ 		ABLDeleteFile(m3u8FileName);
+		sprintf(szMediaSourceInfo, "{\"code\":%d,\"memo\":\"RecordList [app: %s , stream: %s] Record File Not Found .\"}", IndexApiCode_RequestFileNotFound, queryStruct.app, queryStruct.stream);
+	}
 
 	return nMediaCount;
 }
@@ -3209,7 +3245,7 @@ ABL_Restart:
 	strcpy(ABL_MediaServerPort.ABL_szLocalIP, ABL_szLocalIP);
 	WriteLog(Log_Debug, "本机IP地址 ABL_szLocalIP : %s ", ABL_szLocalIP);
 	WriteLog(Log_Debug, "本机cpu物理核心数量 nCurrentSystemCpuCount %d ", ABL_nCurrentSystemCpuCount);
-
+	
 	strcpy(ABL_MediaServerPort.secret, ABL_ConfigFile.GetValue("ABLMediaServer", "secret", "035c73f7-bb6b-4889-a715-d9eb2d1925cc111"));
 	ABL_MediaServerPort.nHttpServerPort = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "httpServerPort", "8081"));
 	ABL_MediaServerPort.nRtspPort = atoi(ABL_ConfigFile.GetValue("ABLMediaServer", "rtspPort", "554"));
@@ -3818,8 +3854,16 @@ ABL_Restart:
 	int nRet = -1 ;
 	if (!ABL_bInitXHNetSDKFlag) //保证只初始化1次
 	{
-		nRet = XHNetSDK_Init(ABL_nCurrentSystemCpuCount, 1);
- 	    ABL_bInitXHNetSDKFlag = true;
+		if(ABL_nCurrentSystemCpuCount > 0 && ABL_nCurrentSystemCpuCount <= 4 )
+		  nRet = XHNetSDK_Init(ABL_nCurrentSystemCpuCount * 4 , 1);
+		else if(ABL_nCurrentSystemCpuCount > 4 && ABL_nCurrentSystemCpuCount <= 8 )
+		  nRet = XHNetSDK_Init(ABL_nCurrentSystemCpuCount * 3 , 1);
+		else if(ABL_nCurrentSystemCpuCount > 8 && ABL_nCurrentSystemCpuCount <= 32 )
+		  nRet = XHNetSDK_Init(ABL_nCurrentSystemCpuCount * 2 , 1);
+	    else 
+		  nRet = XHNetSDK_Init(ABL_nCurrentSystemCpuCount , 1);
+	  
+	    ABL_bInitXHNetSDKFlag = true;
 		WriteLog(Log_Debug, "Network Init = %d \r\n", nRet);
 	}
 	  

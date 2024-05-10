@@ -1727,10 +1727,14 @@ bool   CNetRtspServer::GetMediaInfoFromRtspSDP()
 
 		if (strcmp(szAudioName, "PCMA") == 0)
 		{
+			nSampleRate = 8000;
+			nChannels = 1;
 			strcpy(szAudioName, "G711_A");
 		}
 		else if (strcmp(szAudioName, "PCMU") == 0)
 		{
+			nSampleRate = 8000;
+			nChannels = 1;
 			strcpy(szAudioName, "G711_U");
 		}
 		else if (strcmp(szAudioName, "MPEG4-GENERIC") == 0)
