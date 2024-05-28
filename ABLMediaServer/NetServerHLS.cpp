@@ -20,7 +20,6 @@ extern boost::shared_ptr<CMediaStreamSource>  GetMediaStreamSource(char* szURL, 
 extern std::shared_ptr<CMediaStreamSource>  GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound = false);
 #endif
 
-
 extern CMediaFifo                      pDisconnectBaseNetFifo; //清理断裂的链接 
 extern bool                            DeleteClientMediaStreamSource(uint64_t nClient);
 extern char                            ABL_wwwMediaPath[256]; //www 子路径
@@ -219,10 +218,11 @@ int CNetServerHLS::ProcessNetData()
 	if (!bRunFlag)
 		return -1;
 
-	if (netDataCacheLength > 512 || strstr((char*)netDataCache, "%") != NULL)
+	if (netDataCacheLength > string_length_4096 )
 	{
 		WriteLog(Log_Debug, "CNetServerHLS = %X , nClient = %llu ,netDataCacheLength = %d, 发送过来的url数据长度非法 ,立即删除 ", this, nClient, netDataCacheLength);
 		DeleteNetRevcBaseClient(nClient);
+		return -1;
 	}
 
   	if (ReadHttpRequest() == false )

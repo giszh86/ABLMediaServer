@@ -220,10 +220,11 @@ int CNetServerHTTP::ProcessNetData()
 	if (!bRunFlag)
 		return -1;
 
-	if (netDataCacheLength > 1024 )
+	if (netDataCacheLength > 4096 )
 	{
 		WriteLog(Log_Debug, "CNetServerHTTP = %X , nClient = %llu ,netDataCacheLength = %d, 发送过来的url数据长度非法 ,立即删除 ", this, nClient, netDataCacheLength);
 		DeleteNetRevcBaseClient(nClient);
+		return -1;
 	}
 
 	int nHttpHeadEndPos = CheckHttpHeadEnd();
@@ -525,14 +526,13 @@ bool CNetServerHTTP::SplitterJsonParam(char* szJsonParam)
 				nType = jValue.GetType();
  				if (nType == kStringType)
 				{
-					string value = jValue.GetString();
-				
-#ifdef USE_BOOST
+				  string value = jValue.GetString();
+ 	#ifdef USE_BOOST
 					boost::trim(value);
 #else
 					ABL::trim(value);
 #endif
-					strcpy(szValue, value.c_str());
+				  strcpy(szValue, value.c_str());
 				}
 				else if (nType == kNumberType)
 				{
@@ -1027,9 +1027,8 @@ bool  CNetServerHTTP::index_api_addStreamProxy(NetRevcBaseClientType nType)
 		auto tmpMediaSource = GetMediaStreamSource(szShareMediaURL);
 		if (tmpMediaSource != NULL)
 		{
-			sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"MediaSource: %s Already exists \",\"key\":%d}", IndexApiCode_ParamError, szShareMediaURL, 0);
-			ResponseSuccess(szResponseBody);
-			return false;
+			DeleteMediaStreamSource(szShareMediaURL);
+			WriteLog(Log_Debug, "媒体源 %s 已经异常，现在执行删除 ", szShareMediaURL);
 		}
 
 		auto pClient = CreateNetRevcBaseClient(nType, 0, 0, m_addStreamProxyStruct.url, 0, szShareMediaURL);
@@ -1430,10 +1429,9 @@ bool  CNetServerHTTP::index_api_openRtpServer()
 		auto tmpMediaSource = GetMediaStreamSource(szShareMediaURL);
 		if (tmpMediaSource != NULL)
 		{
-			sprintf(szResponseBody, "{\"code\":%d,\"memo\":\"MediaSource: %s Already exists \",\"key\":%d}", IndexApiCode_ParamError, szShareMediaURL, 0);
-			ResponseSuccess(szResponseBody);
-			return false;
-		}
+			DeleteMediaStreamSource(szShareMediaURL);
+			WriteLog(Log_Debug, "媒体源 %s 已经异常，现在执行删除 ", szShareMediaURL);
+ 		}
 
 		int nRet = bindRtpServerPort();
  	}
@@ -1505,7 +1503,7 @@ int   CNetServerHTTP::bindRtpServerPort()
 		if (nRet == 0 && nRet2 == 0)
 		{//rtp ,rtcp 都绑定成功
 			auto pClient = CreateNetRevcBaseClient(NetBaseNetType_NetGB28181RtpServerUDP, 0, nMediaClient, "", atoi(m_openRtpServerStruct.port), szTemp);
-			if (pClient != NULL)
+ 			if (pClient != NULL)
 			{
 				pClient->hParent = nMediaClient;//udp方式没有父类对象 ，所以把本身ID作为父类对象，在码流到达、码流断开时使用
 				pClient->nClientPort = atoi(m_openRtpServerStruct.port);
@@ -2067,11 +2065,11 @@ bool CNetServerHTTP::index_api_getServerConfig()
 	}
 
 	memset(szMediaSourceInfoBuffer, 0x00, MaxMediaSourceInfoLength);
-	sprintf(szMediaSourceInfoBuffer, "{\"code\":0,\"params\":[{\"secret\":\"%s\",\"memo\":\"server password\"},{\"ServerIP\":\"%s\",\"memo\":\"ABLMediaServer ip address\"},{\"mediaServerID\":\"%s\",\"memo\":\"media Server ID \"},{\"hook_enable\":%d,\"memo\":\"hook_enable = 1 open notice , hook_enable = 0 close notice \"},{\"enable_audio\":%d,\"memo\":\"enable_audio = 1 open Audio , enable_audio = 0 Close Audio \"},{\"httpServerPort\":%d,\"memo\":\"http api port \"},{\"rtspPort\":%d,\"memo\":\"rtsp port \"},{\"rtmpPort\":%d,\"memo\":\"rtmp port \"},{\"httpFlvPort\":%d,\"memo\":\"http-flv port \"},{\"hls_enable\":%d,\"memo\":\"hls whether enable \"},{\"hlsPort\":%d,\"memo\":\"hls port\"},{\"wsPort\":%d,\"memo\":\"websocket flv port\"},{\"mp4Port\":%d,\"memo\":\"http mp4 port\"},{\"ps_tsRecvPort\":%d,\"memo\":\"recv ts , ps Stream port \"},{\"hlsCutType\":%d,\"memo\":\"hlsCutType = 1 hls cut to Harddisk,hlsCutType = 2  hls cut Media to memory\"},{\"h265CutType\":%d,\"memo\":\" 1 h265 cut TS , 2 cut fmp4 \"},{\"RecvThreadCount\":%d,\"memo\":\" RecvThreadCount \"},{\"SendThreadCount\":%d,\"memo\":\"SendThreadCount\"},{\"GB28181RtpTCPHeadType\":%d,\"memo\":\"rtp Length Type\"},{\"ReConnectingCount\":%d,\"memo\":\"Try reconnections times .\"},{\"maxTimeNoOneWatch\":%d,\"memo\":\"maxTimeNoOneWatch .\"},{\"pushEnable_mp4\":%d,\"memo\":\"pushEnable_mp4 .\"},{\"fileSecond\":%d,\"memo\":\"fileSecond .\"},{\"fileKeepMaxTime\":%d,\"memo\":\"fileKeepMaxTime .\"},{\"httpDownloadSpeed\":%d,\"memo\":\"httpDownloadSpeed .\"},{\"RecordReplayThread\":%d,\"memo\":\"Total number of video playback threads .\"},{\"convertMaxObject\":%d,\"memo\":\"Max number of video Convert .\"},{\"version\":\"%s\",\"memo\":\"ABLMediaServer currrent Version .\"},{\"recordPath\":\"%s\",\"memo\":\"ABLMediaServer Record File Path  .\"},{\"picturePath\":\"%s\",\"memo\":\"ABLMediaServer Snap Picture Path  .\"}", 
+	sprintf(szMediaSourceInfoBuffer, "{\"code\":0,\"params\":[{\"secret\":\"%s\",\"memo\":\"server password\"},{\"ServerIP\":\"%s\",\"memo\":\"ABLMediaServer ip address\"},{\"mediaServerID\":\"%s\",\"memo\":\"media Server ID \"},{\"hook_enable\":%d,\"memo\":\"hook_enable = 1 open notice , hook_enable = 0 close notice \"},{\"enable_audio\":%d,\"memo\":\"enable_audio = 1 open Audio , enable_audio = 0 Close Audio \"},{\"httpServerPort\":%d,\"memo\":\"http api port \"},{\"rtspPort\":%d,\"memo\":\"rtsp port \"},{\"rtmpPort\":%d,\"memo\":\"rtmp port \"},{\"httpFlvPort\":%d,\"memo\":\"http-flv port \"},{\"hls_enable\":%d,\"memo\":\"hls whether enable \"},{\"hlsPort\":%d,\"memo\":\"hls port\"},{\"wsPort\":%d,\"memo\":\"websocket flv port\"},{\"mp4Port\":%d,\"memo\":\"http mp4 port\"},{\"ps_tsRecvPort\":%d,\"memo\":\"recv ts , ps Stream port \"},{\"hlsCutType\":%d,\"memo\":\"hlsCutType = 1 hls cut to Harddisk,hlsCutType = 2  hls cut Media to memory\"},{\"h265CutType\":%d,\"memo\":\" 1 h265 cut TS , 2 cut fmp4 \"},{\"RecvThreadCount\":%d,\"memo\":\" RecvThreadCount \"},{\"SendThreadCount\":%d,\"memo\":\"SendThreadCount\"},{\"GB28181RtpTCPHeadType\":%d,\"memo\":\"rtp Length Type\"},{\"ReConnectingCount\":%d,\"memo\":\"Try reconnections times .\"},{\"maxTimeNoOneWatch\":%.2f,\"memo\":\"maxTimeNoOneWatch .\"},{\"pushEnable_mp4\":%d,\"memo\":\"pushEnable_mp4 .\"},{\"fileSecond\":%d,\"memo\":\"fileSecond .\"},{\"fileKeepMaxTime\":%d,\"memo\":\"fileKeepMaxTime .\"},{\"httpDownloadSpeed\":%d,\"memo\":\"httpDownloadSpeed .\"},{\"RecordReplayThread\":%d,\"memo\":\"Total number of video playback threads .\"},{\"convertMaxObject\":%d,\"memo\":\"Max number of video Convert .\"},{\"version\":\"%s\",\"memo\":\"ABLMediaServer currrent Version .\"},{\"recordPath\":\"%s\",\"memo\":\"ABLMediaServer Record File Path  .\"},{\"picturePath\":\"%s\",\"memo\":\"ABLMediaServer Snap Picture Path  .\"}", 
 		ABL_MediaServerPort.secret, ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.mediaServerID, ABL_MediaServerPort.hook_enable,ABL_MediaServerPort.nEnableAudio,ABL_MediaServerPort.nHttpServerPort, ABL_MediaServerPort.nRtspPort, ABL_MediaServerPort.nRtmpPort, ABL_MediaServerPort.nHttpFlvPort, ABL_MediaServerPort.nHlsEnable, ABL_MediaServerPort.nHlsPort, ABL_MediaServerPort.nWSFlvPort, ABL_MediaServerPort.nHttpMp4Port, ABL_MediaServerPort.ps_tsRecvPort, ABL_MediaServerPort.nHLSCutType, ABL_MediaServerPort.nH265CutType, ABL_MediaServerPort.nRecvThreadCount, ABL_MediaServerPort.nSendThreadCount, ABL_MediaServerPort.nGBRtpTCPHeadType, ABL_MediaServerPort.nReConnectingCount,
 		ABL_MediaServerPort.maxTimeNoOneWatch, ABL_MediaServerPort.pushEnable_mp4,ABL_MediaServerPort.fileSecond,ABL_MediaServerPort.fileKeepMaxTime,ABL_MediaServerPort.httpDownloadSpeed, ABL_MediaServerPort.nRecordReplayThread, ABL_MediaServerPort.convertMaxObject, MediaServerVerson, ABL_MediaServerPort.recordPath, ABL_MediaServerPort.picturePath);
 
-	sprintf(szTempBuffer, ",{\"noneReaderDuration\":%d,\"memo\":\"How many seconds does it take for no one to watch and send notifications  .\"}", ABL_MediaServerPort.noneReaderDuration);
+	sprintf(szTempBuffer, ",{\"noneReaderDuration\":%.2f,\"memo\":\"How many seconds does it take for no one to watch and send notifications  .\"}", ABL_MediaServerPort.noneReaderDuration);
 	strcat(szMediaSourceInfoBuffer, szTempBuffer);
 	sprintf(szTempBuffer, ",{\"on_server_started\":\"%s\",\"memo\":\"Server starts sending event notifications  .\"}", ABL_MediaServerPort.on_server_started);
 	strcat(szMediaSourceInfoBuffer, szTempBuffer);
@@ -3009,7 +3007,7 @@ bool CNetServerHTTP::WriteParamValue(char* szSection, char* szKey, char* szValue
 		strcpy(ABL_szLocalIP, szValue);
 	}
 	else if (strcmp("maxTimeNoOneWatch", szKey) == 0)
-		ABL_MediaServerPort.maxTimeNoOneWatch = atoi(szValue);
+		ABL_MediaServerPort.maxTimeNoOneWatch = atof(szValue);
 	else if (strcmp("recordPath", szKey) == 0)
 		strcpy(ABL_MediaServerPort.recordPath, szValue);
 	else if (strcmp("picturePath", szKey) == 0)

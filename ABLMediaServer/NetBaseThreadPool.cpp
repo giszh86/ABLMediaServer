@@ -78,7 +78,7 @@ void CNetBaseThreadPool::ProcessFunc()
 	{
 		if ( (nClientID = PopFromTask(nCurrentThreadID) ) > 0  && bRunFlag )
 		{
-			boost::shared_ptr<CNetRevcBase> pClient = GetNetRevcBaseClient(nClientID);
+			auto pClient = GetNetRevcBaseClient(nClientID);
 			if (pClient != NULL)
 			{
 				pClient->ProcessNetData();//»ŒŒÒ÷¥––
@@ -133,7 +133,7 @@ bool CNetBaseThreadPool::InsertIntoTask(uint64_t nClientID)
 		nThreadProcessCount  ++;
 	}
 
-	m_NetHandleQueue[nThreadThread].push(nClientID);
+	m_NetHandleQueue[nThreadThread].push_back(nClientID);
 	cv[nThreadThread].notify_one();
 
 	return true;

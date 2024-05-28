@@ -2434,6 +2434,11 @@ bool  DeleteNetRevcBaseClient(NETHANDLE CltHandle)
 			}
 		}
 
+		//从线程池彻底移除
+		NetBaseThreadPool->DeleteFromTask((*iterator1).second->nClient);
+		RecordReplayThreadPool->DeleteFromTask((*iterator1).second->nClient);
+		MessageSendThreadPool->DeleteFromTask((*iterator1).second->nClient);
+
 		xh_ABLNetRevcBaseMap.erase(iterator1);
 		return true;
 	}
@@ -2868,14 +2873,7 @@ int  CheckNetRevcBaseClientDisconnect()
 			pDisconnectBaseNetFifo.push((unsigned char*)&((*iterator1).second)->nClient, sizeof(((*iterator1).second)->nClient));
 		}
 
-		//消息通知超时检测
-		if ((netBaseNetType == NetBaseNetType_HttpClient_None_reader || netBaseNetType == NetBaseNetType_HttpClient_Not_found || netBaseNetType == NetBaseNetType_HttpClient_Record_mp4 || netBaseNetType == NetBaseNetType_HttpClient_Record_Progress || netBaseNetType == NetBaseNetType_HttpClient_on_stream_arrive ||
-			netBaseNetType == NetBaseNetType_HttpClient_on_stream_not_arrive || netBaseNetType == NetBaseNetType_HttpClient_on_stream_disconnect || netBaseNetType == NetBaseNetType_HttpClient_on_record_ts || netBaseNetType == NetBaseNetType_HttpClient_ServerStarted || netBaseNetType == NetBaseNetType_HttpClient_ServerKeepalive || netBaseNetType == NetBaseNetType_HttpClient_DeleteRecordMp4 ||
-			netBaseNetType == NetBaseNetType_HttpClient_on_play || netBaseNetType == NetBaseNetType_HttpClient_on_publish || netBaseNetType == NetBaseNetType_HttpClient_on_iframe_arrive) && GetTickCount64() - ((*iterator1).second)->nCreateDateTime >= 15000)
-		{
-			WriteLog(Log_Debug, "消息通知已经超过 15 秒 ,加入删除链表等待销毁，nClient = %llu ", ((*iterator1).second)->nClient);
-			pDisconnectBaseNetFifo.push((unsigned char*)&((*iterator1).second)->nClient, sizeof(((*iterator1).second)->nClient));
-		}
+	
 	}
 
 	//服务器心跳
@@ -2932,12 +2930,12 @@ void LIBNET_CALLMETHOD onread(NETHANDLE srvhandle,
 	uint32_t datasize,
 	void* address)
 {
-
 	CNetRevcBase_ptr  pBasePtr = GetNetRevcBaseClient(clihandle);
 	if (pBasePtr != NULL)
 	{
 		pBasePtr->InputNetData(srvhandle, clihandle, data, datasize, address);
-		pBasePtr->ProcessNetData();
+		NetBaseThreadPool->InsertIntoTask(clihandle);//验证使用、arm平台有点问题 
+		//pBasePtr->ProcessNetData();
 	}
 }
 
@@ -3046,6 +3044,25 @@ std::shared_ptr<CNetRevcBase> CreateHttpClientFunc(int nMsgType)
 	return pMsgClient;
 }
 
+//根据NetBaseNetType 查找对象 
+CNetRevcBase_ptr  GetNetRevcBaseClientByNetType(NetBaseNetType netType)
+{
+	std::lock_guard<std::mutex> lock(ABL_CNetRevcBase_ptrMapLock);
+
+	CNetRevcBase_ptrMap::iterator iterator1;
+	CNetRevcBase_ptr   pClient = NULL;
+
+	for (iterator1 = xh_ABLNetRevcBaseMap.begin(); iterator1 != xh_ABLNetRevcBaseMap.end(); iterator1++)
+	{
+		pClient = (*iterator1).second;
+		if (pClient->netBaseNetType == netType)
+		{
+			return pClient;
+		}
+	}
+	return  NULL;
+}
+
 //一些事务处理 
 void* ABLMedisServerProcessThread(void* lpVoid)
 {
@@ -3078,9 +3095,29 @@ void* ABLMedisServerProcessThread(void* lpVoid)
 				memset((char*)&msgNotice, 0x00, sizeof(msgNotice));
 				memcpy((char*)&msgNotice, pData, nLength);
 
-				auto pMsgClient = CreateHttpClientFunc(msgNotice.nClient);
-				if (pMsgClient != NULL)
-					memcpy((char*)&pMsgClient->msgNotice, (char*)&msgNotice, sizeof(msgNotice));
+				auto pMsgClient = GetNetRevcBaseClientByNetType(NetBaseNetType_HttpClient_ServerKeepalive);
+				if (pMsgClient == NULL)
+				{//该消息连接尚未创建 
+					pMsgClient = CreateHttpClientFunc(NetBaseNetType_HttpClient_ServerKeepalive);
+					if (pMsgClient != NULL)
+					{
+						//修改 post 的方法名字 
+						CNetClientHttp* pHttpPost = (CNetClientHttp*)pMsgClient.get();
+						pHttpPost->UpdateResponseURL((NetBaseNetType)msgNotice.nClient);
+
+						//更新 post 内容 
+						memcpy((char*)&pMsgClient->msgNotice, (char*)&msgNotice, sizeof(msgNotice));
+					}
+				}
+				else
+				{
+					//修改 post 的方法名字 
+					CNetClientHttp* pHttpPost = (CNetClientHttp*)pMsgClient.get();
+					pHttpPost->UpdateResponseURL((NetBaseNetType)msgNotice.nClient);
+
+					//更新 post 内容
+					pMsgClient->PushVideo((unsigned char*)msgNotice.szMsg, strlen(msgNotice.szMsg), pHttpPost->szResponseURL);
+				}
 			}
 			pMessageNoticeFifo.pop_front();
 		}
@@ -3118,8 +3155,7 @@ void* ABLMedisServerProcessThread(void* lpVoid)
 		nReConnectStreamProxyTimer++;
 		nCreateHttpClientTimer++;
 		DeleteExpireM3u8FileTimer++;
-
-	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		//Sleep(100);
 	}
 
@@ -3814,7 +3850,7 @@ ABL_Restart:
 	ABL_MediaServerPort.fileRepeat = ABL_ConfigFile.GetLongValue("ABLMediaServer", "fileRepeat", 0);
 	ABL_MediaServerPort.httpDownloadSpeed = ABL_ConfigFile.GetLongValue("ABLMediaServer", "httpDownloadSpeed", 6);
 
-	ABL_MediaServerPort.maxTimeNoOneWatch = ABL_ConfigFile.GetLongValue("ABLMediaServer", "maxTimeNoOneWatch", 2);
+	ABL_MediaServerPort.maxTimeNoOneWatch = ABL_ConfigFile.GetDoubleValue("ABLMediaServer", "maxTimeNoOneWatch", 2);
 	ABL_MediaServerPort.nG711ConvertAAC = ABL_ConfigFile.GetLongValue("ABLMediaServer", "G711ConvertAAC",0);
 
 	strcpy(ABL_MediaServerPort.picturePath, ABL_ConfigFile.GetValue("ABLMediaServer", "picturePath", ""));
@@ -4105,7 +4141,7 @@ ABL_Restart:
 	ABL_MediaServerPort.enable_GetFileDuration = ABL_ConfigFile.GetLongValue("ABLMediaServer", "enable_GetFileDuration",0);
 	ABL_MediaServerPort.httpDownloadSpeed = ABL_ConfigFile.GetLongValue("ABLMediaServer", "httpDownloadSpeed",0);
 
-	ABL_MediaServerPort.maxTimeNoOneWatch = ABL_ConfigFile.GetLongValue("ABLMediaServer", "maxTimeNoOneWatch",0);
+	ABL_MediaServerPort.maxTimeNoOneWatch = ABL_ConfigFile.GetDoubleValue("ABLMediaServer", "maxTimeNoOneWatch",0);
 	ABL_MediaServerPort.nG711ConvertAAC = ABL_ConfigFile.GetLongValue("ABLMediaServer", "G711ConvertAAC",0); 
 
 	strcpy(ABL_MediaServerPort.picturePath, ABL_ConfigFile.GetValue("ABLMediaServer", "picturePath",""));
@@ -4404,8 +4440,18 @@ ABL_Restart:
 	if (ABL_MediaServerPort.snapOutPictureHeight > 1080)
 		ABL_MediaServerPort.snapOutPictureHeight = 1080;
 
+	//确定网络接收、处理线程数量
+	if (ABL_nCurrentSystemCpuCount > 0 && ABL_nCurrentSystemCpuCount <= 4)
+		ABL_MediaServerPort.nRecvThreadCount = ABL_nCurrentSystemCpuCount * 4;
+	else if (ABL_nCurrentSystemCpuCount > 4 && ABL_nCurrentSystemCpuCount <= 8)
+		ABL_MediaServerPort.nRecvThreadCount = ABL_nCurrentSystemCpuCount * 3;
+	else if (ABL_nCurrentSystemCpuCount > 8 && ABL_nCurrentSystemCpuCount <= 24)
+		ABL_MediaServerPort.nRecvThreadCount = ABL_nCurrentSystemCpuCount * 2;
+	else
+		ABL_MediaServerPort.nRecvThreadCount = ABL_nCurrentSystemCpuCount;
+
 	//用于网络数据接收
-	NetBaseThreadPool = new CNetBaseThreadPool(ABL_nCurrentSystemCpuCount);
+	NetBaseThreadPool = new CNetBaseThreadPool(ABL_MediaServerPort.nRecvThreadCount);
 
 	//录像回放线程池
 	RecordReplayThreadPool = new CNetBaseThreadPool(ABL_MediaServerPort.nRecordReplayThread);
@@ -4416,14 +4462,7 @@ ABL_Restart:
 	int nRet = -1;
 	if (!ABL_bInitXHNetSDKFlag) //保证只初始化1次
 	{
-		if (ABL_nCurrentSystemCpuCount > 0 && ABL_nCurrentSystemCpuCount <= 4)
-			nRet = XHNetSDK_Init(ABL_nCurrentSystemCpuCount * 4, 1);
-		else if (ABL_nCurrentSystemCpuCount > 4 && ABL_nCurrentSystemCpuCount <= 8)
-			nRet = XHNetSDK_Init(ABL_nCurrentSystemCpuCount * 3, 1);
-		else if (ABL_nCurrentSystemCpuCount > 8 && ABL_nCurrentSystemCpuCount <= 32)
-			nRet = XHNetSDK_Init(ABL_nCurrentSystemCpuCount * 2, 1);
-		else
-			nRet = XHNetSDK_Init(ABL_nCurrentSystemCpuCount, 1);
+		nRet = XHNetSDK_Init(ABL_MediaServerPort.nRecvThreadCount, 1);
 
 		ABL_bInitXHNetSDKFlag = true;
 		WriteLog(Log_Debug, "Network Init = %d \r\n", nRet);

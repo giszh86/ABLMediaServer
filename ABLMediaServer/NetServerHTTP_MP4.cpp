@@ -321,10 +321,11 @@ int CNetServerHTTP_MP4::ProcessNetData()
 
 	if (!bFindMP4NameFlag)
 	{
-		if (netDataCacheLength > 512 || strstr((char*)netDataCache, "%") != NULL)
+		if (netDataCacheLength > string_length_4096 || strstr((char*)netDataCache, "%") != NULL)
 		{
 			WriteLog(Log_Debug, "CNetServerHTTP_MP4 = %X , nClient = %llu ,netDataCacheLength = %d, 发送过来的url数据长度非法 ,立即删除 ", this, nClient, netDataCacheLength);
 			DeleteNetRevcBaseClient(nClient);
+			return -1;
 		}
 
 		if (strstr((char*)netDataCache, "\r\n\r\n") == NULL)
@@ -439,7 +440,6 @@ int CNetServerHTTP_MP4::ProcessNetData()
 #else
 		std::shared_ptr<CMediaStreamSource> pushClient=NULL;
 #endif
-		
 		strcpy(szMediaSourceURL, szMP4Name);
 		if (strstr(szMP4Name, RecordFileReplaySplitter) == NULL)
 		{
