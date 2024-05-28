@@ -48,7 +48,7 @@ elseif (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "aarch64")
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin/arm64)    
     # 设置链接目录
 set(LIBRARY_DIR
-    ${CMAKE_CURRENT_SOURCE_DIR}/bin/linux
+    ${CMAKE_CURRENT_SOURCE_DIR}/bin/arm64
     ${CMAKE_CURRENT_SOURCE_DIR}/media-server-master/${SYSTEM_NAME_LOWER}
     ${CMAKE_CURRENT_SOURCE_DIR}/3rd/ffmpeg6/lib/arm64
     ${CMAKE_CURRENT_SOURCE_DIR}/3rd/boost/arm64

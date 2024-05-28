@@ -45,6 +45,12 @@ endif()
 target_include_directories(${PROJECT_NAME} PRIVATE asio/include)
 
 target_link_libraries(${PROJECT_NAME} pthread)
+# 根据不同架构设置输出目录和链接目录
+if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64")
 
 # 设置生成的库文件路径为上一级目录下的 Bin 文件夹
-set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/../Bin)
+set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/../bin/linux)
+elseif (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "aarch64")
+# 设置生成的库文件路径为上一级目录下的 Bin 文件夹
+set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/../bin/arm64)
+endif()

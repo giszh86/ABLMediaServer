@@ -3,10 +3,14 @@
 #include "EncodedVideoFrameBuffer.h"
 #include "common_video/h264/h264_common.h"
 #include "common_video/h264/sps_parser.h"
+#ifndef WIN32
+#include <malloc.h>
+#endif // !WIN32
+
 VideoTrackSourceInput::VideoTrackSourceInput() {
 
 	m_bStop.store(false);
-	videoFifo.InitFifo(1024 * 1024 * 3);
+	//videoFifo.InitFifo(4024 * 1024 * 10);
 	Run();
 }
 
@@ -43,45 +47,67 @@ VideoTrackSourceInput* VideoTrackSourceInput::Create(const std::string& videourl
 
 VideoTrackSourceInput::~VideoTrackSourceInput()
 {
-	{
-		std::unique_lock<std::mutex> lock(m_mutex);
-		m_bStop.store(true);
-		m_vCapture->RegisterH264Callback(nullptr);
-		m_condition.notify_all();
+	//SPDLOG_LOGGER_INFO(spdlogptr, "VideoTrackSourceInput::stop start ");
+	m_bStop.store(true);
 
-	}
-	if (m_thread->joinable())
-	{
-		m_thread->join();
-	}
-
-	std::this_thread::sleep_for(std::chrono::milliseconds(50));
-	videoFifo.FreeFifo();
 	if (m_vCapture)
 	{
+		m_vCapture->RegisterH264Callback(nullptr);	
 		VideoCaptureManager::getInstance().RemoveInput(m_videourl);
-		m_vCapture = nullptr;
+
 	}
-	printf("VideoTrackSourceInput end \r\n");
+#ifndef WIN32
+	// 释放一些内存回给系统
+	malloc_trim(0);
+#endif 
+
+
+
 }
 bool VideoTrackSourceInput::Init(size_t width, size_t height, size_t target_fps, const std::string& videourl)
 {
 
 	m_videourl = videourl;
 	m_vCapture = VideoCaptureManager::getInstance().GetInput(videourl);
+	if (m_vCapture == nullptr)
+	{
+		m_vCapture = VideoCaptureManager::getInstance().AddInput(videourl);
+	}
+
 	m_vCapture->Init(videourl.c_str(), width, height, target_fps);
 	m_vCapture->RegisterCallback([this](uint8_t* y, int strideY, uint8_t* u, int strideU, uint8_t* v, int strideV, int nWidth, int nHeight, int64_t nTimeStamp)
 		{
-			InputVideoFrame(y, strideY, u, strideU, v, strideV, nWidth, nHeight,
+			//VideoFrame frame = { y, strideY, u, strideU, v, strideV, nWidth, nHeight, nTimeStamp };
+			//{
+			//	// 使用互斥锁保护对队列的访问
+			//	std::lock_guard<std::mutex> lock(queueMutex);
+			//	frameQueue.push(frame);
+			//	queueCV.notify_one();
+			//}
+			InputVideoFrame(y, strideY, u, strideU,
+				v, strideV, nWidth, nHeight,
 				nTimeStamp);
 		});
 	m_vCapture->RegisterH264Callback([this](char* h264_raw, int file_size, bool bKey, int nWidth, int nHeight, int fps, int64_t nTimeStamp)
 		{
+			if (m_bStop.load())
+			{
+				return;
+			}
+		
+			std::shared_ptr<rtc::Thread> _worker_thread_ptr = std::move(rtc::Thread::Create());
+			_worker_thread_ptr->Start();
+			_worker_thread_ptr->PostTask([&]()
+				{
+
+					InputVideoFrame((unsigned char*)h264_raw, file_size, nWidth, nHeight, fps);
+				});
+			return;
 			m_nWidth = nWidth;
 			m_nHeigh = nHeight;
 			m_fps = fps;
 			// 使用互斥锁保护共享资源
-			std::unique_lock<std::mutex> lock(m_mutex);
+		//	std::unique_lock<std::mutex> lock(m_mutex);
 			videoFifo.push((unsigned char*)h264_raw, file_size);
 			m_fifosize = videoFifo.GetSize();
 			m_condition.notify_one();
@@ -94,7 +120,6 @@ bool VideoTrackSourceInput::Init(size_t width, size_t height, size_t target_fps,
 }
 bool VideoTrackSourceInput::Init(std::string videourl, std::map<std::string, std::string> opts)
 {
-	m_videourl = videourl;
 	m_opts = opts;
 	size_t width = 0;
 	size_t height = 0;
@@ -203,10 +228,10 @@ void VideoTrackSourceInput::InputVideoFrame(uint8_t* y, int strideY, uint8_t* u,
 
 }
 
+
 bool VideoTrackSourceInput::InputVideoFrame(unsigned char* data, size_t size, int nWidth, int nHeigh, int fps)
 {
-	
-	int videosize = videoFifo.GetSize();
+	//int videosize = videoFifo.GetSize();
 	int start_offset = 0;
 	webrtc::VideoFrameType frameType = webrtc::VideoFrameType::kVideoFrameDelta;
 	std::vector<webrtc::H264::NaluIndex> naluIndexes = webrtc::H264::FindNaluIndices(data, size);
@@ -233,36 +258,37 @@ bool VideoTrackSourceInput::InputVideoFrame(unsigned char* data, size_t size, in
 	}
 	if (fps < 1)
 	{
-		fps = 30;
+		fps = 25;
 	}
+
 	int64_t nsleeptime = 40;
-	if (videosize <= 6)
-	{
-		nsleeptime = 1000 / fps - perio +8;
-	}
-	else if (videosize > 6 && videosize <= 13)
-	{
-		nsleeptime = 1000 / fps- perio;
+	//if (videosize <= 6)
+	//{
+	nsleeptime = 1000 / fps - perio - 5;
+	//}
+	//else if (videosize > 6 && videosize <= 13)
+	//{
+	//	nsleeptime = 1000 / fps - perio+5;
 
-	}
-	else if (videosize > 13 && videosize <= 20)
-	{
-		nsleeptime = 1000 / fps - perio - 5;
-	}
-	else if (videosize > 20 && videosize <= 30)
-	{
-		nsleeptime = 1000 / fps - perio - 10;
-	}
-	else if (videosize > 30 && videosize <= 40)
-	{
-		nsleeptime = 1000 / fps - perio - 15;
-	}
-	else
-		nsleeptime = 2;
+	//}
+	//else if (videosize > 13 && videosize <= 20)
+	//{
+	//	nsleeptime = 1000 / fps - perio ;
+	//}
+	//else if (videosize > 20 && videosize <= 30)
+	//{
+	//	nsleeptime = 1000 / fps - perio - 5;
+	//}
+	//else if (videosize > 30 && videosize <= 40)
+	//{
+	//	nsleeptime = 1000 / fps - perio - 10;
+	//}
+	//else
+	//	nsleeptime = 2;
 
-	if (nsleeptime > 0 && nsleeptime<100)
-	{
-		std::this_thread::sleep_for(std::chrono::milliseconds(nsleeptime));
+	if (nsleeptime > 0 && nsleeptime < 50)
+	{//
+		//std::this_thread::sleep_for(std::chrono::milliseconds(nsleeptime));
 	}
 	//printf("nsleeptime=[%ld] perio=[%ld] videosize=[%d] \r\n", nsleeptime, perio, videosize);
 	if (m_bStop.load())
@@ -272,18 +298,14 @@ bool VideoTrackSourceInput::InputVideoFrame(unsigned char* data, size_t size, in
 
 	//rtc::scoped_refptr<webrtc::EncodedImageBuffer> imageframe = webrtc::EncodedImageBuffer::Create(data, size);
 	rtc::scoped_refptr<webrtc::EncodedImageBuffer> imageframe = webrtc::EncodedImageBuffer::Create(data + start_offset, size - start_offset);
-	
 	rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer = rtc::make_ref_counted<EncodedVideoFrameBuffer>(nWidth, nHeigh, imageframe, frameType);
 	//	webrtc::VideoFrame frame(buffer, webrtc::kVideoRotation_0, next_timestamp_us_);
 	//int64_t ts = rtc::TimeMillis();
-
-	
 	int64_t ts = std::chrono::high_resolution_clock::now().time_since_epoch().count() / 1000 / 1000;
 	webrtc::VideoFrame frame = webrtc::VideoFrame::Builder()
 		.set_video_frame_buffer(buffer)
 		.set_rotation(webrtc::kVideoRotation_0)
 		.set_timestamp_ms(ts)
-	    .set_ntp_time_ms(ts)
 		.set_id(ts)
 		.build();
 	OnFrame(frame);
@@ -325,32 +347,75 @@ bool VideoTrackSourceInput::InputVideoFrame(const char* id, unsigned char* buffe
 
 void VideoTrackSourceInput::Run()
 {
-	if (m_thread == nullptr)
-	{
-		m_thread = std::make_shared<std::thread>([=]()
-			{
-				while (!m_bStop.load())
-				{
-					unsigned char* pData = nullptr;
-					int            nLength;
-					{
-						// 使用互斥锁保护共享资源
-						std::unique_lock<std::mutex> lock(m_mutex);
-						// 等待条件变量，直到有数据可用			
-						m_fifosize = videoFifo.GetSize();
-						m_condition.wait(lock, [this] { return (m_fifosize >0 || m_bStop.load()); });
-						if (m_bStop.load())
-						{
-							return;
-						}						
-						pData = videoFifo.pop(&nLength);		
-					}
-					if (pData != NULL && nLength > 0)
-					{
-						InputVideoFrame(pData, nLength, m_nWidth, m_nHeigh, m_fps);
-						videoFifo.pop_front();
-					}
-				}
-			});
-	}
+	//	if (m_thread == nullptr)
+	//	{
+	//		m_thread = std::make_shared<std::thread>([=]()
+	//			{
+	//
+	//				while (!m_bStop.load())
+	//				{
+	//#if 0
+	//					VideoFrame frame;
+	//					{
+	//						// 使用互斥锁保护对队列的访问
+	//						std::unique_lock<std::mutex> lock(queueMutex);
+	//
+	//						// 等待队列非空
+	//						queueCV.wait(lock, [&] { return !frameQueue.empty(); });
+	//
+	//
+	//						// 从队列中取出并处理 VideoFrame
+	//						frame = frameQueue.front();
+	//					}
+	//					auto  timestamp_us_ = rtc::TimeMillis();
+	//					int64_t perio = timestamp_us_ - m_prevts;
+	//					m_prevts = rtc::TimeMillis();
+	//					if (m_fps < 1)
+	//					{
+	//						m_fps = 30;
+	//					}
+	//					int nsleeptime = 1000 / m_fps - perio + 8;
+	//					if (nsleeptime < 0)
+	//					{
+	//						nsleeptime = 1;
+	//					}
+	//					//std::this_thread::sleep_for(std::chrono::milliseconds(nsleeptime));
+	//					InputVideoFrame(frame.y, frame.strideY, frame.u, frame.strideU,
+	//						frame.v, frame.strideV, frame.nWidth, frame.nHeight,
+	//						frame.nTimeStamp);
+	//#else
+	//					unsigned char* pData = nullptr;
+	//					int            nLength;
+	//					{
+	//						// 使用互斥锁保护共享资源
+	//						std::unique_lock<std::mutex> lock(m_mutex);
+	//						// 等待条件变量，直到有数据可用			
+	//						m_fifosize = videoFifo.GetSize();
+	//						m_condition.wait(lock, [this] { return (m_fifosize > 0 || m_bStop.load()); });
+	//						if (m_bStop.load())
+	//						{
+	//							return;
+	//						}
+	//					}				
+	//
+	//					pData = videoFifo.pop(&nLength);
+	//					if (pData != NULL && nLength > 0)
+	//					{
+	//						InputVideoFrame(pData, nLength, m_nWidth, m_nHeigh, m_fps);
+	//
+	//						videoFifo.pop_front();
+	//					}
+	//
+	//
+	//#endif
+	//						
+	//
+	//
+	//
+	//
+	//
+	//				
+	//				}
+	//			});
+	//	}
 }

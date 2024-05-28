@@ -1,30 +1,113 @@
 version: '3'
 
 services:
-  ABLMediaServer:
-    container_name: ABLMediaServer  #配置容器名
-    restart: always
-    ulimits:
-        nproc: 65535
-        nofile:
-            soft: 65535
-            hard: 65535
-    build:
-        context: ./
-    network_mode: host
-    volumes:
-        - ./bin:/opt/media/ABLMediaServer
-    ports:      
-        - 5088:5088/udp #http-mp4端口
-        - 5088:5088/tcp
-        - 6088:6088/udp #ws-flv端口
-        - 6088:6088/tcp    
-        - 7088:7088/udp #http端口
-        - 7088:7088/tcp
-        - 8088:8088/udp #http-flv端口
-        - 8088:8088/tcp
-        - 9088:9088/udp #http-hls
-        - 9088:9088/tcp
-        - 554:554    #rtsp端口
-        - 1935:1935    #rtsp端口
+    ABLMediaServer:
+        container_name: ABLMediaServer  #配置容器名
+        restart: always
+        ulimits:
+            nproc: 65535
+            nofile:
+                soft: 65535
+                hard: 65535
+        build:
+            context: ./ABL
+        network_mode: host
+        volumes:
+            - ./bin:/opt/media/ABLMediaServer
+        ports:      
+            - 5088:5088/udp #http-mp4端口
+            - 6088:6088/udp #ws-flv端口  
+            - 7088:7088     #http端口
+            - 8088:8088/udp #http-flv端口
+            - 8088:8088/tcp
+            - 9088:9088/udp #http-hls
+            - 9088:9088/tcp
+            - 554:554    #rtsp端口
+            - 1935:1935    #rtmp端口
+    wvpRedis:
+        image: redis:6.2-rc3-alpine3.13
+        restart: always
+        container_name: wvpRedis
+        volumes:
+            - ./redis/data:/data
+            - ./redis/log:/logs
+        expose:
+            - "6380"
+        environment:
+            TZ: Asia/Shanghai
+        command: redis-server --port 6380 --appendonly yes
+    wvpMysql:
+        image: mysql:8.0 # 指定镜像和版本
+        restart: always # 指定开机重启
+        container_name: wvpMysql
+        cap_add:
+            - SYS_NICE  # CAP_SYS_NICE, to prevent mbind error
+        environment:
+            - MYSQL_ALLOW_EMPTY_PASSWORD=no
+            - MYSQL_ROOT_PASSWORD=sky123456
+            - MYSQL_USER=skyadmin
+            - MYSQL_PASSWORD=sky123456
+            - MYSQL_DATABASE=wvp
+            - SQL_MODE= "STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION"
+        command:
+            --default-authentication-plugin=mysql_native_password
+            --character-set-server=utf8mb4
+            --collation-server=utf8mb4_general_ci
+            --explicit_defaults_for_timestamp=true
+            --lower_case_table_names=1
+            --default-time-zone=+8:00
+        expose:
+            - "3306"
+        volumes:
+        #数据挂载
+            - ./mysql/mysql-data/:/var/lib/mysql:rw # 挂载数据目录
+            - ./mysql/init/:/docker-entrypoint-initdb.d/            #初始化目录挂载
+            - ./mysql/logs:/var/log/mysql
+            - ./mysql/conf.d:/etc/mysql/conf.d
+            - /etc/localtime:/etc/localtime:ro
+            - /etc/timezone:/etc/timezone:ro
+        logging: 
+            driver: "json-file"
+            options: 
+                   max-size: "100m" 
+    wvp:
+        restart: always
+        ulimits:
+            nproc: 65535
+            nofile:
+                soft: 65535
+                hard: 65535
+        container_name: wvp  #配置容器名
+        image: yunshiting/java:8  # 指定镜像名
+        ports:
+            - 5066:5066/tcp
+            - 5066:5066/udp
+            - 18080:18080                   
+        volumes:
+            - ./wvp/:/opt/wvp/     
+        working_dir: /opt/wvp/config
+        entrypoint:  ["sh","run-wvp.sh"] #启动命令   
+        environment:
+            TZ: Asia/Shanghai
+            WVP_DOMAIN: 4401020049
+            WVP_ID: 44010200492000000001
+            SIP_PASSWORD: admin123
+            WVP_IP: wvp
+            WVP_PORT: 18080        # [必须修改] 本机的IP 公网IP
+            WVP_DB_PATH: wvpMysql:3306
+            SIP_HOST: 1.14.19.123
+            MONITOR_IP: 0.0.0.0         
+            SIP_PORT: 5066
+            ZLM_IP: zlm
+            ZLM_PORT: 2280
+            MYSQL_USERNAME: root
+            MYSQL_PASSWORD: sky123456
+            REDIS_HOST: wvpRedis
+            REDIS_PORT: 6380
+            REDIS_PWD: 
+            ASSIST_PORT: 18081
+            RECORD_PATH: ./media/record
+            STREAM_HOST: 1.14.19.123
+            DRUID_USER: rjAdmin
+            DRUID_PASS: rj@2022   
 

@@ -1366,10 +1366,10 @@ bool PeerConnectionManager::AddStreams(webrtc::PeerConnectionInterface* peer_con
 	}
 
 	webrtc::BitrateSettings bitrateParam;
-	bitrateParam.min_bitrate_bps = absl::optional<int>(bitrate * 0.5);
+	bitrateParam.min_bitrate_bps = absl::optional<int>(bitrate );
 	bitrateParam.start_bitrate_bps = absl::optional<int>(bitrate);
 	bitrateParam.max_bitrate_bps = absl::optional<int>(bitrate * 2);
-	peer_connection->SetBitrate(bitrateParam);
+	//peer_connection->SetBitrate(bitrateParam);
 
 	// keep capturer options (to improve!!!)
 	std::string optcapturer;
