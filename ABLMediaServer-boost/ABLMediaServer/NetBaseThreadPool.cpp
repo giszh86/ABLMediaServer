@@ -65,12 +65,12 @@ void CNetBaseThreadPool::ProcessFunc()
 {
 	int nCurrentThreadID = nGetCurrentThreadOrder;
  	bExitProcessThreadFlag[nCurrentThreadID] = false;
-	uint64_t nClientID;
+	uint64_t nClientID = 0 ;
 
 	bCreateThreadFlag = true; //创建线程完毕
 	while (bRunFlag)
 	{
-		if (m_NetHandleQueue[nCurrentThreadID].pop(nClientID) && bRunFlag )
+		if ( (nClientID = PopFromTask(nCurrentThreadID) ) > 0  && bRunFlag )
 		{
 			boost::shared_ptr<CNetRevcBase> pClient = GetNetRevcBaseClient(nClientID);
 			if (pClient != NULL)
@@ -127,8 +127,40 @@ bool CNetBaseThreadPool::InsertIntoTask(uint64_t nClientID)
 		nThreadProcessCount  ++;
 	}
 
-	m_NetHandleQueue[nThreadThread].push(nClientID);
+	m_NetHandleQueue[nThreadThread].push_back(nClientID);
 	cv[nThreadThread].notify_one();
 
 	return true;
+}
+
+//从线程池取出执行任务的 nClient 
+uint64_t CNetBaseThreadPool::PopFromTask(int nThreadOrder)
+{
+	std::lock_guard<std::mutex> lock(threadLock);
+	if (nThreadOrder >= MaxNetHandleQueueCount)
+		return 0;
+	if (m_NetHandleQueue[nThreadOrder].size() <= 0)
+		return 0;
+
+	nGetCurClientID[nThreadOrder] = m_NetHandleQueue[nThreadOrder].front();
+ 	m_NetHandleQueue[nThreadOrder].pop_front();
+
+	return nGetCurClientID[nThreadOrder];
+}
+
+//从线程池彻底移除 nClient 
+bool CNetBaseThreadPool::DeleteFromTask(uint64_t nClientID)
+{
+	std::lock_guard<std::mutex> lock(threadLock);
+ 
+	ClientProcessThreadMap::iterator it;
+
+	it = clientThreadMap.find(nClientID);
+	if (it != clientThreadMap.end())
+	{//找到 
+		clientThreadMap.erase(it);
+		return true;
+	}
+	else
+		return false;
 }

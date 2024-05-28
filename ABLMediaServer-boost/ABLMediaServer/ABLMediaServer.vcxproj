@@ -84,8 +84,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>D:\study\ABLMediaServer\3rd\boost\include;..\rapidjson-master\include;..\media-server-master\libflv\include;..\media-server-master\librtmp\include;..\media-server-master\libmpeg\include;..\media-server-master\libhls\include;..\media-server-master\libmov\include;..\media-server-master\librtp\include;D:\study\ABLMediaServer\3rd\ffmpeg6\include;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\study\ABLMediaServer\3rd\boost\lib;..\media-server-master\x64\Release;D:\study\ABLMediaServer\3rd\ffmpeg6\lib\x64;..\directx9\lib\x64;..\lib\Release;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\boost_1_73_0\boost_1_73_0;..\rapidjson-master\include;..\media-server-master\libflv\include;..\media-server-master\librtmp\include;..\media-server-master\libmpeg\include;..\media-server-master\libhls\include;..\media-server-master\libmov\include;..\media-server-master\librtp\include;..\ffmpeg-6.0\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\boost_1_73_0_Lib_VC2019-NEW\lib;..\media-server-master\x64\Release;..\ffmpeg-6.0\lib;..\directx9\lib\x64;..\lib\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

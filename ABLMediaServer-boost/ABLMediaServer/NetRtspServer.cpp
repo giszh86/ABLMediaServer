@@ -1603,22 +1603,30 @@ bool   CNetRtspServer::GetMediaInfoFromRtspSDP()
 	memset(szAudioSDP, 0x00, sizeof(szAudioSDP));
 	memset(szVideoName, 0x00, sizeof(szVideoName));
 	memset(szAudioName, 0x00, sizeof(szAudioName));
-	if (nPos1 >= 0 && nPos2 > 0)
-	{
+	if (nPos1 >= 0 && nPos2 > 0 && nPos2 > nPos1)
+	{//视频SDP 排在前面 ，音频SDP排在后面
 		memcpy(szVideoSDP, szRtspContentSDP + nPos1, nPos2 - nPos1);
 		memcpy(szAudioSDP, szRtspContentSDP + nPos2, strlen(szRtspContentSDP) - nPos2);
 
 		sipParseV.ParseSipString(szVideoSDP);
 		sipParseA.ParseSipString(szAudioSDP);
 	}
+	else if (nPos1 >= 0 && nPos2 > 0 && nPos2 < nPos1)
+	{//视频SDP排在后面，音频SDP排在前面，ZLMediaKit 采用这样的排列方式 
+		memcpy(szVideoSDP, szRtspContentSDP + nPos1, strlen(szRtspContentSDP) - nPos1);
+		memcpy(szAudioSDP, szRtspContentSDP + nPos2, nPos1 - nPos2);
+
+		sipParseV.ParseSipString(szVideoSDP);
+		sipParseA.ParseSipString(szAudioSDP);
+	}
 	else if (nPos1 >= 0 && nPos2 < 0)
-	{
+	{//只有视频
 		memcpy(szVideoSDP, szRtspContentSDP + nPos1, strlen(szRtspContentSDP) - nPos1);
 		sipParseV.ParseSipString(szVideoSDP);
 	}
-	else if (nPos2 >= 0)
-	{
-		memcpy(szAudioSDP, szRtspContentSDP+nPos2,strlen(szRtspContentSDP) - nPos2);
+	else if (nPos1 < 0 && nPos2 >= 0)
+	{//只有音频 
+		memcpy(szAudioSDP, szRtspContentSDP + nPos2, strlen(szRtspContentSDP) - nPos2);
 		sipParseA.ParseSipString(szAudioSDP);
 	}
 	else

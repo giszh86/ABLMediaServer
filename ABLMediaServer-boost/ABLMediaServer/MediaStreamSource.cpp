@@ -1522,7 +1522,7 @@ bool CMediaStreamSource::PushVideo(unsigned char* szVideo, int nLength, char* sz
 		//无人观看最大时长，必须关闭
 		if ((GetCurrentSecond() - nLastWatchTimeDisconect) >= (ABL_MediaServerPort.maxTimeNoOneWatch * 60))
 		{
-			WriteLog(Log_Debug, "app = %s ,stream = %s  无人观看已经达到 %llu 分钟 ，现在执行删除 ", app, stream, (GetCurrentSecond() - nLastWatchTimeDisconect) / 60 );
+			WriteLog(Log_Debug, "app = %s ,stream = %s  无人观看已经达到 %d 秒 ，现在执行删除 ", app, stream, (GetCurrentSecond() - nLastWatchTimeDisconect));
 			nLastWatchTimeDisconect = GetCurrentSecond(); //防止2次删除 
 			pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
 		}
@@ -2475,7 +2475,7 @@ void   CMediaStreamSource::UpdateVideoFrameSpeed(int nVideoSpeed,int netType)
 bool  CMediaStreamSource::GetVideoWidthHeight(char* szVideoCodeName, unsigned char* pVideoData, int nDataLength)
 {
 	//码流达到通知
-	if (ABL_MediaServerPort.hook_enable == 1 && m_bNoticeOnPublish && m_mediaCodecInfo.nWidth > 0 && m_mediaCodecInfo.nHeight > 0 && bNoticeClientArriveFlag == false)
+	if (ABL_MediaServerPort.hook_enable == 1 && m_bNoticeOnPublish  && bNoticeClientArriveFlag == false)
 	{  
 		boost::shared_ptr<CNetRevcBase> pClient = GetNetRevcBaseClient(nClient);
 		if (pClient != NULL)

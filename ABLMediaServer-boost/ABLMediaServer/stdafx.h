@@ -189,7 +189,7 @@ struct MediaServerPort
 	int  snapObjectDuration;//抓拍对象最长生存时长，单位秒
 	int  deleteSnapPicture;//是否删除抓拍图片 
 	int  maxSameTimeSnap;//抓拍最大并发数量
-	int  maxTimeNoOneWatch;//无人观看最大时长 
+	float  maxTimeNoOneWatch;//无人观看最大时长 
 	int  nG711ConvertAAC; //是否转换为AAC 
 	char ABL_szLocalIP[128];
 	char mediaServerID[256];
@@ -474,7 +474,7 @@ enum NetBaseNetType
 	NetBaseNetType_NetServerReadMultRecordFile     = 140,//连续读取多个录像文件
 };
 
-#define   MediaServerVerson                 "ABLMediaServer-6.3.6(2024-05-04)"
+#define   MediaServerVerson                 "ABLMediaServer-6.3.6(2024-05-21)"
 #define   RtspServerPublic                  "DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE, OPTIONS, ANNOUNCE, RECORD，GET_PARAMETER"
 #define   RecordFileReplaySplitter          "__ReplayFMP4RecordFile__"  //实况、录像区分的标志字符串，用于区分实况，放置在url中。
 
