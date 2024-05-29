@@ -10,7 +10,7 @@ export LD_LIBRARY_PATH="$SCRIPT_DIR"
 umask 000
 
 # 添加当前目录及其子目录的读写权限
-chmod -R u+rwX "$SCRIPT_DIR"
+chmod -R u+rwx "$SCRIPT_DIR"
 
 # 切换到 ABLServer 可执行程序所在目录
 cd "$SCRIPT_DIR"
