@@ -1,7 +1,9 @@
 #include "spdloghead.h"
 #include <iostream>
+#include <filesystem>
 #include "spdlog/sinks/stdout_sinks.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
+
 std::shared_ptr<spdlog::logger> g_logger_ptr;
 
 void SPDLOGInit()
@@ -18,13 +20,63 @@ void SPDLOGInit()
 
 }
 
+#if defined(_WIN32)
 
+int mkdir(const char* path, int mode) {
+	return _mkdir(path);
+}
+#endif
 
+int	replace_all(std::string& strBuf, std::string  strSrc, std::string  strDes)
+{
+	if (strSrc.empty())
+	{
+		return 0;  // 无需替换，返回替换次数为0
+	}
+
+	std::size_t pos = 0;
+	int nCount = 0;
+
+	while ((pos = strBuf.find(strSrc, pos)) != std::string::npos)
+	{
+		strBuf.replace(pos, strSrc.length(), strDes);
+		pos += strDes.length();
+		++nCount;
+	}
+
+	return nCount;
+
+}
+
+bool create_path(const char* file, unsigned int mod) {
+
+	std::string path = file;
+	replace_all(path, "\\", "/");
+	std::string dir;
+	size_t index = 1;
+	while (true) {
+		index = path.find('/', index) + 1;
+		dir = path.substr(0, index);
+		if (dir.length() == 0) {
+			break;
+		}
+		if (_access(dir.c_str(), 0) == -1) { //access函数是查看是不是存在
+			if (mkdir(dir.c_str(), mod) == -1) {  //如果不存在就用mkdir函数来创建
+
+				return false;
+			}
+		}
+	}
+	return true;
+}
 
 void spdlog::SPDLOG::init(std::string log_file_path, std::string logger_name, std::string level, size_t max_file_size, size_t max_files, bool mt_security)
 {
 	try 
 	{
+		// Convert log file path to absolute path and create the directory
+		std::filesystem::path fs_log_file_path = std::filesystem::absolute(log_file_path).parent_path();
+		create_path(fs_log_file_path.string().c_str(),777);
 		if (mt_security)		
 		{
 
