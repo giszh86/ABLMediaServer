@@ -1,6 +1,6 @@
 version: '3'
 networks:
-    monitor_wvp:
+    monitor:
         driver: bridge
         external: false
         name: monitorNetwork
@@ -35,7 +35,7 @@ services:
         environment:
             - TZ=Asia/Shanghai
         networks:
-            - monitor_wvp
+            - monitor
     wvpRedis:
         image: redis:6.2-rc3-alpine3.13
         restart: always
@@ -49,7 +49,7 @@ services:
             TZ: Asia/Shanghai
         command: redis-server --port 6379 --appendonly yes
         networks:
-            - monitor_wvp
+            - monitor
     wvpMysql:
         image: mysql:8.0 # 指定镜像和版本
         restart: always # 指定开机重启
@@ -85,7 +85,7 @@ services:
             options: 
                    max-size: "100m" 
         networks:
-            - monitor_wvp
+            - monitor
     wvp:
         restart: always
         ulimits:
@@ -100,31 +100,28 @@ services:
             - 5066:5066/udp
             - 18080:18080                   
         volumes:
-            - ./wvp/:/opt/wvp/     
+            - ./wvp:/opt/wvp/     
         working_dir: /opt/wvp
         entrypoint: ["/bin/sh", "-c", "java -Duser.timezone=GMT+8 -Xms800m -Xmx800m -jar *.jar --spring.config.location=/opt/wvp/application-dev.yml"]   
         environment:
             TZ: Asia/Shanghai
-            WVP_DOMAIN: 4401020049
-            WVP_ID: 44010200492000000001
-            SIP_PASSWORD: admin123         
-            WVP_PORT: 18080             # [必须修改] 本机的IP 公网IP
+            SIP_DOMAIN: 4401020049
+            SIP_ID: 44010200492000000001
+            SIP_PASSWORD: admin123           # [可选] 默认设备认证密码，后续扩展使用设备单独密码, 移除密码将不进行校验
+            WVP_PORT: 18080                        #[可选] WVP监听的HTTP端口, 网页和接口调用都是这个端口           
+            SIP_IP: 0.0.0.0                               #本机的IP，对应你的网卡，监听什么ip就是使用什么网卡，
+            SIP_PORT: 5066                            # [可选] 28181服务监听的端口
+            MEDIA_ID: ZbnQN5csqxrPix7a      #  # [必须修改] ABL服务器唯一id，用于触发hook时区别是哪台服务器,mediaServerId
+            MEDIA_IP: ablmediaserver            #ABL服务器的内网IP
+            MEDIA_PORT: 7088                      # [必须修改]ABL服务器的http.port
+            STREAM_IP: 1.14.19.123               # [可选] 返回流地址时的ip，置空使用 media.ip
+            HOOK_IP: wvp                             #abl服务器的hook所使用的IP, 默认使用sip.ip      
             WVP_DB_PATH: wvpMysql:3306
-            ZLM_IP: ablmediaserver    #ABL服务器的内网IP
-            ZLM_PORT: 7088              # [必须修改]ABL服务器的http.port
-            STREAM_IP: 1.14.19.123      # [可选] 返回流地址时的ip，置空使用 media.ip
-            SIP_IP: 0.0.0.0    
-            WVP_IP: wvp                 #abl服务器的hook所使用的IP, 默认使用sip.ip
-            MONITOR_IP: 0.0.0.0         
-            SIP_PORT: 5066   
             MYSQL_USERNAME: root
             MYSQL_PASSWORD: sky123456
             REDIS_HOST: wvpRedis
             REDIS_PORT: 6379
             REDIS_PWD:
-            RECORD_PATH: ./media/record  
-            DRUID_USER: rjAdmin
-            DRUID_PASS: rj@2022   
+            RECORD_PATH: ./media/record   
         networks:
-            - monitor_wvp
-
+            - monitor

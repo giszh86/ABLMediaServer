@@ -62,33 +62,34 @@ sip:
   # 如果要监听多张网卡，可以使用逗号分隔多个IP， 例如： 192.168.1.4,10.0.0.4
   # 如果不明白，就使用0.0.0.0，大部分情况都是可以的
   # 请不要使用127.0.0.1，任何包括localhost在内的域名都是不可以的。
-  ip: 0.0.0.0
+  ip: ${SIP_IP:0.0.0.0}
   # [可选] 28181服务监听的端口
   port: ${SIP_PORT:5060}
   # 根据国标6.1.2中规定，domain宜采用ID统一编码的前十位编码。国标附录D中定义前8位为中心编码（由省级、市级、区级、基层编号组成，参照GB/T 2260-2007）
   # 后两位为行业编码，定义参照附录D.3
   # 3701020049标识山东济南历下区 信息行业接入
   # [可选]
-  domain: ${WVP_DOMAIN:4401020049}
+  domain: ${SIP_DOMAIN:4401020049}
   # [可选]
-  id: ${WVP_ID:44010200492000000001}
+  id: ${SIP_ID:44010200492000000001}
   # [可选] 默认设备认证密码，后续扩展使用设备单独密码, 移除密码将不进行校验
   password: ${SIP_PASSWORD:admin123}
   # 是否存储alarm信息
   alarm: false
 #zlm 默认服务器配置
 media:
-  id: ZbnQN5csqxrPix7a
+  # [必须修改] ABL服务器唯一id，用于触发hook时区别是哪台服务器,mediaServerId
+  id: ${MEDIA_ID:ZbnQN5csqxrPix7a}
   # [必须修改] abl服务器的内网IP
-  ip: 1.14.19.123
+  ip: ${MEDIA_IP:1.14.19.123}
   # [必须修改] abl服务器的http.port
-  http-port: 7088
+  http-port: ${MEDIA_PORT:7088}
   # [可选] 返回流地址时的ip，置空使用 media.ip
-  stream-ip: 1.14.19.123
+  stream-ip: ${STREAM_IP:1.14.19.123}
   # [可选] wvp在国标信令中使用的ip，此ip为摄像机可以访问到的ip， 置空使用 media.ip
-  sdp-ip: 1.14.19.123
+  sdp-ip: ${STREAM_IP:1.14.19.123}
   # [可选] abl服务器的hook所使用的IP, 默认使用sip.ip
-  hook-ip: ${WVP_IP:1.14.19.123}
+  hook-ip: ${HOOK_IP:1.14.19.123}
   # [可选] abl服务器的http.sslport, 置空使用zlm配置文件配置
   http-ssl-port: 1443
   # [可选] abl服务器的hook.admin_params=secret
