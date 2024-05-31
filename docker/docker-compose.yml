@@ -102,7 +102,7 @@ services:
         volumes:
             - ./wvp/:/opt/wvp/     
         working_dir: /opt/wvp
-        entrypoint: ["/bin/sh", "-c", "java -Duser.timezone=GMT+8 -Xms800m -Xmx800m -jar *.jar --spring.config.location=/opt/wvp/config/application-dev.yml"]   
+        entrypoint: ["/bin/sh", "-c", "java -Duser.timezone=GMT+8 -Xms800m -Xmx800m -jar *.jar --spring.config.location=/opt/wvp/application-dev.yml"]   
         environment:
             TZ: Asia/Shanghai
             WVP_DOMAIN: 4401020049
