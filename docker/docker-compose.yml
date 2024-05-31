@@ -15,7 +15,6 @@ services:
                 hard: 65535
         build:
             context: ./ABL
-      #  network_mode: host
         volumes:
             - ./ABL/bin:/opt/media/ABLMediaServer
         working_dir: /opt/media/ABLMediaServer
