@@ -254,6 +254,8 @@ struct MediaServerPort
 	int        httqRequstClose;//是否为短链接操作 
 	int        keepaliveDuration; //发送心跳时间间隔
 	int        flvPlayAddMute;
+	int        GB28181RtpMinPort;
+	int        GB28181RtpMaxPort;
  	MediaServerPort()
 	{
 		memset(wwwPath, 0x00, sizeof(wwwPath));
@@ -364,6 +366,8 @@ struct MediaServerPort
 		enable_GetFileDuration = 0;
 		keepaliveDuration = 20;
 		flvPlayAddMute = 1;
+		GB28181RtpMinPort = 35000;
+		GB28181RtpMaxPort = 40000;
  	}
 };
 
@@ -474,7 +478,7 @@ enum NetBaseNetType
 	NetBaseNetType_NetServerReadMultRecordFile     = 140,//连续读取多个录像文件
 };
 
-#define   MediaServerVerson                 "ABLMediaServer-6.3.6(2024-05-21)"
+#define   MediaServerVerson                 "ABLMediaServer-6.3.6(2024-05-31)"
 #define   RtspServerPublic                  "DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE, OPTIONS, ANNOUNCE, RECORD，GET_PARAMETER"
 #define   RecordFileReplaySplitter          "__ReplayFMP4RecordFile__"  //实况、录像区分的标志字符串，用于区分实况，放置在url中。
 

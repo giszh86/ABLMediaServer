@@ -11,20 +11,9 @@ using namespace boost;
 
 #define Send_ResponseHttp_MaxPacketCount   1024*48  //回复http包最大发送一次字节
 
-#define  MaxNetClientHttpBuffer        1024*1024*2
+#define  MaxNetClientHttpBuffer        1024*1024*1 
 
-#define  MaxClientRespnseInfoLength    1024*1024*2  
-
-struct PostMsg
-{
-	char szPostURI[string_length_512];
-	char szMsg[string_length_4096];
-	PostMsg()
-	{
-		memset(szPostURI, 0x00, sizeof(szPostURI));
-		memset(szMsg, 0x00, sizeof(szMsg));
-	}
-};
+#define  MaxClientRespnseInfoLength    1024*1024*1   
 
 class CNetClientHttp : public CNetRevcBase
 {
@@ -42,8 +31,6 @@ public:
    virtual int SendFirstRequst();//发送第一个请求
    virtual bool RequestM3u8File();//请求m3u8文件
 
-   bool                    UpdateResponseURL(NetBaseNetType netType);
-   bool                    CopyResponseFromURL(char* szHttpURL);
    char                    szResponseData[8192];
    char                    szResponseURL[string_length_2048];//支持用户自定义的url 
    void                    HttpRequest(char* szUrl, char* szBody, int nLength);

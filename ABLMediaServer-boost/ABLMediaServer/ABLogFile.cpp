@@ -41,13 +41,23 @@ char                             ABL_LogBuffer[48000] = {0};
 char                             ABL_PrintBuffer[48000] = {0};
 pthread_t                        pThread_deleteLogFile ;
 char                             szLogLevel[3][64]={"Log_Debug","Log_Title","Log_Error"};
+extern char                      ABL_MediaSeverRunPath[256] ; //当前路径
 
 int showAllFiles( const char * dir_name,bool& bExitingFlag,int& fileSize)
 {
+	char szCmd[512]={0};
 	umask(0);
 	mkdir("./log",777);
-	umask(0);
-	mkdir(LogFilePath,777);
+	
+	sprintf(szCmd,"cd %s/log",ABL_MediaSeverRunPath);
+	system(szCmd) ;
+	system("chmod -R 777 *");
+	 
+ 	mkdir(LogFilePath,777);
+	
+	sprintf(szCmd,"cd %s/log/ABLMediaServer",ABL_MediaSeverRunPath);
+	system(szCmd) ;
+	system("chmod -R 777 *");
 
     fileNameNumber.clear() ;
 	

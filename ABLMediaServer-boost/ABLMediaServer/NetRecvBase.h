@@ -26,6 +26,10 @@ public:
    virtual int   SendFirstRequst() = 0;//发送第一个请求
    virtual bool  RequestM3u8File() = 0 ;
 
+   void                   SetPathAuthority(char* szPath);
+   char                   szCmd[string_length_2048];
+   boost::shared_ptr<CMediaStreamSource>  WaitGetMediaStreamSource(char* szMediaSourceURL);
+
    std::vector<std::string> mutliRecordPlayNameList;//多个录像连续播放文件
    MessageNoticeStruct    msgNotice;
    uint64_t               nWriteRecordByteSize;//写入录像字节数量

@@ -1004,6 +1004,39 @@ void  CNetRevcBase::GetCurrentDatetime()
 #endif
 }
 
+//等待获取媒体源
+boost::shared_ptr<CMediaStreamSource>  CNetRevcBase::WaitGetMediaStreamSource(char* szMediaSourceURL)
+{
+	if (ABL_MediaServerPort.hook_enable == 0)
+		return NULL;
+
+	uint64_t  tCurrentSecond = GetCurrentSecond();
+	while (true)
+	{
+		boost::shared_ptr<CMediaStreamSource>  pCurrentMediaSource = GetMediaStreamSource(szMediaSourceURL);
+		if (pCurrentMediaSource != NULL )
+			return  pCurrentMediaSource;
+		else
+		{
+			if (GetCurrentSecond() - tCurrentSecond > 15)
+				return NULL ;
+			Sleep(100);
+		}
+	}
+}
+
+//设置路径权限 
+void  CNetRevcBase::SetPathAuthority(char* szPath)
+{
+#ifdef  OS_System_Windows
+ 
+#else
+ 	sprintf(szCmd,"cd %s",szPath);
+	system(szCmd) ;
+	system("chmod -R 777 *");
+#endif	
+}
+
 //检查SPS的位置 
 int  CNetRevcBase::FindSPSPositionPos(char* szVideoName, unsigned char* pVideo, int nLength)
 {

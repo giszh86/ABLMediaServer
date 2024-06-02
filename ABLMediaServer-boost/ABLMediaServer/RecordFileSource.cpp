@@ -98,7 +98,7 @@ bool  CRecordFileSource::UpdateExpireRecordFile(char* szNewFileName)
 			  {
 				  MessageNoticeStruct msgNotice;
 				  msgNotice.nClient = NetBaseNetType_HttpClient_DeleteRecordMp4;
-				  sprintf(msgNotice.szMsg, "{\"app\":\"%s\",\"stream\":\"%s\",\"mediaServerId\":\"%s\",\"fileName\":\"%s.mp4\"}", m_app, m_stream, ABL_MediaServerPort.mediaServerID, szDateTime);
+				  sprintf(msgNotice.szMsg, "{\"eventName\":\"on_delete_record_mp4\",\"app\":\"%s\",\"stream\":\"%s\",\"mediaServerId\":\"%s\",\"fileName\":\"%s.mp4\"}", m_app, m_stream, ABL_MediaServerPort.mediaServerID, szDateTime);
 				  pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
 			  }
 			  break;
@@ -149,7 +149,7 @@ bool  CRecordFileSource::queryRecordFile(char* szRecordFileName)
 	{
 		MessageNoticeStruct msgNotice;
 		msgNotice.nClient = NetBaseNetType_HttpClient_Not_found;
-		sprintf(msgNotice.szMsg, "{\"app\":\"%s\",\"stream\":\"%s___ReplayFMP4RecordFile__%s\",\"mediaServerId\":\"%s\"}", m_app, m_stream, szRecordFileName, ABL_MediaServerPort.mediaServerID);
+		sprintf(msgNotice.szMsg, "{\"eventName\":\"on_stream_not_found\",\"app\":\"%s\",\"stream\":\"%s___ReplayFMP4RecordFile__%s\",\"mediaServerId\":\"%s\"}", m_app, m_stream, szRecordFileName, ABL_MediaServerPort.mediaServerID);
 		pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
 	}
 

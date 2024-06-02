@@ -55,6 +55,10 @@ extern char                                   szConfigFileName[512] ;
 
 extern  CSimpleIniA                           ABL_ConfigFile;
 
+#ifndef  OS_System_Windows
+extern void  ABL_SetPathAuthority(char* szPath);
+#endif 
+
 CNetServerHTTP::CNetServerHTTP(NETHANDLE hServer, NETHANDLE hClient, char* szIP, unsigned short nPort,char* szShareMediaURL)
 {
 	memset(request_uuid, 0x00, sizeof(request_uuid));
@@ -1535,8 +1539,8 @@ int   CNetServerHTTP::bindRtpServerPort()
 	if(nTcp_Switch == 0 || nTcp_Switch == 1 ) 
 	  ResponseSuccess(szResponseBody);
 
- 	if (ABL_nGB28181Port >= 65520)
-		ABL_nGB28181Port = 10002;  //端口重新反转
+ 	if (ABL_nGB28181Port >= ABL_MediaServerPort.GB28181RtpMaxPort)
+		ABL_nGB28181Port = ABL_MediaServerPort.GB28181RtpMinPort;  //端口重新反转
 
 	//绑定端口失败，需要删除
 	if (nRet != 0)
@@ -1883,8 +1887,8 @@ bool  CNetServerHTTP::index_api_startSendRtp()
 		if (atoi(m_startSendRtpStruct.src_port) == 0)
 		{
 			WriteLog(Log_Debug, "index_api_startSendRtp() nClient = %llu ,is_udp = %s, 使用的端口为 %d ",nClient, m_startSendRtpStruct.is_udp,ABL_nGB28181Port - 2);
- 			if (ABL_nGB28181Port >= 65520)
-				ABL_nGB28181Port = 10002;  //端口重新反转
+ 			if (ABL_nGB28181Port >= ABL_MediaServerPort.GB28181RtpMaxPort)
+				ABL_nGB28181Port = ABL_MediaServerPort.GB28181RtpMinPort;  //端口重新反转
 		}
 		else
 		{
@@ -2041,6 +2045,10 @@ bool CNetServerHTTP::index_api_getServerConfig()
 	sprintf(szTempBuffer, ",{\"flvPlayAddMute\":%d,\"memo\":\"When playing HTTP FLV and WS FLV, do you want to turn on mute when there is no audio in the source stream .\"}", ABL_MediaServerPort.flvPlayAddMute);
 	strcat(szMediaSourceInfoBuffer, szTempBuffer);
 	sprintf(szTempBuffer, ",{\"gb28181LibraryUse\":%d,\"memo\":\"Link Library for GB28181 PS Standard Packaging .\"}", ABL_MediaServerPort.gb28181LibraryUse);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"GB28181RtpMinPort\":%d,\"memo\":\"Recv GB28181 min Port .\"}", ABL_MediaServerPort.GB28181RtpMinPort);
+	strcat(szMediaSourceInfoBuffer, szTempBuffer);
+	sprintf(szTempBuffer, ",{\"GB28181RtpMaxPort\":%d,\"memo\":\"Recv GB28181 max Port .\"}", ABL_MediaServerPort.GB28181RtpMaxPort);
 	strcat(szMediaSourceInfoBuffer, szTempBuffer);
 
 	strcat(szMediaSourceInfoBuffer, "]}");
@@ -3024,6 +3032,10 @@ bool CNetServerHTTP::WriteParamValue(char* szSection, char* szKey, char* szValue
 		ABL_MediaServerPort.WsRecvPcmPort = atoi(szValue);
 	else if (strcmp("flvPlayAddMute", szKey) == 0)
 		ABL_MediaServerPort.flvPlayAddMute = atoi(szValue);
+	else if (strcmp("GB28181RtpMinPort", szKey) == 0)
+		ABL_MediaServerPort.GB28181RtpMinPort = atoi(szValue);
+	else if (strcmp("GB28181RtpMaxPort", szKey) == 0)
+		ABL_MediaServerPort.GB28181RtpMaxPort = atoi(szValue);
 	else if (strcmp("wwwPath", szKey) == 0)
 	{
  		if(strlen(szValue) == 0)
@@ -3044,6 +3056,7 @@ bool CNetServerHTTP::WriteParamValue(char* szSection, char* szKey, char* szValue
 		sprintf(ABL_wwwMediaPath, "%swww", ABL_MediaServerPort.wwwPath);
 		umask(0);
 		mkdir(ABL_wwwMediaPath, 777);
+		ABL_SetPathAuthority(ABL_wwwMediaPath);
 #endif
 	}
 	else
