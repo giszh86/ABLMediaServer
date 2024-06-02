@@ -1064,7 +1064,8 @@ std::shared_ptr<CMediaStreamSource>  CNetRevcBase::WaitGetMediaStreamSource(char
 		{
 			if (GetCurrentSecond() - tCurrentSecond > 15)
 				return NULL ;
-			Sleep(100);
+		//	Sleep(100);
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		}
 	}
 }
