@@ -444,6 +444,11 @@ int CNetServerHTTP_MP4::ProcessNetData()
 		if (strstr(szMP4Name, RecordFileReplaySplitter) == NULL)
 		{
 			 pushClient = GetMediaStreamSource(szMP4Name, true);
+
+			 //先播放后接入
+			 if (pushClient == NULL)
+				 pushClient = WaitGetMediaStreamSource(szMP4Name);
+
 			if (pushClient == NULL)
 			{
  				return  ResponseError("没有推流对象的地址");
@@ -463,7 +468,7 @@ int CNetServerHTTP_MP4::ProcessNetData()
 				bOn_playFlag = true;
 				MessageNoticeStruct msgNotice;
 				msgNotice.nClient = NetBaseNetType_HttpClient_on_play;
-				sprintf(msgNotice.szMsg, "{\"app\":\"%s\",\"stream\":\"%s\",\"mediaServerId\":\"%s\",\"networkType\":%d,\"key\":%llu,\"ip\":\"%s\" ,\"port\":%d,\"params\":\"%s\"}", szSplliterApp, szSplliterStream, ABL_MediaServerPort.mediaServerID, netBaseNetType, nClient, szClientIP, nClientPort, szPlayParams);
+				sprintf(msgNotice.szMsg, "{\"eventName\":\"on_play\",\"app\":\"%s\",\"stream\":\"%s\",\"mediaServerId\":\"%s\",\"networkType\":%d,\"key\":%llu,\"ip\":\"%s\" ,\"port\":%d,\"params\":\"%s\"}", szSplliterApp, szSplliterStream, ABL_MediaServerPort.mediaServerID, netBaseNetType, nClient, szClientIP, nClientPort, szPlayParams);
 				pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
 			}
 

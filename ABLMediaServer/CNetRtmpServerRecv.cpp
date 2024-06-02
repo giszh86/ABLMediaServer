@@ -188,6 +188,11 @@ static int rtmp_server_onplay(void* param, const char* app, const char* stream, 
 	if (strstr(szTemp, RecordFileReplaySplitter) == NULL)
 	{//观看实况
 		pushClient = GetMediaStreamSource(szTemp,true);
+
+		//先播放后接入
+		if (pushClient == NULL)
+			pushClient = pClient->WaitGetMediaStreamSource(szTemp);
+
 		if (pushClient == NULL || !(strlen(pushClient->m_mediaCodecInfo.szVideoName) > 0 || strlen(pushClient->m_mediaCodecInfo.szAudioName) > 0))
 		{
 			WriteLog(Log_Debug, "CNetRtmpServerRecv=%X, 没有推流对象的地址 %s nClient = %llu ", pClient, szTemp, pClient->nClient);
@@ -231,7 +236,7 @@ static int rtmp_server_onplay(void* param, const char* app, const char* stream, 
 
  		pClient->flvMuxer = flv_muxer_create(NetRtmpServerRec_MuxerFlv, pClient);
 
-		
+		//把客户端加入发送线程 
 		pClient->netBaseNetType = NetBaseNetType_RtmpServerSendPush;//RTMP 服务器，转发客户端的推上来的码流
 
 		pClient->m_videoFifo.InitFifo(MaxLiveingVideoFifoBufferLength);

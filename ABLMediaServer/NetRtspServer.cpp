@@ -1325,9 +1325,14 @@ void  CNetRtspServer::InputRtspData(unsigned char* pRecvData, int nDataLength)
 		if (strstr(szMediaSourceURL, RecordFileReplaySplitter) == NULL)
 		{//观看实况
 			pMediaSource = GetMediaStreamSource(szMediaSourceURL,true);
+
+			//先播放后接入
+			if (pMediaSource == NULL)
+				pMediaSource = WaitGetMediaStreamSource(szMediaSourceURL);
+
 			if (pMediaSource == NULL || !(strlen(pMediaSource->m_mediaCodecInfo.szVideoName) > 0 || strlen(pMediaSource->m_mediaCodecInfo.szAudioName) > 0))
 			{
-				sprintf(szResponseBuffer, "RTSP/1.0 404 Not FOUND\r\nServer: %s\r\nCSeq: %s\r\n\r\n", MediaServerVerson, szCSeq);
+ 				sprintf(szResponseBuffer, "RTSP/1.0 404 Not FOUND\r\nServer: %s\r\nCSeq: %s\r\n\r\n", MediaServerVerson, szCSeq);
 				nSendRet = XHNetSDK_Write(nClient, (unsigned char*)szResponseBuffer, strlen(szResponseBuffer), 1);
 				WriteLog(Log_Debug, "媒体流 %s 不存在 ,准备删除 nClient =%llu ", szMediaSourceURL, nClient);
 
