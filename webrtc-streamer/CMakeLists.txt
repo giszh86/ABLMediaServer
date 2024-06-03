@@ -64,6 +64,21 @@ elseif(UNIX AND NOT APPLE)
   message("UNIX AND NOT APPLE")
 endif()
 
+# 设置安装路径
+if (UNIX AND NOT APPLE)
+    if (CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
+        set(INSTALL_BIN_DIR "${CMAKE_CURRENT_LIST_DIR}/../bin/arm64" CACHE PATH "exe和dll的安装路径")
+        set(INSTALL_LIB_DIR "${CMAKE_CURRENT_LIST_DIR}/../bin/arm64" CACHE PATH "lib的安装路径")
+    else()
+        set(INSTALL_BIN_DIR "${CMAKE_CURRENT_LIST_DIR}/../bin/linux86" CACHE PATH "exe和dll的安装路径")
+        set(INSTALL_LIB_DIR "${CMAKE_CURRENT_LIST_DIR}/../bin/linux86" CACHE PATH "lib的安装路径")
+    endif()
+endif()
+
+# 设置输出目录
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${INSTALL_BIN_DIR})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${INSTALL_LIB_DIR})
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${INSTALL_LIB_DIR})
 
 
 # 根据选项生成对应的目标
@@ -81,7 +96,8 @@ endif()
 
 
 target_include_directories(webrtc-streamer  PRIVATE
- ../3rd/spdlog/include
+  ../3rd/spdlog/include
+  ../3rd/filesystem/include
   ${CMAKE_CURRENT_SOURCE_DIR}/inc
   ${CMAKE_CURRENT_SOURCE_DIR}/capture
   ${CMAKE_CURRENT_SOURCE_DIR}/civetweb/include
@@ -136,15 +152,14 @@ if (NOT APPLE)
     endif()
 endif()
 
-# 安装目标和相关文件
-# 设置安装路径
-set(INSTALL_BIN_DIR      "${CMAKE_CURRENT_LIST_DIR}/../Bin" CACHE PATH "exe和dll的安装路径")
-set(INSTALL_LIB_DIR      "${CMAKE_CURRENT_LIST_DIR}/../Bin" CACHE PATH "lib的安装路径")
-set(INSTALL_INCLUDE_DIR  "./"           CACHE PATH "头文件的安装路径")
-set(INSTALL_CMAKE_DIR    "./"             CACHE PATH "cmake配置的安装路径")
+
 
 # 安装目标文件到 Bin 文件夹中
-install(TARGETS webrtc-streamer  RUNTIME DESTINATION ${INSTALL_BIN_DIR})
+install(TARGETS webrtc-streamer 
+    RUNTIME DESTINATION ${INSTALL_BIN_DIR}
+    LIBRARY DESTINATION ${INSTALL_LIB_DIR}
+    ARCHIVE DESTINATION ${INSTALL_LIB_DIR}
+)
 install(DIRECTORY html DESTINATION ${INSTALL_BIN_DIR})
 install(FILES config.json DESTINATION ${INSTALL_BIN_DIR})
 install(FILES Procfile DESTINATION ${INSTALL_BIN_DIR})
