@@ -1056,11 +1056,12 @@ const Json::Value PeerConnectionManager::hangUp(const std::string& peerid)
 			if (m_callback)
 			{
 				m_callback(jsonobj.ToString(false).c_str(), NULL);
+				SPDLOG_LOGGER_INFO(spdlogptr, " peerid= {} result={} ", peerid, jsonobj.ToString(false).c_str());
 			}		
 		}
 
 	}
-	SPDLOG_LOGGER_INFO(spdlogptr, " peerid= {} result={} ", peerid, result);
+	
 	return answer;
 }
 

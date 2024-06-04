@@ -93,7 +93,7 @@ void WebRtcEndpoint::init(const char* webrtcConfig, std::function<void(const cha
 		bool        usePlanB = false;
 		int         maxpc = 0;
 		std::string localWebrtcUdpPortRange = "0:65535";
-		iceServerList.push_back(std::string("turn:") + "admin:admin@175.178.213.69:3478?transport=udp");
+		//iceServerList.push_back(std::string("turn:") + "admin:admin@175.178.213.69:3478");
 		webrtc::AudioDeviceModule::AudioLayer audioLayer = webrtc::AudioDeviceModule::kPlatformDefaultAudio;
 		webRtcServer = new PeerConnectionManager(iceServerList, config["urls"], audioLayer, publishFilter, localWebrtcUdpPortRange, useNullCodec, usePlanB, maxpc, transportType);	if (!webRtcServer->InitializePeerConnection())
 		{
@@ -259,7 +259,7 @@ void WebRtcEndpoint::createIceServers(std::string username, std::string realm,
 		external_server_addr.FromString(externalIp + ":" + std::to_string(listeningPort));
 		std::cout << "TURN external addr:" << external_server_addr.ToString() << std::endl;
 		turnserver->SetExternalSocketFactory(new rtc::BasicPacketSocketFactory(&socket_server), rtc::SocketAddress(external_server_addr.ipaddr(), 0));
-		std::string localturn = username + "@" + externalIp + ":" + std::to_string(listeningPort)+"?transport=udp";
+		std::string localturn = username + "@" + externalIp + ":" + std::to_string(listeningPort);
 		webRtcServer->addIceServers(localturn);
 		main.Run();
 
