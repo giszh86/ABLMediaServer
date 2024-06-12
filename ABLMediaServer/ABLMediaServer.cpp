@@ -3722,7 +3722,7 @@ void WebRtcCallBack(const char* callbackJson, void* pUserHandle)
 		}
 	}
 };
-#define VERSION	 "1.0.001.0425" //   001是当日第几个版本       最后的是日期
+#define VERSION	 "1.0.001.0425" //   001是当日第几个版本       最后的是日期ddsfsdgsdgsdgsdgsdgsdgsgdsg
 void  printfVersion()
 {
 
