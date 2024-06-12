@@ -11,10 +11,9 @@ using namespace boost;
 #else
 
 #endif
-
 #define Send_ResponseHttp_MaxPacketCount   1024*48  //回复http包最大发送一次字节
 
-#define  MaxNetClientHttpBuffer        1024*1024*1 
+#define  MaxNetClientHttpBuffer        1024*1024*2
 
 #define  MaxClientRespnseInfoLength    1024*1024*1   
 

@@ -26,6 +26,8 @@ public:
    virtual int   SendFirstRequst() = 0;//发送第一个请求
    virtual bool  RequestM3u8File() = 0 ;
 
+   char*                  getDatetimeBySecond(time_t tSecond);
+   char                   szDatetimeBySecond[128];
    void                   SetPathAuthority(char* szPath);
    char                   szCmd[string_length_2048];
 
@@ -41,6 +43,7 @@ public:
    void                   GetCurrentDatetime();//获取当前时间
    char                   szCurrentDateTime[128];//当前时间，年月日时分秒 
    char                   szStartDateTime[128];//当前时间，年月日时分秒 
+   uint64_t               nStartDateTime;//文件创建秒数
 
    volatile bool          m_bSendCacheAudioFlag;
    int                    nSpeedCount[2];//速度统计 

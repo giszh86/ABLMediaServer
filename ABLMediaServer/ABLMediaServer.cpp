@@ -943,6 +943,7 @@ bool CheckAppStreamExisting(char* szAppStreamURL)
 			pClient->netBaseNetType != NetBaseNetType_WsFLVServerSendPush &&
 			pClient->netBaseNetType != NetBaseNetType_HttpMP4ServerSendPush &&
 			pClient->netBaseNetType != NetBaseNetType_HttpHLSServerSendPush &&
+			pClient->netBaseNetType != NetBaseNetType_SnapPicture_JPEG &&
 			pClient->netBaseNetType != NetBaseNetType_NetClientWebrtcPlayer
 			)
 			)
@@ -1125,16 +1126,17 @@ int queryRecordListByTime(char* szMediaSourceInfo, queryRecordListStruct querySt
 #endif 
 			fileM3U8 = fopen(m3u8FileName, "wb");
 			sprintf(szTemp1, "\"http-hls\":\"http://%s:%d/%s/%s%s%s_%s.m3u8\"", ABL_szLocalIP, ABL_MediaServerPort.nHlsPort, queryStruct.app, queryStruct.stream, RecordFileReplaySplitter, queryStruct.starttime, queryStruct.endtime);
-	}
+		}
 
 		if (fileM3U8 != NULL)
 		{//ts 切片
-			sprintf(szRecordURL, "\"url\":{\"rtsp\": \"rtsp://%s:%d/%s/%s_%s-%s\",\"rtmp\": \"rtmp://%s:%d/%s/%s_%s-%s\",\"http-flv\": \"http://%s:%d/%s/%s_%s-%s.flv\",\"ws-flv\": \"ws://%s:%d/%s/%s_%s-%s.flv\",\"http-mp4\": \"http://%s:%d/%s/%s_%s-%s.mp4\",%s}",
+			sprintf(szRecordURL, "\"url\":{\"rtsp\": \"rtsp://%s:%d/%s/%s_%s-%s\",\"rtmp\": \"rtmp://%s:%d/%s/%s_%s-%s\",\"http-flv\": \"http://%s:%d/%s/%s_%s-%s.flv\",\"ws-flv\": \"ws://%s:%d/%s/%s_%s-%s.flv\",\"http-mp4\": \"http://%s:%d/%s/%s_%s-%s.mp4\",\"download\": \"http://%s:%d/%s/%s_%s-%s.mp4?download_speed=%d\",%s}",
 				ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.nRtspPort, queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime,
 				ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.nRtmpPort, queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime,
 				ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.nHttpFlvPort, queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime,
 				ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.nWSFlvPort, queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime,
 				ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.nHttpMp4Port, queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime,
+				ABL_MediaServerPort.ABL_szLocalIP, ABL_MediaServerPort.nHttpMp4Port, queryStruct.app, queryStruct.stream, queryStruct.starttime, queryStruct.endtime, ABL_MediaServerPort.httpDownloadSpeed,
 				szTemp1
 			);
 		}
@@ -1162,7 +1164,7 @@ int queryRecordListByTime(char* szMediaSourceInfo, queryRecordListStruct querySt
 				);
 			}
 		}
-}
+	}
 
 	sprintf(szShareMediaURL, "/%s/%s", queryStruct.app, queryStruct.stream);
 	iterator1 = xh_ABLRecordFileSourceMap.find(szShareMediaURL);
@@ -3117,13 +3119,18 @@ void* ABLMedisServerProcessThread(void* lpVoid)
 
 				auto pMsgClient = GetNetRevcBaseClientByNetType((NetBaseNetType)msgNotice.nClient);
 				if (pMsgClient == NULL)
-				{//该消息连接尚未创建 
 					pMsgClient = CreateHttpClientFunc(msgNotice.nClient);
-					if (pMsgClient != NULL)
-						memcpy((char*)&pMsgClient->msgNotice, (char*)&msgNotice, sizeof(msgNotice));
+
+				if (pMsgClient != NULL)
+				{
+					if (pMsgClient->bConnectSuccessFlag)
+					{
+						pMsgClient->PushVideo((unsigned char*)msgNotice.szMsg, strlen(msgNotice.szMsg), "JSON");
+						MessageSendThreadPool->InsertIntoTask(pMsgClient->nClient);
+					}
+					else
+						pMsgClient->PushVideo((unsigned char*)msgNotice.szMsg, strlen(msgNotice.szMsg), "JSON");
 				}
-				else
-					pMsgClient->PushVideo((unsigned char*)msgNotice.szMsg, strlen(msgNotice.szMsg), "JSON");
 			}
 			pMessageNoticeFifo.pop_front();
 		}
@@ -4507,15 +4514,15 @@ ABL_Restart:
 	nBindRecvAudio = XHNetSDK_Listen((int8_t*)("0.0.0.0"), ABL_MediaServerPort.WsRecvPcmPort, &srvhandle_9298, onaccept, onread, onclose, true);
 	nBingPS10000 = XHNetSDK_Listen((int8_t*)("0.0.0.0"), ABL_MediaServerPort.ps_tsRecvPort, &srvhandle_10000, onaccept, onread, onclose, true);
 
-	WriteLog(Log_Debug, (nBindHttp == 0) ? "绑定http 端口%d 成功(success) " : "绑定http 端口 %d 失败(fail) ", ABL_MediaServerPort.nHttpServerPort);
-	WriteLog(Log_Debug, (nBindRtsp == 0) ? "绑定rtsp端口 %d 成功(success)  " : "绑定rtsp端口 %d 失败(fail) ", ABL_MediaServerPort.nRtspPort);
-	WriteLog(Log_Debug, (nBindRtmp == 0) ? "绑定rtmp端口 %d 成功(success)  " : "绑定rtmp端口 %d 失败(fail) ", ABL_MediaServerPort.nRtmpPort);
-	WriteLog(Log_Debug, (nBindWsFlv == 0) ? "绑定wsflv端口 %d 成功(success)  " : "绑定wsflv端口 %d 失败(fail) ", ABL_MediaServerPort.nWSFlvPort);
-	WriteLog(Log_Debug, (nBindHttpFlv == 0) ? "绑定HttpFlvP端口 %d 成功(success)  " : "绑定HttpFlvP端口 %d 失败(fail) ", ABL_MediaServerPort.nHttpFlvPort);
-	WriteLog(Log_Debug, (nBindHls == 0) ? "绑定Hls端口 %d 成功(success)  " : "绑定Hls端口 %d 失败(fail) ", ABL_MediaServerPort.nHlsPort);
-	WriteLog(Log_Debug, (nBindMp4 == 0) ? "绑定HttpMp4Por端口 %d 成功(success)  " : "绑定HttpMp4Por端口 %d 失败(fail) ", ABL_MediaServerPort.nHttpMp4Port);
-	WriteLog(Log_Debug, (nBindRecvAudio == 0) ? "绑定WsRecvPcmPort端口 %d 成功(success)  " : "绑定WsRecvPcmPort端口 %d 失败(fail) ", ABL_MediaServerPort.WsRecvPcmPort);
-	WriteLog(Log_Debug, (nBingPS10000 == 0) ? "绑定ps_tsRecvPort端口 %d(tcp) 成功(success)  " : "绑定ps_tsRecvPort端口 %d(tcp) 失败(fail) ", ABL_MediaServerPort.ps_tsRecvPort);
+	WriteLog(Log_Debug, (nBindHttp == 0) ? "绑定端口 [http] %d 成功(success) " : "绑定端口 [http] %d 失败(fail) ", ABL_MediaServerPort.nHttpServerPort);
+	WriteLog(Log_Debug, (nBindRtsp == 0) ? "绑定端口 [rtsp] %d 成功(success)  " : "绑定端口 [rtsp] %d 失败(fail) ", ABL_MediaServerPort.nRtspPort);
+	WriteLog(Log_Debug, (nBindRtmp == 0) ? "绑定端口 [rtmp] %d 成功(success)  " : "绑定端口 [rtmp] %d 失败(fail) ", ABL_MediaServerPort.nRtmpPort);
+	WriteLog(Log_Debug, (nBindWsFlv == 0) ? "绑定端口 [ws-flv] %d 成功(success)  " : "绑定端口[ws-flv] %d 失败(fail) ", ABL_MediaServerPort.nWSFlvPort);
+	WriteLog(Log_Debug, (nBindHttpFlv == 0) ? "绑定端口 [http-flv] %d 成功(success)  " : "绑定端口 [http-flv] %d 失败(fail) ", ABL_MediaServerPort.nHttpFlvPort);
+	WriteLog(Log_Debug, (nBindHls == 0) ? "绑定端口 [hls] %d 成功(success)  " : "绑定端口  [hls] %d 失败(fail) ", ABL_MediaServerPort.nHlsPort);
+	WriteLog(Log_Debug, (nBindMp4 == 0) ? "绑定端口 [http-mp4] %d 成功(success)  " : "绑定端口 [http-mp4] %d 失败(fail) ", ABL_MediaServerPort.nHttpMp4Port);
+	WriteLog(Log_Debug, (nBindRecvAudio == 0) ? "绑定端口 [ws-recvpcm] %d 成功(success)  " : "绑定端口 [ws-recvpcm] %d 失败(fail) ", ABL_MediaServerPort.WsRecvPcmPort);
+	WriteLog(Log_Debug, (nBingPS10000 == 0) ? "绑定端口 [tcp] %d(tcp) 成功(success)  " : "绑定端口 [tcp] %d(tcp) 失败(fail) ", ABL_MediaServerPort.ps_tsRecvPort);
 
 	alaw_pcm16_tableinit();
 	ulaw_pcm16_tableinit();

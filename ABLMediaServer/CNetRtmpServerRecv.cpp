@@ -26,7 +26,6 @@ extern std::shared_ptr<CMediaStreamSource> GetMediaStreamSource(char* szURL, boo
 extern bool                                  DeleteMediaStreamSource(char* szURL);
 extern bool                                  DeleteClientMediaStreamSource(uint64_t nClient);
 
-
 extern CMediaFifo                            pDisconnectBaseNetFifo; //清理断裂的链接 
 int                                          SampleRateArray[] = { 96000,88200,64000,48000,44100,32000,24000,22050,16000,12000,11025,8000,7350 };
 static int NetRtmpServerRecvCallBackFLV(void* param, int codec, const void* data, size_t bytes, uint32_t pts, uint32_t dts, int flags);
@@ -188,10 +187,6 @@ static int rtmp_server_onplay(void* param, const char* app, const char* stream, 
 	if (strstr(szTemp, RecordFileReplaySplitter) == NULL)
 	{//观看实况
 		pushClient = GetMediaStreamSource(szTemp,true);
-
-		//先播放后接入
-		if (pushClient == NULL)
-			pushClient = pClient->WaitGetMediaStreamSource(szTemp);
 
 		if (pushClient == NULL || !(strlen(pushClient->m_mediaCodecInfo.szVideoName) > 0 || strlen(pushClient->m_mediaCodecInfo.szAudioName) > 0))
 		{
