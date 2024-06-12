@@ -55,6 +55,7 @@ public:
    virtual int SendFirstRequst();//发送第一个请求
    virtual bool RequestM3u8File();//请求m3u8文件
 
+   int                     nCurrentRecordFileOrder;//当前录像文件序号，从0开始 
    bool                    ResponseError(char* szErrorMsg);
    int                     nPos;
    int                     nSendErrorCount;

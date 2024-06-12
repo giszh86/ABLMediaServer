@@ -1685,13 +1685,13 @@ bool CMediaStreamSource::PushAudio(unsigned char* szAudio, int nLength, char* sz
 	{
 		boost::shared_ptr<CNetRevcBase> pClient = GetNetRevcBaseClient(nClient);
  
- 		if (pClient)
+		if (pClient && m_bNoticeOnPublish == false)
 		{
+			m_bNoticeOnPublish = true;
 			MessageNoticeStruct msgNotice;
 			msgNotice.nClient = NetBaseNetType_HttpClient_on_publish;
 			sprintf(msgNotice.szMsg, "{\"eventName\":\"on_publish\",\"app\":\"%s\",\"stream\":\"%s\",\"mediaServerId\":\"%s\",\"networkType\":%d,\"key\":%llu,\"ip\":\"%s\" ,\"port\":%d,\"params\":\"%s\"}", app, stream, ABL_MediaServerPort.mediaServerID, pClient->netBaseNetType, pClient->nClient, pClient->szClientIP, pClient->nClientPort, pClient->szPlayParams);
 			pMessageNoticeFifo.push((unsigned char*)&msgNotice, sizeof(MessageNoticeStruct));
-			m_bNoticeOnPublish = true;
 		}
  
 		if (pClient != NULL)

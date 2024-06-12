@@ -1298,10 +1298,6 @@ void  CNetRtspServer::InputRtspData(unsigned char* pRecvData, int nDataLength)
 		{//观看实况
 			pMediaSource = GetMediaStreamSource(szMediaSourceURL,true);
 
-			//先播放后接入
-			if (pMediaSource == NULL)
-				pMediaSource = WaitGetMediaStreamSource(szMediaSourceURL);
-
 			if (pMediaSource == NULL || !(strlen(pMediaSource->m_mediaCodecInfo.szVideoName) > 0 || strlen(pMediaSource->m_mediaCodecInfo.szAudioName) > 0))
 			{
  				sprintf(szResponseBuffer, "RTSP/1.0 404 Not FOUND\r\nServer: %s\r\nCSeq: %s\r\n\r\n", MediaServerVerson, szCSeq);

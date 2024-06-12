@@ -10,7 +10,7 @@ using namespace std;
 
 struct SipFieldStruct
 {
-	char szKey[1024];
+	char szKey[2048];
 	char szValue[1024*48];
 	SipFieldStruct()
 	{
@@ -44,6 +44,9 @@ class CABLSipParse
 	CABLSipParse();
 	~CABLSipParse();
 
+	bool         InsertToMap(SipFieldStruct * inSipKey);
+	uint64_t     nOrder;
+	char         szTemp2[256] = { 0 };
 	int          GetSize();
 	SipBodyHead  sipBodyHead;
 	bool  FreeSipString();

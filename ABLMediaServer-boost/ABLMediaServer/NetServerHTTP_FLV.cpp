@@ -400,10 +400,6 @@ int CNetServerHTTP_FLV::ProcessNetData()
 		{//实况点播
 		     pushClient = GetMediaStreamSource(szFlvName, true);
 
-			 //先播放后接入
-			 if (pushClient == NULL)
-				 pushClient = WaitGetMediaStreamSource(szFlvName);
-
 			if (pushClient == NULL)
 			{
 				WriteLog(Log_Debug, "CNetServerHTTP_FLV=%X, 没有推流对象的地址 %s nClient = %llu ", this, szFlvName, nClient);

@@ -61,6 +61,7 @@ CNetServerHLS::~CNetServerHLS()
 	  delete [] pTsFileBuffer;
 	  pTsFileBuffer;
 	}
+	httpParse.FreeSipString();
  
 	WriteLog(Log_Debug, "CNetServerHLS Îö¹¹ = %X  szRequestFileName = %s, nClient = %llu \r\n", this, szRequestFileName, nClient);
 	malloc_trim(0);
@@ -332,7 +333,8 @@ int CNetServerHLS::ProcessNetData()
 	      pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
 #endif
 
-
+	 httpParse.FreeSipString();
+ 
 	return 0;
 }
 

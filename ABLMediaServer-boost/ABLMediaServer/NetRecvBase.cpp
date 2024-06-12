@@ -1037,6 +1037,18 @@ void  CNetRevcBase::SetPathAuthority(char* szPath)
 #endif	
 }
 
+//根据秒数量 转换为年月日时分秒 
+char*   CNetRevcBase::getDatetimeBySecond(time_t tSecond)
+{
+	memset(szDatetimeBySecond, 0x00, sizeof(szDatetimeBySecond));
+	time_t now = tSecond;
+	struct tm *local;
+	local = localtime(&now);
+	sprintf(szDatetimeBySecond, "%04d%02d%02d%02d%02d%02d", local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);;
+
+	return szDatetimeBySecond;
+}
+
 //检查SPS的位置 
 int  CNetRevcBase::FindSPSPositionPos(char* szVideoName, unsigned char* pVideo, int nLength)
 {

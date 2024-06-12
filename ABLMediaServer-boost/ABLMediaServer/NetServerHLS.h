@@ -30,7 +30,7 @@ private :
 	int                     nCurrentTsFileBufferSize; //当前TS、FMP4缓存字节大小 
 
 	bool                    ReadHttpRequest();
-	char                    szHttpRequestBuffer[1280];
+	char                    szHttpRequestBuffer[string_length_4096];
 
 	std::mutex              netDataLock;
  	char                    szCookieNumber[64];

@@ -455,10 +455,6 @@ bool  CNetServerWS_FLV::Create_WS_FLV_Handle()
 		{//实况点播
 			pushClient = GetMediaStreamSource(szFlvName, true);
 
-			//先播放后接入
-			if (pushClient == NULL)
-				pushClient = WaitGetMediaStreamSource(szMediaSourceURL);
-
 			if (pushClient == NULL)
 			{
 				WriteLog(Log_Debug, "CNetServerWS_FLV=%X, 没有推流对象的地址 %s nClient = %llu ", this, szFlvName, nClient);
