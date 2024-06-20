@@ -91,7 +91,7 @@ services:
                 soft: 65535
                 hard: 65535
         container_name: wvp  #配置容器名
-        image: yunshiting/java:8  # 指定镜像名
+        image: atomhub.openatom.cn/library/ibmjava:8  # 指定镜像名
         ports:
             - 5066:5066/tcp
             - 5066:5066/udp
