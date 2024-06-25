@@ -12,29 +12,6 @@ VideoCapture* VideoCapture::CreateVideoCapture(std::string videourl)
 {
 	std::map<std::string, std::string> opts;
 	return new RtspVideoCapture(videourl, opts);
-	if ((videourl.find("rtsp://") == 0)|| (videourl.find("rtmp://") == 0))
-	{	
-		return new RtspVideoCapture(videourl, opts);
-	}
-	else if ((videourl.find("file://") == 0))
-	{
-	//	return new FFmpegVideoCapture(videourl, opts);
-	}
-#if defined(WEBRTC_WIN) 
-	else if ((videourl.find("screen://") == 0))
-	{
-		//return new MyDesktopCapture();
-	}
-#endif // WEBRTC_WIN
-	else if ((videourl.find("window://") == 0))
-	{
-	//	return new MyDesktopCapture();
-	}
-	else
-	{
-		return new RtspVideoCapture(videourl, opts);
-	}
-	return nullptr;
 
 }
 
@@ -43,9 +20,20 @@ VideoCapture* VideoCapture::CreateVideoCapture(std::string videourl)
 // 添加输入流
 VideoCapture* VideoCaptureManager::AddInput(const std::string& videoUrl)
 {
+	if (videoUrl.empty())
+	{
+		return nullptr;
+	}
 	std::lock_guard<std::mutex> lock(m_mutex);
-
-	if (m_inputMap.count(videoUrl) == 0)
+	SPDLOG_LOGGER_INFO(spdlogptr, "AddInput  size start m_inputMap.size()  ={} videoUrl={} ", m_inputMap.size(), videoUrl);
+	std::string  path = videoUrl;
+	auto it = m_inputMap.find(path);
+	if (it != m_inputMap.end())
+	{
+		VideoCapture* input = it->second;
+		return input;
+	}
+	else
 	{
 		VideoCapture* input = VideoCapture::CreateVideoCapture(videoUrl);
 		if (input)
@@ -57,24 +45,33 @@ VideoCapture* VideoCaptureManager::AddInput(const std::string& videoUrl)
 
 }
 
+
+
 // 移除输入流
 void VideoCaptureManager::RemoveInput(const std::string& videoUrl)
 {
+	if (videoUrl.empty())
+	{
+		return;
+	}
 	std::lock_guard<std::mutex> lock(m_mutex);
 	std::string path = getStream(videoUrl);
 	auto it = m_inputMap.find(path);
 	if (it != m_inputMap.end())
 	{
 		delete it->second;
-		it->second = NULL;
+		it->second = nullptr;
 		m_inputMap.erase(it);
 	}
 
 }
-
 // 获取输入流对象
 VideoCapture* VideoCaptureManager::GetInput(const std::string& videoUrl)
 {
+	if (videoUrl.empty())
+	{
+		return nullptr;
+	}
 	std::lock_guard<std::mutex> lock(m_mutex);
 	std::string path= getStream(videoUrl);
 	auto it = m_inputMap.find(path);
