@@ -34,6 +34,7 @@
 #include "rtmpvideosource.h"
 #endif
 
+#include "livevideosource.h"
 #include "spdloghead.h"
 #include "pc/video_track_source.h"
 #include "VideoTrackSourceInput.h"
@@ -238,7 +239,11 @@ public:
 
 	static rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> CreateVideoSource(const std::string& videourl, const std::map<std::string, std::string>& opts, const std::regex& publishFilter, rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> peer_connection_factory, std::unique_ptr<webrtc::VideoDecoderFactory>& videoDecoderFactory) {
 		rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> videoSource;
-		videoSource = VideoTrackSourceInput::Create(videourl, opts);
+		//videoSource = VideoTrackSourceInput::Create(videourl, opts);
+		//return videoSource;
+
+
+		videoSource = TrackSource<LiveVideoSource>::Create(videourl, opts, videoDecoderFactory);
 		return videoSource;
 		if (((videourl.find("rtsp://") == 0) || (videourl.find("rtsps://") == 0)) && (std::regex_match("rtsp://", publishFilter))) {
 #ifdef HAVE_LIVE555

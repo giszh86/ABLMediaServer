@@ -56,6 +56,18 @@ if (opts.find("fps") != opts.end()) {
 
 */
 
+class WEBRTCSDK_EXPORTSIMPL MediaSourceEvent
+{
+public:
+
+	virtual void OnSourceConnected(void* arg, const std::map<std::string, std::string>& opts) = 0;
+	virtual bool onNewSession(const char* id, const char* media, const char* codec, const char* sdp, unsigned int rtpfrequency, unsigned int channels) = 0;
+	virtual void OnSourceDisConnected(int err) = 0;
+	virtual void OnSourceVideoPacket(const char* id, uint8_t* aBytes, int aSize, int64_t ts) = 0;
+	virtual void OnSourceAudioPacket(const char* id, uint8_t* aBytes, int aSize, int64_t ts) = 0;
+	virtual bool OnIsQuitCapture() = 0;
+};
+
 class WEBRTCSDK_EXPORTSIMPL VideoCapture
 {
 public:
@@ -84,6 +96,8 @@ public:
 	virtual bool onData(const char* id, unsigned char* buffer, int size, int64_t ts)=0;
 
 	virtual bool onData(uint8_t* y, int strideY, uint8_t* u, int strideU, uint8_t* v, int strideV, int nWidth, int nHeight, int64_t nTimeStamp) = 0;
+
+	virtual void setCallbackEvent(MediaSourceEvent* callbackevent) = 0;
 
 };
 

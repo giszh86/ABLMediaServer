@@ -22,14 +22,15 @@
 
 #include "modules/audio_device/include/audio_device.h"
 
-#include "rtc_base/logging.h"
 #include "rtc_base/strings/json.h"
 
 #include "HttpServerRequestHandler.h"
+
 #include "framework.h"
+
 #include "NSJson.h"
 
-#define VERSION	 "10.0.101.1008"
+#define VERSION	 "10.0.102.0625"
 
 
 #include "../capture/VideoCapture.h"

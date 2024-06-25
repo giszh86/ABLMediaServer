@@ -19,7 +19,7 @@
 #include "modules/video_capture/video_capture.h"
 #include "modules/video_capture/video_capture_factory.h"
 
-
+#include "spdloghead.h"
 
 class RtspVideoCapture :public VideoCapture
 {
@@ -47,13 +47,14 @@ public:
 
 	virtual void RegisterH264Callback(H264CallBack h264Callback) { m_h264Callback = h264Callback; };
 
-	
-
-
 	virtual bool onData(const char* id, unsigned char* buffer, int size, int64_t ts);
 
 	virtual bool onData(uint8_t* y, int strideY, uint8_t* u, int strideU, uint8_t* v, int strideV, int nWidth, int nHeight, int64_t nTimeStamp) { return true; };
-	
+
+	virtual void setCallbackEvent(MediaSourceEvent* callbackevent)
+	{
+		m_callbackEvent = callbackevent;
+	};
 private:
 	void CaptureThread();
 	void Init(std::map<std::string, std::string> opts = {});
@@ -81,7 +82,7 @@ private:
 	std::vector<uint8_t>               m_cfg;
 	std::map<std::string, std::string> m_codec;
 
-
+	MediaSourceEvent* m_callbackEvent = nullptr;
 
 };
 

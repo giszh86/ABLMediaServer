@@ -284,7 +284,8 @@ WebRtcEndpoint::WebRtcEndpoint()
 
 	rtc::PhysicalSocketServer ss;
 	rtc::AutoSocketServerThread main_thread(&ss);
-	spdlog::SPDLOG::getInstance().init("log/webrtc-streamer.txt", "webrtc-streamer");
+
+	LOG_INIT("./log//webrtc-streamer.txt", "webrtc-streamer", "D", 20 * 1024 * 1024, 5, true);
 
 	rtc::InitializeSSL();
 	bInit.store(false);

@@ -25,8 +25,7 @@ VideoCapture* VideoCaptureManager::AddInput(const std::string& videoUrl)
 		return nullptr;
 	}
 	std::lock_guard<std::mutex> lock(m_mutex);
-	SPDLOG_LOGGER_INFO(spdlogptr, "AddInput  size start m_inputMap.size()  ={} videoUrl={} ", m_inputMap.size(), videoUrl);
-	std::string  path = videoUrl;
+	std::string  path = getStream(videoUrl);
 	auto it = m_inputMap.find(path);
 	if (it != m_inputMap.end())
 	{

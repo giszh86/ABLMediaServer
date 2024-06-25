@@ -14,7 +14,7 @@
 #include "api/video/i420_buffer.h"
 
 #include "VideoSource.h"
-
+#include "spdloghead.h"
 class VideoScaler :  public rtc::VideoSinkInterface<webrtc::VideoFrame>,  public VideoSource 
 {
 public:
