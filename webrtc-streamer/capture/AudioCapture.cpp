@@ -13,17 +13,28 @@ AudioCapture* AudioCapture::CreateAudioCapture(std::string audiourl, const std::
 
 
 // Ìí¼ÓÊäÈëÁ÷
-void AudioCaptureManager::AddInput(const std::string& videoUrl)
+AudioCapture* AudioCaptureManager::AddInput(const std::string& audioUrl)
 {
-	std::lock_guard<std::mutex> lock(m_mutex);
-
-	if (m_inputMap.count(videoUrl) == 0)
+	if (audioUrl.empty())
 	{
-		AudioCapture* input = AudioCapture::CreateAudioCapture(videoUrl);
+		return nullptr;
+	}
+	std::lock_guard<std::mutex> lock(m_mutex);
+	std::string  path = audioUrl;
+	auto it = m_inputMap.find(path);
+	if (it != m_inputMap.end())
+	{
+		AudioCapture* input = it->second;
+		return input;
+	}
+	else
+	{
+		AudioCapture* input = AudioCapture::CreateAudioCapture(audioUrl);
 		if (input)
 		{
-			m_inputMap[videoUrl] = input;
+			m_inputMap[audioUrl] = input;
 		}
+		return input;
 	}
 
 }
@@ -36,6 +47,8 @@ void AudioCaptureManager::RemoveInput(const std::string& videoUrl)
 	auto it = m_inputMap.find(path);
 	if (it != m_inputMap.end())
 	{
+		delete it->second;
+		it->second = nullptr;
 		m_inputMap.erase(it);
 	}
 }
@@ -52,12 +65,7 @@ AudioCapture* AudioCaptureManager::GetInput(const std::string& videoUrl)
 	}
 	else
 	{
-		AudioCapture* input = AudioCapture::CreateAudioCapture(path);
-		if (input)
-		{
-			m_inputMap[path] = input;
-		}
-		return input;
+		return nullptr;
 	}
 }
 

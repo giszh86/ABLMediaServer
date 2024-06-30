@@ -105,8 +105,6 @@ CNetClientWebrtcPlayer::CNetClientWebrtcPlayer(NETHANDLE hServer, NETHANDLE hCli
 					int ret = m_resampler->GetOneFrame(output_data, &sample_size);
 					if (ret < 0)
 					{
-						//	std::unique_lock<std::mutex> lock(m_mutex);
-							//audioDataCV.wait(lock, [&]() { return  !stopThread.load(); });
 						if (stopThread.load())
 						{
 							return;
@@ -163,6 +161,14 @@ CNetClientWebrtcPlayer::~CNetClientWebrtcPlayer()
 	{
 		delete  m_resampler;
 		m_resampler = nullptr;
+	}
+
+	// 释放资源
+	for (int i = 0; i < AV_NUM_DATA_POINTERS; ++i) {
+		if (outData[i] != nullptr) {
+			delete[] outData[i];
+			outData[i] = nullptr;
+		}
 	}
 
 	if (pMediaSource != NULL)
@@ -231,20 +237,14 @@ int CNetClientWebrtcPlayer::PushAudio(uint8_t* pVideoData, uint32_t nDataLength,
 
 
 	int outSize = 0;
-	uint8_t* outData[AV_NUM_DATA_POINTERS] = { 0 };
+
 	bool res = m_decder->DecodeData(pVideoData, nDataLength, outData, &outSize);
 	if (res && outSize>0)
 	{
 		res = m_resampler->FillingPCM(outData, outSize);
 	
 	}
-	// 释放资源
-	for (int i = 0; i < AV_NUM_DATA_POINTERS; ++i) {
-		if (outData[i] != nullptr) {
-			delete[] outData[i];
-			outData[i] = nullptr;
-		}
-	}
+
 
 	return 0;
 }

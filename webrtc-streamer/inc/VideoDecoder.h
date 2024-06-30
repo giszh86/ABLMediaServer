@@ -198,6 +198,7 @@ protected:
 		webrtc::VideoDecoder::Settings settings;
 		webrtc::RenderResolution resolution(width, height);
 		settings.set_max_render_resolution(resolution);
+
 		if (format == "H264") {
 			m_decoder = m_factory->CreateVideoDecoder(webrtc::SdpVideoFormat(cricket::kH264CodecName));
 			settings.set_codec_type(webrtc::VideoCodecType::kVideoCodecH264);
@@ -265,7 +266,8 @@ protected:
 
 					if (this->hasDecoder()) {
 						int res = m_decoder->Decode(input_image, false, frame.m_timestamp_ms);
-						if (res != WEBRTC_VIDEO_CODEC_OK) {
+						if (res != WEBRTC_VIDEO_CODEC_OK)
+						{
 							SPDLOG_LOGGER_ERROR(spdlogptr, "VideoDecoder::DecoderThread failure:{}", res);
 						}
 					}

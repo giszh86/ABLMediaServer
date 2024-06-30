@@ -140,7 +140,7 @@ public:
                     SPDLOG_LOGGER_DEBUG(spdlogptr, "LiveVideoSource:onData drop frame in past for FFmpeg:{}", (m_prevTimestamp-ts));
 
                 } else {
-                    ts = rtc::TimeMillis();
+                   //ts = rtc::TimeMillis();
                     content.insert(content.end(), buffer + index.start_offset, buffer + index.payload_size + index.payload_start_offset);
                     rtc::scoped_refptr<webrtc::EncodedImageBuffer> frame = webrtc::EncodedImageBuffer::Create(content.data(), content.size());
                     m_decoder.PostFrame(frame, ts, frameType);
@@ -203,17 +203,29 @@ public:
 		}
 	}
 
-    bool onData(const char* id, unsigned char* buffer, ssize_t size, struct timeval presentationTime, int64_t ts)
+    bool onData(const char* id, unsigned char* buffer, ssize_t size, struct timeval presentationTime, int64_t ts1)
   {
-	 // int64_t ts = presentationTime.tv_sec;
-	 // ts = ts * 1000 + presentationTime.tv_usec / 1000;
-        SPDLOG_LOGGER_TRACE(spdlogptr,"LiveVideoSource:onData id:{}   size:{} ts:{} " ,id , size , ts);
+		//// 使用 std::chrono 获取当前时间
+		//auto now = std::chrono::system_clock::now();
+		//auto milliseconds_since_epoch = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+		//// 将当前时间赋值给 ts
+		//int64_t ts = milliseconds_since_epoch;
+        std::lock_guard<std::mutex> _lock(m_mutex);
+		// 使用 std::chrono 获取当前时间
+		auto now = std::chrono::system_clock::now();
+		auto now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
+		auto epoch = now_ms.time_since_epoch();
+		int64_t ts = std::chrono::duration_cast<std::chrono::milliseconds>(epoch).count();
+
+
+		//SPDLOG_LOGGER_ERROR(spdlogptr, "LiveVideoSource:onData id:{}   size:{} ts:{} ", id, size, ts);
 	  int res = 0;
 
 	  std::string codec = id;
 	  if (codec == "H264")
 	  {
 		  onH264Data(buffer, size, ts, codec);
+      
 	  }
 	  else if (codec == "H265")
 	  {
@@ -274,9 +286,11 @@ public:
 
         virtual void OnSourceVideoPacket(const char* id, uint8_t* aBytes, int aSize, int64_t ts) override 
         {
+			// 定义并清空 presentationTime 结构
 			struct timeval presentationTime;
 			timerclear(&presentationTime);
-            onData(id, aBytes, aSize, presentationTime,ts);        
+
+            onData(id, aBytes, aSize, presentationTime,0);        
         
         };
 		virtual void OnSourceAudioPacket(const char* id, uint8_t* aBytes, int aSize, int64_t ts) override {};
@@ -295,4 +309,5 @@ private:
     uint64_t                           m_prevTimestamp;
     VideoCapture* m_vCapture = nullptr;
     std::string m_videourl;
+    std::mutex					m_mutex;
 };

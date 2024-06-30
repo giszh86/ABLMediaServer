@@ -61,7 +61,7 @@ class WEBRTCSDK_EXPORTSIMPL  AudioCaptureManager
 {
 public:
 	// 添加输入流
-	void AddInput(const std::string& videoUrl);
+	AudioCapture* AddInput(const std::string& videoUrl);
 
 	// 移除输入流
 	void RemoveInput(const std::string& videoUrl);

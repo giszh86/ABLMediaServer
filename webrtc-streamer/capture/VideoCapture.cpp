@@ -80,12 +80,7 @@ VideoCapture* VideoCaptureManager::GetInput(const std::string& videoUrl)
 	}
 	else
 	{
-		VideoCapture* input = VideoCapture::CreateVideoCapture(path);
-		if (input)
-		{
-			m_inputMap[path] = input;
-		}
-		return input;
+		return nullptr;
 	}
 }
 

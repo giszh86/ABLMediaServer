@@ -33,7 +33,7 @@ class NullDecoder : public webrtc::VideoDecoder {
 
     int32_t Decode(const webrtc::EncodedImage& input_image, bool /*missing_frames*/, int64_t render_time_ms = -1) override {
 	    if (!m_decoded_image_callback) {
-			RTC_LOG(LS_WARNING) << "RegisterDecodeCompleteCallback() not called";
+			SPDLOG_LOGGER_TRACE(spdlogptr, "RegisterDecodeCompleteCallback() not called");
 			return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
 		}
 		rtc::scoped_refptr<webrtc::EncodedImageBufferInterface> encodedData = input_image.GetEncodedData();
@@ -47,8 +47,7 @@ class NullDecoder : public webrtc::VideoDecoder {
 					.set_ntp_time_ms(input_image.NtpTimeMs())
 					.build();
 
-		RTC_LOG(LS_VERBOSE) << "Decode " << frame.id() << " " << input_image._frameType << " " <<  frameBuffer->width() << "x" <<  frameBuffer->height() << " " <<  frameBuffer->GetI420()->StrideY();
-
+		SPDLOG_LOGGER_TRACE(spdlogptr, "Decode £º{}  input_image._frameType:{}  frameBuffer->width: {}  frameBuffer->height{} x:{}", frame.id(), input_image._frameType, frameBuffer->width(), frameBuffer->height(), frameBuffer->GetI420()->StrideY());
 		m_decoded_image_callback->Decoded(frame);
 
 		return WEBRTC_VIDEO_CODEC_OK;		

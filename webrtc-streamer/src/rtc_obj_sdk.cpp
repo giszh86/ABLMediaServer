@@ -24,13 +24,14 @@
 #include "rtc_base/win32_socket_init.h"
 #endif
 
+
 class RtcLogSink :public rtc::LogSink {
 public:
 	RtcLogSink() {}
 	~RtcLogSink() {}
 	virtual void OnLogMessage(const std::string& message)
 	{
-		std::cout<<"RtcLog OnLogMessage ="<< message;
+		std::cout << "RtcLog OnLogMessage =" << message;
 		static FILE* file = fopen("./rtc.log", "ab+");
 		if (file)
 		{
@@ -238,13 +239,14 @@ void WebRtcEndpoint::createIceServers(std::string username, std::string realm,
 
 		rtc::Socket* tcp_server_socket = socket_server.CreateSocket(AF_INET, SOCK_STREAM);
 		if (tcp_server_socket) {
-			std::cout << "TURN Listening TCP at " << server_addr.ToString() << std::endl;
+			SPDLOG_LOGGER_INFO(spdlogptr, "TURN Listening TCP at{}", server_addr.ToString());
+
 			tcp_server_socket->Bind(server_addr);
 			tcp_server_socket->Listen(5);
 			turnserver->AddInternalServerSocket(tcp_server_socket, cricket::PROTO_TCP);
 		}
 		else {
-			std::cout << "Failed to create TURN TCP server socket" << std::endl;
+			SPDLOG_LOGGER_ERROR(spdlogptr, "Failed to create TURN TCP server socket");			
 		}
 
 		rtc::AsyncUDPSocket* udp_server_socket = rtc::AsyncUDPSocket::Create(&socket_server, server_addr);
@@ -253,13 +255,17 @@ void WebRtcEndpoint::createIceServers(std::string username, std::string realm,
 			turnserver->AddInternalSocket(udp_server_socket, cricket::PROTO_UDP);
 		}
 		else {
-			std::cout << "Failed to create TURN UDP server socket" << std::endl;
+			SPDLOG_LOGGER_ERROR(spdlogptr, "Failed to create TURN UDP server socket");
+
 		}
 		rtc::SocketAddress external_server_addr;
 		external_server_addr.FromString(externalIp + ":" + std::to_string(listeningPort));
-		std::cout << "TURN external addr:" << external_server_addr.ToString() << std::endl;
+	
+		SPDLOG_LOGGER_INFO(spdlogptr, "TURN external addr:{}", external_server_addr.ToString());
 		turnserver->SetExternalSocketFactory(new rtc::BasicPacketSocketFactory(&socket_server), rtc::SocketAddress(external_server_addr.ipaddr(), 0));
+
 		std::string localturn = username + "@" + externalIp + ":" + std::to_string(listeningPort);
+
 		webRtcServer->addIceServers(localturn);
 		main.Run();
 
@@ -286,7 +292,9 @@ WebRtcEndpoint::WebRtcEndpoint()
 	rtc::AutoSocketServerThread main_thread(&ss);
 
 	LOG_INIT("./log//webrtc-streamer.txt", "webrtc-streamer", "D", 20 * 1024 * 1024, 5, true);
-
+	rtc::LogMessage::LogTimestamps();
+	rtc::LogMessage::LogThreads();
+	rtc::LogMessage::AddLogToStream(new RtcLogSink(), rtc::LS_ERROR);
 	rtc::InitializeSSL();
 	bInit.store(false);
 

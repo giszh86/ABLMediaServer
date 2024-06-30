@@ -1,4 +1,4 @@
-#include "AudioTrackSourceInput.h"
+	#include "AudioTrackSourceInput.h"
 #include "spdloghead.h"
 
 
@@ -87,45 +87,36 @@ int32_t AudioTrackSourceInput::SendRecordedBuffer(int8_t* audio_data,
 };
 
 
+// 构造函数
 AudioTrackSourceInput::AudioTrackSourceInput(const std::string& uri, const std::map<std::string, std::string>& opts, bool wait)
 	:m_wait(wait)
 	, m_previmagets(0)
 	, m_prevts(0)
-	, m_audiourl(uri)
-{
-
-	m_pAudioCapture =AudioCaptureManager::getInstance().GetInput(uri); 
-	if (m_pAudioCapture)
+	, m_audiourl(uri) {
+	m_pAudioCapture = AudioCaptureManager::getInstance().GetInput(uri);
+	if (m_pAudioCapture == nullptr)
 	{
+		m_pAudioCapture = AudioCaptureManager::getInstance().AddInput(uri);
+	}
+
+	if (m_pAudioCapture) {
 		m_pAudioCapture->Init("",0, 0, 0);
-		m_pAudioCapture->RegisterPcmCallback([=](uint8_t* pcm, int datalen, int nSampleRate, int nChannel, int64_t nTimeStamp)
-			{
-				//  std::shared_ptr<rtc::Thread> _worker_thread_ptr(std::move(rtc::Thread::Create()));
-				//	  _worker_thread_ptr->Start();
-				//	  _worker_thread_ptr->PostTask([&]()
-					//	  {
-				SendRecordedBuffer((int8_t*)pcm, (uint32_t)datalen, 16, nSampleRate, (size_t)nChannel, nTimeStamp);
-
-				// }
-			// );
-
-
+		m_pAudioCapture->RegisterPcmCallback([=](uint8_t* pcm, int datalen, int nSampleRate, int nChannel, int64_t nTimeStamp) {
+			SendRecordedBuffer((int8_t*)pcm, (uint32_t)datalen, 16, nSampleRate, (size_t)nChannel, nTimeStamp);
 			});
 		m_pAudioCapture->Start();
 	}
-
-
 }
 
-AudioTrackSourceInput::~AudioTrackSourceInput()
-{
+// 析构函数
+AudioTrackSourceInput::~AudioTrackSourceInput() {
 	SPDLOG_LOGGER_INFO(spdlogptr, "AudioTrackSourceInput::stop start ");
+
+	m_pAudioCapture = AudioCaptureManager::getInstance().GetInput(m_audiourl);
 	if (m_pAudioCapture)
 	{
-		AudioCaptureManager::getInstance().RemoveInput(m_audiourl);
 		m_pAudioCapture->Stop();
-		delete m_pAudioCapture;
-		m_pAudioCapture = nullptr;
+		AudioCaptureManager::getInstance().RemoveInput(m_audiourl);
 	}
 	{
 		std::lock_guard<std::mutex> lock(m_sink_lock);
@@ -133,5 +124,4 @@ AudioTrackSourceInput::~AudioTrackSourceInput()
 		m_vecbuffer.clear();
 	}
 	SPDLOG_LOGGER_INFO(spdlogptr, "AudioTrackSourceInput::stop end ");
-
 }
