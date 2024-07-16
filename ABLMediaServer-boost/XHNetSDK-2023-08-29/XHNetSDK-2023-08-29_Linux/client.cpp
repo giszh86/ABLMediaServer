@@ -26,6 +26,7 @@ client::client(boost::asio::io_context& ioc,
 	
 {
 	m_closeflag = false ;
+	m_connectflag = false;
 	m_readbuff = new uint8_t[CLIENT_MAX_RECV_BUFF_SIZE];
 }
 
@@ -137,13 +138,6 @@ int32_t client::connect(int8_t* remoteip,
 		return e_libnet_err_clisetsockopt;
 	}
 	
-	//设置接收，发送缓冲区
-	int  nRecvSize = 1024 * 1024 * 1;
-	boost::asio::socket_base::send_buffer_size    SendSize_option(nRecvSize); //定义发送缓冲区大小
-	boost::asio::socket_base::receive_buffer_size RecvSize_option(nRecvSize); //定义接收缓冲区大小
-	m_socket.set_option(SendSize_option); //设置发送缓存区大小
-	m_socket.set_option(RecvSize_option); //设置接收缓冲区大小
-
 	//设置发送，接收超时
 	int  nSendRecvTimer = 5000; //3秒超时
 	int nSocket = m_socket.native_handle();
@@ -251,15 +245,16 @@ void client::handle_read(const boost::system::error_code& ec, size_t transize)
 				boost::asio::placeholders::error,
 				boost::asio::placeholders::bytes_transferred));
 		}
-			else
+		else
+		{
+ 			if (client_manager_singleton::get_mutable_instance().pop_client(get_id()))
 			{
-				m_socket.async_read_some(boost::asio::buffer(m_readbuff, CLIENT_MAX_RECV_BUFF_SIZE),
-					boost::bind(&client::handle_read,
-					shared_from_this(),
-					boost::asio::placeholders::error,
-					boost::asio::placeholders::bytes_transferred));
-				printf("close socket\n");
+				if (m_fnclose)
+				{
+					m_fnclose(get_server_id(), get_id());
+				}
 			}
+		}
 	}
 	else
 	{
@@ -289,6 +284,7 @@ void client::handle_connect(const boost::system::error_code& ec)
 	}
 	else
 	{
+		m_connectflag.exchange(true);
 		if (m_fnconnect)
 		{
 			m_fnconnect(get_id(), 1,htons(m_socket.local_endpoint().port()));
@@ -503,7 +499,7 @@ void client::close()
 		m_fnread = NULL;
 		//m_timer.cancel();
 
-		if (m_socket.is_open())
+		if (m_socket.is_open() && m_connectflag.load())
 		{
 			boost::system::error_code ec;
 			m_socket.close(ec);
@@ -513,12 +509,11 @@ void client::close()
 
 void client::handle_connect_timeout(const boost::system::error_code& ec)
 {
-	if (!ec)
+	if (m_connectflag.load() == false)
 	{
-		if (m_socket.is_open())
-		{
-			boost::system::error_code ec;
-			m_socket.close(ec);
+		if (m_fnconnect)
+		{//通知连接失败
+			m_fnconnect(get_id(), 0,0);
 		}
 	}
 }

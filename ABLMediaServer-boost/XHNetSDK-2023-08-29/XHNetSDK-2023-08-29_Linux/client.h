@@ -57,6 +57,7 @@ private:
 	close_callback m_fnclose;
 	connect_callback m_fnconnect;
 	boost::atomic_bool m_closeflag;
+	boost::atomic_bool m_connectflag;
 
 	//connect
 	boost::asio::deadline_timer m_timer;
