@@ -1184,7 +1184,7 @@ int queryRecordListByTime(char* szMediaSourceInfo, queryRecordListStruct querySt
 			bFlag2 = false;
 			if (nFileOrder == 0)
 			{
-				if (nTime1 <= nTime2 && (nTime1 + ABL_MediaServerPort.fileSecond) > nTime2)
+				if ((nTime1 <= nTime2 && (nTime1 + ABL_MediaServerPort.fileSecond) > nTime2) || nTime2 < nTime1)
 					bFlag1 = true;//第一个符合条件的文件 
 			}
 			if (nFileOrder >= 1 && *it2 <= atoll(queryStruct.endtime))
@@ -1267,6 +1267,13 @@ int queryRecordListByTime(char* szMediaSourceInfo, queryRecordListStruct querySt
 					if (fp)
 						fclose(fp);
 				}
+			}
+
+			//后面的mp4文件不再符合条件 ，需要中断查询 
+			if (*it2 > atoll(queryStruct.endtime))
+			{
+				WriteLog(Log_Debug, "queryRecordListByTime() 后面的mp4文件不再符合条件 ，需要中断查询 *it2 = %llu , endtime = %s ", *it2, queryStruct.endtime);
+				break;
 			}
 		}
 	}
@@ -3236,7 +3243,7 @@ void* ABLMedisServerFastDeleteThread(void* lpVoid)
 			pDisconnectBaseNetFifo.pop_front();
 		}
 
-		SendToMapFromMutePacketList();
+		
 		std::this_thread::sleep_for(std::chrono::milliseconds(64));
 		//Sleep(64);
 	}
@@ -3683,7 +3690,7 @@ void WebRtcCallBack(const char* callbackJson, void* pUserHandle)
 
 		if (callbackStruct.eventID == 2)
 		{//创建webrtc播放
-			CMediaStreamSource_ptr pMediaSource = GetMediaStreamSource(callbackStruct.stream, false);
+			CMediaStreamSource_ptr pMediaSource = GetMediaStreamSource(callbackStruct.stream, true);
 			if (pMediaSource == NULL)
 				WriteLog(Log_Debug, "不存在流 %s ", callbackStruct.stream);
 			else
