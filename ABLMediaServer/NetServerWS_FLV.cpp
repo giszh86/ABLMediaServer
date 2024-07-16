@@ -9,7 +9,7 @@ E-Mail  79941308@qq.com
 
 #include "stdafx.h"
 #include "NetServerWS_FLV.h"
-
+#ifdef USE_BOOST
 extern             bool                DeleteNetRevcBaseClient(NETHANDLE CltHandle);
 extern boost::shared_ptr<CMediaStreamSource>  GetMediaStreamSource(char* szURL, bool bNoticeStreamNoFound = false);
 

@@ -1160,7 +1160,7 @@ bool   CNetRtspServer::createTcpRtpDecode()
 //处理rtsp数据
 void  CNetRtspServer::InputRtspData(unsigned char* pRecvData, int nDataLength)
 {
-#if  0 
+#if  1 
 	 if (nDataLength < 1024)
 		WriteLog(Log_Debug, "RecvData \r\n%s \r\n", pRecvData);
 #endif
@@ -1307,6 +1307,13 @@ void  CNetRtspServer::InputRtspData(unsigned char* pRecvData, int nDataLength)
 				DeleteNetRevcBaseClient(nClient);
 				return;
 			}
+
+			boost::shared_ptr<CNetRevcBase>   pSourceClient =  GetNetRevcBaseClient(pMediaSource->nClient);
+			if (pSourceClient != NULL)
+			{//记录回放源ID
+                if(pSourceClient->netBaseNetType == ReadRecordFileInput_ReadFMP4File || pSourceClient->netBaseNetType == NetBaseNetType_NetServerReadMultRecordFile)
+				  nReplayClient = pMediaSource->nClient;
+		    }
 		}
 		else
 		{//录像点播
@@ -1480,6 +1487,7 @@ void  CNetRtspServer::InputRtspData(unsigned char* pRecvData, int nDataLength)
 	else if (memcmp(pRecvData, "PLAY", 4) == 0 && strstr((char*)pRecvData, "\r\n\r\n") != NULL)
 	{
 		GetFieldValue("CSeq", szCSeq);
+		nRecvDataTimerBySecond = 0 ;
 
 		sprintf(szResponseBuffer, "RTSP/1.0 200 OK\r\nServer: %s\r\nCSeq: %s\r\nSession: ABLMediaServer_%llu\r\nRTP-Info: %s\r\n\r\n", MediaServerVerson, szCSeq, currentSession, szCurRtspURL);
 		nSendRet = XHNetSDK_Write(nClient, (unsigned char*)szResponseBuffer, strlen(szResponseBuffer), 1);
@@ -1500,11 +1508,21 @@ void  CNetRtspServer::InputRtspData(unsigned char* pRecvData, int nDataLength)
 
 			if(nReplayClient > 0 )
 			{
+			  CReadRecordFileInput*          pReplayPtr1 = NULL ;//单文件
+			  CNetServerReadMultRecordFile*  pReplayPtr2 = NULL;//多文件
+
 			  boost::shared_ptr<CNetRevcBase> pBasePtr = GetNetRevcBaseClient(nReplayClient);
 			  if (pBasePtr)
 			  {
-				CReadRecordFileInput* pReplayPtr = (CReadRecordFileInput*)pBasePtr.get();
-				pReplayPtr->UpdatePauseFlag(false);//继续播放
+				  if (pBasePtr->netBaseNetType == ReadRecordFileInput_ReadFMP4File)
+				  {
+				    pReplayPtr1 = (CReadRecordFileInput*)pBasePtr.get();
+				    pReplayPtr1->UpdatePauseFlag(false);//继续播放
+ 				  }else if (pBasePtr->netBaseNetType == NetBaseNetType_NetServerReadMultRecordFile)
+				  {
+					  pReplayPtr2 = (CNetServerReadMultRecordFile*)pBasePtr.get();
+					  pReplayPtr2->UpdatePauseFlag(false);//继续播放
+				  }
 
 				nRtspPlayCount++;
 
@@ -1519,7 +1537,16 @@ void  CNetRtspServer::InputRtspData(unsigned char* pRecvData, int nDataLength)
 					else
 						m_rtspPlayerType = RtspPlayerType_RecordReplay;
 
-					pReplayPtr->UpdateReplaySpeed(atof(szScale), m_rtspPlayerType);
+					if (pBasePtr->netBaseNetType == ReadRecordFileInput_ReadFMP4File)
+					{
+						if(pReplayPtr1)
+					      pReplayPtr1->UpdateReplaySpeed(atof(szScale), m_rtspPlayerType);
+ 					}
+					else if (pBasePtr->netBaseNetType == NetBaseNetType_NetServerReadMultRecordFile)
+					{
+						if(pReplayPtr2)
+						   pReplayPtr2->UpdateReplaySpeed(atof(szScale), m_rtspPlayerType);
+			    	}
 				}
 
 				//实现拖动播放
@@ -1537,7 +1564,18 @@ void  CNetRtspServer::InputRtspData(unsigned char* pRecvData, int nDataLength)
 					{
 						memcpy(szRangeValue, szRange + nPos1 + 4, nPos2 - nPos1 - 4);
 						if (atoi(szRangeValue) > 0)
-							pReplayPtr->ReaplyFileSeek(atoi(szRangeValue));
+						{
+							if (pBasePtr->netBaseNetType == ReadRecordFileInput_ReadFMP4File)
+							{
+								if(pReplayPtr1)
+								  pReplayPtr1->ReaplyFileSeek(atoi(szRangeValue));
+						    }
+							else if (pBasePtr->netBaseNetType == NetBaseNetType_NetServerReadMultRecordFile)
+							{
+								if(pReplayPtr2)
+								   pReplayPtr2->ReaplyFileSeek(atoi(szRangeValue));
+ 							}
+ 						}
 					}
 				}
 			}
@@ -1551,8 +1589,16 @@ void  CNetRtspServer::InputRtspData(unsigned char* pRecvData, int nDataLength)
 		boost::shared_ptr<CNetRevcBase> pBasePtr = GetNetRevcBaseClient(nReplayClient);
 		if (pBasePtr)
 		{
-			CReadRecordFileInput* pReplayPtr = (CReadRecordFileInput*)pBasePtr.get();
-			pReplayPtr->UpdatePauseFlag(true);//暂停播放
+			if (pBasePtr->netBaseNetType == ReadRecordFileInput_ReadFMP4File) 
+			{//读取单个mp4文件
+			   CReadRecordFileInput* pReplayPtr = (CReadRecordFileInput*)pBasePtr.get();
+			   pReplayPtr->UpdatePauseFlag(true);//暂停播放
+			}
+			else if (pBasePtr->netBaseNetType == NetBaseNetType_NetServerReadMultRecordFile)
+			{//读取多个mp4文件
+				CNetServerReadMultRecordFile* pReplayPtr = (CNetServerReadMultRecordFile*)pBasePtr.get();
+				pReplayPtr->UpdatePauseFlag(true);//暂停播放
+			}
 		}
 		GetFieldValue("CSeq", szCSeq);
 
@@ -1564,11 +1610,11 @@ void  CNetRtspServer::InputRtspData(unsigned char* pRecvData, int nDataLength)
 			return;
 		}
 
-		WriteLog(Log_Debug, "收到断开 暂停 命令，立即执行暂停 nClient = %llu , nReplayClient = %llu ", nClient, nReplayClient);
+		WriteLog(Log_Debug, "收到 暂停 命令，立即执行暂停 nClient = %llu , nReplayClient = %llu ", nClient, nReplayClient);
  	}
 	else if (memcmp(pRecvData, "TEARDOWN", 8) == 0 && strstr((char*)pRecvData, "\r\n\r\n") != NULL)
 	{
-		WriteLog(Log_Debug, "收到断开 TEARDOWN 命令，立即执行删除 nClient = %llu ", nClient);
+		WriteLog(Log_Debug, "收到 TEARDOWN 命令，立即执行删除 nClient = %llu ", nClient);
 		bRunFlag = false;
 		DeleteNetRevcBaseClient(nClient);
 	}

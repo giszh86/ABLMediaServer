@@ -23,7 +23,7 @@
     std::chrono::high_resolution_clock::now() - start).count(); \
     std::cout << print_message << \
     elapsedTime \
-    << " ms " << std::endl;
+    << " ms " << std::endldl;
 
 #define CUDA_DRVAPI_CALL( call )                                                                                                 \
     do                                                                                                                           \

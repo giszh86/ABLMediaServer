@@ -195,6 +195,13 @@ CNetClientFFmpegRecv::CNetClientFFmpegRecv(NETHANDLE hServer, NETHANDLE hClient,
 		mediaCodecInfo.nHeight = video_dec_ctx->height;
 		pix_fmt = video_dec_ctx->pix_fmt;
  	}
+	else
+	{
+		avformat_close_input(&pFormatCtx2);
+		WriteLog(Log_Debug, "CNetClientFFmpegRecv =  %X ,nClient = %llu 文件中不存在视频、音频流  ", this, hClient);
+	    pDisconnectBaseNetFifo.push((unsigned char*)&nClient,sizeof(nClient)); //清理断裂的链接 
+		return;
+	}
  
 	//查找出音频源
 	if (open_codec_context(&stream_isAudio, &audio_dec_ctx, pFormatCtx2, AVMEDIA_TYPE_AUDIO) >= 0)
@@ -248,15 +255,6 @@ CNetClientFFmpegRecv::CNetClientFFmpegRecv(NETHANDLE hServer, NETHANDLE hClient,
 
 			mediaCodecInfo.nBaseAddAudioTimeStamp = nInputAudioDelay;
 		}
-	}
-	 
-	if(stream_isVideo == -1 )
-	{
-		strcpy(szReadFileError, "rtmp http-flv (h265) Video Codec Is Not Support ! ");
-		WriteLog(Log_Debug, "NetClientFFmpegRecv =  %X ,nClient = %llu ，http-flv、rtmp (h265) Video Codec Is Not Support !  ", this, hClient );
-		avformat_close_input(&pFormatCtx2);
-		pDisconnectBaseNetFifo.push((unsigned char*)&nClient, sizeof(nClient));
-		return;
 	}
 		
 	packet2 = av_packet_alloc();
