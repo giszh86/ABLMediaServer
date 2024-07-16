@@ -37,7 +37,7 @@ services:
         networks:
             - monitor
     wvpRedis:
-        image: atomhub.openatom.cn/amd64/redis:6.2
+        image: redis:7.0
         restart: always
         container_name: wvpRedis
         volumes:
@@ -51,7 +51,7 @@ services:
         networks:
             - monitor
     wvpMysql:
-        image: docker pull atomhub.openatom.cn/amd64/mysql:8.0 # 指定镜像和版本
+        image: mysql:8.1 # 指定镜像和版本
         restart: always # 指定开机重启
         container_name: wvpMysql
         cap_add:
@@ -94,7 +94,7 @@ services:
                 soft: 65535
                 hard: 65535
         container_name: wvp  #配置容器名
-        image: atomhub.openatom.cn/library/ibmjava:8  # 指定镜像名
+        image: java:8  # 指定镜像名
         ports:
             - 5066:5066/tcp
             - 5066:5066/udp

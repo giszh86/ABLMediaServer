@@ -58,7 +58,7 @@ services:
             - MYSQL_ROOT_PASSWORD=sky123456
             - MYSQL_USER=skyadmin
             - MYSQL_PASSWORD=sky123456
-            - MYSQL_DATABASE=wvp
+            - MYSQL_DATABASE=wvp2
             - SQL_MODE= "STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION"
         command:
             --default-authentication-plugin=mysql_native_password
