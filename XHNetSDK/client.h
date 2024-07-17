@@ -1,7 +1,6 @@
 #pragma  once
 #ifdef USE_BOOST
 
-
 #include <boost/atomic.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/shared_array.hpp>
@@ -21,7 +20,7 @@ public:
 		bool autoread);
 	~client();
 
-	std::mutex     m_climtx;
+	auto_lock::al_spin m_climtx;
 	NETHANDLE get_id();
 	NETHANDLE get_server_id() const;
 	boost::asio::ip::tcp::socket& socket();
@@ -58,6 +57,7 @@ private:
 	close_callback m_fnclose;
 	connect_callback m_fnconnect;
 	boost::atomic_bool m_closeflag;
+	boost::atomic_bool m_connectflag;
 
 	//connect
 	boost::asio::deadline_timer m_timer;
@@ -110,8 +110,6 @@ inline NETHANDLE client::get_server_id() const
 {
 	return m_srvid;
 }
-
-
 #else
 
 
@@ -174,6 +172,7 @@ private:
 	close_callback m_fnclose;
 	connect_callback m_fnconnect;
 	std::atomic<bool> m_closeflag;
+	std::atomic<bool> m_connectflag;
 
 	//connect
 	asio::steady_timer m_timer;
